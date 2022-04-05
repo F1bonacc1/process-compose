@@ -1,0 +1,69 @@
+version: "0.5"
+processes:
+  process1:
+    command: "echo process1"
+    depends_on:
+      process2: 
+        condition: process_completed_successfully
+
+  process2:
+    command: "echo process2"
+    availability:
+      restart: "on-failure"
+    depends_on:
+      process3: 
+        condition: process_completed_successfully
+
+  process3:
+    command: "echo process3"
+    availability:
+      restart: "on-failure"
+      backoff_seconds: 2
+    depends_on:
+      process4: 
+        condition: process_completed_successfully
+
+  process4:
+    command: "echo process4"
+    availability:
+      restart: "on-failure"
+    depends_on:
+      process5: 
+        condition: process_completed_successfully
+
+  process5:
+    command: "echo process5"
+    availability:
+      restart: "on-failure"
+      backoff_seconds: 2
+    depends_on:
+      process6: 
+        condition: process_completed_successfully
+
+  process6:
+    command: "echo process6"
+    availability:
+      restart: "on-failure"
+    depends_on:
+      process7: 
+        condition: process_completed_successfully
+
+  process7:
+    command: "echo process7"
+    availability:
+      restart: "on-failure"
+    depends_on:
+      process8: 
+        condition: process_completed_successfully
+
+  process8:
+    command: "echo process8"
+    availability:
+      restart: "on-failure"
+      backoff_seconds: 2
+
+
+              
+environment:
+  - 'ABC=222'
+

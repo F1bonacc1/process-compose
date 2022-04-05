@@ -1,0 +1,80 @@
+
+version: "0.5"
+
+environment:
+  - 'IS_PRODUCTION_MODE=1'
+log_location: ./pc.log
+
+processes:
+  # downloader_A runs every 5min to download new data from its specific uri
+  # the download directory is also specific for this process
+  # the version of the downloader is defined in the .example_env (because DRY)
+  downloader_A:
+    command: "python3 data_downloader_${VERSION}.py -s 'data.source.A.uri'"
+    availability:
+      restart: "always"
+      backoff_seconds: 300
+    environment:
+      - 'OUTPUT_DIR=/path/to/A/data'
+
+  # downloader_B also runs every 5min to download new data from its specific uri
+  # the download directory is also specific for this process
+  # the version of the downloader is defined in the .env (because DRY)
+  downloader_B:
+    command: "python3 data_downloader_${VERSION}.py -s 'data.source.B.uri'"
+    availability:
+      restart: "always"
+      backoff_seconds: 300
+    environment:
+      - 'OUTPUT_DIR=/path/to/B/data'
+
+  # cleanser should be always running.
+  # It will restart in case of failure with a 2 seconds delay
+  # It cleans the data downloaded by the downloaders and removes duplicates
+  cleanser:
+    command: "python3 data_cleanser.py --path /path/to/A/data --path /path/to/B/data"
+    availability:
+      restart: "on-failure"
+      backoff_seconds: 2
+    environment:
+      - 'OUTPUT_DIR=/path/to/cleansed/data'
+
+  # db_feeder should be always running.
+  # It will restart in case of failure with a 1 second (default) delay
+  # It feeds the clean data into the DB
+  # It depends on the db_awaiter and won't run until it exits with status 0
+  # The DB_USER and DB_PASSWORD are defined in the .env file (should be in .gitignore)
+  db_feeder:
+    command: "python3 feed_db.py --source /path/to/cleansed/data"
+    availability:
+      restart: on-failure
+    depends_on:
+      db_awaiter: 
+        condition: process_completed_successfully
+    environment:
+      - 'DB_CONNECTION_STRING=MYDB://${DB_USER}:${DB_PASSWORD}@localhost:27017'
+
+  # db_awaiter is designed to run once and exit
+  # It sleeps for ${WAIT_SEC} seconds (defined in the .env file) and exits
+  # It runs imideately after the DB is started
+  # This allows the DB to start before processes which depend on it try to establish connection
+  # multiple processes can declare that they depend on db_awaiter
+  db_awaiter:
+    command: "echo 'Waiting for ${WAIT_SEC} seconds for DB to start... && sleep ${WAIT_SEC}"
+    availability:
+      restart: "no"
+    depends_on:
+      database: 
+        condition: process_started
+  
+  # database should be always running
+  # It uses an external script for spinning up the DB (or maybe it just hides a docker command...)
+  # Its log is saved to a sepparate file since this DB is too chatty
+  database:
+    command: "/path/to/db_runner.sh"
+    availability:
+      restart: always
+    log_location: "/path/to/db.log"
+    environment:
+      - 'DB_SPECIFIC_VAR1=VAL1'
+      - 'DB_SPECIFIC_VAR2=VAL2'
