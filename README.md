@@ -37,24 +37,24 @@ It is heavily inspired by [docker-compose](https://github.com/docker/compose), b
 
 ```yaml
 process1:
-    command: "sleep 3"
+  command: "sleep 3"
 process2:
-    command: "sleep 3"
+  command: "sleep 3"
 ```
 
 ##### ✅ Serial
 
 ```yaml
 process1:
-    command: "sleep 3"
-    depends_on:
-        process2: 
-            condition: process_completed_successfully # or "process_completed" if you don't care about errors
+  command: "sleep 3"
+  depends_on:
+    process2: 
+      condition: process_completed_successfully # or "process_completed" if you don't care about errors
 process2:
-    command: "sleep 3"
-    depends_on:
-        process3: 
-            condition: process_completed_successfully # or "process_completed" if you don't care about errors
+  command: "sleep 3"
+  depends_on:
+    process3: 
+      condition: process_completed_successfully # or "process_completed" if you don't care about errors
 ```
 
 ##### ❌ Instance Number
@@ -63,11 +63,11 @@ process2:
 
 ```yaml
 process2:
-    depends_on:
-    process2: 
-        condition: process_completed_successfully # or "process_started" (default)
-    process3: 
-        condition: process_completed_successfully
+  depends_on:
+  process2: 
+    condition: process_completed_successfully # or "process_started" (default)
+  process3: 
+    condition: process_completed_successfully
 ```
 
 
@@ -92,7 +92,7 @@ process2:
 
 ```yaml
 process2:
-    log_location: ./pc.process2.log #if undefined or empty no logs will be saved
+  log_location: ./pc.process2.log #if undefined or empty no logs will be saved
 ```
 
 ##### ✅ Capture StdOut output
@@ -103,10 +103,10 @@ process2:
 
 ```yaml
 processes:
-    process2:
-        command: "chmod 666 /path/to/file"
+  process2:
+    command: "chmod 666 /path/to/file"
 environment:
-    - 'ABC=42'
+  - 'ABC=42'
 log_location: ./pc.global.log #if undefined or empty no logs will be saved (if also not defined per process)
 ```
 
@@ -126,10 +126,10 @@ log_location: ./pc.global.log #if undefined or empty no logs will be saved (if a
 
 ```yaml
 process2:
-    availability:
-        restart: on-failure # other options: "always", "no" (default)
-        backoff_seconds: 2  # default: 1
-        max_restarts: 5 # default: 0 (unlimited)
+  availability:
+    restart: on-failure # other options: "always", "no" (default)
+    backoff_seconds: 2  # default: 1
+    max_restarts: 5 # default: 0 (unlimited)
 ```
 
 
@@ -140,20 +140,20 @@ process2:
 
 ```yaml
 process2:
-    environment:
-        - 'I_AM_LOCAL_EV=42'
+  environment:
+    - 'I_AM_LOCAL_EV=42'
 ```
 
 ##### ✅ Global
 
 ```yaml
 processes:
-    process2:
-        command: "chmod 666 /path/to/file"
-    environment:
-        - 'I_AM_LOCAL_EV=42'		
+  process2:
+    command: "chmod 666 /path/to/file"
+  environment:
+    - 'I_AM_LOCAL_EV=42'		
 environment:
-    - 'I_AM_GLOBAL_EV=42'
+  - 'I_AM_GLOBAL_EV=42'
 ```
 
 
