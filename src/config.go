@@ -5,6 +5,7 @@ import "sync"
 type Project struct {
 	Version     string    `yaml:"version"`
 	LogLocation string    `yaml:"log_location,omitempty"`
+	LogLevel    string    `yaml:"log_level,omitempty"`
 	Processes   Processes `yaml:"processes"`
 	Environment []string  `yaml:"environment,omitempty"`
 

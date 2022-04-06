@@ -1,4 +1,5 @@
 version: "0.5"
+log_level: debug
 processes:
   process0:
     command: "ls ddd"
@@ -9,11 +10,11 @@ processes:
       restart: "on-failure"
       backoff_seconds: 2
     depends_on:
-      process2: 
+      process2:
         condition: process_completed_successfully
-      process3: 
+      process3:
         condition: process_completed
-      # process4: 
+      # process4:
       #   condition: process_completed_successfully
     environment:
       - 'EXIT_CODE=0'
@@ -24,7 +25,7 @@ processes:
     availability:
       restart: "on-failure"
     # depends_on:
-    #   process3: 
+    #   process3:
     #     condition: process_completed_successfully
     environment:
       - 'ABC=2221'
@@ -37,7 +38,7 @@ processes:
       restart: "on-failure"
       backoff_seconds: 2
     depends_on:
-      process4: 
+      process4:
         condition: process_completed_successfully
 
   process4:

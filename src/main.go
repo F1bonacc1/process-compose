@@ -38,7 +38,16 @@ func createProject(inputFile string) *Project {
 	if err != nil {
 		log.Fatal().Msg(err.Error())
 	}
+	if project.LogLevel != "" {
+		lvl, err := zerolog.ParseLevel(project.LogLevel)
+		if err != nil {
+			log.Error().Msgf("Unknown log level %s defaulting to %s",
+				project.LogLevel, zerolog.GlobalLevel().String())
+		} else {
+			zerolog.SetGlobalLevel(lvl)
+		}
 
+	}
 	return &project
 }
 
@@ -48,6 +57,7 @@ func setupLogger() {
 		Out:        os.Stdout,
 		TimeFormat: "06-01-02 15:04:05",
 	})
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 }
 
 func findFiles(names []string, pwd string) []string {

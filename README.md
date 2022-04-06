@@ -1,8 +1,8 @@
 ## Process Compose
 
-[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose)
 
-Process compose is a small utility for building custom workflows and execution sequences. It is optimized for:
+Process compose is a lightweight utility for building custom workflows and execution sequences. It is optimized for:
 
 * Parallelizing processes execution
 * Defining execution dependencies and order
@@ -111,6 +111,17 @@ log_location: ./pc.global.log #if undefined or empty no logs will be saved (if a
 ```
 
 ##### ❌ Silence specific processes
+
+##### ✅ Process compose console log level
+
+```yaml
+log_level: info # other options: "trace", "debug", "info", "warn", "error", "fatal", "panic"
+processes:
+  process2:
+    command: "chmod 666 /path/to/file"
+```
+
+This setting controls the `process-compose` log level. The processes log level should be defined inside the process. It is recommended to support its definition with an environment variable that can be defined in `process-compose.yaml`
 
 
 
