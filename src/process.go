@@ -136,6 +136,9 @@ func (p *Process) WontRun() {
 }
 
 func (p *Process) onProcessEnd() {
+	if isStringDefined(p.procConf.LogLocation) {
+		p.logger.Close()
+	}
 	p.Lock()
 	p.done = true
 	p.Unlock()

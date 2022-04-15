@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -8,6 +9,8 @@ import (
 
 type PCLog struct {
 	logger zerolog.Logger
+	writer *bufio.Writer
+	file   *os.File
 }
 
 func NewLogger(outputPath string) *PCLog {
@@ -15,8 +18,12 @@ func NewLogger(outputPath string) *PCLog {
 	if err != nil {
 		panic(err)
 	}
+	writer := bufio.NewWriter(f)
+
 	return &PCLog{
-		logger: zerolog.New(f),
+		writer: writer,
+		file:   f,
+		logger: zerolog.New(writer),
 	}
 }
 
@@ -33,4 +40,9 @@ func (l PCLog) Error(message string, process string, replica int) {
 		Str("process", process).
 		Int("replica", replica).
 		Msg(message)
+}
+
+func (l PCLog) Close() {
+	l.writer.Flush()
+	l.file.Close()
 }
