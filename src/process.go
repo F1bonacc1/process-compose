@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"runtime"
 	"sync"
 	"time"
 
@@ -50,7 +51,7 @@ func NewProcess(globalEnv []string, logger PcLogger, procConf ProcessConfig, rep
 
 func (p *Process) Run() error {
 	for {
-		cmd := exec.Command(getRunnerShell(), "-c", p.procConf.Command)
+		cmd := exec.Command(getRunnerShell(), getRunnerArg(), p.getCommand())
 		cmd.Env = p.getProcessEnvironment()
 		stdout, _ := cmd.StdoutPipe()
 		stderr, _ := cmd.StderrPipe()
@@ -149,6 +150,10 @@ func (p *Process) GetNameWithReplica() string {
 	return fmt.Sprintf("%s_%d", p.procConf.Name, p.replica)
 }
 
+func (p *Process) getCommand() string {
+	return p.procConf.Command
+}
+
 func (p *Process) handleOutput(pipe io.ReadCloser,
 	handler func(message string)) {
 
@@ -172,8 +177,21 @@ func (p *Process) handleError(message string) {
 func getRunnerShell() string {
 	shell, ok := os.LookupEnv("SHELL")
 	if !ok {
-		return "bash"
+		if runtime.GOOS == "windows" {
+			shell = "cmd"
+		} else {
+			shell = "bash"
+		}
 	} else {
 		return shell
+	}
+	return shell
+}
+
+func getRunnerArg() string {
+	if runtime.GOOS == "windows" {
+		return "/C"
+	} else {
+		return "-c"
 	}
 }

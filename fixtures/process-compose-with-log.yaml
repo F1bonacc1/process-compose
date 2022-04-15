@@ -8,9 +8,10 @@ processes:
         condition: process_completed_successfully
 
   process2:
-    command: "echo 'process2 is removing the log' && rm ./pc.log-test.log"
+    command: "echo 'process2 is removing the log'"
     availability:
       restart: "on-failure"
+      # max_restarts: 3
     depends_on:
       process3:
         condition: process_completed
@@ -30,10 +31,11 @@ processes:
         condition: process_completed_successfully
 
   process5:
-    command: "echo 'process5 is removing the process6 log' && rm ./pc.proc6.log-test.log"
+    command: "python -c print(str(4+5))"
     availability:
       restart: "on-failure"
-      backoff_seconds: 2
+      backoff_seconds: 1
+      # max_restarts: 3
     depends_on:
       process6:
         condition: process_completed_successfully
@@ -60,8 +62,6 @@ processes:
     availability:
       restart: "on-failure"
       backoff_seconds: 2
-
-
 
 environment:
   - 'ABC=222'
