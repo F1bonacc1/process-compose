@@ -31,7 +31,7 @@ processes:
         condition: process_completed_successfully
 
   process5:
-    command: "python -c print(str(4+5))"
+    command: "python3 -c 'print(str(4+5))'"
     availability:
       restart: "on-failure"
       backoff_seconds: 1

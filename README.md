@@ -1,6 +1,6 @@
 ## Process Compose
 
-[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose)
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose)
 
 Process compose is a lightweight utility for building custom workflows and execution sequences. It is optimized for:
 
@@ -14,7 +14,7 @@ It is heavily inspired by [docker-compose](https://github.com/docker/compose), b
 
 ### Installation
 
-- Download one of the [releases](https://github.com/F1bonacc1/process-compose/releases)
+- Go to the [releases](https://github.com/F1bonacc1/process-compose/releases/latest), download the package for your OS, and copy the binary to somewhere on your PATH. 
 
 ### Documentation
 
@@ -199,10 +199,27 @@ The following discovery order is used: `compose.yml, compose.yaml, process-compo
 
 
 
-#### ❌ <u>Multi-platform</u>
+#### ✅ <u>Multi-platform</u>
 
 ##### ✅ Linux
 
-##### ❌ Windows
+The default backend is `bash`. You can define a different backend with a `SHELL` environment variable.
+
+##### ✅ Windows
+
+The default backend is `cmd`. You can define a different backend with a `SHELL` environment variable.
+
+```yaml
+  process1:
+    command: "python -c print(str(40+2))" 
+    #note that the same command for bash/zsh would look like: "python -c 'print(str(40+2))'"
+```
+
+Using `powershell` backend had some funky behaviour (like missing `command1 && command2` functionality in older versions). If you need to run powershell scripts, use the following syntax:
+
+```yaml
+  process2:
+    command: "powershell.exe ./test.ps1 arg1 arg2 argN"
+```
 
 ##### ❌ macOS

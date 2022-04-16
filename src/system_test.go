@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -50,7 +51,31 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 		if err := os.Remove(proc6log); err != nil {
 			t.Errorf("failed to delete the log file %s, %s", proc6log, err.Error())
 		}
+	})
+}
 
+func TestSystem_TestComposeChain(t *testing.T) {
+	fixture := filepath.Join("..", "fixtures", "process-compose-chain.yaml")
+	t.Run(fixture, func(t *testing.T) {
+		project := createProject(fixture)
+		names, err := project.GetDependenciesOrderNames()
+		if err != nil {
+			t.Errorf("GetDependenciesOrderNames() error = %v", err)
+			return
+		}
+		want := []string{
+			"process8",
+			"process7",
+			"process6",
+			"process5",
+			"process4",
+			"process3",
+			"process2",
+			"process1",
+		}
+		if !reflect.DeepEqual(names, want) {
+			t.Errorf("Project.GetDependenciesOrderNames() = %v, want %v", names, want)
+		}
 	})
 }
 
