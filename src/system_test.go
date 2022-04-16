@@ -1,7 +1,9 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -17,11 +19,39 @@ func TestSystem_TestFixtures(t *testing.T) {
 	fixtures := getFixtures()
 	for _, fixture := range fixtures {
 
+		if strings.Contains(fixture, "process-compose-with-log.yaml") {
+			//there is a dedicated test for that TestSystem_TestComposeWithLog
+			continue
+		}
+
 		t.Run(fixture, func(t *testing.T) {
 			project := createProject(fixture)
 			project.Run()
 		})
 	}
+}
+
+func TestSystem_TestComposeWithLog(t *testing.T) {
+	fixture := filepath.Join("..", "fixtures", "process-compose-with-log.yaml")
+	t.Run(fixture, func(t *testing.T) {
+		project := createProject(fixture)
+		project.Run()
+		if _, err := os.Stat(project.LogLocation); err != nil {
+			t.Errorf("log file %s not found", project.LogLocation)
+		}
+		if err := os.Remove(project.LogLocation); err != nil {
+			t.Errorf("failed to delete the log file %s, %s", project.LogLocation, err.Error())
+		}
+
+		proc6log := project.Processes["process6"].LogLocation
+		if _, err := os.Stat(proc6log); err != nil {
+			t.Errorf("log file %s not found", proc6log)
+		}
+		if err := os.Remove(proc6log); err != nil {
+			t.Errorf("failed to delete the log file %s, %s", proc6log, err.Error())
+		}
+
+	})
 }
 
 func Test_autoDiscoverComposeFile(t *testing.T) {
@@ -47,7 +77,7 @@ func Test_autoDiscoverComposeFile(t *testing.T) {
 			args: args{
 				pwd: "../",
 			},
-			want:    "../process-compose.yaml",
+			want:    filepath.Join("..", "process-compose.yaml"),
 			wantErr: false,
 		},
 	}

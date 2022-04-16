@@ -5,8 +5,7 @@ processes:
     command: "ls ddd"
 
   process1:
-    command: "./test_loop.bash ${PROC4}"
-    win_command: "powershell.exe ./test_loop.ps1 ${PROC4}"
+    command: "powershell.exe ./test_loop.ps1 ${PROC4}"
     availability:
       restart: "on-failure"
       backoff_seconds: 2
@@ -21,8 +20,7 @@ processes:
       - 'EXIT_CODE=0'
 
   process2:
-    command: "./test_loop.bash process2"
-    win_command: "powershell.exe ./test_loop.ps1 process2"
+    command: "powershell.exe ./test_loop.ps1 process2"
     log_location: ./pc.proc2.log
     availability:
       restart: "on-failure"
@@ -35,8 +33,7 @@ processes:
       - 'EXIT_CODE=0'
 
   process3:
-    command: "./test_loop.bash process3"
-    win_command: "powershell.exe ./test_loop.ps1 process3"
+    command: "powershell.exe ./test_loop.ps1 process3"
     availability:
       restart: "on-failure"
       backoff_seconds: 2
@@ -45,8 +42,7 @@ processes:
         condition: process_completed_successfully
 
   process4:
-    command: "./test_loop.bash process4"
-    win_command: "powershell.exe ./test_loop.ps1 process4"
+    command: "powershell.exe ./test_loop.ps1 process4"
     # availability:
     #   restart: on-failure
     environment:
@@ -54,7 +50,7 @@ processes:
       - 'EXIT_CODE=1'
 
   kcalc:
-    command: "kcalc"
+    command: "calc"
     disabled: true
 
 environment:

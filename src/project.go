@@ -19,15 +19,16 @@ func (p *Project) Run() {
 		nameOrder = append(nameOrder, v.Name)
 	}
 	var logger PcLogger = NewNilLogger("")
-	if p.LogLocation != "" {
+	if isStringDefined(p.LogLocation) {
 		logger = NewLogger(p.LogLocation)
+		defer logger.Close()
 	}
 	log.Debug().Msgf("Spinning up %d processes. Order: %q", len(runOrder), nameOrder)
 	var wg sync.WaitGroup
 	for _, proc := range runOrder {
 
 		procLogger := logger
-		if proc.LogLocation != "" {
+		if isStringDefined(proc.LogLocation) {
 			procLogger = NewLogger(proc.LogLocation)
 		}
 		process := NewProcess(p.Environment, procLogger, proc, 1)

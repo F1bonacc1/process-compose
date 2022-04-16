@@ -18,3 +18,7 @@ func (l PcNilLog) Info(message string, process string, replica int) {
 func (l PcNilLog) Error(message string, process string, replica int) {
 
 }
+
+func (l PcNilLog) Close() {
+
+}
