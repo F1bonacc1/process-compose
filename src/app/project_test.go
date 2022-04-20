@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"reflect"
@@ -7,12 +7,11 @@ import (
 
 func TestProject_GetDependenciesOrderNames(t *testing.T) {
 	type fields struct {
-		Version          string
-		LogLevel         string
-		LogLocation      string
-		Processes        map[string]ProcessConfig
-		Environment      []string
-		runningProcesses map[string]*Process
+		Version     string
+		LogLevel    string
+		LogLocation string
+		Processes   map[string]ProcessConfig
+		Environment []string
 	}
 	tests := []struct {
 		name    string
@@ -113,11 +112,10 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Project{
-				Version:          tt.fields.Version,
-				LogLocation:      tt.fields.LogLocation,
-				Processes:        tt.fields.Processes,
-				Environment:      tt.fields.Environment,
-				runningProcesses: tt.fields.runningProcesses,
+				Version:     tt.fields.Version,
+				LogLocation: tt.fields.LogLocation,
+				Processes:   tt.fields.Processes,
+				Environment: tt.fields.Environment,
 			}
 			got, err := p.GetDependenciesOrderNames()
 			if (err != nil) != tt.wantErr {

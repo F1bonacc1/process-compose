@@ -6,7 +6,6 @@ processes:
 
   process1:
     command: "./test_loop.bash ${PROC4}"
-    win_command: "powershell.exe ./test_loop.ps1 ${PROC4}"
     availability:
       restart: "on-failure"
       backoff_seconds: 2
@@ -22,7 +21,6 @@ processes:
 
   process2:
     command: "./test_loop.bash process2"
-    win_command: "powershell.exe ./test_loop.ps1 process2"
     log_location: ./pc.proc2.log
     availability:
       restart: "on-failure"
@@ -36,7 +34,6 @@ processes:
 
   process3:
     command: "./test_loop.bash process3"
-    win_command: "powershell.exe ./test_loop.ps1 process3"
     availability:
       restart: "on-failure"
       backoff_seconds: 2
@@ -46,7 +43,6 @@ processes:
 
   process4:
     command: "./test_loop.bash process4"
-    win_command: "powershell.exe ./test_loop.ps1 process4"
     # availability:
     #   restart: on-failure
     environment:

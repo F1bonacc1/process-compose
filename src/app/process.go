@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"bufio"
@@ -11,26 +11,32 @@ import (
 	"sync"
 	"time"
 
+	"github.com/f1bonacc1/process-compose/src/pclog"
+
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
 )
 
 type Process struct {
-	globalEnv       []string
-	procConf        ProcessConfig
-	restartsCounter int
+	globalEnv []string
+	procConf  ProcessConfig
+	procState *ProcessState
 	sync.Mutex
 	procCond  sync.Cond
-	exitCode  int
 	procColor func(a ...interface{}) string
 	noColor   func(a ...interface{}) string
 	redColor  func(a ...interface{}) string
-	logger    PcLogger
+	logger    pclog.PcLogger
 	done      bool
 	replica   int
 }
 
-func NewProcess(globalEnv []string, logger PcLogger, procConf ProcessConfig, replica int) *Process {
+func NewProcess(
+	globalEnv []string,
+	logger pclog.PcLogger,
+	procConf ProcessConfig,
+	procState *ProcessState,
+	replica int) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 	//logger, _ := zap.NewProduction()
 
@@ -41,7 +47,7 @@ func NewProcess(globalEnv []string, logger PcLogger, procConf ProcessConfig, rep
 		redColor:  color.New(color.FgHiRed).SprintFunc(),
 		noColor:   color.New(color.Reset).SprintFunc(),
 		logger:    logger,
-		exitCode:  -1,
+		procState: procState,
 		done:      false,
 		replica:   replica,
 	}
@@ -58,19 +64,21 @@ func (p *Process) Run() error {
 		go p.handleOutput(stdout, p.handleInfo)
 		go p.handleOutput(stderr, p.handleError)
 		cmd.Start()
+		p.procState.Status = ProcessStateRunning
 
 		cmd.Wait()
 		p.Lock()
-		p.exitCode = cmd.ProcessState.ExitCode()
+		p.procState.ExitCode = cmd.ProcessState.ExitCode()
 		p.Unlock()
-		log.Info().Msgf("%s exited with status %d", p.procConf.Name, p.exitCode)
+		log.Info().Msgf("%s exited with status %d", p.procConf.Name, p.procState.ExitCode)
 
-		if !p.isRestartable(p.exitCode) {
+		if !p.isRestartable(p.procState.ExitCode) {
 			break
 		}
-		p.restartsCounter += 1
+		p.procState.Status = ProcessStateRestarting
+		p.procState.Restarts += 1
 		log.Info().Msgf("Restarting %s in %v second(s)... Restarts: %d",
-			p.procConf.Name, p.getBackoff().Seconds(), p.restartsCounter)
+			p.procConf.Name, p.getBackoff().Seconds(), p.procState.Restarts)
 
 		time.Sleep(p.getBackoff())
 	}
@@ -107,14 +115,14 @@ func (p *Process) isRestartable(exitCode int) bool {
 		if p.procConf.RestartPolicy.MaxRestarts == 0 {
 			return true
 		}
-		return p.restartsCounter < p.procConf.RestartPolicy.MaxRestarts
+		return p.procState.Restarts < p.procConf.RestartPolicy.MaxRestarts
 	}
 
 	if p.procConf.RestartPolicy.Restart == RestartPolicyAlways {
 		if p.procConf.RestartPolicy.MaxRestarts == 0 {
 			return true
 		}
-		return p.restartsCounter < p.procConf.RestartPolicy.MaxRestarts
+		return p.procState.Restarts < p.procConf.RestartPolicy.MaxRestarts
 	}
 
 	return false
@@ -127,7 +135,7 @@ func (p *Process) WaitForCompletion(waitee string) int {
 	for !p.done {
 		p.procCond.Wait()
 	}
-	return p.exitCode
+	return p.procState.ExitCode
 }
 
 func (p *Process) WontRun() {
@@ -139,6 +147,7 @@ func (p *Process) onProcessEnd() {
 	if isStringDefined(p.procConf.LogLocation) {
 		p.logger.Close()
 	}
+	p.procState.Status = ProcessStateCompleted
 	p.Lock()
 	p.done = true
 	p.Unlock()

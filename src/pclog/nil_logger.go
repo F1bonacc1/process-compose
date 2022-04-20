@@ -1,4 +1,4 @@
-package main
+package pclog
 
 type PcNilLog struct {
 }

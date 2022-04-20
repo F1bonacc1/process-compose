@@ -1,4 +1,4 @@
-package main
+package pclog
 
 type PcLogger interface {
 	Info(message string, process string, replica int)

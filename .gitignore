@@ -3,3 +3,4 @@ coverage.out
 bin/**
 *.log
 .env
+src/docs

@@ -1,6 +1,7 @@
-package main
+package app
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -9,7 +10,7 @@ import (
 )
 
 func getFixtures() []string {
-	matches, err := filepath.Glob("../fixtures/process-compose-*.yaml")
+	matches, err := filepath.Glob("../../fixtures/process-compose-*.yaml")
 	if err != nil {
 		panic("no fixtures found")
 	}
@@ -26,16 +27,17 @@ func TestSystem_TestFixtures(t *testing.T) {
 		}
 
 		t.Run(fixture, func(t *testing.T) {
-			project := createProject(fixture)
+			project := CreateProject(fixture)
 			project.Run()
 		})
 	}
 }
 
 func TestSystem_TestComposeWithLog(t *testing.T) {
-	fixture := filepath.Join("..", "fixtures", "process-compose-with-log.yaml")
+	fmt.Println(os.Getwd())
+	fixture := filepath.Join("..", "..", "fixtures", "process-compose-with-log.yaml")
 	t.Run(fixture, func(t *testing.T) {
-		project := createProject(fixture)
+		project := CreateProject(fixture)
 		project.Run()
 		if _, err := os.Stat(project.LogLocation); err != nil {
 			t.Errorf("log file %s not found", project.LogLocation)
@@ -55,9 +57,9 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 }
 
 func TestSystem_TestComposeChain(t *testing.T) {
-	fixture := filepath.Join("..", "fixtures", "process-compose-chain.yaml")
+	fixture := filepath.Join("..", "..", "fixtures", "process-compose-chain.yaml")
 	t.Run(fixture, func(t *testing.T) {
-		project := createProject(fixture)
+		project := CreateProject(fixture)
 		names, err := project.GetDependenciesOrderNames()
 		if err != nil {
 			t.Errorf("GetDependenciesOrderNames() error = %v", err)
@@ -92,7 +94,7 @@ func Test_autoDiscoverComposeFile(t *testing.T) {
 		{
 			name: "Should not find",
 			args: args{
-				pwd: "../fixtures",
+				pwd: "../../fixtures",
 			},
 			want:    "",
 			wantErr: true,
@@ -100,15 +102,15 @@ func Test_autoDiscoverComposeFile(t *testing.T) {
 		{
 			name: "Should find process-compose.yaml",
 			args: args{
-				pwd: "../",
+				pwd: "../../",
 			},
-			want:    filepath.Join("..", "process-compose.yaml"),
+			want:    filepath.Join("..", "..", "process-compose.yaml"),
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := autoDiscoverComposeFile(tt.args.pwd)
+			got, err := AutoDiscoverComposeFile(tt.args.pwd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("autoDiscoverComposeFile() error = %v, wantErr %v", err, tt.wantErr)
 				return

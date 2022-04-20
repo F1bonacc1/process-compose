@@ -1,55 +1,19 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
+	"net/http"
+	"time"
 
-	//"log"
 	"os"
 
+	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-
-	"github.com/joho/godotenv"
-	"gopkg.in/yaml.v3"
 )
-
-func createProject(inputFile string) *Project {
-	yamlFile, err := ioutil.ReadFile(inputFile)
-
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			log.Error().Msgf("File %s doesn't exist", inputFile)
-		}
-		log.Fatal().Msg(err.Error())
-	}
-
-	// .env is optional we don't care if it errors
-	godotenv.Load()
-
-	yamlFile = []byte(os.ExpandEnv(string(yamlFile)))
-
-	var project Project
-	err = yaml.Unmarshal(yamlFile, &project)
-	if err != nil {
-		log.Fatal().Msg(err.Error())
-	}
-	if project.LogLevel != "" {
-		lvl, err := zerolog.ParseLevel(project.LogLevel)
-		if err != nil {
-			log.Error().Msgf("Unknown log level %s defaulting to %s",
-				project.LogLevel, zerolog.GlobalLevel().String())
-		} else {
-			zerolog.SetGlobalLevel(lvl)
-		}
-
-	}
-	return &project
-}
 
 func setupLogger() {
 
@@ -58,33 +22,6 @@ func setupLogger() {
 		TimeFormat: "06-01-02 15:04:05",
 	})
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-}
-
-func findFiles(names []string, pwd string) []string {
-	candidates := []string{}
-	for _, n := range names {
-		f := filepath.Join(pwd, n)
-		if _, err := os.Stat(f); err == nil {
-			candidates = append(candidates, f)
-		}
-	}
-	return candidates
-}
-
-// DefaultFileNames defines the Compose file names for auto-discovery (in order of preference)
-var DefaultFileNames = []string{"compose.yml", "compose.yaml", "process-compose.yml", "process-compose.yaml"}
-
-func autoDiscoverComposeFile(pwd string) (string, error) {
-	candidates := findFiles(DefaultFileNames, pwd)
-	if len(candidates) > 0 {
-		winner := candidates[0]
-		if len(candidates) > 1 {
-			log.Warn().Msgf("Found multiple config files with supported names: %s", strings.Join(candidates, ", "))
-			log.Warn().Msgf("Using %s", winner)
-		}
-		return winner, nil
-	}
-	return "", fmt.Errorf("no config files found in %s", pwd)
 }
 
 func isFlagPassed(name string) bool {
@@ -97,22 +34,46 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func main() {
+func init() {
 	setupLogger()
+}
+
+func main() {
 	fileName := ""
-	flag.StringVar(&fileName, "f", DefaultFileNames[0], "path to file to load")
+	flag.StringVar(&fileName, "f", app.DefaultFileNames[0], "path to file to load")
 	flag.Parse()
 	if !isFlagPassed("f") {
 		pwd, err := os.Getwd()
 		if err != nil {
 			log.Fatal().Msg(err.Error())
 		}
-		file, err := autoDiscoverComposeFile(pwd)
+		file, err := app.AutoDiscoverComposeFile(pwd)
 		if err != nil {
 			log.Fatal().Msg(err.Error())
 		}
 		fileName = file
 	}
-	project := createProject(fileName)
+
+	gin.SetMode("")
+
+	routersInit := api.InitRouter()
+	readTimeout := time.Duration(60) * time.Second
+	writeTimeout := time.Duration(60) * time.Second
+	endPoint := fmt.Sprintf(":%d", 8080)
+	maxHeaderBytes := 1 << 20
+
+	server := &http.Server{
+		Addr:           endPoint,
+		Handler:        routersInit,
+		ReadTimeout:    readTimeout,
+		WriteTimeout:   writeTimeout,
+		MaxHeaderBytes: maxHeaderBytes,
+	}
+
+	log.Info().Msgf("start http server listening %s", endPoint)
+
+	go server.ListenAndServe()
+
+	project := app.CreateProject(fileName)
 	project.Run()
 }

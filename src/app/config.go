@@ -1,4 +1,4 @@
-package main
+package app
 
 import "sync"
 
@@ -10,6 +10,7 @@ type Project struct {
 	Environment []string  `yaml:"environment,omitempty"`
 
 	runningProcesses map[string]*Process
+	processStates    map[string]*ProcessState
 	mapMutex         sync.Mutex
 }
 
@@ -23,6 +24,13 @@ type ProcessConfig struct {
 	RestartPolicy RestartPolicyConfig    `yaml:"availability,omitempty"`
 	DependsOn     DependsOnConfig        `yaml:"depends_on,omitempty"`
 	Extensions    map[string]interface{} `yaml:",inline"`
+}
+
+type ProcessState struct {
+	Name     string `json:"name"`
+	Status   string `json:"status"`
+	Restarts int    `json:"restarts"`
+	ExitCode int    `json:"exit_code"`
 }
 
 func (p ProcessConfig) GetDependencies() []string {
@@ -40,6 +48,13 @@ const (
 	RestartPolicyAlways    = "always"
 	RestartPolicyOnFailure = "on-failure"
 	RestartPolicyNo        = "no"
+)
+
+const (
+	ProcessStatePending    = "Pending"
+	ProcessStateRunning    = "Running"
+	ProcessStateRestarting = "Restarting"
+	ProcessStateCompleted  = "Completed"
 )
 
 type RestartPolicyConfig struct {

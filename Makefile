@@ -1,5 +1,4 @@
 BINARY_NAME=process-compose
-EXT=''
 RM=rm
 ifeq ($(OS),Windows_NT)
 	EXT=.exe
@@ -10,8 +9,12 @@ endif
 
 buildrun: build run
 
+swag:
+	~/go/bin/swag init --dir src --output src/docs --parseDependency --parseInternal --parseDepth 1
+
 build:
 	go build -o bin/${BINARY_NAME}${EXT} ./src
+
 compile:
 	# Linux
 	GOOS=linux GOARCH=386 go build -o bin/${BINARY_NAME}-linux-386 ./src
@@ -23,7 +26,7 @@ compile:
 	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}-windows-amd64.exe ./src
 
 test:
-	go test -cover ./src
+	go test -cover ./src/...
 coverhtml:
 	go test -coverprofile=coverage.out ./src
 	go tool cover -html=coverage.out
