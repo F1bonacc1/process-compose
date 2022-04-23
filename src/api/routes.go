@@ -22,8 +22,8 @@ import (
 // @BasePath /
 // @query.collection.format multi
 
-// InitRouter initialize routing information
-func InitRouter() *gin.Engine {
+// InitRoutes initialize routing information
+func InitRoutes() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
@@ -31,6 +31,7 @@ func InitRouter() *gin.Engine {
 	url := ginSwagger.URL("http://localhost:8080/swagger/doc.json") // The url pointing to API definition
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	r.GET("/processes", GetProcesses)
+	r.PATCH("/process/stop/:name", StopProcess)
 
 	return r
 }

@@ -27,6 +27,7 @@ type Process struct {
 	noColor   func(a ...interface{}) string
 	redColor  func(a ...interface{}) string
 	logger    pclog.PcLogger
+	cmd       *exec.Cmd
 	done      bool
 	replica   int
 }
@@ -57,18 +58,18 @@ func NewProcess(
 
 func (p *Process) Run() error {
 	for {
-		cmd := exec.Command(getRunnerShell(), getRunnerArg(), p.getCommand())
-		cmd.Env = p.getProcessEnvironment()
-		stdout, _ := cmd.StdoutPipe()
-		stderr, _ := cmd.StderrPipe()
+		p.cmd = exec.Command(getRunnerShell(), getRunnerArg(), p.getCommand())
+		p.cmd.Env = p.getProcessEnvironment()
+		stdout, _ := p.cmd.StdoutPipe()
+		stderr, _ := p.cmd.StderrPipe()
 		go p.handleOutput(stdout, p.handleInfo)
 		go p.handleOutput(stderr, p.handleError)
-		cmd.Start()
+		p.cmd.Start()
 		p.procState.Status = ProcessStateRunning
 
-		cmd.Wait()
+		p.cmd.Wait()
 		p.Lock()
-		p.procState.ExitCode = cmd.ProcessState.ExitCode()
+		p.procState.ExitCode = p.cmd.ProcessState.ExitCode()
 		p.Unlock()
 		log.Info().Msgf("%s exited with status %d", p.procConf.Name, p.procState.ExitCode)
 
@@ -83,6 +84,11 @@ func (p *Process) Run() error {
 		time.Sleep(p.getBackoff())
 	}
 	p.onProcessEnd()
+	return nil
+}
+
+func (p *Process) stop() error {
+	p.cmd.Process.Kill()
 	return nil
 }
 

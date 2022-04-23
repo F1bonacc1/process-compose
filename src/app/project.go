@@ -126,6 +126,16 @@ func (p *Project) removeRunningProcess(name string) {
 	p.mapMutex.Unlock()
 }
 
+func (p *Project) StopProcess(name string) error {
+	proc := p.getRunningProcess(name)
+	if proc == nil {
+		log.Error().Msgf("Process %s is not running", name)
+		return fmt.Errorf("process %s is not running", name)
+	}
+	proc.stop()
+	return nil
+}
+
 func (p *Project) GetProcesses(names ...string) ([]ProcessConfig, error) {
 	processes := []ProcessConfig{}
 	if len(names) == 0 {
