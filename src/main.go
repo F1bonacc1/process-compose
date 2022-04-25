@@ -15,6 +15,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const EnvDebugMode = "PC_DEBUG_MODE"
+
 func setupLogger() {
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{
@@ -40,7 +42,9 @@ func init() {
 
 func main() {
 	fileName := ""
+	port := 8080
 	flag.StringVar(&fileName, "f", app.DefaultFileNames[0], "path to file to load")
+	flag.IntVar(&port, "p", port, "port number")
 	flag.Parse()
 	if !isFlagPassed("f") {
 		pwd, err := os.Getwd()
@@ -53,13 +57,14 @@ func main() {
 		}
 		fileName = file
 	}
+	if os.Getenv(EnvDebugMode) == "" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
-	gin.SetMode("")
-
-	routersInit := api.InitRouter()
+	routersInit := api.InitRoutes()
 	readTimeout := time.Duration(60) * time.Second
 	writeTimeout := time.Duration(60) * time.Second
-	endPoint := fmt.Sprintf(":%d", 8080)
+	endPoint := fmt.Sprintf(":%d", port)
 	maxHeaderBytes := 1 << 20
 
 	server := &http.Server{
