@@ -3,7 +3,7 @@ package pclog
 type PcNilLog struct {
 }
 
-func NewNilLogger(outputPath string) *PcNilLog {
+func NewNilLogger() *PcNilLog {
 
 	return &PcNilLog{}
 }

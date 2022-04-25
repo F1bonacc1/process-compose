@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -34,7 +33,6 @@ func TestSystem_TestFixtures(t *testing.T) {
 }
 
 func TestSystem_TestComposeWithLog(t *testing.T) {
-	fmt.Println(os.Getwd())
 	fixture := filepath.Join("..", "..", "fixtures", "process-compose-with-log.yaml")
 	t.Run(fixture, func(t *testing.T) {
 		project := CreateProject(fixture)

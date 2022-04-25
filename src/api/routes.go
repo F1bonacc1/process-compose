@@ -32,6 +32,7 @@ func InitRoutes() *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	r.GET("/processes", GetProcesses)
 	r.PATCH("/process/stop/:name", StopProcess)
+	r.POST("/process/start/:name", StartProcess)
 
 	return r
 }

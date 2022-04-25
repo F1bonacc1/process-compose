@@ -41,3 +41,19 @@ func StopProcess(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"name": name})
 }
+
+// @Summary Start a process
+// @Produce  json
+// @Param name path string true "Process Name"
+// @Success 200 {string} string "Started Process Name"
+// @Router /process/start/{name} [post]
+func StartProcess(c *gin.Context) {
+	name := c.Param("name")
+	err := app.PROJ.StartProcess(name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"name": name})
+}

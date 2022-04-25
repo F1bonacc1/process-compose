@@ -1,6 +1,10 @@
 package app
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/f1bonacc1/process-compose/src/pclog"
+)
 
 type Project struct {
 	Version     string    `yaml:"version"`
@@ -12,6 +16,8 @@ type Project struct {
 	runningProcesses map[string]*Process
 	processStates    map[string]*ProcessState
 	mapMutex         sync.Mutex
+	logger           pclog.PcLogger
+	wg               sync.WaitGroup
 }
 
 type Processes map[string]ProcessConfig
@@ -51,6 +57,7 @@ const (
 )
 
 const (
+	ProcessStateDisabled   = "Disabled"
 	ProcessStatePending    = "Pending"
 	ProcessStateRunning    = "Running"
 	ProcessStateRestarting = "Restarting"

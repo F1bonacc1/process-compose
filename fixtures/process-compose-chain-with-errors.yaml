@@ -64,7 +64,6 @@ processes:
       backoff_seconds: 2
 
 
-log_location: pc_tst.log
 environment:
   - 'ABC=222'
 
