@@ -10,6 +10,7 @@ import (
 
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/tui"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -23,7 +24,7 @@ func setupLogger() {
 		Out:        os.Stdout,
 		TimeFormat: "06-01-02 15:04:05",
 	})
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 }
 
 func isFlagPassed(name string) bool {
@@ -40,11 +41,28 @@ func init() {
 	setupLogger()
 }
 
+func quiet() func() {
+	null, _ := os.Open(os.DevNull)
+	sout := os.Stdout
+	serr := os.Stderr
+	os.Stdout = null
+	os.Stderr = null
+	zerolog.SetGlobalLevel(zerolog.Disabled)
+	return func() {
+		defer null.Close()
+		os.Stdout = sout
+		os.Stderr = serr
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+}
+
 func main() {
 	fileName := ""
 	port := 8080
+	isTui := true
 	flag.StringVar(&fileName, "f", app.DefaultFileNames[0], "path to file to load")
 	flag.IntVar(&port, "p", port, "port number")
+	flag.BoolVar(&isTui, "t", isTui, "disable tui (-t=false)")
 	flag.Parse()
 	if !isFlagPassed("f") {
 		pwd, err := os.Getwd()
@@ -80,5 +98,13 @@ func main() {
 	go server.ListenAndServe()
 
 	project := app.CreateProject(fileName)
-	project.Run()
+
+	if isTui {
+		defer quiet()()
+		go project.Run()
+		tui.SetupTui()
+	} else {
+		project.Run()
+	}
+
 }

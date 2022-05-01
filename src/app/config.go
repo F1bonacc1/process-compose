@@ -15,6 +15,7 @@ type Project struct {
 
 	runningProcesses map[string]*Process
 	processStates    map[string]*ProcessState
+	processLogs      map[string]*pclog.ProcessLogBuffer
 	mapMutex         sync.Mutex
 	logger           pclog.PcLogger
 	wg               sync.WaitGroup
@@ -33,10 +34,12 @@ type ProcessConfig struct {
 }
 
 type ProcessState struct {
-	Name     string `json:"name"`
-	Status   string `json:"status"`
-	Restarts int    `json:"restarts"`
-	ExitCode int    `json:"exit_code"`
+	Name       string `json:"name"`
+	Status     string `json:"status"`
+	SystemTime string `json:"system_time"`
+	Restarts   int    `json:"restarts"`
+	ExitCode   int    `json:"exit_code"`
+	Pid        int    `json:"pid"`
 }
 
 func (p ProcessConfig) GetDependencies() []string {

@@ -20,6 +20,7 @@ var PROJ *Project
 
 func (p *Project) Run() {
 	p.initProcessStates()
+	p.initProcessLogs()
 	p.runningProcesses = make(map[string]*Process)
 	runOrder := []ProcessConfig{}
 	p.WithProcesses([]string{}, func(process ProcessConfig) error {
@@ -35,6 +36,7 @@ func (p *Project) Run() {
 		p.logger = pclog.NewLogger(p.LogLocation)
 		defer p.logger.Close()
 	}
+	//zerolog.SetGlobalLevel(zerolog.PanicLevel)
 	log.Debug().Msgf("Spinning up %d processes. Order: %q", len(runOrder), nameOrder)
 	for _, proc := range runOrder {
 		p.runProcess(proc)
@@ -47,7 +49,11 @@ func (p *Project) runProcess(proc ProcessConfig) {
 	if isStringDefined(proc.LogLocation) {
 		procLogger = pclog.NewLogger(proc.LogLocation)
 	}
-	process := NewProcess(p.Environment, procLogger, proc, p.GetProcessState(proc.Name), 1)
+	procLog, err := p.getProcessLog(proc.Name)
+	if err != nil {
+		procLog = pclog.NewLogBuffer(1000)
+	}
+	process := NewProcess(p.Environment, procLogger, proc, p.GetProcessState(proc.Name), procLog, 1)
 	p.addRunningProcess(process)
 	p.wg.Add(1)
 	go func() {
@@ -87,10 +93,12 @@ func (p *Project) initProcessStates() {
 	p.processStates = make(map[string]*ProcessState)
 	for key, proc := range p.Processes {
 		p.processStates[key] = &ProcessState{
-			Name:     key,
-			Status:   ProcessStatePending,
-			Restarts: 0,
-			ExitCode: 0,
+			Name:       key,
+			Status:     ProcessStatePending,
+			SystemTime: "",
+			Restarts:   0,
+			ExitCode:   0,
+			Pid:        0,
 		}
 		if proc.Disabled {
 			p.processStates[key].Status = ProcessStateDisabled
@@ -98,10 +106,25 @@ func (p *Project) initProcessStates() {
 	}
 }
 
+func (p *Project) initProcessLogs() {
+	p.processLogs = make(map[string]*pclog.ProcessLogBuffer)
+	for key := range p.Processes {
+		p.processLogs[key] = pclog.NewLogBuffer(1000)
+	}
+}
+
 func (p *Project) GetProcessState(name string) *ProcessState {
 	if procState, ok := p.processStates[name]; ok {
+		proc := p.getRunningProcess(name)
+		if proc != nil {
+			proc.updateProcState()
+		} else {
+			procState.Pid = 0
+			procState.SystemTime = ""
+		}
 		return procState
 	}
+
 	log.Error().Msgf("Error: process %s doesn't exist", name)
 	return nil
 }
@@ -151,6 +174,22 @@ func (p *Project) StopProcess(name string) error {
 	}
 	proc.stop()
 	return nil
+}
+
+func (p *Project) getProcessLog(name string) (*pclog.ProcessLogBuffer, error) {
+	if procLogs, ok := p.processLogs[name]; ok {
+		return procLogs, nil
+	}
+	log.Error().Msgf("Error: process %s doesn't exist", name)
+	return nil, fmt.Errorf("process %s doesn't exist", name)
+}
+
+func (p *Project) GetProcessLog(name string, offsetFromEnd, limit int) ([]string, error) {
+	logs, err := p.getProcessLog(name)
+	if err != nil {
+		return nil, err
+	}
+	return logs.GetLog(offsetFromEnd, limit), nil
 }
 
 func (p *Project) getProcesses(names ...string) ([]ProcessConfig, error) {
@@ -222,14 +261,14 @@ func (p *Project) GetDependenciesOrderNames() ([]string, error) {
 	return order, err
 }
 
-func (p *Project) GetLexicographicProcessNames() ([]string, error) {
+func (p *Project) GetLexicographicProcessNames() []string {
 
 	names := []string{}
 	for name := range p.Processes {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	return names, nil
+	return names
 }
 
 func CreateProject(inputFile string) *Project {

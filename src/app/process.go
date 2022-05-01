@@ -26,10 +26,12 @@ type Process struct {
 	procColor func(a ...interface{}) string
 	noColor   func(a ...interface{}) string
 	redColor  func(a ...interface{}) string
+	logBuffer *pclog.ProcessLogBuffer
 	logger    pclog.PcLogger
 	cmd       *exec.Cmd
 	done      bool
 	replica   int
+	startTime time.Time
 }
 
 func NewProcess(
@@ -37,6 +39,7 @@ func NewProcess(
 	logger pclog.PcLogger,
 	procConf ProcessConfig,
 	procState *ProcessState,
+	procLog *pclog.ProcessLogBuffer,
 	replica int) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 	//logger, _ := zap.NewProduction()
@@ -51,6 +54,7 @@ func NewProcess(
 		procState: procState,
 		done:      false,
 		replica:   replica,
+		logBuffer: procLog,
 	}
 	proc.procCond = *sync.NewCond(proc)
 	return proc
@@ -65,7 +69,9 @@ func (p *Process) Run() error {
 		go p.handleOutput(stdout, p.handleInfo)
 		go p.handleOutput(stderr, p.handleError)
 		p.cmd.Start()
+		p.startTime = time.Now()
 		p.procState.Status = ProcessStateRunning
+		p.procState.Pid = p.cmd.Process.Pid
 
 		p.cmd.Wait()
 		p.Lock()
@@ -154,6 +160,7 @@ func (p *Process) onProcessEnd() {
 		p.logger.Close()
 	}
 	p.procState.Status = ProcessStateCompleted
+
 	p.Lock()
 	p.done = true
 	p.Unlock()
@@ -172,6 +179,25 @@ func (p *Process) getCommand() string {
 	return p.procConf.Command
 }
 
+func (p *Process) updateProcState() {
+	if p.procState.Status == ProcessStateRunning {
+		dur := time.Since(p.startTime)
+		p.procState.SystemTime = durationToString(dur)
+	}
+}
+
+func durationToString(dur time.Duration) string {
+	if dur.Minutes() < 3 {
+		return dur.Round(time.Second).String()
+	} else if dur.Minutes() < 60 {
+		return fmt.Sprintf("%.0fm", dur.Minutes())
+	} else if dur.Hours() < 24 {
+		return fmt.Sprintf("%dh%dm", int(dur.Hours()), int(dur.Minutes())%60)
+	} else {
+		return fmt.Sprintf("%dh", int(dur.Hours()))
+	}
+}
+
 func (p *Process) handleOutput(pipe io.ReadCloser,
 	handler func(message string)) {
 
@@ -184,12 +210,15 @@ func (p *Process) handleOutput(pipe io.ReadCloser,
 
 func (p *Process) handleInfo(message string) {
 	p.logger.Info(message, p.GetName(), p.replica)
-	fmt.Printf("[%s]\t%s\n", p.procColor(p.GetNameWithReplica()), p.noColor(message))
+	fmt.Printf("[%s]\t%s\n", p.procColor(p.GetNameWithReplica()), message)
+	p.logBuffer.Write(message)
 }
 
 func (p *Process) handleError(message string) {
 	p.logger.Error(message, p.GetName(), p.replica)
 	fmt.Printf("[%s]\t%s\n", p.procColor(p.GetNameWithReplica()), p.redColor(message))
+	p.logBuffer.Write(fmt.Sprintf("[deeppink]%s[-:-:-]", message))
+
 }
 
 func getRunnerShell() string {

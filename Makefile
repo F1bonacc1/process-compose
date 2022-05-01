@@ -5,7 +5,7 @@ ifeq ($(OS),Windows_NT)
 	RM = cmd /C del /Q /F
 endif
 
-.PHONY: test run
+.PHONY: test run testrace
 
 buildrun: build run
 
@@ -27,12 +27,16 @@ compile:
 
 test:
 	go test -cover ./src/...
+
+testrace:
+	go test -race ./src/...
+
 coverhtml:
 	go test -coverprofile=coverage.out ./src
 	go tool cover -html=coverage.out
 
 run:
-	./bin/${BINARY_NAME}${EXT}
+	PC_DEBUG_MODE=1 ./bin/${BINARY_NAME}${EXT}
 
 clean:
 	$(RM) bin/${BINARY_NAME}*
