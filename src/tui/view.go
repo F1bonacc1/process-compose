@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,14 +19,16 @@ type pcView struct {
 	logsText   *tview.TextView
 	statusText *tview.TextView
 	procNames  []string
+	version    string
 }
 
-func newPcView() *pcView {
+func newPcView(version string) *pcView {
 	pv := &pcView{
 		appView:    tview.NewApplication(),
 		logsText:   tview.NewTextView().SetDynamicColors(true).SetScrollable(true),
 		statusText: tview.NewTextView().SetDynamicColors(true),
 		procNames:  app.PROJ.GetLexicographicProcessNames(),
+		version:    version,
 	}
 	pv.procTable = pv.createProcTable()
 	pv.statTable = pv.createStatTable()
@@ -53,12 +56,12 @@ func (pv *pcView) fillTableData() {
 		if state == nil {
 			return
 		}
-		pv.procTable.SetCell(r+1, 0, tview.NewTableCell(strconv.Itoa(state.Pid)).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 0, tview.NewTableCell(strconv.Itoa(state.Pid)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 1, tview.NewTableCell(state.Name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 2, tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 3, tview.NewTableCell(state.SystemTime).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 4, tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 5, tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 4, tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 5, tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 	}
 }
 
@@ -107,8 +110,20 @@ func (pv *pcView) createProcTable() *tview.Table {
 		"PID", "NAME", "STATUS", "TIME", "RESTARTS", "EXIT CODE",
 	}
 	for i := 0; i < len(columns); i++ {
+		expan := 1
+		align := tview.AlignLeft
+		switch columns[i] {
+		case
+			"PID":
+			expan = 0
+		case
+			"RESTARTS",
+			"EXIT CODE":
+			align = tview.AlignRight
+		}
+
 		table.SetCell(0, i, tview.NewTableCell(columns[i]).
-			SetSelectable(false).SetExpansion(1))
+			SetSelectable(false).SetExpansion(expan).SetAlign(align))
 	}
 	return table
 }
@@ -117,15 +132,19 @@ func (pv *pcView) createStatTable() *tview.Table {
 	table := tview.NewTable().SetBorders(false).SetSelectable(false, false)
 
 	table.SetCell(0, 0, tview.NewTableCell("Version:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	table.SetCell(0, 1, tview.NewTableCell("v0.7.2").SetSelectable(false))
+	table.SetCell(0, 1, tview.NewTableCell(pv.version).SetSelectable(false))
 
 	table.SetCell(1, 0, tview.NewTableCell("Hostname:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	table.SetCell(1, 1, tview.NewTableCell("hhhppp").SetSelectable(false))
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = err.Error()
+	}
+	table.SetCell(1, 1, tview.NewTableCell(hostname).SetSelectable(false))
 
 	table.SetCell(2, 0, tview.NewTableCell("Processes:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
 	table.SetCell(2, 1, tview.NewTableCell(strconv.Itoa(len(pv.procNames))).SetSelectable(false))
 
-	table.SetCell(0, 3, tview.NewTableCell("🔥 Process Compose").
+	table.SetCell(0, 2, tview.NewTableCell("🔥 Process Compose").
 		SetSelectable(false).
 		SetAlign(tview.AlignRight).
 		SetExpansion(1).
@@ -166,8 +185,8 @@ func (pv *pcView) updateTable() {
 	}
 }
 
-func SetupTui() {
-	pv := newPcView()
+func SetupTui(version string) {
+	pv := newPcView(version)
 
 	go pv.updateTable()
 

@@ -1,5 +1,6 @@
 BINARY_NAME=process-compose
 RM=rm
+VERSION = $(shell git describe --abbrev=0)
 ifeq ($(OS),Windows_NT)
 	EXT=.exe
 	RM = cmd /C del /Q /F
@@ -13,17 +14,17 @@ swag:
 	~/go/bin/swag init --dir src --output src/docs --parseDependency --parseInternal --parseDepth 1
 
 build:
-	go build -o bin/${BINARY_NAME}${EXT} ./src
+	go build -o bin/${BINARY_NAME}${EXT} -ldflags="-X main.version=${VERSION}" ./src
 
 compile:
 	# Linux
-	GOOS=linux GOARCH=386 go build -o bin/${BINARY_NAME}-linux-386 ./src
-	GOOS=linux GOARCH=amd64 go build -o bin/${BINARY_NAME}-linux-amd64 ./src
-	GOOS=linux GOARCH=arm64 go build -o bin/${BINARY_NAME}-linux-arm64 ./src
-	GOOS=linux GOARCH=arm go build -o bin/${BINARY_NAME}-linux-arm ./src
+	GOOS=linux GOARCH=386 go build -o bin/${BINARY_NAME}-linux-386 -ldflags="-X main.version=${VERSION}"  ./src
+	GOOS=linux GOARCH=amd64 go build -o bin/${BINARY_NAME}-linux-amd64 -ldflags="-X main.version=${VERSION}"  ./src
+	GOOS=linux GOARCH=arm64 go build -o bin/${BINARY_NAME}-linux-arm64 -ldflags="-X main.version=${VERSION}"  ./src
+	GOOS=linux GOARCH=arm go build -o bin/${BINARY_NAME}-linux-arm -ldflags="-X main.version=${VERSION}"  ./src
 
 	# Windows
-	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}-windows-amd64.exe ./src
+	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}-windows-amd64.exe  -ldflags="-X main.version=${VERSION}" ./src
 
 test:
 	go test -cover ./src/...

@@ -18,6 +18,8 @@ import (
 
 const EnvDebugMode = "PC_DEBUG_MODE"
 
+var version = "undefined"
+
 func setupLogger() {
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{
@@ -102,7 +104,7 @@ func main() {
 	if isTui {
 		defer quiet()()
 		go project.Run()
-		tui.SetupTui()
+		tui.SetupTui(version)
 	} else {
 		project.Run()
 	}
