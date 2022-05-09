@@ -23,14 +23,17 @@ import (
 // @query.collection.format multi
 
 // InitRoutes initialize routing information
-func InitRoutes() *gin.Engine {
+func InitRoutes(useLogger bool) *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Logger())
+	if useLogger {
+		r.Use(gin.Logger())
+	}
 	r.Use(gin.Recovery())
 
 	url := ginSwagger.URL("http://localhost:8080/swagger/doc.json") // The url pointing to API definition
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	r.GET("/processes", GetProcesses)
+	r.GET("/process/logs/:name/:endOffset/:limit", GetProcessLogs)
 	r.PATCH("/process/stop/:name", StopProcess)
 	r.POST("/process/start/:name", StartProcess)
 

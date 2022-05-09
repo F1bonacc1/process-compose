@@ -77,11 +77,12 @@ func main() {
 		}
 		fileName = file
 	}
+
 	if os.Getenv(EnvDebugMode) == "" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	routersInit := api.InitRoutes()
+	routersInit := api.InitRoutes(!isTui)
 	readTimeout := time.Duration(60) * time.Second
 	writeTimeout := time.Duration(60) * time.Second
 	endPoint := fmt.Sprintf(":%d", port)
