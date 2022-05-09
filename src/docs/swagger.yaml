@@ -1,0 +1,84 @@
+info:
+  contact: {}
+paths:
+  /process/logs/{name}/{endOffset}/{limit}:
+    get:
+      description: Retrieves the process logs
+      parameters:
+      - description: Process Name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Offset from the end of the log
+        in: path
+        name: endOffset
+        required: true
+        type: integer
+      - description: Limit of lines to get (0 will get all the lines till the end)
+        in: path
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Process Logs
+          schema:
+            type: object
+      summary: Get process logs
+      tags:
+      - Process
+  /process/start/{name}:
+    post:
+      description: Starts the process if the state is not 'running' or 'pending'
+      parameters:
+      - description: Process Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Started Process Name
+          schema:
+            type: string
+      summary: Start a process
+      tags:
+      - Process
+  /process/stop/{name}:
+    patch:
+      description: Sends kill signal to the process
+      parameters:
+      - description: Process Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stopped Process Name
+          schema:
+            type: string
+      summary: Stop a process
+      tags:
+      - Process
+  /processes:
+    get:
+      description: Retrieves all the configured processes and their status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Processes Status
+          schema:
+            type: object
+      summary: Get all processes
+      tags:
+      - Process
+swagger: "2.0"
