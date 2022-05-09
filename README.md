@@ -12,6 +12,8 @@ Process compose is a lightweight utility for building custom workflows and execu
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
+<img src="./imgs/tui.png" alt="TUI" style="zoom:67%;" />
+
 ### Installation
 
 - Go to the [releases](https://github.com/F1bonacc1/process-compose/releases/latest), download the package for your OS, and copy the binary to somewhere on your PATH. 
@@ -83,6 +85,24 @@ process2:
 <img src="./imgs/output.png" alt="output" style="zoom:50%;" />
 
 ##### ❌ Silence specific processes
+
+
+
+#### ✅ <u>TUI</u> (Terminal User Interface)
+
+##### ✅ Review processes status
+
+##### ✅ Start processes (only completed or disabled)
+
+##### ✅ Stop processes
+
+##### ✅ Review logs 
+
+TUI is the default run mode, but it's possible to disable it:
+
+```shell
+./process-compose -t=false
+```
 
 
 
@@ -167,15 +187,19 @@ environment:
   - 'I_AM_GLOBAL_EV=42'
 ```
 
+Default environment variables:
+
+`PC_PROC_NAME` - Defines the process name as defined in the `process-compose.yaml` file.
+
+`PC_REPLICA_NUM` - Defines the process replica number. Useful for port collision avoidance for processes with multiple replicas.
 
 
-#### ❌ <u>System Variables</u>
 
-##### ❌ Process replica number
+#### ✅ <u>REST API</u>
 
-##### ❌ Monitoring
+A convenient Swagger API is provided: http://localhost:8080/swagger/index.html
 
-##### ❌ REST API
+<img src="./imgs/swagger.png" alt="Swagger" style="zoom:67%;" />
 
 
 
