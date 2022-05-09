@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
@@ -73,6 +74,10 @@ func (p *Process) Run() error {
 		p.procState.Status = ProcessStateRunning
 		p.procState.Pid = p.cmd.Process.Pid
 
+		//Wait should wait for I/O consumption, but if the execution is too fast
+		//e.g. echo 'hello world' the output will not reach the pipe
+		//TODO Fix this
+		time.Sleep(50 * time.Millisecond)
 		p.cmd.Wait()
 		p.Lock()
 		p.procState.ExitCode = p.cmd.ProcessState.ExitCode()
@@ -109,7 +114,7 @@ func (p *Process) getBackoff() time.Duration {
 func (p *Process) getProcessEnvironment() []string {
 	env := []string{
 		"PC_PROC_NAME=" + p.GetName(),
-		"PC_REPLICA_NUM=1",
+		"PC_REPLICA_NUM=" + strconv.Itoa(p.replica),
 	}
 	env = append(env, os.Environ()...)
 	env = append(env, p.globalEnv...)
@@ -200,7 +205,6 @@ func durationToString(dur time.Duration) string {
 
 func (p *Process) handleOutput(pipe io.ReadCloser,
 	handler func(message string)) {
-
 	outscanner := bufio.NewScanner(pipe)
 	outscanner.Split(bufio.ScanLines)
 	for outscanner.Scan() {
@@ -217,8 +221,7 @@ func (p *Process) handleInfo(message string) {
 func (p *Process) handleError(message string) {
 	p.logger.Error(message, p.GetName(), p.replica)
 	fmt.Printf("[%s]\t%s\n", p.procColor(p.GetNameWithReplica()), p.redColor(message))
-	p.logBuffer.Write(fmt.Sprintf("[deeppink]%s[-:-:-]", message))
-
+	p.logBuffer.Write(message)
 }
 
 func getRunnerShell() string {

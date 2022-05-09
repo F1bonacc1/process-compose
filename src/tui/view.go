@@ -83,7 +83,15 @@ func (pv *pcView) fillLogs() {
 		pv.logsText.SetBorder(true).SetTitle(err.Error())
 		pv.logsText.Clear()
 	} else {
-		pv.logsText.SetText(strings.Join(logs, "\n"))
+		//pv.logsText.SetText(strings.Join(logs, "\n"))
+		pv.logsText.Clear()
+		for _, line := range logs {
+			if strings.Contains(strings.ToLower(line), "error") {
+				fmt.Fprintf(pv.logsText, "[deeppink]%s[-:-:-]\n", tview.Escape(line))
+			} else {
+				fmt.Fprintf(pv.logsText, "%s\n", tview.Escape(line))
+			}
+		}
 	}
 }
 
