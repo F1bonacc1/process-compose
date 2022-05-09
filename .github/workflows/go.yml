@@ -19,7 +19,7 @@ jobs:
         go-version: 1.17
 
     - name: Build
-      run: go build -v -o process-compose ./...
+      run: go build -v -o process-compose ./src
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v ./src/...
