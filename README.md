@@ -2,17 +2,105 @@
 
 [![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose)
 
-Process compose is a lightweight utility for building custom workflows and execution sequences. It is optimized for:
+**What?** Process Compose is like [docker-compose](https://github.com/docker/compose), but for orchestrating a suite of processes, not containers.
 
-* Parallelizing processes execution
-* Defining execution dependencies and order
-* Defining recovery policies (restart `on-failure`, `always`, `no`)
+**Why?** Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
+
+**How?** Declare all the system processes dependencies in a simple YAML (don't judge) file, monitor the execution and output with a simple UI.
+
+Main use cases would be:
+
+* Processes execution (in parallel or serially)
+* Defining processes dependencies and order
+* Defining recovery policies (restart `on-failure`, `always`, `no`). Manual recovery is also supported.
 * Declaring processes arguments
 * Declaring processes environment variables
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
 <img src="./imgs/tui.png" alt="TUI" style="zoom:67%;" />
+
+
+
+### Quick Start
+
+Imaginary system diagram:
+
+![Diagram](./imgs/diagram.png)
+
+`process-compose.yaml` definitions for the system above:
+
+```yaml
+version: "0.5"
+
+environment:
+  - 'GLOBAL_ENV_VAR=1'
+log_location: /path/to/combined/output/logfile.log
+log_level: debug
+
+processes:
+  Manager:
+    command: "/path/to/manager"
+    availability:
+      restart: "always"
+    depends_on:
+      ClientA:
+        condition: process_started
+      ClientB:
+        condition: process_started
+
+  ClientA:
+    command: "/path/to/ClientA"
+    availability:
+      restart: "always"
+    depends_on:
+      Server_1A:
+        condition: process_started
+      Server_2A:
+        condition: process_started
+    environment:
+      - 'LOCAL_ENV_VAR=1'
+
+  ClientB:
+    command: "/path/to/ClientB -some -arg"
+    availability:
+      restart: "always"
+    depends_on:
+      Server_1B:
+        condition: process_started
+      Server_2B:
+        condition: process_started
+    environment:
+      - 'LOCAL_ENV_VAR=2'
+
+  Server_1A:
+    command: "/path/to/Server_1A"
+    availability:
+      restart: "always"
+
+  Server_2A:
+    command: "/path/to/Server_2A"
+    availability:
+      restart: "always"
+
+  Server_1B:
+    command: "/path/to/Server_1B"
+    availability:
+      restart: "always"
+
+  Server_2B:
+    command: "/path/to/Server_2B"
+    availability:
+      restart: "always"
+```
+
+Finally, run `process-compose` in the `process-compose.yaml` directory. Or give it a direct path:
+
+```shell
+process-compose -f /path/to/process-compose.yaml
+```
+
+
 
 ### Installation
 
