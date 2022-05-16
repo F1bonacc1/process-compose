@@ -6,7 +6,7 @@
 
 **Why?** Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
 
-**How?** Declare all the system processes dependencies in a simple YAML (don't judge) file, monitor the execution and output with a simple UI.
+**How?** Declare all the system processes dependencies in a single YAML (don't judge) file, monitor the execution and output with a built-in UI.
 
 Main use cases would be:
 
