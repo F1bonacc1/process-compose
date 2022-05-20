@@ -200,6 +200,13 @@ func (pv *pcView) updateTable() {
 		time.Sleep(1000 * time.Millisecond)
 		pv.appView.QueueUpdateDraw(func() {
 			pv.fillTableData()
+		})
+	}
+}
+func (pv *pcView) updateLogs() {
+	for {
+		time.Sleep(100 * time.Millisecond)
+		pv.appView.QueueUpdateDraw(func() {
 			pv.fillLogs()
 		})
 	}
@@ -209,6 +216,7 @@ func SetupTui(version string) {
 	pv := newPcView(version)
 
 	go pv.updateTable()
+	go pv.updateLogs()
 
 	if err := pv.appView.Run(); err != nil {
 		panic(err)
