@@ -18,8 +18,10 @@ type pcView struct {
 	appView    *tview.Application
 	logsText   *tview.TextView
 	statusText *tview.TextView
+	helpText   *tview.TextView
 	procNames  []string
 	version    string
+	logWrapOn  bool
 }
 
 func newPcView(version string) *pcView {
@@ -29,9 +31,12 @@ func newPcView(version string) *pcView {
 		statusText: tview.NewTextView().SetDynamicColors(true),
 		procNames:  app.PROJ.GetLexicographicProcessNames(),
 		version:    version,
+		logWrapOn:  true,
+		helpText:   tview.NewTextView().SetDynamicColors(true),
 	}
 	pv.procTable = pv.createProcTable()
 	pv.statTable = pv.createStatTable()
+	pv.updateHelpTextView()
 	pv.appView.SetRoot(pv.createGrid(), true).EnableMouse(true).
 		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 			switch event.Key() {
@@ -111,11 +116,15 @@ func (pv *pcView) createProcTable() *tview.Table {
 		case tcell.KeyF7:
 			name := pv.getSelectedProcName()
 			app.PROJ.StartProcess(name)
+		case tcell.KeyF6:
+			pv.logWrapOn = !pv.logWrapOn
+			pv.logsText.SetWrap(pv.logWrapOn)
+			pv.updateHelpTextView()
 		}
 		return event
 	})
 	columns := []string{
-		"PID", "NAME", "STATUS", "TIME", "RESTARTS", "EXIT CODE",
+		"PID", "NAME", "STATUS", "AGE", "RESTARTS", "EXIT CODE",
 	}
 	for i := 0; i < len(columns); i++ {
 		expan := 1
@@ -160,13 +169,16 @@ func (pv *pcView) createStatTable() *tview.Table {
 	return table
 }
 
-func getHelpTextView() *tview.TextView {
-	textView := tview.NewTextView().
-		SetDynamicColors(true)
-	fmt.Fprintf(textView, "%s ", "F7[black:green]Start[-:-:-]")
-	fmt.Fprintf(textView, "%s ", "F9[black:green]Kill[-:-:-]")
-	fmt.Fprintf(textView, "%s ", "F10[black:green]Quit[-:-:-]")
-	return textView
+func (pv *pcView) updateHelpTextView() {
+	wrap := "Wrap On"
+	if pv.logWrapOn {
+		wrap = "Wrap Off"
+	}
+	pv.helpText.Clear()
+	fmt.Fprintf(pv.helpText, "%s%s%s ", "F6[black:green]", wrap, "[-:-:-]")
+	fmt.Fprintf(pv.helpText, "%s ", "F7[black:green]Start[-:-:-]")
+	fmt.Fprintf(pv.helpText, "%s ", "F9[black:green]Kill[-:-:-]")
+	fmt.Fprintf(pv.helpText, "%s ", "F10[black:green]Quit[-:-:-]")
 }
 
 func (pv pcView) createGrid() *tview.Grid {
@@ -177,7 +189,7 @@ func (pv pcView) createGrid() *tview.Grid {
 		AddItem(pv.statTable, 0, 0, 1, 1, 0, 0, false).
 		AddItem(pv.procTable, 1, 0, 1, 1, 0, 0, true).
 		AddItem(pv.logsText, 2, 0, 1, 1, 0, 0, false).
-		AddItem(getHelpTextView(), 3, 0, 1, 1, 0, 0, false)
+		AddItem(pv.helpText, 3, 0, 1, 1, 0, 0, false)
 
 	grid.SetTitle("Process Compose")
 	return grid
