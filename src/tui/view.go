@@ -42,6 +42,10 @@ func newPcView(version string) *pcView {
 			switch event.Key() {
 			case tcell.KeyF10:
 				pv.appView.Stop()
+			case tcell.KeyF6:
+				pv.logWrapOn = !pv.logWrapOn
+				pv.logsText.SetWrap(pv.logWrapOn)
+				pv.updateHelpTextView()
 			}
 			return event
 		})
@@ -116,10 +120,6 @@ func (pv *pcView) createProcTable() *tview.Table {
 		case tcell.KeyF7:
 			name := pv.getSelectedProcName()
 			app.PROJ.StartProcess(name)
-		case tcell.KeyF6:
-			pv.logWrapOn = !pv.logWrapOn
-			pv.logsText.SetWrap(pv.logWrapOn)
-			pv.updateHelpTextView()
 		}
 		return event
 	})
