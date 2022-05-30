@@ -1,5 +1,6 @@
 version: "0.5"
 log_level: debug
+log_length: 3000
 processes:
   process0:
     command: "ls ddd"

@@ -105,7 +105,7 @@ func main() {
 	if isTui {
 		defer quiet()()
 		go project.Run()
-		tui.SetupTui(version)
+		tui.SetupTui(version, project.LogLength)
 	} else {
 		project.Run()
 	}

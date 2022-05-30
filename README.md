@@ -1,12 +1,10 @@
 ## Process Compose
 
-[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose)
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose) [![Releases](https://img.shields.io/github/downloads/F1bonacc1/process-compose/total.svg)]()
 
-**What?** Process Compose is like [docker-compose](https://github.com/docker/compose), but for orchestrating a suite of processes, not containers.
+Process Compose is like [docker-compose](https://github.com/docker/compose), but for orchestrating a suite of processes, not containers.
 
 **Why?** Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
-
-**How?** Declare all the system processes dependencies in a single YAML (don't judge) file, monitor the execution and output with a built-in UI.
 
 Main use cases would be:
 
@@ -192,7 +190,17 @@ TUI is the default run mode, but it's possible to disable it:
 ./process-compose -t=false
 ```
 
+Control the UI log buffer size:
 
+```yaml
+log_level: info
+log_length: 1200 #default: 1000
+processes:
+  process2:
+    command: "ls -R /"
+```
+
+**Note**: Using a too large buffer will put a significant penalty on your CPU.
 
 #### ✅ <u>Logger</u>
 

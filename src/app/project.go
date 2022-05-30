@@ -10,17 +10,25 @@ import (
 	"strings"
 
 	"github.com/f1bonacc1/process-compose/src/pclog"
+
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	DEFAULT_LOG_LENGTH = 1000
+)
+
 var PROJ *Project
 
-func (p *Project) Run() {
+func (p *Project) init() {
 	p.initProcessStates()
 	p.initProcessLogs()
+}
+
+func (p *Project) Run() {
 	p.runningProcesses = make(map[string]*Process)
 	runOrder := []ProcessConfig{}
 	p.WithProcesses([]string{}, func(process ProcessConfig) error {
@@ -51,7 +59,9 @@ func (p *Project) runProcess(proc ProcessConfig) {
 	}
 	procLog, err := p.getProcessLog(proc.Name)
 	if err != nil {
-		procLog = pclog.NewLogBuffer(1000)
+		// we shouldn't get here
+		log.Error().Msgf("Error: Can't get log: %s using empty buffer", err.Error())
+		procLog = pclog.NewLogBuffer(0)
 	}
 	process := NewProcess(p.Environment, procLogger, proc, p.GetProcessState(proc.Name), procLog, 1)
 	p.addRunningProcess(process)
@@ -109,7 +119,7 @@ func (p *Project) initProcessStates() {
 func (p *Project) initProcessLogs() {
 	p.processLogs = make(map[string]*pclog.ProcessLogBuffer)
 	for key := range p.Processes {
-		p.processLogs[key] = pclog.NewLogBuffer(1000)
+		p.processLogs[key] = pclog.NewLogBuffer(p.LogLength)
 	}
 }
 
@@ -189,7 +199,40 @@ func (p *Project) GetProcessLog(name string, offsetFromEnd, limit int) ([]string
 	if err != nil {
 		return nil, err
 	}
-	return logs.GetLog(offsetFromEnd, limit), nil
+	return logs.GetLogRange(offsetFromEnd, limit), nil
+}
+
+func (p *Project) GetProcessLogLine(name string, lineIndex int) (string, error) {
+	logs, err := p.getProcessLog(name)
+	if err != nil {
+		return "", err
+	}
+	return logs.GetLogLine(lineIndex), nil
+}
+
+func (p *Project) GetProcessLogLength(name string) int {
+	logs, err := p.getProcessLog(name)
+	if err != nil {
+		return 0
+	}
+	return logs.GetLogLength()
+}
+
+func (p *Project) GetLogsAndSubscribe(name string, observer pclog.PcLogObserver) {
+
+	logs, err := p.getProcessLog(name)
+	if err != nil {
+		return
+	}
+	logs.GetLogsAndSubscribe(observer)
+}
+
+func (p *Project) UnSubscribeLogger(name string) {
+	logs, err := p.getProcessLog(name)
+	if err != nil {
+		return
+	}
+	logs.UnSubscribe()
 }
 
 func (p *Project) getProcesses(names ...string) ([]ProcessConfig, error) {
@@ -287,6 +330,7 @@ func CreateProject(inputFile string) *Project {
 	yamlFile = []byte(os.ExpandEnv(string(yamlFile)))
 
 	var project Project
+	project.LogLength = DEFAULT_LOG_LENGTH
 	err = yaml.Unmarshal(yamlFile, &project)
 	if err != nil {
 		log.Fatal().Msg(err.Error())
@@ -302,6 +346,7 @@ func CreateProject(inputFile string) *Project {
 
 	}
 	PROJ = &project
+	project.init()
 	return &project
 }
 
