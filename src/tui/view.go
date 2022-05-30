@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
@@ -16,23 +15,25 @@ type pcView struct {
 	procTable  *tview.Table
 	statTable  *tview.Table
 	appView    *tview.Application
-	logsText   *tview.TextView
+	logsText   *LogView
 	statusText *tview.TextView
 	helpText   *tview.TextView
 	procNames  []string
 	version    string
-	logWrapOn  bool
+	logFollow  bool
+	loggedProc string
 }
 
-func newPcView(version string) *pcView {
+func newPcView(version string, logLength int) *pcView {
 	pv := &pcView{
 		appView:    tview.NewApplication(),
-		logsText:   tview.NewTextView().SetDynamicColors(true).SetScrollable(true),
+		logsText:   NewLogView(logLength),
 		statusText: tview.NewTextView().SetDynamicColors(true),
 		procNames:  app.PROJ.GetLexicographicProcessNames(),
 		version:    version,
-		logWrapOn:  true,
+		logFollow:  true,
 		helpText:   tview.NewTextView().SetDynamicColors(true),
+		loggedProc: "",
 	}
 	pv.procTable = pv.createProcTable()
 	pv.statTable = pv.createStatTable()
@@ -42,15 +43,26 @@ func newPcView(version string) *pcView {
 			switch event.Key() {
 			case tcell.KeyF10:
 				pv.appView.Stop()
+			case tcell.KeyF5:
+				pv.logFollow = !pv.logFollow
+				name := pv.getSelectedProcName()
+				if pv.logFollow {
+					pv.followLog(name)
+					go pv.updateLogs()
+				} else {
+					pv.unFollowLog()
+				}
+				pv.updateHelpTextView()
 			case tcell.KeyF6:
-				pv.logWrapOn = !pv.logWrapOn
-				pv.logsText.SetWrap(pv.logWrapOn)
+				pv.logsText.ToggleWrap()
 				pv.updateHelpTextView()
 			}
 			return event
 		})
 	if len(pv.procNames) > 0 {
-		pv.logsText.SetTitle(pv.procNames[0])
+		name := pv.procNames[0]
+		pv.logsText.SetTitle(name)
+		pv.followLog(name)
 	}
 	return pv
 }
@@ -85,28 +97,29 @@ func (pv pcView) getSelectedProcName() string {
 	return ""
 }
 
-func (pv *pcView) fillLogs() {
-	name := pv.getSelectedProcName()
-	logs, err := app.PROJ.GetProcessLog(name, 1000, 0)
-	if err != nil {
-		pv.logsText.SetBorder(true).SetTitle(err.Error())
-		pv.logsText.Clear()
-	} else {
-		//pv.logsText.SetText(strings.Join(logs, "\n"))
-		pv.logsText.Clear()
-		for _, line := range logs {
-			if strings.Contains(strings.ToLower(line), "error") {
-				fmt.Fprintf(pv.logsText, "[deeppink]%s[-:-:-]\n", tview.Escape(line))
-			} else {
-				fmt.Fprintf(pv.logsText, "%s\n", tview.Escape(line))
-			}
-		}
-	}
-}
-
 func (pv *pcView) onTableSelectionChange(row, column int) {
 	name := pv.getSelectedProcName()
 	pv.logsText.SetBorder(true).SetTitle(name)
+	pv.unFollowLog()
+	pv.followLog(name)
+	if !pv.logFollow {
+		// call follow and unfollow to update the buffer and stop following
+		// in case the following is disabled
+		pv.unFollowLog()
+	}
+}
+
+func (pv *pcView) followLog(name string) {
+	pv.loggedProc = name
+	pv.logsText.Clear()
+	app.PROJ.GetLogsAndSubscribe(name, pv.logsText)
+}
+
+func (pv *pcView) unFollowLog() {
+	if pv.loggedProc != "" {
+		app.PROJ.UnSubscribeLogger(pv.loggedProc)
+	}
+	pv.logsText.Flush()
 }
 
 func (pv *pcView) createProcTable() *tview.Table {
@@ -171,11 +184,18 @@ func (pv *pcView) createStatTable() *tview.Table {
 
 func (pv *pcView) updateHelpTextView() {
 	wrap := "Wrap On"
-	if pv.logWrapOn {
+	if pv.logsText.IsWrapOn() {
 		wrap = "Wrap Off"
 	}
+	follow := "Follow On"
+	if pv.logFollow {
+		follow = "Follow Off"
+	}
 	pv.helpText.Clear()
+	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue:]LOGS:[-:-:-]")
+	fmt.Fprintf(pv.helpText, "%s%s%s ", "F5[black:green]", follow, "[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s%s%s ", "F6[black:green]", wrap, "[-:-:-]")
+	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s ", "F7[black:green]Start[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s ", "F9[black:green]Kill[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s ", "F10[black:green]Quit[-:-:-]")
@@ -205,15 +225,19 @@ func (pv *pcView) updateTable() {
 }
 func (pv *pcView) updateLogs() {
 	for {
-		time.Sleep(100 * time.Millisecond)
 		pv.appView.QueueUpdateDraw(func() {
-			pv.fillLogs()
+			pv.logsText.Flush()
 		})
+		if !pv.logFollow {
+			break
+		}
+		time.Sleep(300 * time.Millisecond)
 	}
+
 }
 
-func SetupTui(version string) {
-	pv := newPcView(version)
+func SetupTui(version string, logLength int) {
+	pv := newPcView(version, logLength)
 
 	go pv.updateTable()
 	go pv.updateLogs()

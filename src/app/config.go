@@ -10,6 +10,7 @@ type Project struct {
 	Version     string    `yaml:"version"`
 	LogLocation string    `yaml:"log_location,omitempty"`
 	LogLevel    string    `yaml:"log_level,omitempty"`
+	LogLength   int       `yaml:"log_length,omitempty"`
 	Processes   Processes `yaml:"processes"`
 	Environment []string  `yaml:"environment,omitempty"`
 
