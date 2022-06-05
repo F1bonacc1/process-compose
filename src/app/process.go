@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/pclog"
@@ -65,6 +66,7 @@ func (p *Process) Run() error {
 	for {
 		p.cmd = exec.Command(getRunnerShell(), getRunnerArg(), p.getCommand())
 		p.cmd.Env = p.getProcessEnvironment()
+		p.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		stdout, _ := p.cmd.StdoutPipe()
 		stderr, _ := p.cmd.StderrPipe()
 		go p.handleOutput(stdout, p.handleInfo)
@@ -99,8 +101,17 @@ func (p *Process) Run() error {
 }
 
 func (p *Process) stop() error {
-	p.cmd.Process.Kill()
-	return nil
+	//p.cmd.Process.Kill()
+	if runtime.GOOS == "windows" {
+		kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(p.cmd.Process.Pid))
+		return kill.Run()
+	} else {
+		pgid, err := syscall.Getpgid(p.cmd.Process.Pid)
+		if err == nil {
+			return syscall.Kill(-pgid, syscall.SIGKILL)
+		}
+		return err
+	}
 }
 
 func (p *Process) getBackoff() time.Duration {
