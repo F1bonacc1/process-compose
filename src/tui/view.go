@@ -42,7 +42,20 @@ func newPcView(version string, logLength int) *pcView {
 		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 			switch event.Key() {
 			case tcell.KeyF10:
-				pv.appView.Stop()
+
+				m := tview.NewModal().
+					SetText("Are you sure you want to quit?").
+					AddButtons([]string{"Quit", "Cancel"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						if buttonLabel == "Quit" {
+							pv.appView.Stop()
+						} else {
+							pv.appView.SetRoot(pv.createGrid(), true)
+						}
+					})
+				// Display and focus the dialog
+				pv.appView.SetRoot(m, false)
+
 			case tcell.KeyF5:
 				pv.logFollow = !pv.logFollow
 				name := pv.getSelectedProcName()
@@ -129,6 +142,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 		switch event.Key() {
 		case tcell.KeyF9:
 			name := pv.getSelectedProcName()
+
 			app.PROJ.StopProcess(name)
 		case tcell.KeyF7:
 			name := pv.getSelectedProcName()
