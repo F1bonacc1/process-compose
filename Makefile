@@ -26,6 +26,10 @@ compile:
 	# Windows
 	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}-windows-amd64.exe  -ldflags="-X main.version=${VERSION}" ./src
 
+	# Darwin
+	GOOS=darwin GOARCH=amd64 go build -o bin/${BINARY_NAME}-darwin-amd64 -ldflags="-X main.version=${VERSION}"  ./src
+	GOOS=darwin GOARCH=arm64 go build -o bin/${BINARY_NAME}-darwin-arm64 -ldflags="-X main.version=${VERSION}"  ./src
+
 test:
 	go test -cover ./src/...
 
