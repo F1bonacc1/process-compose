@@ -3,3 +3,8 @@ coverage.out
 bin/**
 *.log
 .env
+# local build output via go build
+process-compose
+
+# nix build .#process-compose output
+result

@@ -8,17 +8,15 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 
 Main use cases would be:
 
-* Processes execution (in parallel or serially)
-* Defining processes dependencies and startup order
-* Defining recovery policies (restart `on-failure`, `always`, `no`). Manual recovery is also supported.
-* Declaring processes arguments
-* Declaring processes environment variables
+- Processes execution (in parallel or serially)
+- Defining processes dependencies and startup order
+- Defining recovery policies (restart `on-failure`, `always`, `no`). Manual recovery is also supported.
+- Declaring processes arguments
+- Declaring processes environment variables
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
 <img src="./imgs/tui.png" alt="TUI" style="zoom:67%;" />
-
-
 
 ### Quick Start
 
@@ -32,7 +30,7 @@ Imaginary system diagram:
 version: "0.5"
 
 environment:
-  - 'GLOBAL_ENV_VAR=1'
+  - "GLOBAL_ENV_VAR=1"
 log_location: /path/to/combined/output/logfile.log
 log_level: debug
 
@@ -57,7 +55,7 @@ processes:
       Server_2A:
         condition: process_started
     environment:
-      - 'LOCAL_ENV_VAR=1'
+      - "LOCAL_ENV_VAR=1"
 
   ClientB:
     command: "/path/to/ClientB -some -arg"
@@ -69,7 +67,7 @@ processes:
       Server_2B:
         condition: process_started
     environment:
-      - 'LOCAL_ENV_VAR=2'
+      - "LOCAL_ENV_VAR=2"
 
   Server_1A:
     command: "/path/to/Server_1A"
@@ -98,26 +96,25 @@ Finally, run `process-compose` in the `process-compose.yaml` directory. Or give 
 process-compose -f /path/to/process-compose.yaml
 ```
 
-
-
 ### Installation
 
-- Go to the [releases](https://github.com/F1bonacc1/process-compose/releases/latest), download the package for your OS, and copy the binary to somewhere on your PATH. 
+- Go to the [releases](https://github.com/F1bonacc1/process-compose/releases/latest), download the package for your OS, and copy the binary to somewhere on your PATH.
+- If you have the Nix package manager installed with Flake support, just run:
+
+```sh
+nix run github:F1bonacc1/process-compose
+```
 
 ### Documentation
 
-* See [examples](https://github.com/F1bonacc1/process-compose/tree/main/examples) of workflows for best practices
-* See below
-
-
+- See [examples](https://github.com/F1bonacc1/process-compose/tree/main/examples) of workflows for best practices
+- See below
 
 #### List of Features and Planned Features
 
 ##### ✅ Mostly implemented
 
 ##### ❌ Implementation not started (Your feedback and ⭐ will motivate further development 😃)
-
-
 
 #### ✅ <u>Launcher</u>
 
@@ -136,12 +133,12 @@ process2:
 process1:
   command: "sleep 3"
   depends_on:
-    process2: 
+    process2:
       condition: process_completed_successfully # or "process_completed" if you don't care about errors
 process2:
   command: "sleep 3"
   depends_on:
-    process3: 
+    process3:
       condition: process_completed_successfully # or "process_completed" if you don't care about errors
 ```
 
@@ -152,13 +149,11 @@ process2:
 ```yaml
 process2:
   depends_on:
-  process2: 
+  process2:
     condition: process_completed_successfully # or "process_started" (default)
-  process3: 
+  process3:
     condition: process_completed_successfully
 ```
-
-
 
 #### ✅ <u>Output Handling</u>
 
@@ -172,8 +167,6 @@ process2:
 
 ##### ❌ Silence specific processes
 
-
-
 #### ✅ <u>TUI</u> (Terminal User Interface)
 
 ##### ✅ Review processes status
@@ -182,7 +175,7 @@ process2:
 
 ##### ✅ Stop processes
 
-##### ✅ Review logs 
+##### ✅ Review logs
 
 TUI is the default run mode, but it's possible to disable it:
 
@@ -222,7 +215,7 @@ processes:
   process2:
     command: "chmod 666 /path/to/file"
 environment:
-  - 'ABC=42'
+  - "ABC=42"
 log_location: ./pc.global.log #if undefined or empty no logs will be saved (if also not defined per process)
 ```
 
@@ -239,8 +232,6 @@ processes:
 
 This setting controls the `process-compose` log level. The processes log level should be defined inside the process. It is recommended to support its definition with an environment variable that can be defined in `process-compose.yaml`
 
-
-
 #### ❌ <u>Health Checks</u>
 
 ##### ❌ Is Alive
@@ -255,11 +246,9 @@ This setting controls the `process-compose` log level. The processes log level s
 process2:
   availability:
     restart: on-failure # other options: "always", "no" (default)
-    backoff_seconds: 2  # default: 1
+    backoff_seconds: 2 # default: 1
     max_restarts: 5 # default: 0 (unlimited)
 ```
-
-
 
 #### ✅ <u>Environment Variables</u>
 
@@ -268,7 +257,7 @@ process2:
 ```yaml
 process2:
   environment:
-    - 'I_AM_LOCAL_EV=42'
+    - "I_AM_LOCAL_EV=42"
 ```
 
 ##### ✅ Global
@@ -278,9 +267,9 @@ processes:
   process2:
     command: "chmod 666 /path/to/file"
   environment:
-    - 'I_AM_LOCAL_EV=42'		
+    - "I_AM_LOCAL_EV=42"
 environment:
-  - 'I_AM_GLOBAL_EV=42'
+  - "I_AM_GLOBAL_EV=42"
 ```
 
 Default environment variables:
@@ -289,15 +278,11 @@ Default environment variables:
 
 `PC_REPLICA_NUM` - Defines the process replica number. Useful for port collision avoidance for processes with multiple replicas.
 
-
-
 #### ✅ <u>REST API</u>
 
 A convenient Swagger API is provided: http://localhost:8080/swagger/index.html
 
 <img src="./imgs/swagger.png" alt="Swagger" style="zoom:67%;" />
-
-
 
 #### ✅ <u>Configuration</u>
 
@@ -317,8 +302,6 @@ process-compose -f "path/to/process-compose-file.yaml"
 
 The following discovery order is used: `compose.yml, compose.yaml, process-compose.yml, process-compose.yaml`. If multiple files are present the first one will be used.
 
-
-
 #### ✅ <u>Multi-platform</u>
 
 ##### ✅ Linux
@@ -330,16 +313,16 @@ The default backend is `bash`. You can define a different backend with a `SHELL`
 The default backend is `cmd`. You can define a different backend with a `SHELL` environment variable.
 
 ```yaml
-  process1:
-    command: "python -c print(str(40+2))" 
-    #note that the same command for bash/zsh would look like: "python -c 'print(str(40+2))'"
+process1:
+  command: "python -c print(str(40+2))"
+  #note that the same command for bash/zsh would look like: "python -c 'print(str(40+2))'"
 ```
 
 Using `powershell` backend had some funky behaviour (like missing `command1 && command2` functionality in older versions). If you need to run powershell scripts, use the following syntax:
 
 ```yaml
-  process2:
-    command: "powershell.exe ./test.ps1 arg1 arg2 argN"
+process2:
+  command: "powershell.exe ./test.ps1 arg1 arg2 argN"
 ```
 
 ##### ❌ macOS
