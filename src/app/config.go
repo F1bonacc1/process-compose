@@ -24,14 +24,15 @@ type Project struct {
 
 type Processes map[string]ProcessConfig
 type ProcessConfig struct {
-	Name          string
-	Disabled      bool                   `yaml:"disabled,omitempty"`
-	Command       string                 `yaml:"command"`
-	LogLocation   string                 `yaml:"log_location,omitempty"`
-	Environment   []string               `yaml:"environment,omitempty"`
-	RestartPolicy RestartPolicyConfig    `yaml:"availability,omitempty"`
-	DependsOn     DependsOnConfig        `yaml:"depends_on,omitempty"`
-	Extensions    map[string]interface{} `yaml:",inline"`
+	Name           string
+	Disabled       bool                   `yaml:"disabled,omitempty"`
+	Command        string                 `yaml:"command"`
+	LogLocation    string                 `yaml:"log_location,omitempty"`
+	Environment    []string               `yaml:"environment,omitempty"`
+	RestartPolicy  RestartPolicyConfig    `yaml:"availability,omitempty"`
+	DependsOn      DependsOnConfig        `yaml:"depends_on,omitempty"`
+	ShutDownParams ShutDownParams         `yaml:"shutdown,omitempty"`
+	Extensions     map[string]interface{} `yaml:",inline"`
 }
 
 type ProcessState struct {
@@ -72,6 +73,12 @@ type RestartPolicyConfig struct {
 	Restart        string `yaml:",omitempty"`
 	BackoffSeconds int    `yaml:"backoff_seconds,omitempty"`
 	MaxRestarts    int    `yaml:"max_restarts,omitempty"`
+}
+
+type ShutDownParams struct {
+	ShutDownCommand string `yaml:"command,omitempty"`
+	ShutDownTimeout int    `yaml:"timeout_seconds,omitempty"`
+	Signal          int    `yaml:"signal,omitempty"`
 }
 
 const (

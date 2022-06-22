@@ -11,7 +11,7 @@ processes:
       restart: "on-failure"
       backoff_seconds: 2
     depends_on:
-      process2:
+      _process2:
         condition: process_completed_successfully
       process3:
         condition: process_completed
@@ -20,7 +20,7 @@ processes:
     environment:
       - 'EXIT_CODE=0'
 
-  process2:
+  _process2:
     command: "./test_loop.bash process2"
     log_location: ./pc.proc2.log
     availability:
@@ -31,7 +31,11 @@ processes:
     environment:
       - 'ABC=2221'
       - 'PRINT_ERR=111'
-      - 'EXIT_CODE=0'
+      - 'EXIT_CODE=2'
+    shutdown:
+      command: "pkill -f process2"
+      signal: 15
+      timeout_seconds: 2
 
   process3:
     command: "./test_loop.bash process3"
@@ -48,7 +52,7 @@ processes:
     #   restart: on-failure
     environment:
       - 'ABC=2221'
-      - 'EXIT_CODE=1'
+      - 'EXIT_CODE=4'
 
   kcalc:
     command: "kcalc"

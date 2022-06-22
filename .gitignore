@@ -1,6 +1,6 @@
 coverage.out
 .vscode
-bin/**
+bin/process*
 *.log
 .env
 # local build output via go build
