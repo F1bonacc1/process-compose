@@ -2,12 +2,22 @@
 
 package app
 
-import "syscall"
+import (
+	"syscall"
+)
 
-func (p *Process) stop() error {
+const (
+	min_sig = 1
+	max_sig = 31
+)
+
+func (p *Process) stop(sig int) error {
+	if sig < min_sig || sig > max_sig {
+		sig = int(syscall.SIGTERM)
+	}
 	pgid, err := syscall.Getpgid(p.cmd.Process.Pid)
 	if err == nil {
-		return syscall.Kill(-pgid, syscall.SIGKILL)
+		return syscall.Kill(-pgid, syscall.Signal(sig))
 	}
 	return err
 }

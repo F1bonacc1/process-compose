@@ -149,11 +149,32 @@ process2:
 ```yaml
 process2:
   depends_on:
-  process2:
-    condition: process_completed_successfully # or "process_started" (default)
+    process3:
+      condition: process_completed_successfully # or "process_started" (default)
   process3:
     condition: process_completed_successfully
 ```
+
+##### ✅ Termination Parameters
+
+```yaml
+process1:
+  command: "pg_ctl start"
+  shutdown:
+    command: "pg_ctl stop"
+    timeout_seconds: 10 # default 10
+    signal: 15 # default 15, but only if command is not defined or empty
+```
+
+`shutdown` is optional and can be omitted. The default behaviour in this case: `SIGTERM` is issued to the running process.
+
+In case only `shutdown.signal` is defined `[1..31] ` the running process will be terminated with its value.
+
+In case the the `shutdown.command` is defined:
+
+1. The `shutdown.command` is executed with all the Environment Variables of the main process
+2. Wait `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
+3. In case of timeout the process will receive the `SIGKILL` signal
 
 #### ✅ <u>Output Handling</u>
 

@@ -2,6 +2,7 @@ package app
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"math/rand"
@@ -10,12 +11,17 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/pclog"
 
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	DEFAULT_SHUTDOWN_TIMEOUT_SEC = 10
 )
 
 type Process struct {
@@ -154,6 +160,33 @@ func (p *Process) WaitForCompletion(waitee string) int {
 func (p *Process) WontRun() {
 	p.onProcessEnd()
 
+}
+
+func (p *Process) shutDown() error {
+	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
+		return p.doConfiguredStop(p.procConf.ShutDownParams)
+	}
+	return p.stop(p.procConf.ShutDownParams.Signal)
+}
+
+func (p *Process) doConfiguredStop(params ShutDownParams) error {
+	timeout := params.ShutDownTimeout
+	if timeout == 0 {
+		timeout = DEFAULT_SHUTDOWN_TIMEOUT_SEC
+	}
+	log.Debug().Msgf("killing %s with timeout %d ...", p.GetName(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, getRunnerShell(), getRunnerArg(), params.ShutDownCommand)
+	cmd.Env = p.getProcessEnvironment()
+
+	if err := cmd.Run(); err != nil {
+		// the process termination timedout and it will be killed
+		log.Error().Msgf("killing %s with timeout %d failed", p.GetName(), timeout)
+		return p.stop(int(syscall.SIGKILL))
+	}
+	return nil
 }
 
 func (p *Process) onProcessEnd() {
