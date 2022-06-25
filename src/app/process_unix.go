@@ -12,6 +12,9 @@ const (
 )
 
 func (p *Process) stop(sig int) error {
+	if p.cmd == nil {
+		return nil
+	}
 	if sig < min_sig || sig > max_sig {
 		sig = int(syscall.SIGTERM)
 	}

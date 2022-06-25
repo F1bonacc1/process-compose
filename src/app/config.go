@@ -62,11 +62,12 @@ const (
 )
 
 const (
-	ProcessStateDisabled   = "Disabled"
-	ProcessStatePending    = "Pending"
-	ProcessStateRunning    = "Running"
-	ProcessStateRestarting = "Restarting"
-	ProcessStateCompleted  = "Completed"
+	ProcessStateDisabled    = "Disabled"
+	ProcessStatePending     = "Pending"
+	ProcessStateRunning     = "Running"
+	ProcessStateRestarting  = "Restarting"
+	ProcessStateTerminating = "Terminating"
+	ProcessStateCompleted   = "Completed"
 )
 
 type RestartPolicyConfig struct {

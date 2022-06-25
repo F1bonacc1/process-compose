@@ -38,46 +38,66 @@ func newPcView(version string, logLength int) *pcView {
 	pv.procTable = pv.createProcTable()
 	pv.statTable = pv.createStatTable()
 	pv.updateHelpTextView()
-	pv.appView.SetRoot(pv.createGrid(), true).EnableMouse(true).
-		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			switch event.Key() {
-			case tcell.KeyF10:
-
-				m := tview.NewModal().
-					SetText("Are you sure you want to quit?").
-					AddButtons([]string{"Quit", "Cancel"}).
-					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-						if buttonLabel == "Quit" {
-							pv.appView.Stop()
-						} else {
-							pv.appView.SetRoot(pv.createGrid(), true)
-						}
-					})
-				// Display and focus the dialog
-				pv.appView.SetRoot(m, false)
-
-			case tcell.KeyF5:
-				pv.logFollow = !pv.logFollow
-				name := pv.getSelectedProcName()
-				if pv.logFollow {
-					pv.followLog(name)
-					go pv.updateLogs()
-				} else {
-					pv.unFollowLog()
-				}
-				pv.updateHelpTextView()
-			case tcell.KeyF6:
-				pv.logsText.ToggleWrap()
-				pv.updateHelpTextView()
-			}
-			return event
-		})
+	pv.appView.SetRoot(pv.createGrid(), true).EnableMouse(true).SetInputCapture(pv.onAppKey)
 	if len(pv.procNames) > 0 {
 		name := pv.procNames[0]
 		pv.logsText.SetTitle(name)
 		pv.followLog(name)
 	}
 	return pv
+}
+
+func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
+	switch event.Key() {
+	case tcell.KeyF10:
+		pv.terminateAppView()
+	case tcell.KeyF5:
+		pv.logFollow = !pv.logFollow
+		name := pv.getSelectedProcName()
+		if pv.logFollow {
+			pv.followLog(name)
+			go pv.updateLogs()
+		} else {
+			pv.unFollowLog()
+		}
+		pv.updateHelpTextView()
+	case tcell.KeyF6:
+		pv.logsText.ToggleWrap()
+		pv.updateHelpTextView()
+	case tcell.KeyCtrlC:
+		pv.terminateAppView()
+	default:
+		return event
+	}
+	return nil
+}
+
+func (pv *pcView) terminateAppView() {
+
+	m := tview.NewModal().
+		SetText("Are you sure you want to quit?\nThis will terminate all the running processes.").
+		AddButtons([]string{"Quit", "Cancel"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			if buttonLabel == "Quit" {
+				go pv.handleShutDown()
+			}
+			pv.appView.SetRoot(pv.createGrid(), true)
+
+		})
+	// Display and focus the dialog
+	pv.appView.SetRoot(m, false)
+}
+
+func (pv *pcView) handleShutDown() {
+	pv.statTable.SetCell(0, 2, tview.NewTableCell("Shutting Down...").
+		SetSelectable(false).
+		SetAlign(tview.AlignRight).
+		SetExpansion(0).
+		SetTextColor(tcell.ColorWhite).
+		SetBackgroundColor(tcell.ColorRed))
+	app.PROJ.ShutDownProject()
+	pv.appView.Stop()
+
 }
 
 func (pv *pcView) fillTableData() {
@@ -176,19 +196,20 @@ func (pv *pcView) createStatTable() *tview.Table {
 	table := tview.NewTable().SetBorders(false).SetSelectable(false, false)
 
 	table.SetCell(0, 0, tview.NewTableCell("Version:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	table.SetCell(0, 1, tview.NewTableCell(pv.version).SetSelectable(false))
+	table.SetCell(0, 1, tview.NewTableCell(pv.version).SetSelectable(false).SetExpansion(1))
 
 	table.SetCell(1, 0, tview.NewTableCell("Hostname:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = err.Error()
 	}
-	table.SetCell(1, 1, tview.NewTableCell(hostname).SetSelectable(false))
+	table.SetCell(1, 1, tview.NewTableCell(hostname).SetSelectable(false).SetExpansion(1))
 
 	table.SetCell(2, 0, tview.NewTableCell("Processes:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	table.SetCell(2, 1, tview.NewTableCell(strconv.Itoa(len(pv.procNames))).SetSelectable(false))
+	table.SetCell(2, 1, tview.NewTableCell(strconv.Itoa(len(pv.procNames))).SetSelectable(false).SetExpansion(1))
+	table.SetCell(0, 2, tview.NewTableCell("").SetSelectable(false))
 
-	table.SetCell(0, 2, tview.NewTableCell("🔥 Process Compose").
+	table.SetCell(0, 3, tview.NewTableCell("🔥 Process Compose").
 		SetSelectable(false).
 		SetAlign(tview.AlignRight).
 		SetExpansion(1).
