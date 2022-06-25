@@ -67,14 +67,14 @@ func (p *Project) runProcess(proc ProcessConfig) {
 	p.addRunningProcess(process)
 	p.wg.Add(1)
 	go func() {
-		defer p.removeRunningProcess(process.GetName())
+		defer p.removeRunningProcess(process.getName())
 		defer p.wg.Done()
 		if err := p.waitIfNeeded(process.procConf); err != nil {
 			log.Error().Msgf("Error: %s", err.Error())
-			log.Error().Msgf("Error: process %s won't run", process.GetName())
-			process.WontRun()
+			log.Error().Msgf("Error: process %s won't run", process.getName())
+			process.wontRun()
 		} else {
-			process.Run()
+			process.run()
 		}
 	}()
 }
@@ -85,10 +85,10 @@ func (p *Project) waitIfNeeded(process ProcessConfig) error {
 
 			switch process.DependsOn[k].Condition {
 			case ProcessConditionCompleted:
-				runningProc.WaitForCompletion(process.Name)
+				runningProc.waitForCompletion(process.Name)
 			case ProcessConditionCompletedSuccessfully:
 				log.Info().Msgf("%s is waiting for %s to complete successfully", process.Name, k)
-				exitCode := runningProc.WaitForCompletion(process.Name)
+				exitCode := runningProc.waitForCompletion(process.Name)
 				if exitCode != 0 {
 					return fmt.Errorf("process %s depended on %s to complete successfully, but it exited with status %d",
 						process.Name, k, exitCode)
@@ -141,7 +141,7 @@ func (p *Project) GetProcessState(name string) *ProcessState {
 
 func (p *Project) addRunningProcess(process *Process) {
 	p.mapMutex.Lock()
-	p.runningProcesses[process.GetName()] = process
+	p.runningProcesses[process.getName()] = process
 	p.mapMutex.Unlock()
 }
 
@@ -184,6 +184,18 @@ func (p *Project) StopProcess(name string) error {
 	}
 	proc.shutDown()
 	return nil
+}
+
+func (p *Project) ShutDownProject() {
+	p.mapMutex.Lock()
+	runProc := p.runningProcesses
+	p.mapMutex.Unlock()
+	for _, proc := range runProc {
+		proc.prepareForShutDown()
+	}
+	for _, proc := range runProc {
+		proc.shutDown()
+	}
 }
 
 func (p *Project) getProcessLog(name string) (*pclog.ProcessLogBuffer, error) {

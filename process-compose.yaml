@@ -19,6 +19,10 @@ processes:
       #   condition: process_completed_successfully
     environment:
       - 'EXIT_CODE=0'
+    shutdown:
+      command: "sleep 2 && pkill -f process1"
+      signal: 15
+      timeout_seconds: 4
 
   _process2:
     command: "./test_loop.bash process2"
@@ -33,9 +37,9 @@ processes:
       - 'PRINT_ERR=111'
       - 'EXIT_CODE=2'
     shutdown:
-      command: "pkill -f process2"
+      command: "sleep 2 && pkill -f process2"
       signal: 15
-      timeout_seconds: 2
+      timeout_seconds: 4
 
   process3:
     command: "./test_loop.bash process3"

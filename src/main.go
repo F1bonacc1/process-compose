@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"os"
@@ -58,6 +60,18 @@ func quiet() func() {
 	}
 }
 
+func runHeadless(project *app.Project) {
+	cancelChan := make(chan os.Signal, 1)
+	// catch SIGETRM or SIGINTERRUPT
+	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		project.Run()
+	}()
+	sig := <-cancelChan
+	log.Info().Msgf("Caught %v - Shutting down the running processes...", sig)
+	project.ShutDownProject()
+}
+
 func main() {
 	fileName := ""
 	port := 8080
@@ -107,7 +121,9 @@ func main() {
 		go project.Run()
 		tui.SetupTui(version, project.LogLength)
 	} else {
-		project.Run()
+		runHeadless(project)
 	}
+
+	log.Info().Msg("Thank you for using proccess-compose")
 
 }
