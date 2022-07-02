@@ -26,6 +26,7 @@ type Processes map[string]ProcessConfig
 type ProcessConfig struct {
 	Name           string
 	Disabled       bool                   `yaml:"disabled,omitempty"`
+	IsDaemon       bool                   `yaml:"is_daemon,omitempty"`
 	Command        string                 `yaml:"command"`
 	LogLocation    string                 `yaml:"log_location,omitempty"`
 	Environment    []string               `yaml:"environment,omitempty"`
@@ -65,6 +66,8 @@ const (
 	ProcessStateDisabled    = "Disabled"
 	ProcessStatePending     = "Pending"
 	ProcessStateRunning     = "Running"
+	ProcessStateLaunching   = "Launching"
+	ProcessStateLaunched    = "Launched"
 	ProcessStateRestarting  = "Restarting"
 	ProcessStateTerminating = "Terminating"
 	ProcessStateCompleted   = "Completed"

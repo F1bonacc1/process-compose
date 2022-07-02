@@ -58,6 +58,16 @@ processes:
       - 'ABC=2221'
       - 'EXIT_CODE=4'
 
+  docker:
+    command: "docker run -d --rm --name nginx_test nginx"
+    # availability:
+    #   restart: on-failure
+    is_daemon: true
+    shutdown:
+      command: "docker stop nginx_test"
+      signal: 15
+      timeout_seconds: 5
+
   kcalc:
     command: "kcalc"
     disabled: true
