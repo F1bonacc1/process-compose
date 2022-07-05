@@ -21,25 +21,28 @@ import (
 )
 
 const (
-	DEFAULT_SHUTDOWN_TIMEOUT_SEC = 10
+	UNDEFINED_SHUTDOWN_TIMEOUT_SEC = 0
+	DEFAULT_SHUTDOWN_TIMEOUT_SEC   = 10
 )
 
 type Process struct {
-	globalEnv []string
-	procConf  ProcessConfig
-	procState *ProcessState
 	sync.Mutex
-	stateMtx  sync.Mutex
-	procCond  sync.Cond
-	procColor func(a ...interface{}) string
-	noColor   func(a ...interface{}) string
-	redColor  func(a ...interface{}) string
-	logBuffer *pclog.ProcessLogBuffer
-	logger    pclog.PcLogger
-	cmd       *exec.Cmd
-	done      bool
-	replica   int
-	startTime time.Time
+
+	globalEnv     []string
+	procConf      ProcessConfig
+	procState     *ProcessState
+	stateMtx      sync.Mutex
+	procCond      sync.Cond
+	procStateChan chan string
+	procColor     func(a ...interface{}) string
+	noColor       func(a ...interface{}) string
+	redColor      func(a ...interface{}) string
+	logBuffer     *pclog.ProcessLogBuffer
+	logger        pclog.PcLogger
+	cmd           *exec.Cmd
+	done          bool
+	replica       int
+	startTime     time.Time
 }
 
 func NewProcess(
@@ -50,20 +53,21 @@ func NewProcess(
 	procLog *pclog.ProcessLogBuffer,
 	replica int) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
-	//logger, _ := zap.NewProduction()
 
 	proc := &Process{
-		globalEnv: globalEnv,
-		procConf:  procConf,
-		procColor: color.New(color.Attribute(colNumeric), color.Bold).SprintFunc(),
-		redColor:  color.New(color.FgHiRed).SprintFunc(),
-		noColor:   color.New(color.Reset).SprintFunc(),
-		logger:    logger,
-		procState: procState,
-		done:      false,
-		replica:   replica,
-		logBuffer: procLog,
+		globalEnv:     globalEnv,
+		procConf:      procConf,
+		procColor:     color.New(color.Attribute(colNumeric), color.Bold).SprintFunc(),
+		redColor:      color.New(color.FgHiRed).SprintFunc(),
+		noColor:       color.New(color.Reset).SprintFunc(),
+		logger:        logger,
+		procState:     procState,
+		done:          false,
+		replica:       replica,
+		logBuffer:     procLog,
+		procStateChan: make(chan string, 1),
 	}
+
 	proc.procCond = *sync.NewCond(proc)
 	return proc
 }
@@ -83,7 +87,7 @@ func (p *Process) run() error {
 			go p.handleOutput(stderr, p.handleError)
 			return p.cmd.Start()
 		}
-		p.setStateAndRun(ProcessStateRunning, starter)
+		p.setStateAndRun(p.getStartingStateName(), starter)
 
 		p.startTime = time.Now()
 		p.procState.Pid = p.cmd.Process.Pid
@@ -96,7 +100,12 @@ func (p *Process) run() error {
 		p.Lock()
 		p.procState.ExitCode = p.cmd.ProcessState.ExitCode()
 		p.Unlock()
-		log.Info().Msgf("%s exited with status %d", p.procConf.Name, p.procState.ExitCode)
+		log.Info().Msgf("%s exited with status %d", p.getNameWithReplica(), p.procState.ExitCode)
+
+		if p.isDaemonLaunched() {
+			p.setState(ProcessStateLaunched)
+			p.waitForDaemonCompletion()
+		}
 
 		if !p.isRestartable(p.procState.ExitCode) {
 			break
@@ -144,6 +153,7 @@ func (p *Process) isRestartable(exitCode int) bool {
 		return p.procState.Restarts < p.procConf.RestartPolicy.MaxRestarts
 	}
 
+	// TODO consider if forking daemon should disable RestartPolicyAlways
 	if p.procConf.RestartPolicy.Restart == RestartPolicyAlways {
 		if p.procConf.RestartPolicy.MaxRestarts == 0 {
 			return true
@@ -171,7 +181,7 @@ func (p *Process) wontRun() {
 
 // perform gracefull process shutdown if defined in configuration
 func (p *Process) shutDown() error {
-	if !p.isState(ProcessStateRunning) {
+	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.procState.Status)
 		// prevent pending process from running
 		p.setState(ProcessStateTerminating)
@@ -186,12 +196,13 @@ func (p *Process) shutDown() error {
 
 func (p *Process) doConfiguredStop(params ShutDownParams) error {
 	timeout := params.ShutDownTimeout
-	if timeout == 0 {
+	if timeout == UNDEFINED_SHUTDOWN_TIMEOUT_SEC {
 		timeout = DEFAULT_SHUTDOWN_TIMEOUT_SEC
 	}
 	log.Debug().Msgf("terminating %s with timeout %d ...", p.getName(), timeout)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
+	defer p.notifyDaemonStopped()
 
 	cmd := exec.CommandContext(ctx, getRunnerShell(), getRunnerArg(), params.ShutDownCommand)
 	cmd.Env = p.getProcessEnvironment()
@@ -202,6 +213,10 @@ func (p *Process) doConfiguredStop(params ShutDownParams) error {
 		return p.stop(int(syscall.SIGKILL))
 	}
 	return nil
+}
+
+func (p *Process) isRunning() bool {
+	return p.isOneOfStates(ProcessStateRunning, ProcessStateLaunched)
 }
 
 func (p *Process) prepareForShutDown() {
@@ -234,7 +249,7 @@ func (p *Process) getCommand() string {
 }
 
 func (p *Process) updateProcState() {
-	if p.isState(ProcessStateRunning) {
+	if p.isRunning() {
 		dur := time.Since(p.startTime)
 		p.procState.SystemTime = durationToString(dur)
 	}
@@ -251,13 +266,13 @@ func (p *Process) handleOutput(pipe io.ReadCloser,
 
 func (p *Process) handleInfo(message string) {
 	p.logger.Info(message, p.getName(), p.replica)
-	fmt.Printf("[%s]\t%s\n", p.procColor(p.getNameWithReplica()), message)
+	fmt.Printf("[%s\t] %s\n", p.procColor(p.getNameWithReplica()), message)
 	p.logBuffer.Write(message)
 }
 
 func (p *Process) handleError(message string) {
 	p.logger.Error(message, p.getName(), p.replica)
-	fmt.Printf("[%s]\t%s\n", p.procColor(p.getNameWithReplica()), p.redColor(message))
+	fmt.Printf("[%s\t] %s\n", p.procColor(p.getNameWithReplica()), p.redColor(message))
 	p.logBuffer.Write(message)
 }
 
@@ -265,6 +280,17 @@ func (p *Process) isState(state string) bool {
 	p.stateMtx.Lock()
 	defer p.stateMtx.Unlock()
 	return p.procState.Status == state
+}
+
+func (p *Process) isOneOfStates(states ...string) bool {
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
+	for _, state := range states {
+		if p.procState.Status == state {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Process) setState(state string) {
