@@ -158,23 +158,41 @@ process2:
 ##### ✅ Termination Parameters
 
 ```yaml
-process1:
-  command: "pg_ctl start"
+nginx:
+  command: "docker run --rm --name nginx_test nginx"
   shutdown:
-    command: "pg_ctl stop"
+    command: "docker stop nginx_test"
+    timeout_seconds: 10 # default 10
+    signal: 15 # default 15, but only if the 'command' is not defined or empty
+```
+
+`shutdown` is optional and can be omitted. The default behavior in this case: `SIGTERM` is issued to the running process.
+
+In case only `shutdown.signal` is defined `[1..31] ` the running process will be terminated with its value.
+
+In case the `shutdown.command` is defined:
+
+1. The `shutdown.command` is executed with all the Environment Variables of the primary process
+2. Wait for `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
+3. In case of timeout, the process will receive the `SIGKILL` signal
+
+##### ✅ Background (detached) Processes
+
+```yaml
+nginx:
+  command: "docker run -d --rm --name nginx_test nginx" # note the '-d' for detached mode
+  is_daemon: true # this flag is required for background processes (default false)
+  shutdown:
+    command: "docker stop nginx_test"
     timeout_seconds: 10 # default 10
     signal: 15 # default 15, but only if command is not defined or empty
 ```
 
-`shutdown` is optional and can be omitted. The default behaviour in this case: `SIGTERM` is issued to the running process.
+1. For processes that start services / daemons in the background, please use the `is_daemon` flag set to `true`. 
 
-In case only `shutdown.signal` is defined `[1..31] ` the running process will be terminated with its value.
+2. In case a process is daemon it will be considered running until stopped. 
 
-In case the the `shutdown.command` is defined:
-
-1. The `shutdown.command` is executed with all the Environment Variables of the main process
-2. Wait `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
-3. In case of timeout the process will receive the `SIGKILL` signal
+3. Daemon processes can only be stopped with the `$PROCESSNAME.shutdown.command` as in the example above.
 
 #### ✅ <u>Output Handling</u>
 
@@ -278,8 +296,6 @@ Probes configuration and functionality are designed to work similarly to [Kubern
       success_threshold: 1
       failure_threshold: 3
 ```
-
-
 
 ##### ✅ Readiness Probe
 
