@@ -40,6 +40,15 @@ processes:
       command: "sleep 2 && pkill -f process2"
       signal: 15
       timeout_seconds: 4
+    readiness_probe:
+      http_get:
+        host: "google.com"
+        scheme: "https"
+      initial_delay_seconds: 5
+      period_seconds: 2
+      timeout_seconds: 1
+      success_threshold: 1
+      failure_threshold: 3
 
   process3:
     command: "./test_loop.bash process3"
@@ -57,9 +66,17 @@ processes:
     environment:
       - 'ABC=2221'
       - 'EXIT_CODE=4'
+    readiness_probe:
+      exec:
+        command: "ps -ef | grep -v grep | grep process4"
+      initial_delay_seconds: 5
+      period_seconds: 2
+      timeout_seconds: 1
+      success_threshold: 1
+      failure_threshold: 3
 
-  docker:
-    command: "docker run -d --rm --name nginx_test nginx"
+  nginx:
+    command: "docker run -d --rm -p80:80 --name nginx_test nginx"
     # availability:
     #   restart: on-failure
     is_daemon: true
@@ -67,6 +84,27 @@ processes:
       command: "docker stop nginx_test"
       signal: 15
       timeout_seconds: 5
+    liveness_probe:
+      exec:
+        command: "[ $(docker inspect -f '{{.State.Running}}' nginx_test) = 'true' ]"
+      initial_delay_seconds: 5
+      period_seconds: 2
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        path: "/"
+        port: 80
+      initial_delay_seconds: 5
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    availability:
+      restart: "always"
+      backoff_seconds: 2
 
   kcalc:
     command: "kcalc"

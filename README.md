@@ -158,43 +158,23 @@ process2:
 ##### ✅ Termination Parameters
 
 ```yaml
-nginx:
-  command: "docker run --rm --name nginx_test nginx"
+process1:
+  command: "pg_ctl start"
   shutdown:
-    command: "docker stop nginx_test"
-    timeout_seconds: 10 # default 10
-    signal: 15 # default 15, but only if the 'command' is not defined or empty
-```
-
-`shutdown` is optional and can be omitted. The default behavior in this case: `SIGTERM` is issued to the running process.
-
-In case only `shutdown.signal` is defined `[1..31] ` the running process will be terminated with its value.
-
-In case the `shutdown.command` is defined:
-
-1. The `shutdown.command` is executed with all the Environment Variables of the primary process
-2. Wait for `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
-3. In case of timeout, the process will receive the `SIGKILL` signal
-
-##### ✅ Background (detached) Processes
-
-```yaml
-nginx:
-  command: "docker run -d --rm --name nginx_test nginx" # note the '-d' for detached mode
-  is_daemon: true # this flag is required for background processes (default false)
-  shutdown:
-    command: "docker stop nginx_test"
+    command: "pg_ctl stop"
     timeout_seconds: 10 # default 10
     signal: 15 # default 15, but only if command is not defined or empty
 ```
 
-1. For processes that start services / daemons in the background, please use the `is_daemon` flag set to `true`. 
+`shutdown` is optional and can be omitted. The default behaviour in this case: `SIGTERM` is issued to the running process.
 
-2. In case a process is daemon it will be considered running until stopped. 
+In case only `shutdown.signal` is defined `[1..31] ` the running process will be terminated with its value.
 
-3. Daemon processes can only be stopped with the `$PROCESSNAME.shutdown.command` as in the example above.
+In case the the `shutdown.command` is defined:
 
-   
+1. The `shutdown.command` is executed with all the Environment Variables of the main process
+2. Wait `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
+3. In case of timeout the process will receive the `SIGKILL` signal
 
 #### ✅ <u>Output Handling</u>
 
@@ -273,15 +253,79 @@ processes:
 
 This setting controls the `process-compose` log level. The processes log level should be defined inside the process. It is recommended to support its definition with an environment variable that can be defined in `process-compose.yaml`
 
-#### ❌ <u>Health Checks</u>
+#### ✅ <u>Health Checks</u>
 
-##### ❌ Is Alive
+Many applications running for long periods of time eventually transition to broken states, and cannot recover except by being restarted. Process Compose provides liveness and readiness probes to detect and remedy such situations.
 
-##### ❌ Is Ready
+Probes configuration and functionality are designed to work similarly to [Kubernetes liveness and readiness probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/).
 
-##### ❌ Auto Restart if not healthy
+##### ✅ Liveness Probe
 
-##### ✅ Auto Restart on exit
+```yaml
+  nginx:
+    command: "docker run -d --rm -p80:80 --name nginx_test nginx"
+    is_daemon: true
+    shutdown:
+      command: "docker stop nginx_test"
+      signal: 15
+      timeout_seconds: 5
+    liveness_probe:
+      exec:
+        command: "[ $(docker inspect -f '{{.State.Running}}' nginx_test) = 'true' ]"
+      initial_delay_seconds: 5
+      period_seconds: 2
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+```
+
+
+
+##### ✅ Readiness Probe
+
+```yaml
+  nginx:
+    command: "docker run -d --rm -p80:80 --name nginx_test nginx"
+    is_daemon: true
+    shutdown:
+      command: "docker stop nginx_test"
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        scheme: http
+        path: "/"
+        port: 80
+      initial_delay_seconds: 5
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+```
+
+Each probe type (`liveness_probe` or `readiness_probe`) can be configured in to use one of the 2 mutually exclusive modes:
+
+1. `exec`: Will run a configured `command` and based on the `exit code` decide if the process is in a correct state. 0 indicates success. Any other value indicates failure.
+2. `http_get`: For an HTTP probe, the Process Compose sends an HTTP request to the specified path and port to perform the check. Response code 200 indicates success. Any other value indicates failure.
+   - `host`: Host name to connect to.
+   - `scheme`: Scheme to use for connecting to the host (HTTP or HTTPS). Defaults to HTTP.
+   - `path`: Path to access on the HTTP server. Defaults to /.
+   - `port`: Number of the port to access on the process. Number must be in the range 1 to 65535.
+
+##### Configure Probes
+
+Probes have a number of fields that you can use to more precisely control the behavior of liveness and readiness checks:
+
+- `initial_delay_seconds`: Number of seconds after the container has started before liveness or readiness probes are initiated. Defaults to 0 seconds. Minimum value is 0.
+- `period_seconds`: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+- `timeout_seconds`: Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1.
+- `success_threshold`: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup Probes. Minimum value is 1. **Note**: this value is not respected and was added as a placeholder for future implementation.
+- `failure_threshold`: When a probe fails, Process Compose will try `failure_threshold` times before giving up. Giving up in case of liveness probe means restarting the process. In case of readiness probe the Pod will be marked Unready. Defaults to 3. Minimum value is 1.
+
+##### ✅ Auto Restart if not Healthy
+
+In order to insure that the process is restarted (and not transitioned to completed state) in case of readiness check fail, please make sure to define the `availability` configuration. For background (`is_daemon=true`) processes, the `restart` policy should be `always`.
+
+##### ✅ Auto Restart on Exit
 
 ```yaml
 process2:

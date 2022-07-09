@@ -8,12 +8,13 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/f1bonacc1/process-compose/src/cmd"
+	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 
 	"github.com/fatih/color"
@@ -43,6 +44,8 @@ type Process struct {
 	done          bool
 	replica       int
 	startTime     time.Time
+	liveProber    *health.Prober
+	readyProber   *health.Prober
 }
 
 func NewProcess(
@@ -68,6 +71,7 @@ func NewProcess(
 		procStateChan: make(chan string, 1),
 	}
 
+	proc.setUpProbes()
 	proc.procCond = *sync.NewCond(proc)
 	return proc
 }
@@ -78,7 +82,7 @@ func (p *Process) run() error {
 	}
 	for {
 		starter := func() error {
-			p.cmd = exec.Command(getRunnerShell(), getRunnerArg(), p.getCommand())
+			p.cmd = cmd.BuildCommand(p.getCommand())
 			p.cmd.Env = p.getProcessEnvironment()
 			p.setProcArgs()
 			stdout, _ := p.cmd.StdoutPipe()
@@ -91,6 +95,8 @@ func (p *Process) run() error {
 
 		p.startTime = time.Now()
 		p.procState.Pid = p.cmd.Process.Pid
+
+		p.startProbes()
 
 		//Wait should wait for I/O consumption, but if the execution is too fast
 		//e.g. echo 'hello world' the output will not reach the pipe
@@ -188,6 +194,7 @@ func (p *Process) shutDown() error {
 		return nil
 	}
 	p.setState(ProcessStateTerminating)
+	p.stopProbes()
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
 	}
@@ -204,7 +211,7 @@ func (p *Process) doConfiguredStop(params ShutDownParams) error {
 	defer cancel()
 	defer p.notifyDaemonStopped()
 
-	cmd := exec.CommandContext(ctx, getRunnerShell(), getRunnerArg(), params.ShutDownCommand)
+	cmd := cmd.BuildCommandContext(ctx, params.ShutDownCommand)
 	cmd.Env = p.getProcessEnvironment()
 
 	if err := cmd.Run(); err != nil {
@@ -297,31 +304,93 @@ func (p *Process) setState(state string) {
 	p.stateMtx.Lock()
 	defer p.stateMtx.Unlock()
 	p.procState.Status = state
+	p.onStateChange(state)
+
 }
 
 func (p *Process) setStateAndRun(state string, runnable func() error) error {
 	p.stateMtx.Lock()
 	defer p.stateMtx.Unlock()
 	p.procState.Status = state
+	p.onStateChange(state)
 	return runnable()
 }
 
-func getRunnerShell() string {
-	shell, ok := os.LookupEnv("SHELL")
-	if !ok {
-		if runtime.GOOS == "windows" {
-			shell = "cmd"
-		} else {
-			shell = "bash"
-		}
+func (p *Process) onStateChange(state string) {
+	switch state {
+	case ProcessStateRestarting:
+		fallthrough
+	case ProcessStateLaunching:
+		fallthrough
+	case ProcessStateTerminating:
+		p.procState.Health = ProcessHealthUnknown
 	}
-	return shell
 }
 
-func getRunnerArg() string {
-	if runtime.GOOS == "windows" {
-		return "/C"
+func (p *Process) setUpProbes() {
+	var err error
+	if p.procConf.LivenessProbe != nil {
+		p.liveProber, err = health.New(
+			p.getName()+"_live_probe",
+			*p.procConf.LivenessProbe,
+			p.onLivenessCheckEnd,
+		)
+		if err != nil {
+			log.Error().Msgf("failed to setup liveness probe for %s - %s", p.getName(), err.Error())
+			p.logBuffer.Write("Error: " + err.Error())
+		}
+	}
+
+	if p.procConf.ReadinessProbe != nil {
+		p.readyProber, err = health.New(
+			p.getName()+"_ready_probe",
+			*p.procConf.ReadinessProbe,
+			p.onReadinessCheckEnd,
+		)
+		if err != nil {
+			log.Error().Msgf("failed to setup readiness probe for %s - %s", p.getName(), err.Error())
+			p.logBuffer.Write("Error: " + err.Error())
+		}
+	}
+}
+
+func (p *Process) startProbes() {
+	if p.liveProber != nil {
+		p.liveProber.Start()
+	}
+
+	if p.readyProber != nil {
+		p.readyProber.Start()
+	}
+}
+
+func (p *Process) stopProbes() {
+	if p.liveProber != nil {
+		p.liveProber.Stop()
+	}
+
+	if p.readyProber != nil {
+		p.readyProber.Stop()
+	}
+}
+
+func (p *Process) onLivenessCheckEnd(isOk, isFatal bool, err string) {
+	if isFatal {
+		log.Info().Msgf("%s is not alive anymore - %s", p.getName(), err)
+		p.logBuffer.Write("Error: liveness check fail - " + err)
+		p.notifyDaemonStopped()
+	}
+}
+
+func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
+	if isFatal {
+		p.procState.Health = ProcessHealthNotReady
+		log.Info().Msgf("%s is not ready anymore - %s", p.getName(), err)
+		p.logBuffer.Write("Error: readiness check fail - " + err)
+		p.shutDown()
+	} else if isOk {
+		p.procState.Health = ProcessHealthReady
 	} else {
-		return "-c"
+		p.procState.Health = ProcessHealthNotReady
 	}
 }

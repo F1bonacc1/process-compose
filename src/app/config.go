@@ -3,6 +3,7 @@ package app
 import (
 	"sync"
 
+	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 )
 
@@ -32,6 +33,8 @@ type ProcessConfig struct {
 	Environment    []string               `yaml:"environment,omitempty"`
 	RestartPolicy  RestartPolicyConfig    `yaml:"availability,omitempty"`
 	DependsOn      DependsOnConfig        `yaml:"depends_on,omitempty"`
+	LivenessProbe  *health.Probe          `yaml:"liveness_probe,omitempty"`
+	ReadinessProbe *health.Probe          `yaml:"readiness_probe,omitempty"`
 	ShutDownParams ShutDownParams         `yaml:"shutdown,omitempty"`
 	Extensions     map[string]interface{} `yaml:",inline"`
 }
@@ -40,6 +43,7 @@ type ProcessState struct {
 	Name       string `json:"name"`
 	Status     string `json:"status"`
 	SystemTime string `json:"system_time"`
+	Health     string `json:"is_ready"`
 	Restarts   int    `json:"restarts"`
 	ExitCode   int    `json:"exit_code"`
 	Pid        int    `json:"pid"`
@@ -71,6 +75,12 @@ const (
 	ProcessStateRestarting  = "Restarting"
 	ProcessStateTerminating = "Terminating"
 	ProcessStateCompleted   = "Completed"
+)
+
+const (
+	ProcessHealthReady    = "Ready"
+	ProcessHealthNotReady = "Not Ready"
+	ProcessHealthUnknown  = "N/A"
 )
 
 type RestartPolicyConfig struct {

@@ -106,6 +106,7 @@ func (p *Project) initProcessStates() {
 			Name:       key,
 			Status:     ProcessStatePending,
 			SystemTime: "",
+			Health:     ProcessHealthUnknown,
 			Restarts:   0,
 			ExitCode:   0,
 			Pid:        0,
@@ -131,6 +132,7 @@ func (p *Project) GetProcessState(name string) *ProcessState {
 		} else {
 			procState.Pid = 0
 			procState.SystemTime = ""
+			procState.Health = ProcessHealthUnknown
 		}
 		return procState
 	}

@@ -114,8 +114,9 @@ func (pv *pcView) fillTableData() {
 		pv.procTable.SetCell(r+1, 1, tview.NewTableCell(state.Name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 2, tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 3, tview.NewTableCell(state.SystemTime).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 4, tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 5, tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 4, tview.NewTableCell(state.Health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 5, tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 6, tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 	}
 }
 
@@ -171,7 +172,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 		return event
 	})
 	columns := []string{
-		"PID", "NAME", "STATUS", "AGE", "RESTARTS", "EXIT CODE",
+		"PID", "NAME", "STATUS", "AGE", "READINESS", "RESTARTS", "EXIT CODE",
 	}
 	for i := 0; i < len(columns); i++ {
 		expan := 1
@@ -209,7 +210,7 @@ func (pv *pcView) createStatTable() *tview.Table {
 	table.SetCell(2, 1, tview.NewTableCell(strconv.Itoa(len(pv.procNames))).SetSelectable(false).SetExpansion(1))
 	table.SetCell(0, 2, tview.NewTableCell("").SetSelectable(false))
 
-	table.SetCell(0, 3, tview.NewTableCell("🔥 Process Compose").
+	table.SetCell(0, 3, tview.NewTableCell("Process Compose 🔥").
 		SetSelectable(false).
 		SetAlign(tview.AlignRight).
 		SetExpansion(1).
