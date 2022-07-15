@@ -62,7 +62,7 @@ func quiet() func() {
 
 func runHeadless(project *app.Project) {
 	cancelChan := make(chan os.Signal, 1)
-	// catch SIGETRM or SIGINTERRUPT
+	// catch SIGTERM or SIGINTERRUPT
 	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		project.Run()

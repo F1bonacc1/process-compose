@@ -6,8 +6,8 @@ import (
 )
 
 func (p *Process) stop(sig int) error {
-	//p.cmd.Process.Kill()
-	kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(p.cmd.Process.Pid))
+	//p.command.Process.Kill()
+	kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(p.command.Process.Pid))
 	return kill.Run()
 }
 

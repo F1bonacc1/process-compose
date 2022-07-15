@@ -38,10 +38,7 @@ func (h HttpProbe) getUrl() (*url.URL, error) {
 	return url.Parse(urlStr)
 }
 
-func validateAndSetDefaults(p *Probe) {
-	if p == nil {
-		return
-	}
+func (p *Probe) validateAndSetDefaults() {
 	if p.InitialDelay < 0 {
 		p.InitialDelay = 0
 	}
@@ -58,24 +55,24 @@ func validateAndSetDefaults(p *Probe) {
 		p.FailureThreshold = 3
 	}
 
-	validateAndSetHttpDefaults(p.HttpGet)
+	p.validateAndSetHttpDefaults()
 }
 
-func validateAndSetHttpDefaults(h *HttpProbe) {
-	if h == nil {
+func (p *Probe) validateAndSetHttpDefaults() {
+	if p.HttpGet == nil {
 		return
 	}
-	if len(strings.TrimSpace(h.Host)) == 0 {
-		h.Host = "127.0.0.1"
+	if len(strings.TrimSpace(p.HttpGet.Host)) == 0 {
+		p.HttpGet.Host = "127.0.0.1"
 	}
-	if len(strings.TrimSpace(h.Scheme)) == 0 {
-		h.Scheme = "http"
+	if len(strings.TrimSpace(p.HttpGet.Scheme)) == 0 {
+		p.HttpGet.Scheme = "http"
 	}
-	if len(strings.TrimSpace(h.Path)) == 0 {
-		h.Path = "/"
+	if len(strings.TrimSpace(p.HttpGet.Path)) == 0 {
+		p.HttpGet.Path = "/"
 	}
-	if h.Port < 1 || h.Port > 65535 {
+	if p.HttpGet.Port < 1 || p.HttpGet.Port > 65535 {
 		// if undefined or wrong value - will be treated as undefined
-		h.Port = 0
+		p.HttpGet.Port = 0
 	}
 }

@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	UNDEFINED_SHUTDOWN_TIMEOUT_SEC = 0
-	DEFAULT_SHUTDOWN_TIMEOUT_SEC   = 10
+	UndefinedShutdownTimeoutSec = 0
+	DefaultShutdownTimeoutSec   = 10
 )
 
 type Process struct {
@@ -40,7 +40,7 @@ type Process struct {
 	redColor      func(a ...interface{}) string
 	logBuffer     *pclog.ProcessLogBuffer
 	logger        pclog.PcLogger
-	cmd           *exec.Cmd
+	command       *exec.Cmd
 	done          bool
 	replica       int
 	startTime     time.Time
@@ -82,19 +82,19 @@ func (p *Process) run() error {
 	}
 	for {
 		starter := func() error {
-			p.cmd = cmd.BuildCommand(p.getCommand())
-			p.cmd.Env = p.getProcessEnvironment()
+			p.command = cmd.BuildCommand(p.getCommand())
+			p.command.Env = p.getProcessEnvironment()
 			p.setProcArgs()
-			stdout, _ := p.cmd.StdoutPipe()
-			stderr, _ := p.cmd.StderrPipe()
+			stdout, _ := p.command.StdoutPipe()
+			stderr, _ := p.command.StderrPipe()
 			go p.handleOutput(stdout, p.handleInfo)
 			go p.handleOutput(stderr, p.handleError)
-			return p.cmd.Start()
+			return p.command.Start()
 		}
-		p.setStateAndRun(p.getStartingStateName(), starter)
+		_ = p.setStateAndRun(p.getStartingStateName(), starter)
 
 		p.startTime = time.Now()
-		p.procState.Pid = p.cmd.Process.Pid
+		p.procState.Pid = p.command.Process.Pid
 
 		p.startProbes()
 
@@ -102,9 +102,9 @@ func (p *Process) run() error {
 		//e.g. echo 'hello world' the output will not reach the pipe
 		//TODO Fix this
 		time.Sleep(50 * time.Millisecond)
-		p.cmd.Wait()
+		_ = p.command.Wait()
 		p.Lock()
-		p.procState.ExitCode = p.cmd.ProcessState.ExitCode()
+		p.procState.ExitCode = p.command.ProcessState.ExitCode()
 		p.Unlock()
 		log.Info().Msgf("%s exited with status %d", p.getNameWithReplica(), p.procState.ExitCode)
 
@@ -170,7 +170,7 @@ func (p *Process) isRestartable(exitCode int) bool {
 	return false
 }
 
-func (p *Process) waitForCompletion(waitee string) int {
+func (p *Process) waitForCompletion() int {
 	p.Lock()
 	defer p.Unlock()
 
@@ -185,7 +185,7 @@ func (p *Process) wontRun() {
 
 }
 
-// perform gracefull process shutdown if defined in configuration
+// perform graceful process shutdown if defined in configuration
 func (p *Process) shutDown() error {
 	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.procState.Status)
@@ -203,18 +203,18 @@ func (p *Process) shutDown() error {
 
 func (p *Process) doConfiguredStop(params ShutDownParams) error {
 	timeout := params.ShutDownTimeout
-	if timeout == UNDEFINED_SHUTDOWN_TIMEOUT_SEC {
-		timeout = DEFAULT_SHUTDOWN_TIMEOUT_SEC
+	if timeout == UndefinedShutdownTimeoutSec {
+		timeout = DefaultShutdownTimeoutSec
 	}
 	log.Debug().Msgf("terminating %s with timeout %d ...", p.getName(), timeout)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
 	defer p.notifyDaemonStopped()
 
-	cmd := cmd.BuildCommandContext(ctx, params.ShutDownCommand)
-	cmd.Env = p.getProcessEnvironment()
+	command := cmd.BuildCommandContext(ctx, params.ShutDownCommand)
+	command.Env = p.getProcessEnvironment()
 
-	if err := cmd.Run(); err != nil {
+	if err := command.Run(); err != nil {
 		// the process termination timedout and it will be killed
 		log.Error().Msgf("terminating %s with timeout %d failed - %s", p.getName(), timeout, err.Error())
 		return p.stop(int(syscall.SIGKILL))
@@ -327,6 +327,13 @@ func (p *Process) onStateChange(state string) {
 	}
 }
 
+func (p *Process) getStartingStateName() string {
+	if p.procConf.IsDaemon {
+		return ProcessStateLaunching
+	}
+	return ProcessStateRunning
+}
+
 func (p *Process) setUpProbes() {
 	var err error
 	if p.procConf.LivenessProbe != nil {
@@ -387,7 +394,7 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 		p.procState.Health = ProcessHealthNotReady
 		log.Info().Msgf("%s is not ready anymore - %s", p.getName(), err)
 		p.logBuffer.Write("Error: readiness check fail - " + err)
-		p.shutDown()
+		_ = p.shutDown()
 	} else if isOk {
 		p.procState.Health = ProcessHealthReady
 	} else {

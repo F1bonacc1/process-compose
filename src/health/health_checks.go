@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	FAIL = "failed"
-	OK   = "ok"
+	OK = "ok"
 )
 
 type Prober struct {
@@ -22,7 +21,7 @@ type Prober struct {
 }
 
 func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober, error) {
-	validateAndSetDefaults(&probe)
+	probe.validateAndSetDefaults()
 	p := &Prober{
 		probe:          probe,
 		name:           name,
@@ -44,7 +43,7 @@ func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober
 		}
 		return p, err
 	}
-	return p, fmt.Errorf("probe settings are missing [http_get.host, exec.command] for %s", name)
+	return nil, fmt.Errorf("no probes [http_get, exec] configured for %s", name)
 }
 
 func (p *Prober) Start() {
@@ -60,7 +59,7 @@ func (p *Prober) Start() {
 
 func (p *Prober) Stop() {
 	if p.hc != nil {
-		p.hc.Stop()
+		_ = p.hc.Stop()
 	}
 }
 

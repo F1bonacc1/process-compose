@@ -12,13 +12,13 @@ const (
 )
 
 func (p *Process) stop(sig int) error {
-	if p.cmd == nil {
+	if p.command == nil {
 		return nil
 	}
 	if sig < min_sig || sig > max_sig {
 		sig = int(syscall.SIGTERM)
 	}
-	pgid, err := syscall.Getpgid(p.cmd.Process.Pid)
+	pgid, err := syscall.Getpgid(p.command.Process.Pid)
 	if err == nil {
 		return syscall.Kill(-pgid, syscall.Signal(sig))
 	}
@@ -26,5 +26,5 @@ func (p *Process) stop(sig int) error {
 }
 
 func (p *Process) setProcArgs() {
-	p.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	p.command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 }

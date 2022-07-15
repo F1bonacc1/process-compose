@@ -31,7 +31,7 @@ func (p *Project) init() {
 func (p *Project) Run() {
 	p.runningProcesses = make(map[string]*Process)
 	runOrder := []ProcessConfig{}
-	p.WithProcesses([]string{}, func(process ProcessConfig) error {
+	_ = p.WithProcesses([]string{}, func(process ProcessConfig) error {
 		runOrder = append(runOrder, process)
 		return nil
 	})
@@ -74,7 +74,7 @@ func (p *Project) runProcess(proc ProcessConfig) {
 			log.Error().Msgf("Error: process %s won't run", process.getName())
 			process.wontRun()
 		} else {
-			process.run()
+			_ = process.run()
 		}
 	}()
 }
@@ -85,10 +85,10 @@ func (p *Project) waitIfNeeded(process ProcessConfig) error {
 
 			switch process.DependsOn[k].Condition {
 			case ProcessConditionCompleted:
-				runningProc.waitForCompletion(process.Name)
+				runningProc.waitForCompletion()
 			case ProcessConditionCompletedSuccessfully:
 				log.Info().Msgf("%s is waiting for %s to complete successfully", process.Name, k)
-				exitCode := runningProc.waitForCompletion(process.Name)
+				exitCode := runningProc.waitForCompletion()
 				if exitCode != 0 {
 					return fmt.Errorf("process %s depended on %s to complete successfully, but it exited with status %d",
 						process.Name, k, exitCode)
@@ -184,7 +184,7 @@ func (p *Project) StopProcess(name string) error {
 		log.Error().Msgf("Process %s is not running", name)
 		return fmt.Errorf("process %s is not running", name)
 	}
-	proc.shutDown()
+	_ = proc.shutDown()
 	return nil
 }
 
@@ -196,7 +196,7 @@ func (p *Project) ShutDownProject() {
 		proc.prepareForShutDown()
 	}
 	for _, proc := range runProc {
-		proc.shutDown()
+		_ = proc.shutDown()
 	}
 }
 
@@ -339,7 +339,7 @@ func CreateProject(inputFile string) *Project {
 	}
 
 	// .env is optional we don't care if it errors
-	godotenv.Load()
+	_ = godotenv.Load()
 
 	yamlFile = []byte(os.ExpandEnv(string(yamlFile)))
 
