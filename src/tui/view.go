@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/updater"
 	"os"
 	"strconv"
 	"time"
@@ -91,7 +92,7 @@ func (pv *pcView) terminateAppView() {
 func (pv *pcView) handleShutDown() {
 	pv.statTable.SetCell(0, 2, tview.NewTableCell("Shutting Down...").
 		SetSelectable(false).
-		SetAlign(tview.AlignRight).
+		SetAlign(tview.AlignCenter).
 		SetExpansion(0).
 		SetTextColor(tcell.ColorWhite).
 		SetBackgroundColor(tcell.ColorRed))
@@ -208,7 +209,7 @@ func (pv *pcView) createStatTable() *tview.Table {
 
 	table.SetCell(2, 0, tview.NewTableCell("Processes:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
 	table.SetCell(2, 1, tview.NewTableCell(strconv.Itoa(len(pv.procNames))).SetSelectable(false).SetExpansion(1))
-	table.SetCell(0, 2, tview.NewTableCell("").SetSelectable(false))
+	table.SetCell(0, 2, tview.NewTableCell("").SetSelectable(false).SetExpansion(0))
 
 	table.SetCell(0, 3, tview.NewTableCell("Process Compose 🔥").
 		SetSelectable(false).
@@ -269,7 +270,22 @@ func (pv *pcView) updateLogs() {
 		}
 		time.Sleep(300 * time.Millisecond)
 	}
+}
 
+func (pv *pcView) runOnce() {
+	version, err := updater.GetLatestReleaseName()
+	if err != nil {
+		return
+	}
+	if pv.version != version {
+		pv.showUpdateAvailable(version)
+	}
+}
+
+func (pv *pcView) showUpdateAvailable(version string) {
+	pv.appView.QueueUpdateDraw(func() {
+		pv.statTable.GetCell(0, 1).SetText(fmt.Sprintf("%s  [green:]%s[-:-:-]", pv.version, version))
+	})
 }
 
 func SetupTui(version string, logLength int) {
@@ -277,6 +293,7 @@ func SetupTui(version string, logLength int) {
 
 	go pv.updateTable()
 	go pv.updateLogs()
+	go pv.runOnce()
 
 	if err := pv.appView.Run(); err != nil {
 		panic(err)
