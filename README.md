@@ -329,13 +329,13 @@ Each probe type (`liveness_probe` or `readiness_probe`) can be configured in to 
 
 ##### Configure Probes
 
-Probes have a number of fields that you can use to more precisely control the behavior of liveness and readiness checks:
+Probes have a number of fields that you can use to control the behavior of liveness and readiness checks more precisely:
 
-- `initial_delay_seconds`: Number of seconds after the container has started before liveness or readiness probes are initiated. Defaults to 0 seconds. Minimum value is 0.
-- `period_seconds`: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-- `timeout_seconds`: Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1.
-- `success_threshold`: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup Probes. Minimum value is 1. **Note**: this value is not respected and was added as a placeholder for future implementation.
-- `failure_threshold`: When a probe fails, Process Compose will try `failure_threshold` times before giving up. Giving up in case of liveness probe means restarting the process. In case of readiness probe the Pod will be marked Unready. Defaults to 3. Minimum value is 1.
+- `initial_delay_seconds`: Number of seconds after the container has started before liveness or readiness probes are initiated. Defaults to 0 seconds. The minimum value is 0.
+- `period_seconds`: How often (in seconds) to perform the probe. Defaults to 10 seconds. The minimum value is 1.
+- `timeout_seconds`: Number of seconds after which the probe times out. Defaults to 1 second. The minimum value is 1.
+- `success_threshold`: Minimum consecutive successes for the probe to be considered successful after failing. Defaults to 1. Must be 1 for liveness and startup Probes. The minimum value is 1. **Note**: this value is not respected and was added as a placeholder for future implementation.
+- `failure_threshold`: When a probe fails, Process Compose will try `failure_threshold` times before giving up. Giving up in case of liveness probe means restarting the process. In case of readiness probe, the Pod will be marked Unready. Defaults to 3. The minimum value is 1.
 
 ##### ✅ Auto Restart if not Healthy
 
@@ -427,3 +427,15 @@ process2:
 ```
 
 ##### ❌ macOS
+
+
+
+## How to Contribute
+
+1. Fork it
+2. Create your feature branch (git checkout -b my-new-feature)
+3. Commit your changes (git commit -am 'Add some feature')
+4. Push to the branch (git push origin my-new-feature)
+5. Create new Pull Request
+
+English is not my native language, so PRs correcting grammar or spelling are welcome and appreciated.
