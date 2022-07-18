@@ -53,11 +53,11 @@ processes:
   process3:
     command: "./test_loop.bash process3"
     availability:
-      restart: "on-failure"
+      restart: "always"
       backoff_seconds: 2
     depends_on:
-      process4:
-        condition: process_completed_successfully
+      nginx:
+        condition: process_healthy
 
   process4:
     command: "./test_loop.bash process4"

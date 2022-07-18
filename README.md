@@ -150,10 +150,17 @@ process2:
 process2:
   depends_on:
     process3:
-      condition: process_completed_successfully # or "process_started" (default)
+      condition: process_completed_successfully
   process3:
     condition: process_completed_successfully
 ```
+
+There are 4 condition types that cab be used in process dependencies:
+
+* `process_completed` - is the type for waiting until a process has completed (any exit code)
+* `process_completed_successfully` - is the type for waiting until a process has completed successfully (exit code 0)
+* `process_healthy` - is the type for waiting until a process is healthy
+* `process_started` - is the type for waiting until a process has started (default)
 
 ##### ✅ Termination Parameters
 

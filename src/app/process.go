@@ -29,23 +29,25 @@ const (
 type Process struct {
 	sync.Mutex
 
-	globalEnv     []string
-	procConf      ProcessConfig
-	procState     *ProcessState
-	stateMtx      sync.Mutex
-	procCond      sync.Cond
-	procStateChan chan string
-	procColor     func(a ...interface{}) string
-	noColor       func(a ...interface{}) string
-	redColor      func(a ...interface{}) string
-	logBuffer     *pclog.ProcessLogBuffer
-	logger        pclog.PcLogger
-	command       *exec.Cmd
-	done          bool
-	replica       int
-	startTime     time.Time
-	liveProber    *health.Prober
-	readyProber   *health.Prober
+	globalEnv      []string
+	procConf       ProcessConfig
+	procState      *ProcessState
+	stateMtx       sync.Mutex
+	healthMtx      sync.Mutex
+	procCond       sync.Cond
+	procHealthCond sync.Cond
+	procStateChan  chan string
+	procColor      func(a ...interface{}) string
+	noColor        func(a ...interface{}) string
+	redColor       func(a ...interface{}) string
+	logBuffer      *pclog.ProcessLogBuffer
+	logger         pclog.PcLogger
+	command        *exec.Cmd
+	done           bool
+	replica        int
+	startTime      time.Time
+	liveProber     *health.Prober
+	readyProber    *health.Prober
 }
 
 func NewProcess(
@@ -73,6 +75,7 @@ func NewProcess(
 
 	proc.setUpProbes()
 	proc.procCond = *sync.NewCond(proc)
+	proc.procHealthCond = *sync.NewCond(&proc.healthMtx)
 	return proc
 }
 
@@ -178,6 +181,15 @@ func (p *Process) waitForCompletion() int {
 		p.procCond.Wait()
 	}
 	return p.procState.ExitCode
+}
+
+func (p *Process) waitUntilReady() {
+	p.healthMtx.Lock()
+	defer p.healthMtx.Unlock()
+
+	for p.procState.Health != ProcessHealthReady {
+		p.procHealthCond.Wait()
+	}
 }
 
 func (p *Process) wontRun() {
@@ -397,6 +409,7 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 		_ = p.shutDown()
 	} else if isOk {
 		p.procState.Health = ProcessHealthReady
+		p.procHealthCond.Broadcast()
 	} else {
 		p.procState.Health = ProcessHealthNotReady
 	}

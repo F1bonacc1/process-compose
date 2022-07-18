@@ -93,6 +93,8 @@ func (p *Project) waitIfNeeded(process ProcessConfig) error {
 					return fmt.Errorf("process %s depended on %s to complete successfully, but it exited with status %d",
 						process.Name, k, exitCode)
 				}
+			case ProcessConditionHealthy:
+				runningProc.waitUntilReady()
 			}
 		}
 	}
