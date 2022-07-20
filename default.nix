@@ -4,7 +4,7 @@ pkgs.buildGoModule rec {
   pname = "process-compose";
   version = "0.16.0";
   src = ./.;
-  ldflags = [ "-X main.version=${version}" ];
+  ldflags = [ "-X main.version=v${version}" ];
 
   vendorSha256 = "RcxU68vn2RirbOtEGcVrKYmEFeQDg1eovlQKXRandNs=";
 
