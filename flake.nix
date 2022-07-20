@@ -8,12 +8,21 @@
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      let pkgs = import nixpkgs { inherit system; };
-      in rec {
-        packages = { process-compose = pkgs.callPackage ./default.nix { }; };
-        defaultPackage = packages.process-compose;
-        apps.process-compose =
-          flake-utils.lib.mkApp { drv = packages.process-compose; };
-        defaultApp = apps.process-compose;
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ self.overlays."${system}".default ];
+        };
+      in {
+        overlays.default = final: prev: {
+          process-compose = final.callPackage ./default.nix { };
+        };
+        overlay = self.overlays.default;
+        packages = { inherit (pkgs) process-compose; };
+        defaultPackage = self.packages."${system}".process-compose;
+        apps.process-compose = flake-utils.lib.mkApp {
+          drv = self.packages."${system}".process-compose;
+        };
+        defaultApp = self.apps."${system}".process-compose;
       });
 }
