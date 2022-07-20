@@ -8,9 +8,7 @@
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        lib = pkgs.lib;
+      let pkgs = import nixpkgs { inherit system; };
       in rec {
         packages = { process-compose = pkgs.callPackage ./default.nix { }; };
         defaultPackage = packages.process-compose;
