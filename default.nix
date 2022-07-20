@@ -6,7 +6,7 @@ pkgs.buildGoModule rec {
   src = ./.;
   ldflags = [ "-X main.version=${version}" ];
 
-  vendorSha256 = "1syn7sfv2hqwyl16kg14rvgwil65zlabnv2g44bpi4q35xmv1q46";
+  vendorSha256 = "RcxU68vn2RirbOtEGcVrKYmEFeQDg1eovlQKXRandNs=";
 
   postInstall = "mv $out/bin/{src,process-compose}";
 
