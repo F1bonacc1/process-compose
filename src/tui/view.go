@@ -13,33 +13,35 @@ import (
 )
 
 type pcView struct {
-	procTable  *tview.Table
-	statTable  *tview.Table
-	appView    *tview.Application
-	logsText   *LogView
-	statusText *tview.TextView
-	helpText   *tview.TextView
-	procNames  []string
-	version    string
-	logFollow  bool
-	loggedProc string
+	procTable   *tview.Table
+	statTable   *tview.Table
+	appView     *tview.Application
+	logsText    *LogView
+	statusText  *tview.TextView
+	helpText    *tview.TextView
+	procNames   []string
+	version     string
+	logFollow   bool
+	logFullScrn bool
+	loggedProc  string
 }
 
 func newPcView(version string, logLength int) *pcView {
 	pv := &pcView{
-		appView:    tview.NewApplication(),
-		logsText:   NewLogView(logLength),
-		statusText: tview.NewTextView().SetDynamicColors(true),
-		procNames:  app.PROJ.GetLexicographicProcessNames(),
-		version:    version,
-		logFollow:  true,
-		helpText:   tview.NewTextView().SetDynamicColors(true),
-		loggedProc: "",
+		appView:     tview.NewApplication(),
+		logsText:    NewLogView(logLength),
+		statusText:  tview.NewTextView().SetDynamicColors(true),
+		procNames:   app.PROJ.GetLexicographicProcessNames(),
+		version:     version,
+		logFollow:   true,
+		logFullScrn: false,
+		helpText:    tview.NewTextView().SetDynamicColors(true),
+		loggedProc:  "",
 	}
 	pv.procTable = pv.createProcTable()
 	pv.statTable = pv.createStatTable()
 	pv.updateHelpTextView()
-	pv.appView.SetRoot(pv.createGrid(), true).EnableMouse(true).SetInputCapture(pv.onAppKey)
+	pv.appView.SetRoot(pv.createGrid(pv.logFullScrn), true).EnableMouse(true).SetInputCapture(pv.onAppKey)
 	if len(pv.procNames) > 0 {
 		name := pv.procNames[0]
 		pv.logsText.SetTitle(name)
@@ -52,6 +54,9 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyF10:
 		pv.terminateAppView()
+	case tcell.KeyF4:
+		pv.logFullScrn = !pv.logFullScrn
+		pv.appView.SetRoot(pv.createGrid(pv.logFullScrn), true)
 	case tcell.KeyF5:
 		pv.logFollow = !pv.logFollow
 		name := pv.getSelectedProcName()
@@ -82,7 +87,7 @@ func (pv *pcView) terminateAppView() {
 			if buttonLabel == "Quit" {
 				go pv.handleShutDown()
 			}
-			pv.appView.SetRoot(pv.createGrid(), true)
+			pv.appView.SetRoot(pv.createGrid(pv.logFullScrn), true)
 
 		})
 	// Display and focus the dialog
@@ -230,6 +235,7 @@ func (pv *pcView) updateHelpTextView() {
 	}
 	pv.helpText.Clear()
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue:]LOGS:[-:-:-]")
+	fmt.Fprintf(pv.helpText, "%s ", "F4[black:green]Full Screen[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s%s%s ", "F5[black:green]", follow, "[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s%s%s ", "F6[black:green]", wrap, "[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
@@ -238,15 +244,23 @@ func (pv *pcView) updateHelpTextView() {
 	fmt.Fprintf(pv.helpText, "%s ", "F10[black:green]Quit[-:-:-]")
 }
 
-func (pv pcView) createGrid() *tview.Grid {
+func (pv pcView) createGrid(hideProcs bool) *tview.Grid {
+	logRowSpan := 1
+	logRow := 2
+	if hideProcs {
+		logRowSpan = 2
+		logRow = 1
+	}
 	grid := tview.NewGrid().
 		SetRows(3, 0, 0, 1).
 		//SetColumns(30, 0, 30).
 		SetBorders(true).
 		AddItem(pv.statTable, 0, 0, 1, 1, 0, 0, false).
-		AddItem(pv.procTable, 1, 0, 1, 1, 0, 0, true).
-		AddItem(pv.logsText, 2, 0, 1, 1, 0, 0, false).
+		AddItem(pv.logsText, logRow, 0, logRowSpan, 1, 0, 0, hideProcs).
 		AddItem(pv.helpText, 3, 0, 1, 1, 0, 0, false)
+	if !hideProcs {
+		grid.AddItem(pv.procTable, 1, 0, 1, 1, 0, 0, true)
+	}
 
 	grid.SetTitle("Process Compose")
 	return grid
