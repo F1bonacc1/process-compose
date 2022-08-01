@@ -6,13 +6,19 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 
 **Why?** Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
 
-Main use cases would be:
+#### Features:
 
-- Processes execution (in parallel or serially)
-- Defining processes dependencies and startup order
-- Defining recovery policies (restart `on-failure`, `always`, `no`). Manual recovery is also supported.
-- Declaring processes arguments
-- Declaring processes environment variables
+- Processes execution (in parallel or/and serially)
+- Processes dependencies and startup order
+- Defining recovery policies (restart `on-failure`, `always`, `no`). Manual recovery
+- Processes arguments `bash` or `zsh` style (or define your own shell)
+- Per process and global environment variables
+- Per process or global (single file) logs
+- Health checks (liveness and readiness)
+- Terminal User Interface (TUI) or CLI modes
+- Forking (services or daemons) processes
+- REST API (OpenAPI a.k.a Swagger) 
+- Logs caching
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
