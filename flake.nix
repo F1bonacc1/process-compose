@@ -23,6 +23,6 @@
         apps.process-compose = flake-utils.lib.mkApp {
           drv = self.packages."${system}".process-compose;
         };
-        defaultApp = self.apps."${system}".process-compose;
+        apps.default = self.apps."${system}".process-compose;
       });
 }
