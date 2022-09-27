@@ -1,6 +1,9 @@
 BINARY_NAME=process-compose
 RM=rm
 VERSION = $(shell git describe --abbrev=0)
+
+LD_FLAGS = "-X main.version=${VERSION} -s -w"
+
 ifeq ($(OS),Windows_NT)
 	EXT=.exe
 	RM = cmd /C del /Q /F
@@ -18,17 +21,17 @@ build:
 
 compile:
 	# Linux
-	GOOS=linux GOARCH=386 go build -o bin/${BINARY_NAME}-linux-386 -ldflags="-X main.version=${VERSION}"  ./src
-	GOOS=linux GOARCH=amd64 go build -o bin/${BINARY_NAME}-linux-amd64 -ldflags="-X main.version=${VERSION}"  ./src
-	GOOS=linux GOARCH=arm64 go build -o bin/${BINARY_NAME}-linux-arm64 -ldflags="-X main.version=${VERSION}"  ./src
-	GOOS=linux GOARCH=arm go build -o bin/${BINARY_NAME}-linux-arm -ldflags="-X main.version=${VERSION}"  ./src
+	GOOS=linux GOARCH=386 go build -o bin/${BINARY_NAME}-linux-386 -ldflags=${LD_FLAGS}  ./src
+	GOOS=linux GOARCH=amd64 go build -o bin/${BINARY_NAME}-linux-amd64 -ldflags=${LD_FLAGS}  ./src
+	GOOS=linux GOARCH=arm64 go build -o bin/${BINARY_NAME}-linux-arm64 -ldflags=${LD_FLAGS}  ./src
+	GOOS=linux GOARCH=arm go build -o bin/${BINARY_NAME}-linux-arm -ldflags=${LD_FLAGS}  ./src
 
 	# Windows
-	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}-windows-amd64.exe  -ldflags="-X main.version=${VERSION}" ./src
+	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}-windows-amd64.exe  -ldflags=${LD_FLAGS} ./src
 
 	# Darwin
-	GOOS=darwin GOARCH=amd64 go build -o bin/${BINARY_NAME}-darwin-amd64 -ldflags="-X main.version=${VERSION}"  ./src
-	GOOS=darwin GOARCH=arm64 go build -o bin/${BINARY_NAME}-darwin-arm64 -ldflags="-X main.version=${VERSION}"  ./src
+	GOOS=darwin GOARCH=amd64 go build -o bin/${BINARY_NAME}-darwin-amd64 -ldflags=${LD_FLAGS}  ./src
+	GOOS=darwin GOARCH=arm64 go build -o bin/${BINARY_NAME}-darwin-arm64 -ldflags=${LD_FLAGS}  ./src
 
 test:
 	go test -cover ./src/...
