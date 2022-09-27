@@ -2,11 +2,11 @@
 
 pkgs.buildGoModule rec {
   pname = "process-compose";
-  version = "0.17.0";
+  version = "0.17.2";
   src = ./.;
   ldflags = [ "-X main.version=v${version}" ];
 
-  vendorSha256 = "RcxU68vn2RirbOtEGcVrKYmEFeQDg1eovlQKXRandNs=";
+  vendorSha256 = "bJXym+JTAIbEh/dIkY22HdNwgYbdCGgUIts0KkS0GYk=";
 
   postInstall = "mv $out/bin/{src,process-compose}";
 

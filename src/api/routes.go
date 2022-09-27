@@ -3,8 +3,8 @@ package api
 import (
 	_ "github.com/f1bonacc1/process-compose/src/docs"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
 // @title Process Compose API
@@ -30,8 +30,8 @@ func InitRoutes(useLogger bool) *gin.Engine {
 	}
 	r.Use(gin.Recovery())
 
-	url := ginSwagger.URL("http://localhost:8080/swagger/doc.json") // The url pointing to API definition
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+	//url := ginSwagger.URL("http://localhost:8080/swagger/doc.json") // The url pointing to API definition
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/processes", GetProcesses)
 	r.GET("/process/logs/:name/:endOffset/:limit", GetProcessLogs)
 	r.PATCH("/process/stop/:name", StopProcess)

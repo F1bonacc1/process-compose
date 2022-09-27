@@ -1,5 +1,6 @@
 coverage.out
 .vscode
+.idea
 bin/process*
 *.log
 .env
