@@ -2,9 +2,8 @@ package health
 
 import (
 	"context"
+	"github.com/f1bonacc1/process-compose/src/command"
 	"time"
-
-	"github.com/f1bonacc1/process-compose/src/cmd"
 )
 
 type execChecker struct {
@@ -16,7 +15,7 @@ func (c *execChecker) Status() (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.timeout)*time.Second)
 	defer cancel()
 
-	cmd := cmd.BuildCommandContext(ctx, c.command)
+	cmd := command.BuildCommandContext(ctx, c.command)
 
 	if err := cmd.Run(); err != nil {
 		return nil, err
