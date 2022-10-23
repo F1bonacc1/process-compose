@@ -5,6 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"net/http"
+	"net/url"
 )
 
 // @title Process Compose API
@@ -32,6 +34,11 @@ func InitRoutes(useLogger bool) *gin.Engine {
 
 	//url := ginSwagger.URL("http://localhost:8080/swagger/doc.json") // The url pointing to API definition
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/", func(c *gin.Context) {
+		location := url.URL{Path: "/swagger/index.html"}
+		c.Redirect(http.StatusFound, location.RequestURI())
+	})
+
 	r.GET("/processes", GetProcesses)
 	r.GET("/process/logs/:name/:endOffset/:limit", GetProcessLogs)
 	r.PATCH("/process/stop/:name", StopProcess)
