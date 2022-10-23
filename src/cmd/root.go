@@ -28,13 +28,7 @@ var (
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
 		Use:   "process-compose",
-		Short: "A brief description of your application",
-		Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+		Short: "Processes scheduler and orchestrator",
 		// Uncomment the following line if your bare application
 		// has an action associated with it:
 		Run: func(cmd *cobra.Command, args []string) {
@@ -103,7 +97,7 @@ func init() {
 
 	rootCmd.Flags().StringVarP(&fileName, "config", "f", app.DefaultFileNames[0], "path to config file to load")
 	rootCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false)")
-	rootCmd.Flags().IntVarP(&port, "port", "p", 8080, "port number")
+	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 8080, "port number")
 }
 
 func runHeadless(project *app.Project) {
