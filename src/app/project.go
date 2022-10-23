@@ -3,13 +3,12 @@ package app
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"github.com/f1bonacc1/process-compose/src/pclog"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/f1bonacc1/process-compose/src/pclog"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
@@ -170,9 +169,9 @@ func (p *Project) StartProcess(name string) error {
 		log.Error().Msgf("Process %s is already running", name)
 		return fmt.Errorf("process %s is already running", name)
 	}
-	if proc, ok := p.Processes[name]; ok {
-		proc.Name = name
-		p.runProcess(proc)
+	if processConfig, ok := p.Processes[name]; ok {
+		processConfig.Name = name
+		p.runProcess(processConfig)
 	} else {
 		return fmt.Errorf("no such process: %s", name)
 	}
@@ -187,6 +186,25 @@ func (p *Project) StopProcess(name string) error {
 		return fmt.Errorf("process %s is not running", name)
 	}
 	_ = proc.shutDown()
+	return nil
+}
+
+func (p *Project) RestartProcess(name string) error {
+	proc := p.getRunningProcess(name)
+	if proc != nil {
+		_ = proc.shutDown()
+		if proc.isRestartable() {
+			return nil
+		}
+		time.Sleep(proc.getBackoff())
+	}
+
+	if processConfig, ok := p.Processes[name]; ok {
+		processConfig.Name = name
+		p.runProcess(processConfig)
+	} else {
+		return fmt.Errorf("no such process: %s", name)
+	}
 	return nil
 }
 
@@ -331,7 +349,7 @@ func (p *Project) GetLexicographicProcessNames() []string {
 }
 
 func CreateProject(inputFile string) *Project {
-	yamlFile, err := ioutil.ReadFile(inputFile)
+	yamlFile, err := os.ReadFile(inputFile)
 
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {

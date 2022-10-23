@@ -216,6 +216,9 @@ func (pv *pcView) createProcTable() *tview.Table {
 		case tcell.KeyF7:
 			name := pv.getSelectedProcName()
 			app.PROJ.StartProcess(name)
+		case tcell.KeyCtrlR:
+			name := pv.getSelectedProcName()
+			app.PROJ.RestartProcess(name)
 		}
 		return event
 	})
@@ -294,6 +297,7 @@ func (pv *pcView) updateHelpTextView() {
 	fmt.Fprintf(pv.helpText, "%s ", "F7[black:green]Start[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s%s%s ", "F8[black:green]", procScr, " Screen[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s ", "F9[black:green]Kill[-:-:-]")
+	fmt.Fprintf(pv.helpText, "%s ", "CTRL+R[black:green]Restart[-:-:-]")
 	fmt.Fprintf(pv.helpText, "%s ", "F10[black:green]Quit[-:-:-]")
 }
 

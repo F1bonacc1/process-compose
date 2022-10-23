@@ -116,7 +116,7 @@ func (p *Process) run() error {
 			p.waitForDaemonCompletion()
 		}
 
-		if !p.isRestartable(p.procState.ExitCode) {
+		if !p.isRestartable() {
 			break
 		}
 		p.setState(ProcessStateRestarting)
@@ -149,7 +149,8 @@ func (p *Process) getProcessEnvironment() []string {
 	return env
 }
 
-func (p *Process) isRestartable(exitCode int) bool {
+func (p *Process) isRestartable() bool {
+	exitCode := p.procState.ExitCode
 	if p.procConf.RestartPolicy.Restart == RestartPolicyNo ||
 		p.procConf.RestartPolicy.Restart == "" {
 		return false

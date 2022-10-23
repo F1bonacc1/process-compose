@@ -59,6 +59,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/process/restart/{name}": {
+            "post": {
+                "description": "Restarts the process",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Restart a process",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Process Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Restarted Process Name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/process/start/{name}": {
             "post": {
                 "description": "Starts the process if the state is not 'running' or 'pending'",

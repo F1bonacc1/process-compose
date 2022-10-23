@@ -36,6 +36,7 @@ func InitRoutes(useLogger bool) *gin.Engine {
 	r.GET("/process/logs/:name/:endOffset/:limit", GetProcessLogs)
 	r.PATCH("/process/stop/:name", StopProcess)
 	r.POST("/process/start/:name", StartProcess)
+	r.POST("/process/restart/:name", RestartProcess)
 
 	return r
 }
