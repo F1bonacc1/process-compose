@@ -19,6 +19,7 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 - Forking (services or daemons) processes
 - REST API (OpenAPI a.k.a Swagger) 
 - Logs caching
+- Functions as both server and client
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -394,9 +395,53 @@ Default environment variables:
 
 #### ✅ <u>REST API</u>
 
-A convenient Swagger API is provided: http://localhost:8080/swagger/index.html
+A convenient Swagger API is provided: http://localhost:8080
 
 <img src="./imgs/swagger.png" alt="Swagger" style="zoom:67%;" />
+
+Default port is 8080. Specify your own port:
+
+```shell
+process-compose -p PORT
+```
+
+#### ✅ Client Mode
+
+Process compose can also connect to itself as client. Available commands:
+
+##### Processes List
+
+```shell
+process-compose process list #lists available processes
+```
+
+##### Process Start
+
+```shell
+process-compose process start [PROCESS] #starts one of the available non running processes
+```
+
+##### Process Stop
+
+```shell
+process-compose process stop [PROCESS] #stops one of the running processes
+```
+
+##### Process Restart
+
+```shell
+process-compose process start [PROCESS] #restarts one of the available processes
+```
+
+Restart will wait `process.availability.backoff_seconds` seconds between `stop` and `start` of the process. If not configured the default value is 1s.
+
+By default the client will try to use the default port `8080` and default address `localhost` to connect to the locally running instance of process-compose. You can provide deferent values:
+
+```shell
+process-compose -p PORT process -a ADDRESS list
+```
+
+
 
 #### ✅ <u>Configuration</u>
 

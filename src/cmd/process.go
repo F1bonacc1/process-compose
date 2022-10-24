@@ -11,7 +11,7 @@ var (
 // processCmd represents the process command
 var processCmd = &cobra.Command{
 	Use:   "process",
-	Short: "Execute operations on running processes",
+	Short: "Execute operations on available processes",
 	Args:  cobra.MinimumNArgs(1),
 }
 
