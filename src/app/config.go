@@ -49,6 +49,10 @@ type ProcessState struct {
 	Pid        int    `json:"pid"`
 }
 
+type ProcessStates struct {
+	States []ProcessState `json:"data"`
+}
+
 func (p ProcessConfig) GetDependencies() []string {
 	dependencies := make([]string, len(p.DependsOn))
 

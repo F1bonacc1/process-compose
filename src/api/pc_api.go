@@ -97,3 +97,22 @@ func StartProcess(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"name": name})
 }
+
+// @Schemes
+// @Description Restarts the process
+// @Tags Process
+// @Summary Restart a process
+// @Produce  json
+// @Param name path string true "Process Name"
+// @Success 200 {string} string "Restarted Process Name"
+// @Router /process/restart/{name} [post]
+func RestartProcess(c *gin.Context) {
+	name := c.Param("name")
+	err := app.PROJ.RestartProcess(name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"name": name})
+}

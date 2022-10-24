@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/f1bonacc1/process-compose/src/cmd"
+	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 
@@ -85,7 +85,7 @@ func (p *Process) run() error {
 	}
 	for {
 		starter := func() error {
-			p.command = cmd.BuildCommand(p.getCommand())
+			p.command = command.BuildCommand(p.getCommand())
 			p.command.Env = p.getProcessEnvironment()
 			p.setProcArgs()
 			stdout, _ := p.command.StdoutPipe()
@@ -116,7 +116,7 @@ func (p *Process) run() error {
 			p.waitForDaemonCompletion()
 		}
 
-		if !p.isRestartable(p.procState.ExitCode) {
+		if !p.isRestartable() {
 			break
 		}
 		p.setState(ProcessStateRestarting)
@@ -149,7 +149,8 @@ func (p *Process) getProcessEnvironment() []string {
 	return env
 }
 
-func (p *Process) isRestartable(exitCode int) bool {
+func (p *Process) isRestartable() bool {
+	exitCode := p.procState.ExitCode
 	if p.procConf.RestartPolicy.Restart == RestartPolicyNo ||
 		p.procConf.RestartPolicy.Restart == "" {
 		return false
@@ -223,10 +224,10 @@ func (p *Process) doConfiguredStop(params ShutDownParams) error {
 	defer cancel()
 	defer p.notifyDaemonStopped()
 
-	command := cmd.BuildCommandContext(ctx, params.ShutDownCommand)
-	command.Env = p.getProcessEnvironment()
+	cmd := command.BuildCommandContext(ctx, params.ShutDownCommand)
+	cmd.Env = p.getProcessEnvironment()
 
-	if err := command.Run(); err != nil {
+	if err := cmd.Run(); err != nil {
 		// the process termination timedout and it will be killed
 		log.Error().Msgf("terminating %s with timeout %d failed - %s", p.getName(), timeout, err.Error())
 		return p.stop(int(syscall.SIGKILL))
@@ -393,7 +394,7 @@ func (p *Process) stopProbes() {
 	}
 }
 
-func (p *Process) onLivenessCheckEnd(isOk, isFatal bool, err string) {
+func (p *Process) onLivenessCheckEnd(_, isFatal bool, err string) {
 	if isFatal {
 		log.Info().Msgf("%s is not alive anymore - %s", p.getName(), err)
 		p.logBuffer.Write("Error: liveness check fail - " + err)

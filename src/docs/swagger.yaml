@@ -30,6 +30,25 @@ paths:
       summary: Get process logs
       tags:
       - Process
+  /process/restart/{name}:
+    post:
+      description: Restarts the process
+      parameters:
+      - description: Process Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Restarted Process Name
+          schema:
+            type: string
+      summary: Restart a process
+      tags:
+      - Process
   /process/start/{name}:
     post:
       description: Starts the process if the state is not 'running' or 'pending'
