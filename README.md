@@ -430,7 +430,7 @@ process-compose process stop [PROCESS] #stops one of the running processes
 ##### Process Restart
 
 ```shell
-process-compose process start [PROCESS] #restarts one of the available processes
+process-compose process restart [PROCESS] #restarts one of the available processes
 ```
 
 Restart will wait `process.availability.backoff_seconds` seconds between `stop` and `start` of the process. If not configured the default value is 1s.
