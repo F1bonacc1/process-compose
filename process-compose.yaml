@@ -8,7 +8,7 @@ processes:
   process1:
     command: "./test_loop.bash ${PROC4}"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
       backoff_seconds: 2
     depends_on:
       _process2:
@@ -28,7 +28,7 @@ processes:
     command: "./test_loop.bash process2"
     log_location: ./pc.proc2.log
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
     # depends_on:
     #   process3:
     #     condition: process_completed_successfully
@@ -62,7 +62,7 @@ processes:
   process4:
     command: "./test_loop.bash process4"
     # availability:
-    #   restart: on-failure
+    #   restart: on_failure
     environment:
       - 'ABC=2221'
       - 'EXIT_CODE=4'
@@ -78,7 +78,7 @@ processes:
   nginx:
     command: "docker run -d --rm -p80:80 --name nginx_test nginx"
     # availability:
-    #   restart: on-failure
+    #   restart: on_failure
     is_daemon: true
     shutdown:
       command: "docker stop nginx_test"

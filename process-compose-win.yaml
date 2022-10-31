@@ -7,7 +7,7 @@ processes:
   process1:
     command: "powershell.exe ./test_loop.ps1 ${PROC4}"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
       backoff_seconds: 2
     depends_on:
       process2:
@@ -23,7 +23,7 @@ processes:
     command: "powershell.exe ./test_loop.ps1 process2"
     log_location: ./pc.proc2.log
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
     # depends_on:
     #   process3:
     #     condition: process_completed_successfully
@@ -35,7 +35,7 @@ processes:
   process3:
     command: "powershell.exe ./test_loop.ps1 process3"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
       backoff_seconds: 2
     depends_on:
       process4:
@@ -44,7 +44,7 @@ processes:
   process4:
     command: "powershell.exe ./test_loop.ps1 process4"
     # availability:
-    #   restart: on-failure
+    #   restart: on_failure
     environment:
       - 'ABC=2221'
       - 'EXIT_CODE=1'

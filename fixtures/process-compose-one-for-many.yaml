@@ -3,22 +3,22 @@ processes:
   process2:
     command: "echo process2"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
       backoff_seconds: 2
     depends_on:
-      process1: 
+      process1:
         condition: process_completed_successfully
-      process3: 
-        condition: process_completed_successfully        
-      process4: 
-        condition: process_completed_successfully 
-      process5: 
-        condition: process_completed_successfully 
-      process6: 
-        condition: process_completed_successfully 
-      process7: 
-        condition: process_completed_successfully 
-      process8: 
+      process3:
+        condition: process_completed_successfully
+      process4:
+        condition: process_completed_successfully
+      process5:
+        condition: process_completed_successfully
+      process6:
+        condition: process_completed_successfully
+      process7:
+        condition: process_completed_successfully
+      process8:
         condition: process_completed_successfully
 
   process1:
@@ -45,7 +45,7 @@ processes:
 
   process7:
     command: "echo process7"
-              
+
 environment:
   - 'ABC=222'
 

@@ -25,9 +25,10 @@ var PROJ *Project
 func (p *Project) init() {
 	p.initProcessStates()
 	p.initProcessLogs()
+	p.deprecationCheck()
 }
 
-func (p *Project) Run() {
+func (p *Project) Run() int {
 	p.runningProcesses = make(map[string]*Process)
 	runOrder := []ProcessConfig{}
 	_ = p.WithProcesses([]string{}, func(process ProcessConfig) error {
@@ -49,6 +50,8 @@ func (p *Project) Run() {
 		p.runProcess(proc)
 	}
 	p.wg.Wait()
+	log.Info().Msg("Project completed")
+	return p.exitCode
 }
 
 func (p *Project) runProcess(proc ProcessConfig) {
@@ -73,7 +76,8 @@ func (p *Project) runProcess(proc ProcessConfig) {
 			log.Error().Msgf("Error: process %s won't run", process.getName())
 			process.wontRun()
 		} else {
-			_ = process.run()
+			exitCode := process.run()
+			p.onProcessEnd(exitCode, process.procConf)
 		}
 	}()
 }
@@ -93,11 +97,23 @@ func (p *Project) waitIfNeeded(process ProcessConfig) error {
 						process.Name, k, exitCode)
 				}
 			case ProcessConditionHealthy:
-				runningProc.waitUntilReady()
+				log.Info().Msgf("%s is waiting for %s to be healthy", process.Name, k)
+				ready := runningProc.waitUntilReady()
+				if !ready {
+					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.Name, k)
+				}
+
 			}
 		}
 	}
 	return nil
+}
+
+func (p *Project) onProcessEnd(exitCode int, procConf ProcessConfig) {
+	if exitCode != 0 && procConf.RestartPolicy.Restart == RestartPolicyExitOnFailure {
+		p.ShutDownProject()
+		p.exitCode = exitCode
+	}
 }
 
 func (p *Project) initProcessStates() {
@@ -122,6 +138,14 @@ func (p *Project) initProcessLogs() {
 	p.processLogs = make(map[string]*pclog.ProcessLogBuffer)
 	for key := range p.Processes {
 		p.processLogs[key] = pclog.NewLogBuffer(p.LogLength)
+	}
+}
+
+func (p *Project) deprecationCheck() {
+	for key, proc := range p.Processes {
+		if proc.RestartPolicy.Restart == RestartPolicyOnFailureDeprecated {
+			deprecationHandler("2022-10-30", key, RestartPolicyOnFailureDeprecated, RestartPolicyOnFailure, "restart policy")
+		}
 	}
 }
 
@@ -210,8 +234,8 @@ func (p *Project) RestartProcess(name string) error {
 
 func (p *Project) ShutDownProject() {
 	p.mapMutex.Lock()
+	defer p.mapMutex.Unlock()
 	runProc := p.runningProcesses
-	p.mapMutex.Unlock()
 	for _, proc := range runProc {
 		proc.prepareForShutDown()
 	}
@@ -348,7 +372,7 @@ func (p *Project) GetLexicographicProcessNames() []string {
 	return names
 }
 
-func CreateProject(inputFile string) *Project {
+func NewProject(inputFile string) *Project {
 	yamlFile, err := os.ReadFile(inputFile)
 
 	if err != nil {
@@ -363,8 +387,10 @@ func CreateProject(inputFile string) *Project {
 
 	yamlFile = []byte(os.ExpandEnv(string(yamlFile)))
 
-	var project Project
-	project.LogLength = DEFAULT_LOG_LENGTH
+	project := Project{
+		LogLength: DEFAULT_LOG_LENGTH,
+		exitCode:  0,
+	}
 	err = yaml.Unmarshal(yamlFile, &project)
 	if err != nil {
 		log.Fatal().Msg(err.Error())

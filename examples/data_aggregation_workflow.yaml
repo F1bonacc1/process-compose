@@ -34,7 +34,7 @@ processes:
   cleanser:
     command: "python3 data_cleanser.py --path /path/to/A/data --path /path/to/B/data"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
       backoff_seconds: 2
     environment:
       - 'OUTPUT_DIR=/path/to/cleansed/data'
@@ -47,9 +47,9 @@ processes:
   db_feeder:
     command: "python3 feed_db.py --source /path/to/cleansed/data"
     availability:
-      restart: on-failure
+      restart: on_failure
     depends_on:
-      db_awaiter: 
+      db_awaiter:
         condition: process_completed_successfully
     environment:
       - 'DB_CONNECTION_STRING=MYDB://${DB_USER}:${DB_PASSWORD}@localhost:27017'
@@ -64,9 +64,9 @@ processes:
     availability:
       restart: "no"
     depends_on:
-      database: 
+      database:
         condition: process_started
-  
+
   # database should be always running
   # It uses an external script for spinning up the DB (or maybe it just hides a docker command...)
   # Its log is saved to a sepparate file since this DB is too chatty

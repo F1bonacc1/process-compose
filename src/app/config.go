@@ -21,6 +21,7 @@ type Project struct {
 	mapMutex         sync.Mutex
 	logger           pclog.PcLogger
 	wg               sync.WaitGroup
+	exitCode         int
 }
 
 type Processes map[string]ProcessConfig
@@ -65,9 +66,11 @@ func (p ProcessConfig) GetDependencies() []string {
 }
 
 const (
-	RestartPolicyAlways    = "always"
-	RestartPolicyOnFailure = "on-failure"
-	RestartPolicyNo        = "no"
+	RestartPolicyAlways              = "always"
+	RestartPolicyOnFailureDeprecated = "on-failure"
+	RestartPolicyOnFailure           = "on_failure"
+	RestartPolicyExitOnFailure       = "exit_on_failure"
+	RestartPolicyNo                  = "no"
 )
 
 const (

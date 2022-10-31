@@ -18,6 +18,7 @@ type Prober struct {
 	name           string
 	onCheckEndFunc func(bool, bool, string)
 	hc             *health.Health
+	stopped        bool
 }
 
 func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober, error) {
@@ -27,6 +28,7 @@ func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober
 		name:           name,
 		onCheckEndFunc: onCheckEnd,
 		hc:             health.New(),
+		stopped:        false,
 	}
 	p.hc.DisableLogging()
 	if probe.Exec != nil {
@@ -49,6 +51,9 @@ func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober
 func (p *Prober) Start() {
 	go func() {
 		time.Sleep(time.Duration(p.probe.InitialDelay) * time.Second)
+		if p.stopped {
+			return
+		}
 		log.Debug().Msgf("%s starting monitoring", p.name)
 		err := p.hc.Start()
 		if err != nil {
@@ -60,6 +65,7 @@ func (p *Prober) Start() {
 func (p *Prober) Stop() {
 	if p.hc != nil {
 		_ = p.hc.Stop()
+		p.stopped = true
 	}
 }
 
