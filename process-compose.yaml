@@ -28,7 +28,7 @@ processes:
     command: "./test_loop.bash process2"
     log_location: ./pc.proc2.log
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
     # depends_on:
     #   process3:
     #     condition: process_completed_successfully
