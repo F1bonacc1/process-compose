@@ -10,7 +10,7 @@ processes:
   process2:
     command: "echo process2"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
     depends_on:
       process3:
         condition: process_completed_successfully
@@ -24,7 +24,7 @@ processes:
   process4:
     command: "echo process4"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
     depends_on:
       process5:
         condition: process_completed
@@ -32,7 +32,7 @@ processes:
   process5:
     command: "echo 'process5 error' >&2 && exit 1"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
       backoff_seconds: 1
       max_restarts: 1
     depends_on:
@@ -52,7 +52,7 @@ processes:
   process7:
     command: "echo process7"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
     depends_on:
       process8:
         condition: process_completed_successfully
@@ -60,7 +60,7 @@ processes:
   process8:
     command: "echo process8"
     availability:
-      restart: "on-failure"
+      restart: "on_failure"
       backoff_seconds: 2
 
 

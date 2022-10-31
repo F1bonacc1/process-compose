@@ -10,7 +10,7 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 
 - Processes execution (in parallel or/and serially)
 - Processes dependencies and startup order
-- Defining recovery policies (restart `on-failure`, `always`, `no`). Manual recovery
+- Defining recovery policies (restart `on_failure`, `always`, `no`). Manual recovery
 - Processes arguments `bash` or `zsh` style (or define your own shell)
 - Per process and global environment variables
 - Per process or global (single file) logs
@@ -360,7 +360,7 @@ In order to insure that the process is restarted (and not transitioned to comple
 ```yaml
 process2:
   availability:
-    restart: on-failure # other options: "always", "no" (default)
+    restart: on_failure # other options: "exit_on_failure", "always", "no" (default)
     backoff_seconds: 2 # default: 1
     max_restarts: 5 # default: 0 (unlimited)
 ```

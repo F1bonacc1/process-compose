@@ -156,7 +156,12 @@ func (p *Process) isRestartable() bool {
 		return false
 	}
 
-	if exitCode != 0 && p.procConf.RestartPolicy.Restart == RestartPolicyOnFailure {
+	if exitCode != 0 && p.procConf.RestartPolicy.Restart == RestartPolicyExitOnFailure {
+		return false
+	}
+
+	if exitCode != 0 && (p.procConf.RestartPolicy.Restart == RestartPolicyOnFailureDeprecated ||
+		p.procConf.RestartPolicy.Restart == RestartPolicyOnFailure) {
 		if p.procConf.RestartPolicy.MaxRestarts == 0 {
 			return true
 		}

@@ -25,6 +25,7 @@ var PROJ *Project
 func (p *Project) init() {
 	p.initProcessStates()
 	p.initProcessLogs()
+	p.deprecationCheck()
 }
 
 func (p *Project) Run() {
@@ -122,6 +123,14 @@ func (p *Project) initProcessLogs() {
 	p.processLogs = make(map[string]*pclog.ProcessLogBuffer)
 	for key := range p.Processes {
 		p.processLogs[key] = pclog.NewLogBuffer(p.LogLength)
+	}
+}
+
+func (p *Project) deprecationCheck() {
+	for key, proc := range p.Processes {
+		if proc.RestartPolicy.Restart == RestartPolicyOnFailureDeprecated {
+			deprecationHandler("2022-10-30", key, RestartPolicyOnFailureDeprecated, RestartPolicyOnFailure, "restart policy")
+		}
 	}
 }
 
