@@ -32,7 +32,6 @@ var (
 		// Uncomment the following line if your bare application
 		// has an action associated with it:
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(fileName)
 			if !cmd.Flags().Changed("config") {
 
 				pwd, err := os.Getwd()
@@ -68,17 +67,16 @@ var (
 
 			go server.ListenAndServe()
 
-			project := app.CreateProject(fileName)
-
+			project := app.NewProject(fileName)
+			exitCode := 0
 			if isTui {
-				defer quiet()()
-				go project.Run()
-				tui.SetupTui(version, project.LogLength)
+				exitCode = runTui(project)
 			} else {
-				runHeadless(project)
+				exitCode = runHeadless(project)
 			}
 
 			log.Info().Msg("Thank you for using proccess-compose")
+			os.Exit(exitCode)
 		},
 	}
 )
@@ -100,16 +98,28 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 8080, "port number")
 }
 
-func runHeadless(project *app.Project) {
+func runHeadless(project *app.Project) int {
 	cancelChan := make(chan os.Signal, 1)
 	// catch SIGTERM or SIGINTERRUPT
 	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
-	go project.Run()
-	sig := <-cancelChan
-	log.Info().Msgf("Caught %v - Shutting down the running processes...", sig)
-	project.ShutDownProject()
+
+	go func() {
+		sig := <-cancelChan
+		log.Info().Msgf("Caught %v - Shutting down the running processes...", sig)
+		project.ShutDownProject()
+		os.Exit(1)
+	}()
+	exitCode := project.Run()
+	return exitCode
 }
 
+func runTui(project *app.Project) int {
+	defer quiet()()
+	go tui.SetupTui(version, project.LogLength)
+	exitCode := project.Run()
+	tui.Stop()
+	return exitCode
+}
 func quiet() func() {
 	null, _ := os.Open(os.DevNull)
 	sout := os.Stdout

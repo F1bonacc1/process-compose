@@ -353,7 +353,7 @@ Probes have a number of fields that you can use to control the behavior of liven
 
 ##### ✅ Auto Restart if not Healthy
 
-In order to insure that the process is restarted (and not transitioned to completed state) in case of readiness check fail, please make sure to define the `availability` configuration. For background (`is_daemon=true`) processes, the `restart` policy should be `always`.
+In order to ensure that the process is restarted (and not transitioned to completed state) in case of readiness check fail, please make sure to define the `availability` configuration. For background (`is_daemon=true`) processes, the `restart` policy should be `always`.
 
 ##### ✅ Auto Restart on Exit
 
@@ -364,6 +364,27 @@ process2:
     backoff_seconds: 2 # default: 1
     max_restarts: 5 # default: 0 (unlimited)
 ```
+
+##### ✅ Terminate Process Compose on Failure
+
+There are cases when you would like the `process-compose` to terminate immediately when one of the processes exits with non `0` exit code. This can be useful when you would like to perform "pre-flight" validation checks on the environment.
+
+To achieve that, use `exit_on_failure` restart policy. If defined, `process-compose` will gracefully shut down all the other running processes and exit with the same exit code as the failed process.
+
+```yaml
+sanitycheck:
+  command: "which go"
+  availability:
+    restart: "exit_on_failure"
+
+other_proc:
+  command: "go test ./..."
+  depends_on:
+    sanitycheck:
+      condition: process_completed_successfuly
+```
+
+
 
 #### ✅ <u>Environment Variables</u>
 

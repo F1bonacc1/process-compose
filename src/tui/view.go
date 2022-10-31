@@ -20,6 +20,8 @@ const (
 	LogProcHalf              = 2
 )
 
+var pcv *pcView = nil
+
 type pcView struct {
 	procTable    *tview.Table
 	statTable    *tview.Table
@@ -116,6 +118,7 @@ func (pv *pcView) handleShutDown() {
 		SetTextColor(tcell.ColorWhite).
 		SetBackgroundColor(tcell.ColorRed))
 	app.PROJ.ShutDownProject()
+	time.Sleep(time.Second)
 	pv.appView.Stop()
 
 }
@@ -368,7 +371,13 @@ func SetupTui(version string, logLength int) {
 	go pv.updateLogs()
 	go pv.runOnce()
 
+	pcv = pv
+
 	if err := pv.appView.Run(); err != nil {
 		panic(err)
 	}
+}
+
+func Stop() {
+	pcv.handleShutDown()
 }

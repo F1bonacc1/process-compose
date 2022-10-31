@@ -29,25 +29,26 @@ const (
 type Process struct {
 	sync.Mutex
 
-	globalEnv      []string
-	procConf       ProcessConfig
-	procState      *ProcessState
-	stateMtx       sync.Mutex
-	healthMtx      sync.Mutex
-	procCond       sync.Cond
-	procHealthCond sync.Cond
-	procStateChan  chan string
-	procColor      func(a ...interface{}) string
-	noColor        func(a ...interface{}) string
-	redColor       func(a ...interface{}) string
-	logBuffer      *pclog.ProcessLogBuffer
-	logger         pclog.PcLogger
-	command        *exec.Cmd
-	done           bool
-	replica        int
-	startTime      time.Time
-	liveProber     *health.Prober
-	readyProber    *health.Prober
+	globalEnv     []string
+	procConf      ProcessConfig
+	procState     *ProcessState
+	stateMtx      sync.Mutex
+	procCond      sync.Cond
+	procStateChan chan string
+	procReadyChan chan string
+	procReadyCtx  context.Context
+	readyCancelFn context.CancelFunc
+	procColor     func(a ...interface{}) string
+	noColor       func(a ...interface{}) string
+	redColor      func(a ...interface{}) string
+	logBuffer     *pclog.ProcessLogBuffer
+	logger        pclog.PcLogger
+	command       *exec.Cmd
+	done          bool
+	replica       int
+	startTime     time.Time
+	liveProber    *health.Prober
+	readyProber   *health.Prober
 }
 
 func NewProcess(
@@ -71,17 +72,18 @@ func NewProcess(
 		replica:       replica,
 		logBuffer:     procLog,
 		procStateChan: make(chan string, 1),
+		procReadyChan: make(chan string, 1),
 	}
 
+	proc.procReadyCtx, proc.readyCancelFn = context.WithCancel(context.Background())
 	proc.setUpProbes()
 	proc.procCond = *sync.NewCond(proc)
-	proc.procHealthCond = *sync.NewCond(&proc.healthMtx)
 	return proc
 }
 
-func (p *Process) run() error {
+func (p *Process) run() int {
 	if p.isState(ProcessStateTerminating) {
-		return nil
+		return 0
 	}
 	for {
 		starter := func() error {
@@ -126,8 +128,8 @@ func (p *Process) run() error {
 
 		time.Sleep(p.getBackoff())
 	}
-	p.onProcessEnd()
-	return nil
+	p.onProcessEnd(ProcessStateCompleted)
+	return p.procState.ExitCode
 }
 
 func (p *Process) getBackoff() time.Duration {
@@ -189,17 +191,22 @@ func (p *Process) waitForCompletion() int {
 	return p.procState.ExitCode
 }
 
-func (p *Process) waitUntilReady() {
-	p.healthMtx.Lock()
-	defer p.healthMtx.Unlock()
-
-	for p.procState.Health != ProcessHealthReady {
-		p.procHealthCond.Wait()
+func (p *Process) waitUntilReady() bool {
+	for {
+		select {
+		case <-p.procReadyCtx.Done():
+			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
+			return false
+		case ready := <-p.procReadyChan:
+			if ready == ProcessHealthReady {
+				return true
+			}
+		}
 	}
 }
 
 func (p *Process) wontRun() {
-	p.onProcessEnd()
+	p.onProcessEnd(ProcessStateCompleted)
 
 }
 
@@ -208,7 +215,7 @@ func (p *Process) shutDown() error {
 	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.procState.Status)
 		// prevent pending process from running
-		p.setState(ProcessStateTerminating)
+		p.onProcessEnd(ProcessStateTerminating)
 		return nil
 	}
 	p.setState(ProcessStateTerminating)
@@ -249,11 +256,12 @@ func (p *Process) prepareForShutDown() {
 	p.procConf.RestartPolicy.Restart = RestartPolicyNo
 }
 
-func (p *Process) onProcessEnd() {
+func (p *Process) onProcessEnd(state string) {
 	if isStringDefined(p.procConf.LogLocation) {
 		p.logger.Close()
 	}
-	p.setState(ProcessStateCompleted)
+	p.stopProbes()
+	p.setState(state)
 
 	p.Lock()
 	p.done = true
@@ -396,6 +404,7 @@ func (p *Process) stopProbes() {
 
 	if p.readyProber != nil {
 		p.readyProber.Stop()
+		p.readyCancelFn()
 	}
 }
 
@@ -415,7 +424,7 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 		_ = p.shutDown()
 	} else if isOk {
 		p.procState.Health = ProcessHealthReady
-		p.procHealthCond.Broadcast()
+		p.procReadyChan <- ProcessHealthReady
 	} else {
 		p.procState.Health = ProcessHealthNotReady
 	}

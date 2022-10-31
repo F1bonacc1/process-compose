@@ -21,6 +21,7 @@ type Project struct {
 	mapMutex         sync.Mutex
 	logger           pclog.PcLogger
 	wg               sync.WaitGroup
+	exitCode         int
 }
 
 type Processes map[string]ProcessConfig
