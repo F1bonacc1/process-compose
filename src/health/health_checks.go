@@ -50,6 +50,7 @@ func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober
 
 func (p *Prober) Start() {
 	go func() {
+		p.stopped = false
 		time.Sleep(time.Duration(p.probe.InitialDelay) * time.Second)
 		if p.stopped {
 			return
