@@ -28,15 +28,15 @@ nixver:
 
 compile:
 	for arch in amd64 386 arm64 arm; do \
-		GOOS=linux GOARCH=$$arch go build $(LDFLAGS) -o bin/${NAME}-linux-$$arch  ./src ; \
+		GOOS=linux GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-linux-$$arch  ./src ; \
 	done;
 
 	for arch in amd64 arm64; do \
-		GOOS=darwin GOARCH=$$arch go build $(LDFLAGS) -o bin/${NAME}-darwin-$$arch  ./src ; \
+		GOOS=darwin GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-darwin-$$arch  ./src ; \
 	done;
 
 	for arch in amd64 arm64; do \
-		GOOS=windows GOARCH=$$arch go build $(LDFLAGS) -o bin/${NAME}-windows-$$arch.exe  ./src ; \
+		GOOS=windows GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-windows-$$arch.exe  ./src ; \
 	done;
 
 test:
