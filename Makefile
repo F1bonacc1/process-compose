@@ -1,8 +1,9 @@
-BINARY_NAME=process-compose
+NAME=process-compose
 RM=rm
 VERSION = $(shell git describe --abbrev=0)
+NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
 
-LD_FLAGS = "-X main.version=${VERSION} -s -w"
+LD_FLAGS := -ldflags="-X main.version=${VERSION} -s -w"
 
 ifeq ($(OS),Windows_NT)
 	EXT=.exe
@@ -17,21 +18,26 @@ swag:
 	~/go/bin/swag init --dir src --output src/docs --parseDependency --parseInternal --parseDepth 1
 
 build:
-	go build -o bin/${BINARY_NAME}${EXT} -ldflags="-X main.version=${VERSION}" ./src
+	go build -o bin/${NAME}${EXT} ${LD_FLAGS} ./src
+
+build-nix:
+	nix build .
+
+nixver:
+	sed -i 's/version = ".*"/version = "${NUMVER}"/' default.nix
 
 compile:
-	# Linux
-	GOOS=linux GOARCH=386 go build -o bin/${BINARY_NAME}-linux-386 -ldflags=${LD_FLAGS}  ./src
-	GOOS=linux GOARCH=amd64 go build -o bin/${BINARY_NAME}-linux-amd64 -ldflags=${LD_FLAGS}  ./src
-	GOOS=linux GOARCH=arm64 go build -o bin/${BINARY_NAME}-linux-arm64 -ldflags=${LD_FLAGS}  ./src
-	GOOS=linux GOARCH=arm go build -o bin/${BINARY_NAME}-linux-arm -ldflags=${LD_FLAGS}  ./src
+	for arch in amd64 386 arm64 arm; do \
+		GOOS=linux GOARCH=$$arch go build $(LDFLAGS) -o bin/${NAME}-linux-$$arch  ./src ; \
+	done;
 
-	# Windows
-	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}-windows-amd64.exe  -ldflags=${LD_FLAGS} ./src
+	for arch in amd64 arm64; do \
+		GOOS=darwin GOARCH=$$arch go build $(LDFLAGS) -o bin/${NAME}-darwin-$$arch  ./src ; \
+	done;
 
-	# Darwin
-	GOOS=darwin GOARCH=amd64 go build -o bin/${BINARY_NAME}-darwin-amd64 -ldflags=${LD_FLAGS}  ./src
-	GOOS=darwin GOARCH=arm64 go build -o bin/${BINARY_NAME}-darwin-arm64 -ldflags=${LD_FLAGS}  ./src
+	for arch in amd64 arm64; do \
+		GOOS=windows GOARCH=$$arch go build $(LDFLAGS) -o bin/${NAME}-windows-$$arch.exe  ./src ; \
+	done;
 
 test:
 	go test -cover ./src/...
@@ -44,7 +50,7 @@ coverhtml:
 	go tool cover -html=coverage.out
 
 run:
-	PC_DEBUG_MODE=1 ./bin/${BINARY_NAME}${EXT}
+	PC_DEBUG_MODE=1 ./bin/${NAME}${EXT}
 
 clean:
-	$(RM) bin/${BINARY_NAME}*
+	$(RM) bin/${NAME}*
