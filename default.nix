@@ -2,7 +2,7 @@
 
 pkgs.buildGoModule rec {
   pname = "process-compose";
-  version = "0.20.0";
+  version = "0.21.0";
   src = ./.;
   ldflags = [ "-X main.version=v${version}" ];
 
