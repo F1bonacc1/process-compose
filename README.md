@@ -248,6 +248,19 @@ processes:
 
 **Note**: Using a too large buffer will put a significant penalty on your CPU.
 
+##### Disabled Processes
+
+Process execution can be disabled:
+
+```yaml
+processes:
+  process_name:
+    command: "ls -R /"
+    disabled: true
+```
+
+Even if disabled, it is still listed in the TUI and the REST client, can be started manually when needed.
+
 #### ✅ <u>Logger</u>
 
 ##### ✅ Per Process Log Collection
