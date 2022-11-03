@@ -61,6 +61,7 @@ processes:
 
   process4:
     command: "./test_loop.bash process4"
+    disable_ansi_colors: true
     # availability:
     #   restart: on_failure
     environment:
@@ -109,6 +110,9 @@ processes:
   kcalc:
     command: "kcalc"
     disabled: true
+
+  ls_root:
+    command: "ls -lF /"
 
 environment:
   - 'ABC=222'

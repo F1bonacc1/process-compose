@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 
@@ -10,17 +11,22 @@ import (
 
 type LogView struct {
 	tview.TextView
-	isWrapOn bool
-	buffer   *strings.Builder
-	mx       sync.Mutex
+	isWrapOn   bool
+	buffer     *strings.Builder
+	ansiWriter io.Writer
+	mx         sync.Mutex
+	useAnsi    bool
 }
 
 func NewLogView(maxLines int) *LogView {
+
 	l := &LogView{
 		isWrapOn: true,
 		TextView: *tview.NewTextView().SetDynamicColors(true).SetScrollable(true).SetMaxLines(maxLines),
 		buffer:   &strings.Builder{},
+		useAnsi:  false,
 	}
+	l.ansiWriter = tview.ANSIWriter(l)
 	l.SetBorder(true)
 	return l
 }
@@ -28,6 +34,10 @@ func NewLogView(maxLines int) *LogView {
 func (l *LogView) AddLine(line string) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
+	if l.useAnsi {
+		fmt.Fprintf(l.buffer, "%s\n", line)
+		return
+	}
 	if strings.Contains(strings.ToLower(line), "error") {
 		fmt.Fprintf(l.buffer, "[deeppink]%s[-:-:-]\n", tview.Escape(line))
 	} else {
@@ -58,6 +68,11 @@ func (l *LogView) IsWrapOn() bool {
 func (l *LogView) Flush() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
-	l.Write([]byte(l.buffer.String()))
+	if l.useAnsi {
+		l.ansiWriter.Write([]byte(l.buffer.String()))
+	} else {
+		l.Write([]byte(l.buffer.String()))
+	}
+
 	l.buffer.Reset()
 }

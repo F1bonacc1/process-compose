@@ -248,6 +248,15 @@ processes:
 
 **Note**: Using a too large buffer will put a significant penalty on your CPU.
 
+By default `process-compose` uses the standard ANSI colors mode to display logs. However, you can disable it for each process:
+
+```yaml
+processes:
+  process_name:
+    command: "ls -R /"
+    disable_ansi_colors: true #default false
+```
+
 ##### Disabled Processes
 
 Process execution can be disabled:
@@ -256,7 +265,7 @@ Process execution can be disabled:
 processes:
   process_name:
     command: "ls -R /"
-    disabled: true
+    disabled: true #default false
 ```
 
 Even if disabled, it is still listed in the TUI and the REST client, can be started manually when needed.

@@ -197,6 +197,10 @@ func (pv *pcView) stopFollowLog() {
 func (pv *pcView) followLog(name string) {
 	pv.loggedProc = name
 	pv.logsText.Clear()
+	_ = app.PROJ.WithProcesses([]string{name}, func(process app.ProcessConfig) error {
+		pv.logsText.useAnsi = !process.DisableAnsiColors
+		return nil
+	})
 	app.PROJ.GetLogsAndSubscribe(name, pv.logsText)
 }
 

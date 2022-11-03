@@ -26,18 +26,19 @@ type Project struct {
 
 type Processes map[string]ProcessConfig
 type ProcessConfig struct {
-	Name           string
-	Disabled       bool                   `yaml:"disabled,omitempty"`
-	IsDaemon       bool                   `yaml:"is_daemon,omitempty"`
-	Command        string                 `yaml:"command"`
-	LogLocation    string                 `yaml:"log_location,omitempty"`
-	Environment    []string               `yaml:"environment,omitempty"`
-	RestartPolicy  RestartPolicyConfig    `yaml:"availability,omitempty"`
-	DependsOn      DependsOnConfig        `yaml:"depends_on,omitempty"`
-	LivenessProbe  *health.Probe          `yaml:"liveness_probe,omitempty"`
-	ReadinessProbe *health.Probe          `yaml:"readiness_probe,omitempty"`
-	ShutDownParams ShutDownParams         `yaml:"shutdown,omitempty"`
-	Extensions     map[string]interface{} `yaml:",inline"`
+	Name              string
+	Disabled          bool                   `yaml:"disabled,omitempty"`
+	IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
+	Command           string                 `yaml:"command"`
+	LogLocation       string                 `yaml:"log_location,omitempty"`
+	Environment       []string               `yaml:"environment,omitempty"`
+	RestartPolicy     RestartPolicyConfig    `yaml:"availability,omitempty"`
+	DependsOn         DependsOnConfig        `yaml:"depends_on,omitempty"`
+	LivenessProbe     *health.Probe          `yaml:"liveness_probe,omitempty"`
+	ReadinessProbe    *health.Probe          `yaml:"readiness_probe,omitempty"`
+	ShutDownParams    ShutDownParams         `yaml:"shutdown,omitempty"`
+	DisableAnsiColors bool                   `yaml:"disable_ansi_colors,omitempty"`
+	Extensions        map[string]interface{} `yaml:",inline"`
 }
 
 type ProcessState struct {
