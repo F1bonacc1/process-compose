@@ -212,7 +212,7 @@ func (pv *pcView) unFollowLog() {
 }
 
 func (pv *pcView) createProcTable() *tview.Table {
-	table := tview.NewTable().SetBorders(false).SetSelectable(true, false).SetSelectionChangedFunc(pv.onTableSelectionChange)
+	table := tview.NewTable().SetBorders(false).SetSelectable(true, false)
 	//pv.fillTableData()
 	table.Select(1, 1).SetFixed(1, 0).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -248,6 +248,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 		table.SetCell(0, i, tview.NewTableCell(columns[i]).
 			SetSelectable(false).SetExpansion(expan).SetAlign(align))
 	}
+	table.SetSelectionChangedFunc(pv.onTableSelectionChange)
 	return table
 }
 
