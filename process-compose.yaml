@@ -45,8 +45,8 @@ processes:
         host: "google.com"
         scheme: "https"
       initial_delay_seconds: 5
-      period_seconds: 2
-      timeout_seconds: 1
+      period_seconds: 5
+      timeout_seconds: 2
       success_threshold: 1
       failure_threshold: 3
 
@@ -111,8 +111,8 @@ processes:
     command: "kcalc"
     disabled: true
 
-  ls_root:
-    command: "ls -lF /"
+  pc_log:
+    command: "tail -f -n100 /tmp/process-compose-eugene.log"
 
 environment:
   - 'ABC=222'

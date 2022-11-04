@@ -6,7 +6,6 @@ import (
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/tui"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -75,7 +74,7 @@ var (
 				exitCode = runHeadless(project)
 			}
 
-			log.Info().Msg("Thank you for using proccess-compose")
+			log.Info().Msg("Thank you for using process-compose")
 			os.Exit(exitCode)
 		},
 	}
@@ -126,11 +125,9 @@ func quiet() func() {
 	serr := os.Stderr
 	os.Stdout = null
 	os.Stderr = null
-	zerolog.SetGlobalLevel(zerolog.Disabled)
 	return func() {
 		defer null.Close()
 		os.Stdout = sout
 		os.Stderr = serr
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 }
