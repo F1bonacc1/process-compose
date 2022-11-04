@@ -100,6 +100,7 @@ func (p *Process) run() int {
 
 		p.startTime = time.Now()
 		p.procState.Pid = p.command.Process.Pid
+		log.Info().Msgf("%s started", p.getName())
 
 		p.startProbes()
 
@@ -111,7 +112,7 @@ func (p *Process) run() int {
 		p.Lock()
 		p.procState.ExitCode = p.command.ProcessState.ExitCode()
 		p.Unlock()
-		log.Info().Msgf("%s exited with status %d", p.getNameWithReplica(), p.procState.ExitCode)
+		log.Info().Msgf("%s exited with status %d", p.getName(), p.procState.ExitCode)
 
 		if p.isDaemonLaunched() {
 			p.setState(ProcessStateLaunched)
