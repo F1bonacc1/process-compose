@@ -8,18 +8,20 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 
 #### Features:
 
-- Processes execution (in parallel or/and serially)
-- Processes dependencies and startup order
-- Defining recovery policies (restart `on_failure`, `always`, `no`). Manual recovery
-- Processes arguments `bash` or `zsh` style (or define your own shell)
-- Per process and global environment variables
-- Per process or global (single file) logs
-- Health checks (liveness and readiness)
-- Terminal User Interface (TUI) or CLI modes
-- Forking (services or daemons) processes
-- REST API (OpenAPI a.k.a Swagger) 
-- Logs caching
-- Functions as both server and client
+- [Processes execution (in parallel or/and serially)](#-ulauncheru)
+- [Processes dependencies and startup order](#-define-process-dependencies)
+- [Defining recovery policies](#-auto-restart-on-exit)
+- [Manual process \[re\]start](#disabled-processes)
+- [Processes arguments `bash` or `zsh` style (or define your own shell)](#-linux)
+- [Per process and global environment variables](#-uenvironment-variablesu)
+- [Per process or global (single file) logs](#-uloggeru)
+- [Health checks (liveness and readiness)](#-uhealth-checksu)
+- [Terminal User Interface (TUI) or CLI modes](#-utuiu-terminal-user-interface)
+- [Forking (services or daemons) processes](#-background-detached-processes)
+- [REST API (OpenAPI a.k.a Swagger)](#-urest-apiu) 
+- [Logs caching](#-review-logs)
+- [Functions as both server and client](#-client-mode)
+- Configurable shortcuts (see [Wiki](https://github.com/F1bonacc1/process-compose/wiki/Shortcuts-Configuration))
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 

@@ -1,23 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"github.com/f1bonacc1/process-compose/src/cmd"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
-	"os/user"
-	"path/filepath"
 	"time"
 )
 
 var version = "undefined"
-
-const (
-	LogFileFlags = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
-	LogFileMode  = os.FileMode(0600)
-)
 
 func setupLogger(output io.Writer) {
 
@@ -29,17 +22,9 @@ func setupLogger(output io.Writer) {
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 }
 
-func mustUser() string {
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to retrieve user info")
-	}
-	return usr.Username
-}
-
 func main() {
-	logFile := filepath.Join(os.TempDir(), fmt.Sprintf("process-compose-%s.log", mustUser()))
-	file, err := os.OpenFile(logFile, LogFileFlags, LogFileMode)
+
+	file, err := os.OpenFile(config.LogFilePath, config.LogFileFlags, config.LogFileMode)
 	if err != nil {
 		panic(err)
 	}

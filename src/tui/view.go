@@ -2,8 +2,10 @@ package tui
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/updater"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -21,6 +23,10 @@ const (
 )
 
 var pcv *pcView = nil
+var scFiles = []string{
+	"shortcuts.yaml",
+	"shortcuts.yml",
+}
 
 type pcView struct {
 	procTable    *tview.Table
@@ -34,9 +40,11 @@ type pcView struct {
 	logFollow    bool
 	fullScrState FullScrState
 	loggedProc   string
+	shortcuts    ShortCuts
 }
 
 func newPcView(version string, logLength int) *pcView {
+	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
 	pv := &pcView{
 		appView:      tview.NewApplication(),
 		logsText:     NewLogView(logLength),
@@ -47,7 +55,9 @@ func newPcView(version string, logLength int) *pcView {
 		fullScrState: LogProcHalf,
 		helpText:     tview.NewTextView().SetDynamicColors(true),
 		loggedProc:   "",
+		shortcuts:    getDefaultActions(),
 	}
+	pv.loadShortcuts()
 	pv.procTable = pv.createProcTable()
 	pv.statTable = pv.createStatTable()
 	pv.updateHelpTextView()
@@ -60,11 +70,19 @@ func newPcView(version string, logLength int) *pcView {
 	return pv
 }
 
+func (pv *pcView) loadShortcuts() {
+	for _, path := range scFiles {
+		if err := pv.shortcuts.loadFromFile(filepath.Join(config.ProcCompHome(), path)); err == nil {
+			break
+		}
+	}
+}
+
 func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
-	case tcell.KeyF10:
+	case pv.shortcuts.ShortCutKeys[ActionQuit].key:
 		pv.terminateAppView()
-	case tcell.KeyF4:
+	case pv.shortcuts.ShortCutKeys[ActionLogScreen].key:
 		if pv.fullScrState == LogFull {
 			pv.fullScrState = LogProcHalf
 		} else {
@@ -72,12 +90,12 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		}
 		pv.appView.SetRoot(pv.createGrid(pv.fullScrState), true)
 		pv.updateHelpTextView()
-	case tcell.KeyF5:
+	case pv.shortcuts.ShortCutKeys[ActionFollowLog].key:
 		pv.toggleLogFollow()
-	case tcell.KeyF6:
+	case pv.shortcuts.ShortCutKeys[ActionWrapLog].key:
 		pv.logsText.ToggleWrap()
 		pv.updateHelpTextView()
-	case tcell.KeyF8:
+	case pv.shortcuts.ShortCutKeys[ActionProcessScreen].key:
 		if pv.fullScrState == ProcFull {
 			pv.fullScrState = LogProcHalf
 		} else {
@@ -216,14 +234,13 @@ func (pv *pcView) createProcTable() *tview.Table {
 	//pv.fillTableData()
 	table.Select(1, 1).SetFixed(1, 0).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyF9:
+		case pv.shortcuts.ShortCutKeys[ActionProcessStop].key:
 			name := pv.getSelectedProcName()
-
 			app.PROJ.StopProcess(name)
-		case tcell.KeyF7:
+		case pv.shortcuts.ShortCutKeys[ActionProcessStart].key:
 			name := pv.getSelectedProcName()
 			app.PROJ.StartProcess(name)
-		case tcell.KeyCtrlR:
+		case pv.shortcuts.ShortCutKeys[ActionProcessRestart].key:
 			name := pv.getSelectedProcName()
 			app.PROJ.RestartProcess(name)
 		}
@@ -278,35 +295,19 @@ func (pv *pcView) createStatTable() *tview.Table {
 }
 
 func (pv *pcView) updateHelpTextView() {
-	wrap := "Wrap On"
-	if pv.logsText.IsWrapOn() {
-		wrap = "Wrap Off"
-	}
-
-	follow := "Follow On"
-	if pv.logFollow {
-		follow = "Follow Off"
-	}
-
-	logScr := "Full"
-	procScr := "Full"
-	switch pv.fullScrState {
-	case LogFull:
-		logScr = "Half"
-	case ProcFull:
-		procScr = "Half"
-	}
+	logScrBool := pv.fullScrState != LogFull
+	procScrBool := pv.fullScrState != ProcFull
 	pv.helpText.Clear()
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue:]LOGS:[-:-:-]")
-	fmt.Fprintf(pv.helpText, "%s%s%s ", "F4[black:green]", logScr, " Screen[-:-:-]")
-	fmt.Fprintf(pv.helpText, "%s%s%s ", "F5[black:green]", follow, "[-:-:-]")
-	fmt.Fprintf(pv.helpText, "%s%s%s ", "F6[black:green]", wrap, "[-:-:-]")
+	pv.shortcuts.ShortCutKeys[ActionLogScreen].writeToggleButton(pv.helpText, logScrBool)
+	pv.shortcuts.ShortCutKeys[ActionFollowLog].writeToggleButton(pv.helpText, !pv.logFollow)
+	pv.shortcuts.ShortCutKeys[ActionWrapLog].writeToggleButton(pv.helpText, !pv.logsText.IsWrapOn())
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
-	fmt.Fprintf(pv.helpText, "%s ", "F7[black:green]Start[-:-:-]")
-	fmt.Fprintf(pv.helpText, "%s%s%s ", "F8[black:green]", procScr, " Screen[-:-:-]")
-	fmt.Fprintf(pv.helpText, "%s ", "F9[black:green]Kill[-:-:-]")
-	fmt.Fprintf(pv.helpText, "%s ", "CTRL+R[black:green]Restart[-:-:-]")
-	fmt.Fprintf(pv.helpText, "%s ", "F10[black:green]Quit[-:-:-]")
+	pv.shortcuts.ShortCutKeys[ActionProcessStart].writeButton(pv.helpText)
+	pv.shortcuts.ShortCutKeys[ActionProcessScreen].writeToggleButton(pv.helpText, procScrBool)
+	pv.shortcuts.ShortCutKeys[ActionProcessStop].writeButton(pv.helpText)
+	pv.shortcuts.ShortCutKeys[ActionProcessRestart].writeButton(pv.helpText)
+	pv.shortcuts.ShortCutKeys[ActionQuit].writeButton(pv.helpText)
 }
 
 func (pv *pcView) createGrid(fullScrState FullScrState) *tview.Grid {
@@ -370,6 +371,7 @@ func (pv *pcView) showUpdateAvailable(version string) {
 }
 
 func SetupTui(version string, logLength int) {
+
 	pv := newPcView(version, logLength)
 
 	go pv.updateTable()

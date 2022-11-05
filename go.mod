@@ -19,6 +19,7 @@ replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2
 require (
 	github.com/InVisionApp/go-logger v1.0.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect

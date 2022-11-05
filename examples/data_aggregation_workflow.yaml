@@ -56,7 +56,7 @@ processes:
 
   # db_awaiter is designed to run once and exit
   # It sleeps for ${WAIT_SEC} seconds (defined in the .env file) and exits
-  # It runs imideately after the DB is started
+  # It runs immediately after the DB is started
   # This allows the DB to start before processes which depend on it try to establish connection
   # multiple processes can declare that they depend on db_awaiter
   db_awaiter:
@@ -69,7 +69,7 @@ processes:
 
   # database should be always running
   # It uses an external script for spinning up the DB (or maybe it just hides a docker command...)
-  # Its log is saved to a sepparate file since this DB is too chatty
+  # Its log is saved to a separate file since this DB is too chatty
   database:
     command: "/path/to/db_runner.sh"
     availability:
