@@ -56,7 +56,7 @@ func (s *ShortCuts) saveToFile(filePath string) error {
 func (s *ShortCuts) loadFromFile(filePath string) error {
 	file, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Error().Msgf("Failed to load shortcuts - %s", filePath, err.Error())
+		log.Error().Msgf("Failed to load shortcuts - %s", err.Error())
 		return err
 	}
 
