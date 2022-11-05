@@ -18,7 +18,7 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 - [Health checks (liveness and readiness)](#-uhealth-checksu)
 - [Terminal User Interface (TUI) or CLI modes](#-utuiu-terminal-user-interface)
 - [Forking (services or daemons) processes](#-background-detached-processes)
-- [REST API (OpenAPI a.k.a Swagger)](#-urest-apiu) 
+- [REST API (OpenAPI a.k.a Swagger)](#-rest-api) 
 - [Logs caching](#-review-logs)
 - [Functions as both server and client](#-client-mode)
 - Configurable shortcuts (see [Wiki](https://github.com/F1bonacc1/process-compose/wiki/Shortcuts-Configuration))
