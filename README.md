@@ -8,15 +8,15 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 
 #### Features:
 
-- [Processes execution (in parallel or/and serially)](#-ulauncheru)
+- [Processes execution (in parallel or/and serially)](#-launcher)
 - [Processes dependencies and startup order](#-define-process-dependencies)
 - [Defining recovery policies](#-auto-restart-on-exit)
 - [Manual process \[re\]start](#disabled-processes)
 - [Processes arguments `bash` or `zsh` style (or define your own shell)](#-linux)
-- [Per process and global environment variables](#-uenvironment-variablesu)
-- [Per process or global (single file) logs](#-uloggeru)
-- [Health checks (liveness and readiness)](#-uhealth-checksu)
-- [Terminal User Interface (TUI) or CLI modes](#-utuiu-terminal-user-interface)
+- [Per process and global environment variables](#-environment-variables)
+- [Per process or global (single file) logs](#-logger)
+- [Health checks (liveness and readiness)](#-health-checks)
+- [Terminal User Interface (TUI) or CLI modes](#-tui-terminal-user-interface)
 - [Forking (services or daemons) processes](#-background-detached-processes)
 - [REST API (OpenAPI a.k.a Swagger)](#-rest-api) 
 - [Logs caching](#-review-logs)
