@@ -8,7 +8,7 @@ pkgs.buildGoModule rec {
 
   nativeBuildInputs = [ installShellFiles ];
 
-  vendorSha256 = "RqPH8gm8K8sLuRl4FTpGeitS++t3ygAgZ6OMvBCsCB8=";
+  vendorSha256 = "IsO1B6z1/HoGQ8xdNKQqZ/eZd90WikDbU9XiP0z28mU=";
 
   postInstall = ''
     mv $out/bin/{src,process-compose}
