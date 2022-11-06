@@ -386,5 +386,7 @@ func SetupTui(version string, logLength int) {
 }
 
 func Stop() {
-	pcv.handleShutDown()
+	if pcv != nil {
+		pcv.handleShutDown()
+	}
 }
