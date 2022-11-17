@@ -529,7 +529,7 @@ process2:
   command: "powershell.exe ./test.ps1 arg1 arg2 argN"
 ```
 
-##### ❌ macOS
+##### ✅ macOS
 
 
 
