@@ -38,6 +38,7 @@ type ProcessConfig struct {
 	ReadinessProbe    *health.Probe          `yaml:"readiness_probe,omitempty"`
 	ShutDownParams    ShutDownParams         `yaml:"shutdown,omitempty"`
 	DisableAnsiColors bool                   `yaml:"disable_ansi_colors,omitempty"`
+	WorkingDir        string                 `yaml:"working_dir"`
 	Extensions        map[string]interface{} `yaml:",inline"`
 }
 
@@ -83,6 +84,7 @@ const (
 	ProcessStateRestarting  = "Restarting"
 	ProcessStateTerminating = "Terminating"
 	ProcessStateCompleted   = "Completed"
+	ProcessStateError       = "Error"
 )
 
 const (

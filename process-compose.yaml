@@ -3,7 +3,8 @@ log_level: debug
 log_length: 3000
 processes:
   process0:
-    command: "ls ddd"
+    command: "ls -lFa --color=always"
+    working_dir: "/"
 
   process1:
     command: "./test_loop.bash ${PROC4}"
@@ -113,6 +114,9 @@ processes:
 
   pc_log:
     command: "tail -f -n100 /tmp/process-compose-eugene.log"
+
+  bat_config:
+    command: "batcat -f process-compose.yaml"
 
 environment:
   - 'ABC=222'

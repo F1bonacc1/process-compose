@@ -157,6 +157,16 @@ process2:
 
 ##### ❌ Instance Number
 
+##### ✅ Specify a working directory
+
+```yaml
+process1:
+  command: "ls -laF --color=always"
+  working_dir: "/path/to/your/working/directory"
+```
+
+Make sure that you have the proper access permissions to the specified `working_dir`. If not, the command will fail with a `permission denied` error. The process status in TUI will be `Error`.
+
 ##### ✅ Define process dependencies
 
 ```yaml

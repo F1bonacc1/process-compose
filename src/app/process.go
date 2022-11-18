@@ -85,18 +85,21 @@ func (p *Process) run() int {
 	if p.isState(ProcessStateTerminating) {
 		return 0
 	}
+
+	if err := p.validateProcess(); err != nil {
+		log.Error().Err(err).Msgf("Failed to run command %s for process %s", p.getCommand(), p.getName())
+		p.onProcessEnd(ProcessStateError)
+		return 1
+	}
+
 	for {
-		starter := func() error {
-			p.command = command.BuildCommand(p.getCommand())
-			p.command.Env = p.getProcessEnvironment()
-			p.setProcArgs()
-			stdout, _ := p.command.StdoutPipe()
-			stderr, _ := p.command.StderrPipe()
-			go p.handleOutput(stdout, p.handleInfo)
-			go p.handleOutput(stderr, p.handleError)
-			return p.command.Start()
+		err := p.setStateAndRun(p.getStartingStateName(), p.getProcessStarter())
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to run command %s for process %s", p.getCommand(), p.getName())
+			p.logBuffer.Write(err.Error())
+			p.onProcessEnd(ProcessStateError)
+			return 1
 		}
-		_ = p.setStateAndRun(p.getStartingStateName(), starter)
 
 		p.startTime = time.Now()
 		p.procState.Pid = p.command.Process.Pid
@@ -131,6 +134,20 @@ func (p *Process) run() int {
 	}
 	p.onProcessEnd(ProcessStateCompleted)
 	return p.procState.ExitCode
+}
+
+func (p *Process) getProcessStarter() func() error {
+	return func() error {
+		p.command = command.BuildCommand(p.getCommand())
+		p.command.Env = p.getProcessEnvironment()
+		p.command.Dir = p.procConf.WorkingDir
+		p.setProcArgs()
+		stdout, _ := p.command.StdoutPipe()
+		stderr, _ := p.command.StderrPipe()
+		go p.handleOutput(stdout, p.handleInfo)
+		go p.handleOutput(stderr, p.handleError)
+		return p.command.Start()
+	}
 }
 
 func (p *Process) getBackoff() time.Duration {
@@ -429,4 +446,17 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 	} else {
 		p.procState.Health = ProcessHealthNotReady
 	}
+}
+
+func (p *Process) validateProcess() error {
+	if isStringDefined(p.procConf.WorkingDir) {
+		stat, err := os.Stat(p.procConf.WorkingDir)
+		if err != nil {
+			return err
+		}
+		if !stat.IsDir() {
+			return fmt.Errorf("%s is not a directory", p.procConf.WorkingDir)
+		}
+	}
+	return nil
 }
