@@ -1,6 +1,7 @@
 package health
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -55,11 +56,12 @@ func (p *Prober) Start() {
 		if p.stopped {
 			return
 		}
-		log.Debug().Msgf("%s starting monitoring", p.name)
 		err := p.hc.Start()
-		if err != nil {
-			log.Error().Msgf("%s failed to start monitoring - %s", p.name, err.Error())
+		if err != nil && !errors.Is(err, health.ErrAlreadyRunning) {
+			log.Error().Err(err).Msgf("%s failed to start monitoring", p.name)
+			return
 		}
+		log.Debug().Msgf("%s started monitoring", p.name)
 	}()
 }
 
