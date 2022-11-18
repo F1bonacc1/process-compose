@@ -22,6 +22,11 @@ const (
 	LogProcHalf              = 2
 )
 
+const (
+	PageMain   = "main"
+	PageDialog = "dialog"
+)
+
 var pcv *pcView = nil
 var scFiles = []string{
 	"shortcuts.yaml",
@@ -35,6 +40,7 @@ type pcView struct {
 	logsText     *LogView
 	statusText   *tview.TextView
 	helpText     *tview.TextView
+	pages        *tview.Pages
 	procNames    []string
 	version      string
 	logFollow    bool
@@ -61,7 +67,10 @@ func newPcView(version string, logLength int) *pcView {
 	pv.procTable = pv.createProcTable()
 	pv.statTable = pv.createStatTable()
 	pv.updateHelpTextView()
-	pv.appView.SetRoot(pv.createGrid(pv.fullScrState), true).EnableMouse(true).SetInputCapture(pv.onAppKey)
+	pv.pages = tview.NewPages().
+		AddPage(PageMain, pv.createGrid(pv.fullScrState), true, true)
+
+	pv.appView.SetRoot(pv.pages, true).EnableMouse(true).SetInputCapture(pv.onAppKey)
 	if len(pv.procNames) > 0 {
 		name := pv.procNames[0]
 		pv.logsText.SetTitle(name)
@@ -106,6 +115,8 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.updateHelpTextView()
 	case tcell.KeyCtrlC:
 		pv.terminateAppView()
+	case pv.shortcuts.ShortCutKeys[ActionProcessInfo].key:
+		pv.showInfo()
 	default:
 		return event
 	}
@@ -121,11 +132,33 @@ func (pv *pcView) terminateAppView() {
 			if buttonLabel == "Quit" {
 				go pv.handleShutDown()
 			}
-			pv.appView.SetRoot(pv.createGrid(pv.fullScrState), true)
-
+			pv.pages.SwitchToPage(PageMain)
+			pv.pages.RemovePage(PageDialog)
 		})
 	// Display and focus the dialog
-	pv.appView.SetRoot(m, false)
+	pv.pages.AddPage(PageDialog, createPage(m, 50, 50), true, true)
+}
+
+func (pv *pcView) showError(errMessage string) {
+	m := tview.NewModal().
+		SetText(fmt.Sprintf("Error: [white:red]%s[-:-:-]", errMessage)).
+		AddButtons([]string{"OK"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			pv.pages.SwitchToPage(PageMain)
+			pv.pages.RemovePage(PageDialog)
+		})
+
+	pv.pages.AddPage(PageDialog, createPage(m, 50, 50), true, true)
+}
+
+func (pv *pcView) showInfo() {
+	name := pv.getSelectedProcName()
+	info, err := app.PROJ.GetProcessInfo(name)
+	if err != nil {
+		pv.showError(err.Error())
+		return
+	}
+	pv.showProcInfo(info)
 }
 
 func (pv *pcView) handleShutDown() {
@@ -174,6 +207,9 @@ func (pv *pcView) getSelectedProcName() string {
 
 func (pv *pcView) onTableSelectionChange(row, column int) {
 	name := pv.getSelectedProcName()
+	if len(name) == 0 {
+		return
+	}
 	pv.logsText.SetBorder(true).SetTitle(name)
 	pv.unFollowLog()
 	pv.followLog(name)
@@ -303,6 +339,7 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionFollowLog].writeToggleButton(pv.helpText, !pv.logFollow)
 	pv.shortcuts.ShortCutKeys[ActionWrapLog].writeToggleButton(pv.helpText, !pv.logsText.IsWrapOn())
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
+	pv.shortcuts.ShortCutKeys[ActionProcessInfo].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessStart].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessScreen].writeToggleButton(pv.helpText, procScrBool)
 	pv.shortcuts.ShortCutKeys[ActionProcessStop].writeButton(pv.helpText)
@@ -379,7 +416,6 @@ func SetupTui(version string, logLength int) {
 	go pv.runOnce()
 
 	pcv = pv
-
 	if err := pv.appView.Run(); err != nil {
 		panic(err)
 	}

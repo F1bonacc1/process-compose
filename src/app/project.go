@@ -232,6 +232,15 @@ func (p *Project) RestartProcess(name string) error {
 	return nil
 }
 
+func (p *Project) GetProcessInfo(name string) (*ProcessConfig, error) {
+	if processConfig, ok := p.Processes[name]; ok {
+		processConfig.Name = name
+		return &processConfig, nil
+	} else {
+		return nil, fmt.Errorf("no such process: %s", name)
+	}
+}
+
 func (p *Project) ShutDownProject() {
 	p.mapMutex.Lock()
 	defer p.mapMutex.Unlock()
