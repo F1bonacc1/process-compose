@@ -111,7 +111,11 @@ process-compose -f /path/to/process-compose.yaml
 - If you have the Nix package manager installed with Flake support, just run:
 
 ```sh
-nix run github:F1bonacc1/process-compose
+# to use the latest binary release
+nix run nixpkgs/master#process-compose -- --help
+
+# or to compile from the latest source
+nix run github:F1bonacc1/process-compose -- --help
 ```
 
 ### Documentation

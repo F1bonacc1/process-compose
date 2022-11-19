@@ -15,7 +15,9 @@
         };
       in {
         overlays.default = final: prev: {
-          process-compose = final.callPackage ./default.nix { };
+          process-compose = final.callPackage ./default.nix {
+            version = self.shortRev or "dirty";
+          };
         };
         overlay = self.overlays.default;
         packages = { inherit (pkgs) process-compose; };
