@@ -31,7 +31,11 @@ func TestSystem_TestFixtures(t *testing.T) {
 		}
 
 		t.Run(fixture, func(t *testing.T) {
-			project := NewProject(fixture)
+			project, err := NewProject(fixture, []string{}, false)
+			if err != nil {
+				t.Errorf(err.Error())
+				return
+			}
 			project.Run()
 		})
 	}
@@ -40,7 +44,11 @@ func TestSystem_TestFixtures(t *testing.T) {
 func TestSystem_TestComposeWithLog(t *testing.T) {
 	fixture := filepath.Join("..", "..", "fixtures", "process-compose-with-log.yaml")
 	t.Run(fixture, func(t *testing.T) {
-		project := NewProject(fixture)
+		project, err := NewProject(fixture, []string{}, false)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
 		project.Run()
 		if _, err := os.Stat(project.LogLocation); err != nil {
 			t.Errorf("log file %s not found", project.LogLocation)
@@ -62,7 +70,11 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 func TestSystem_TestComposeChain(t *testing.T) {
 	fixture := filepath.Join("..", "..", "fixtures", "process-compose-chain.yaml")
 	t.Run(fixture, func(t *testing.T) {
-		project := NewProject(fixture)
+		project, err := NewProject(fixture, []string{}, false)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
 		names, err := project.GetDependenciesOrderNames()
 		if err != nil {
 			t.Errorf("GetDependenciesOrderNames() error = %v", err)
@@ -87,7 +99,11 @@ func TestSystem_TestComposeChain(t *testing.T) {
 func TestSystem_TestComposeChainExit(t *testing.T) {
 	fixture := filepath.Join("..", "..", "fixtures", "process-compose-chain-exit.yaml")
 	t.Run(fixture, func(t *testing.T) {
-		project := NewProject(fixture)
+		project, err := NewProject(fixture, []string{}, false)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
 		exitCode := project.Run()
 		want := 42
 		if want != exitCode {
