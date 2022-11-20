@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 )
 
+var Version = "undefined"
+var CheckForUpdates = "false"
+
 const (
 	pcConfigEnv  = "PROC_COMP_CONFIG"
 	LogFileFlags = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC

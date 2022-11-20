@@ -42,21 +42,19 @@ type pcView struct {
 	helpText     *tview.TextView
 	pages        *tview.Pages
 	procNames    []string
-	version      string
 	logFollow    bool
 	fullScrState FullScrState
 	loggedProc   string
 	shortcuts    ShortCuts
 }
 
-func newPcView(version string, logLength int) *pcView {
+func newPcView(logLength int) *pcView {
 	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
 	pv := &pcView{
 		appView:      tview.NewApplication(),
 		logsText:     NewLogView(logLength),
 		statusText:   tview.NewTextView().SetDynamicColors(true),
 		procNames:    app.PROJ.GetLexicographicProcessNames(),
-		version:      version,
 		logFollow:    true,
 		fullScrState: LogProcHalf,
 		helpText:     tview.NewTextView().SetDynamicColors(true),
@@ -309,7 +307,7 @@ func (pv *pcView) createStatTable() *tview.Table {
 	table := tview.NewTable().SetBorders(false).SetSelectable(false, false)
 
 	table.SetCell(0, 0, tview.NewTableCell("Version:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	table.SetCell(0, 1, tview.NewTableCell(pv.version).SetSelectable(false).SetExpansion(1))
+	table.SetCell(0, 1, tview.NewTableCell(config.Version).SetSelectable(false).SetExpansion(1))
 
 	table.SetCell(1, 0, tview.NewTableCell("Hostname:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
 	hostname, err := os.Hostname()
@@ -396,24 +394,26 @@ func (pv *pcView) runOnce() {
 	if err != nil {
 		return
 	}
-	if pv.version != version {
+	if config.Version != version {
 		pv.showUpdateAvailable(version)
 	}
 }
 
 func (pv *pcView) showUpdateAvailable(version string) {
 	pv.appView.QueueUpdateDraw(func() {
-		pv.statTable.GetCell(0, 1).SetText(fmt.Sprintf("%s  [green:]%s[-:-:-]", pv.version, version))
+		pv.statTable.GetCell(0, 1).SetText(fmt.Sprintf("%s  [green:]%s[-:-:-]", config.Version, version))
 	})
 }
 
-func SetupTui(version string, logLength int) {
+func SetupTui(logLength int) {
 
-	pv := newPcView(version, logLength)
+	pv := newPcView(logLength)
 
 	go pv.updateTable()
 	go pv.updateLogs()
-	go pv.runOnce()
+	if config.CheckForUpdates == "true" {
+		go pv.runOnce()
+	}
 
 	pcv = pv
 	if err := pv.appView.Run(); err != nil {

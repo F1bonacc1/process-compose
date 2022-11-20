@@ -2,8 +2,9 @@ NAME=process-compose
 RM=rm
 VERSION = $(shell git describe --abbrev=0)
 NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
+PKG = github.com/f1bonacc1/process-compose
 
-LD_FLAGS := -ldflags="-X main.version=${VERSION} -s -w"
+LD_FLAGS := -ldflags="-X ${PKG}/src/config.Version=${VERSION} -X ${PKG}/src/config.CheckForUpdates=true -s -w"
 
 ifeq ($(OS),Windows_NT)
 	EXT=.exe

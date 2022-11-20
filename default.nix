@@ -4,7 +4,8 @@ buildGoModule {
   pname = "process-compose";
   version = version;
   src = ./.;
-  ldflags = [ "-X main.version=v${version}" ];
+  pkg = "github.com/f1bonacc1/process-compose";
+  ldflags = [ "-X ${pkg}/src/config.Version=v${version} -s -w" ];
 
   nativeBuildInputs = [ installShellFiles ];
 

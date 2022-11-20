@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-var version = "undefined"
-
 func setupLogger(output io.Writer) {
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{
@@ -34,5 +32,5 @@ func main() {
 		}
 	}()
 	setupLogger(file)
-	cmd.Execute(version)
+	cmd.Execute()
 }
