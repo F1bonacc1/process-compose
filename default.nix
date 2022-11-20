@@ -1,8 +1,8 @@
-{ config, lib, pkgs, installShellFiles, ... }:
+{ buildGoModule, config, lib, pkgs, installShellFiles, version ? "latest" }:
 
-pkgs.buildGoModule rec {
+buildGoModule {
   pname = "process-compose";
-  version = "0.24.1";
+  version = version;
   src = ./.;
   ldflags = [ "-X main.version=v${version}" ];
 
