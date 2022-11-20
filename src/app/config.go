@@ -50,6 +50,7 @@ type ProcessState struct {
 	Restarts   int    `json:"restarts"`
 	ExitCode   int    `json:"exit_code"`
 	Pid        int    `json:"pid"`
+	IsRunning  bool
 }
 
 type ProcessStates struct {

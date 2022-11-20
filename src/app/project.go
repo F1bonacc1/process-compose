@@ -158,6 +158,7 @@ func (p *Project) GetProcessState(name string) *ProcessState {
 			procState.Pid = 0
 			procState.SystemTime = ""
 			procState.Health = ProcessHealthUnknown
+			procState.IsRunning = false
 		}
 		return procState
 	}

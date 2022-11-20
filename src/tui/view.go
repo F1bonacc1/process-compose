@@ -177,6 +177,8 @@ func (pv *pcView) fillTableData() {
 		return
 	}
 
+	runningProcCount := 0
+
 	for r, name := range pv.procNames {
 		state := app.PROJ.GetProcessState(name)
 		if state == nil {
@@ -189,7 +191,11 @@ func (pv *pcView) fillTableData() {
 		pv.procTable.SetCell(r+1, 4, tview.NewTableCell(state.Health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 5, tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 6, tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		if state.IsRunning {
+			runningProcCount += 1
+		}
 	}
+	pv.statTable.GetCell(2, 1).SetText(fmt.Sprintf("%d/%d", runningProcCount, len(pv.procNames)))
 }
 
 func (pv *pcView) getSelectedProcName() string {

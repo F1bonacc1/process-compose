@@ -303,6 +303,7 @@ func (p *Process) updateProcState() {
 	if p.isRunning() {
 		dur := time.Since(p.startTime)
 		p.procState.SystemTime = durationToString(dur)
+		p.procState.IsRunning = true
 	}
 }
 
