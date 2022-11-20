@@ -38,7 +38,7 @@ processes:
       - 'PRINT_ERR=111'
       - 'EXIT_CODE=2'
     shutdown:
-      command: "sleep 2 && pkill -f process2"
+      command: "sleep 2 && pkill -f 'test_loop.bash process2'"
       signal: 15
       timeout_seconds: 4
     readiness_probe:

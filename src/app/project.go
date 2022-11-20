@@ -381,7 +381,43 @@ func (p *Project) GetLexicographicProcessNames() []string {
 	return names
 }
 
-func NewProject(inputFile string) *Project {
+func (p *Project) selectRunningProcesses(procList []string) error {
+	if len(procList) == 0 {
+		return nil
+	}
+	newProcMap := Processes{}
+	err := p.WithProcesses(procList, func(process ProcessConfig) error {
+		newProcMap[process.Name] = process
+		return nil
+	})
+	if err != nil {
+		log.Err(err).Msgf("Failed select processes")
+		return err
+	}
+	p.Processes = newProcMap
+	return nil
+}
+
+func (p *Project) selectRunningProcessesNoDeps(procList []string) error {
+	if len(procList) == 0 {
+		return nil
+	}
+	newProcMap := Processes{}
+	for _, procName := range procList {
+		if conf, ok := p.Processes[procName]; ok {
+			conf.DependsOn = DependsOnConfig{}
+			newProcMap[procName] = conf
+		} else {
+			err := fmt.Errorf("no such process: %s", procName)
+			log.Err(err).Msgf("Failed select processes")
+			return err
+		}
+	}
+	p.Processes = newProcMap
+	return nil
+}
+
+func NewProject(inputFile string, processesToRun []string, noDeps bool) (*Project, error) {
 	yamlFile, err := os.ReadFile(inputFile)
 
 	if err != nil {
@@ -396,11 +432,11 @@ func NewProject(inputFile string) *Project {
 
 	yamlFile = []byte(os.ExpandEnv(string(yamlFile)))
 
-	project := Project{
+	project := &Project{
 		LogLength: DEFAULT_LOG_LENGTH,
 		exitCode:  0,
 	}
-	err = yaml.Unmarshal(yamlFile, &project)
+	err = yaml.Unmarshal(yamlFile, project)
 	if err != nil {
 		log.Fatal().Msg(err.Error())
 	}
@@ -414,9 +450,17 @@ func NewProject(inputFile string) *Project {
 		}
 
 	}
-	PROJ = &project
+	if noDeps {
+		err = project.selectRunningProcessesNoDeps(processesToRun)
+	} else {
+		err = project.selectRunningProcesses(processesToRun)
+	}
+	if err != nil {
+		return nil, err
+	}
+	PROJ = project
 	project.init()
-	return &project
+	return project, nil
 }
 
 func findFiles(names []string, pwd string) []string {

@@ -19,7 +19,7 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			isDefConfigPath := !cmd.Flags().Changed("config")
 			api.StartHttpServer(!isTui, port)
-			runProject(isDefConfigPath, []string{})
+			runProject(isDefConfigPath, []string{}, false)
 		},
 	}
 )

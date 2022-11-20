@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/tui"
 	"github.com/rs/zerolog/log"
@@ -9,7 +10,7 @@ import (
 	"syscall"
 )
 
-func runProject(isDefConfigPath bool, process []string) {
+func runProject(isDefConfigPath bool, process []string, noDeps bool) {
 	if isDefConfigPath {
 		pwd, err := os.Getwd()
 		if err != nil {
@@ -17,12 +18,17 @@ func runProject(isDefConfigPath bool, process []string) {
 		}
 		file, err := app.AutoDiscoverComposeFile(pwd)
 		if err != nil {
+			fmt.Println(err)
 			log.Fatal().Msg(err.Error())
 		}
 		fileName = file
 	}
 
-	project := app.NewProject(fileName)
+	project, err := app.NewProject(fileName, process, noDeps)
+	if err != nil {
+		fmt.Println(err)
+		log.Fatal().Msg(err.Error())
+	}
 	exitCode := 0
 	if isTui {
 		exitCode = runTui(project)
