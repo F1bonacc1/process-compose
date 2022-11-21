@@ -174,8 +174,8 @@ process2:
   depends_on:
     process3:
       condition: process_completed_successfully
-  process3:
-    condition: process_completed_successfully
+		process4:
+   		condition: process_completed_successfully
 ```
 
 There are 4 condition types that cab be used in process dependencies:
@@ -184,6 +184,51 @@ There are 4 condition types that cab be used in process dependencies:
 * `process_completed_successfully` - is the type for waiting until a process has completed successfully (exit code 0)
 * `process_healthy` - is the type for waiting until a process is healthy
 * `process_started` - is the type for waiting until a process has started (default)
+
+##### ✅ Run only specific processes
+
+For testing and debugging purposes, especially when your `process-compose.yaml` file contains many processes, you might want to specify only a subset of processes to run. For example:
+
+```yaml
+#process-compose.yaml
+process1:
+	command: "echo 'Hi from Process1'"
+  depends_on:
+    process2:
+      condition: process_completed_successfully
+process2:
+  command: "echo 'Hi from Process2'"      
+process3:
+  command: "echo 'Hi from Process3'"
+```
+
+```bash
+process-compose up # will run all the processes - equal to 'process-compose'
+
+#output:
+#Hi from Process3
+#Hi from Process2
+#Hi from Process1
+```
+
+```bash
+process-compose up process1 processe3 # will run 'process1', 'process3' and all of their dependencies - 'process2'
+
+#output:
+#Hi from Process3
+#Hi from Process2
+#Hi from Process1
+```
+
+```bash
+process-compose up process1 processe3 --no-deps # will run 'process1', 'process3' without any dependencies
+
+#output:
+#Hi from Process3
+#Hi from Process1
+```
+
+
 
 ##### ✅ Termination Parameters
 
