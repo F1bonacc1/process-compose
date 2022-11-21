@@ -34,32 +34,34 @@ var scFiles = []string{
 }
 
 type pcView struct {
-	procTable    *tview.Table
-	statTable    *tview.Table
-	appView      *tview.Application
-	logsText     *LogView
-	statusText   *tview.TextView
-	helpText     *tview.TextView
-	pages        *tview.Pages
-	procNames    []string
-	logFollow    bool
-	fullScrState FullScrState
-	loggedProc   string
-	shortcuts    ShortCuts
+	procTable     *tview.Table
+	statTable     *tview.Table
+	appView       *tview.Application
+	logsText      *LogView
+	statusText    *tview.TextView
+	helpText      *tview.TextView
+	pages         *tview.Pages
+	procNames     []string
+	logFollow     bool
+	fullScrState  FullScrState
+	loggedProc    string
+	shortcuts     ShortCuts
+	procCountCell *tview.TableCell
 }
 
 func newPcView(logLength int) *pcView {
 	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
 	pv := &pcView{
-		appView:      tview.NewApplication(),
-		logsText:     NewLogView(logLength),
-		statusText:   tview.NewTextView().SetDynamicColors(true),
-		procNames:    app.PROJ.GetLexicographicProcessNames(),
-		logFollow:    true,
-		fullScrState: LogProcHalf,
-		helpText:     tview.NewTextView().SetDynamicColors(true),
-		loggedProc:   "",
-		shortcuts:    getDefaultActions(),
+		appView:       tview.NewApplication(),
+		logsText:      NewLogView(logLength),
+		statusText:    tview.NewTextView().SetDynamicColors(true),
+		procNames:     app.PROJ.GetLexicographicProcessNames(),
+		logFollow:     true,
+		fullScrState:  LogProcHalf,
+		helpText:      tview.NewTextView().SetDynamicColors(true),
+		loggedProc:    "",
+		shortcuts:     getDefaultActions(),
+		procCountCell: tview.NewTableCell(""),
 	}
 	pv.loadShortcuts()
 	pv.procTable = pv.createProcTable()
@@ -195,7 +197,9 @@ func (pv *pcView) fillTableData() {
 			runningProcCount += 1
 		}
 	}
-	pv.statTable.GetCell(2, 1).SetText(fmt.Sprintf("%d/%d", runningProcCount, len(pv.procNames)))
+	if pv.procCountCell != nil {
+		pv.procCountCell.SetText(fmt.Sprintf("%d/%d", runningProcCount, len(pv.procNames)))
+	}
 }
 
 func (pv *pcView) getSelectedProcName() string {
@@ -323,7 +327,8 @@ func (pv *pcView) createStatTable() *tview.Table {
 	table.SetCell(1, 1, tview.NewTableCell(hostname).SetSelectable(false).SetExpansion(1))
 
 	table.SetCell(2, 0, tview.NewTableCell("Processes:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	table.SetCell(2, 1, tview.NewTableCell(strconv.Itoa(len(pv.procNames))).SetSelectable(false).SetExpansion(1))
+	pv.procCountCell = tview.NewTableCell(strconv.Itoa(len(pv.procNames))).SetSelectable(false).SetExpansion(1)
+	table.SetCell(2, 1, pv.procCountCell)
 	table.SetCell(0, 2, tview.NewTableCell("").SetSelectable(false).SetExpansion(0))
 
 	table.SetCell(0, 3, tview.NewTableCell("Process Compose 🔥").
