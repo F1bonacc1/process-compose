@@ -174,8 +174,8 @@ process2:
   depends_on:
     process3:
       condition: process_completed_successfully
-		process4:
-   		condition: process_completed_successfully
+    process4:
+      condition: process_completed_successfully
 ```
 
 There are 4 condition types that cab be used in process dependencies:
@@ -192,7 +192,7 @@ For testing and debugging purposes, especially when your `process-compose.yaml` 
 ```yaml
 #process-compose.yaml
 process1:
-	command: "echo 'Hi from Process1'"
+  command: "echo 'Hi from Process1'"
   depends_on:
     process2:
       condition: process_completed_successfully
@@ -212,7 +212,7 @@ process-compose up # will run all the processes - equal to 'process-compose'
 ```
 
 ```bash
-process-compose up process1 processe3 # will run 'process1', 'process3' and all of their dependencies - 'process2'
+process-compose up process1 process3 # will run 'process1', 'process3' and all of their dependencies - 'process2'
 
 #output:
 #Hi from Process3
@@ -221,7 +221,7 @@ process-compose up process1 processe3 # will run 'process1', 'process3' and all 
 ```
 
 ```bash
-process-compose up process1 processe3 --no-deps # will run 'process1', 'process3' without any dependencies
+process-compose up process1 process3 --no-deps # will run 'process1', 'process3' without any dependencies
 
 #output:
 #Hi from Process3
