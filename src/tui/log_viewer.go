@@ -22,9 +22,12 @@ func NewLogView(maxLines int) *LogView {
 
 	l := &LogView{
 		isWrapOn: true,
-		TextView: *tview.NewTextView().SetDynamicColors(true).SetScrollable(true).SetMaxLines(maxLines),
-		buffer:   &strings.Builder{},
-		useAnsi:  false,
+		TextView: *tview.NewTextView().
+			SetDynamicColors(true).
+			SetScrollable(true).
+			SetMaxLines(maxLines),
+		buffer:  &strings.Builder{},
+		useAnsi: false,
 	}
 	l.ansiWriter = tview.ANSIWriter(l)
 	l.SetBorder(true)

@@ -16,6 +16,7 @@ const (
 	ActionLogScreen      = ActionName("log_screen")
 	ActionFollowLog      = ActionName("log_follow")
 	ActionWrapLog        = ActionName("log_wrap")
+	ActionLogSelection   = ActionName("log_select")
 	ActionProcessStart   = ActionName("process_start")
 	ActionProcessInfo    = ActionName("process_info")
 	ActionProcessStop    = ActionName("process_stop")
@@ -28,6 +29,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionLogScreen:      tcell.KeyF4,
 	ActionFollowLog:      tcell.KeyF5,
 	ActionWrapLog:        tcell.KeyF6,
+	ActionLogSelection:   tcell.KeyCtrlS,
 	ActionProcessInfo:    tcell.KeyF3,
 	ActionProcessStart:   tcell.KeyF7,
 	ActionProcessStop:    tcell.KeyF9,
@@ -160,6 +162,12 @@ func getDefaultActions() ShortCuts {
 				ToggleDescription: map[bool]string{
 					true:  "Wrap On",
 					false: "Wrap Off",
+				},
+			},
+			ActionLogSelection: {
+				ToggleDescription: map[bool]string{
+					true:  "Select On",
+					false: "Select Off",
 				},
 			},
 			ActionProcessInfo: {

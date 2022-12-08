@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/glippy"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/updater"
 	"os"
@@ -43,10 +44,13 @@ type pcView struct {
 	pages         *tview.Pages
 	procNames     []string
 	logFollow     bool
+	logSelect     bool
 	fullScrState  FullScrState
 	loggedProc    string
 	shortcuts     ShortCuts
 	procCountCell *tview.TableCell
+	mainGrid      *tview.Grid
+	logsTextArea  *tview.TextArea
 }
 
 func newPcView(logLength int) *pcView {
@@ -62,13 +66,29 @@ func newPcView(logLength int) *pcView {
 		loggedProc:    "",
 		shortcuts:     getDefaultActions(),
 		procCountCell: tview.NewTableCell(""),
+		mainGrid:      tview.NewGrid(),
+		logsTextArea:  tview.NewTextArea(),
+		logSelect:     false,
 	}
 	pv.loadShortcuts()
 	pv.procTable = pv.createProcTable()
 	pv.statTable = pv.createStatTable()
 	pv.updateHelpTextView()
+	pv.createGrid()
+	pv.logsTextArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyCR:
+			text, start, _ := pv.logsTextArea.GetSelection()
+			glippy.Set(text)
+			pv.logsTextArea.Select(start, start)
+		case tcell.KeyEsc:
+			pv.toggleLogSelection()
+			pv.updateHelpTextView()
+		}
+		return nil
+	})
 	pv.pages = tview.NewPages().
-		AddPage(PageMain, pv.createGrid(pv.fullScrState), true, true)
+		AddPage(PageMain, pv.mainGrid, true, true)
 
 	pv.appView.SetRoot(pv.pages, true).EnableMouse(true).SetInputCapture(pv.onAppKey)
 	if len(pv.procNames) > 0 {
@@ -97,12 +117,17 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		} else {
 			pv.fullScrState = LogFull
 		}
-		pv.appView.SetRoot(pv.createGrid(pv.fullScrState), true)
+		pv.redrawGrid()
 		pv.updateHelpTextView()
 	case pv.shortcuts.ShortCutKeys[ActionFollowLog].key:
 		pv.toggleLogFollow()
 	case pv.shortcuts.ShortCutKeys[ActionWrapLog].key:
 		pv.logsText.ToggleWrap()
+		pv.updateHelpTextView()
+	case pv.shortcuts.ShortCutKeys[ActionLogSelection].key:
+		pv.stopFollowLog()
+		pv.toggleLogSelection()
+		pv.appView.SetFocus(pv.logsTextArea)
 		pv.updateHelpTextView()
 	case pv.shortcuts.ShortCutKeys[ActionProcessScreen].key:
 		if pv.fullScrState == ProcFull {
@@ -110,7 +135,7 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		} else {
 			pv.fullScrState = ProcFull
 		}
-		pv.appView.SetRoot(pv.createGrid(pv.fullScrState), true)
+		pv.redrawGrid()
 		pv.onProcRowSpanChange()
 		pv.updateHelpTextView()
 	case tcell.KeyCtrlC:
@@ -136,7 +161,7 @@ func (pv *pcView) terminateAppView() {
 			pv.pages.RemovePage(PageDialog)
 		})
 	// Display and focus the dialog
-	pv.pages.AddPage(PageDialog, createPage(m, 50, 50), true, true)
+	pv.pages.AddPage(PageDialog, createDialogPage(m, 50, 50), true, true)
 }
 
 func (pv *pcView) showError(errMessage string) {
@@ -148,7 +173,7 @@ func (pv *pcView) showError(errMessage string) {
 			pv.pages.RemovePage(PageDialog)
 		})
 
-	pv.pages.AddPage(PageDialog, createPage(m, 50, 50), true, true)
+	pv.pages.AddPage(PageDialog, createDialogPage(m, 50, 50), true, true)
 }
 
 func (pv *pcView) showInfo() {
@@ -158,7 +183,22 @@ func (pv *pcView) showInfo() {
 		pv.showError(err.Error())
 		return
 	}
-	pv.showProcInfo(info)
+	form := pv.createProcInfoForm(info)
+	pv.showDialog(form)
+}
+
+func (pv *pcView) toggleLogSelection() {
+	name := pv.getSelectedProcName()
+	pv.logSelect = !pv.logSelect
+	if pv.logSelect {
+		pv.logsTextArea.SetText(pv.logsText.GetText(true), true).
+			SetBorder(true).
+			SetTitle(name + " [Select & Press Enter to Copy]")
+	} else {
+		pv.logsTextArea.SetText("", false)
+	}
+
+	pv.redrawGrid()
 }
 
 func (pv *pcView) handleShutDown() {
@@ -347,6 +387,7 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionLogScreen].writeToggleButton(pv.helpText, logScrBool)
 	pv.shortcuts.ShortCutKeys[ActionFollowLog].writeToggleButton(pv.helpText, !pv.logFollow)
 	pv.shortcuts.ShortCutKeys[ActionWrapLog].writeToggleButton(pv.helpText, !pv.logsText.IsWrapOn())
+	pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
 	pv.shortcuts.ShortCutKeys[ActionProcessInfo].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessStart].writeButton(pv.helpText)
@@ -356,27 +397,38 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionQuit].writeButton(pv.helpText)
 }
 
-func (pv *pcView) createGrid(fullScrState FullScrState) *tview.Grid {
-
-	grid := tview.NewGrid().
+func (pv *pcView) createGrid() {
+	pv.mainGrid.Clear().
 		SetRows(3, 0, 0, 1).
 		//SetColumns(30, 0, 30).
 		SetBorders(true).
 		AddItem(pv.statTable, 0, 0, 1, 1, 0, 0, false).
 		AddItem(pv.helpText, 3, 0, 1, 1, 0, 0, false)
 
-	switch fullScrState {
+	var log tview.Primitive
+	if !pv.logSelect {
+		log = pv.logsText
+	} else {
+		log = pv.logsTextArea
+	}
+	switch pv.fullScrState {
 	case LogFull:
-		grid.AddItem(pv.logsText, 1, 0, 2, 1, 0, 0, true)
+		pv.mainGrid.AddItem(log, 1, 0, 2, 1, 0, 0, true)
 	case ProcFull:
-		grid.AddItem(pv.procTable, 1, 0, 2, 1, 0, 0, true)
+		pv.mainGrid.AddItem(pv.procTable, 1, 0, 2, 1, 0, 0, true)
 	case LogProcHalf:
-		grid.AddItem(pv.procTable, 1, 0, 1, 1, 0, 0, true)
-		grid.AddItem(pv.logsText, 2, 0, 1, 1, 0, 0, false)
+		pv.mainGrid.AddItem(pv.procTable, 1, 0, 1, 1, 0, 0, true)
+		pv.mainGrid.AddItem(log, 2, 0, 1, 1, 0, 0, false)
 	}
 
-	grid.SetTitle("Process Compose")
-	return grid
+	pv.mainGrid.SetTitle("Process Compose")
+	//pv.mainGrid = grid
+}
+
+func (pv *pcView) redrawGrid() {
+	go pv.appView.QueueUpdateDraw(func() {
+		pv.createGrid()
+	})
 }
 
 func (pv *pcView) updateTable() {
