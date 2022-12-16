@@ -2,12 +2,9 @@ package tui
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/glippy"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/updater"
-	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
@@ -75,18 +72,7 @@ func newPcView(logLength int) *pcView {
 	pv.statTable = pv.createStatTable()
 	pv.updateHelpTextView()
 	pv.createGrid()
-	pv.logsTextArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyCR:
-			text, start, _ := pv.logsTextArea.GetSelection()
-			glippy.Set(text)
-			pv.logsTextArea.Select(start, start)
-		case tcell.KeyEsc:
-			pv.toggleLogSelection()
-			pv.updateHelpTextView()
-		}
-		return nil
-	})
+	pv.createLogSelectionTextArea()
 	pv.pages = tview.NewPages().
 		AddPage(PageMain, pv.mainGrid, true, true)
 
@@ -187,20 +173,6 @@ func (pv *pcView) showInfo() {
 	pv.showDialog(form)
 }
 
-func (pv *pcView) toggleLogSelection() {
-	name := pv.getSelectedProcName()
-	pv.logSelect = !pv.logSelect
-	if pv.logSelect {
-		pv.logsTextArea.SetText(pv.logsText.GetText(true), true).
-			SetBorder(true).
-			SetTitle(name + " [Select & Press Enter to Copy]")
-	} else {
-		pv.logsTextArea.SetText("", false)
-	}
-
-	pv.redrawGrid()
-}
-
 func (pv *pcView) handleShutDown() {
 	pv.statTable.SetCell(0, 2, tview.NewTableCell("Shutting Down...").
 		SetSelectable(false).
@@ -214,34 +186,6 @@ func (pv *pcView) handleShutDown() {
 
 }
 
-func (pv *pcView) fillTableData() {
-	if app.PROJ == nil {
-		return
-	}
-
-	runningProcCount := 0
-
-	for r, name := range pv.procNames {
-		state := app.PROJ.GetProcessState(name)
-		if state == nil {
-			return
-		}
-		pv.procTable.SetCell(r+1, 0, tview.NewTableCell(strconv.Itoa(state.Pid)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 1, tview.NewTableCell(state.Name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 2, tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 3, tview.NewTableCell(state.SystemTime).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 4, tview.NewTableCell(state.Health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 5, tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 6, tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		if state.IsRunning {
-			runningProcCount += 1
-		}
-	}
-	if pv.procCountCell != nil {
-		pv.procCountCell.SetText(fmt.Sprintf("%d/%d", runningProcCount, len(pv.procNames)))
-	}
-}
-
 func (pv *pcView) getSelectedProcName() string {
 	if pv.procTable == nil {
 		return ""
@@ -253,130 +197,10 @@ func (pv *pcView) getSelectedProcName() string {
 	return ""
 }
 
-func (pv *pcView) onTableSelectionChange(row, column int) {
-	name := pv.getSelectedProcName()
-	if len(name) == 0 {
-		return
-	}
-	pv.logsText.SetBorder(true).SetTitle(name)
-	pv.unFollowLog()
-	pv.followLog(name)
-	if !pv.logFollow {
-		// call follow and unfollow to update the buffer and stop following
-		// in case the following is disabled
-		pv.unFollowLog()
-	}
-}
-
 func (pv *pcView) onProcRowSpanChange() {
 	if pv.fullScrState == ProcFull && pv.logFollow {
 		pv.stopFollowLog()
 	}
-}
-
-func (pv *pcView) toggleLogFollow() {
-	if pv.logFollow {
-		pv.stopFollowLog()
-	} else {
-		name := pv.getSelectedProcName()
-		pv.startFollowLog(name)
-	}
-}
-
-func (pv *pcView) startFollowLog(name string) {
-	pv.logFollow = true
-	pv.followLog(name)
-	go pv.updateLogs()
-	pv.updateHelpTextView()
-}
-
-func (pv *pcView) stopFollowLog() {
-	pv.logFollow = false
-	pv.unFollowLog()
-	pv.updateHelpTextView()
-}
-
-func (pv *pcView) followLog(name string) {
-	pv.loggedProc = name
-	pv.logsText.Clear()
-	_ = app.PROJ.WithProcesses([]string{name}, func(process app.ProcessConfig) error {
-		pv.logsText.useAnsi = !process.DisableAnsiColors
-		return nil
-	})
-	app.PROJ.GetLogsAndSubscribe(name, pv.logsText)
-}
-
-func (pv *pcView) unFollowLog() {
-	if pv.loggedProc != "" {
-		app.PROJ.UnSubscribeLogger(pv.loggedProc)
-	}
-	pv.logsText.Flush()
-}
-
-func (pv *pcView) createProcTable() *tview.Table {
-	table := tview.NewTable().SetBorders(false).SetSelectable(true, false)
-	//pv.fillTableData()
-	table.Select(1, 1).SetFixed(1, 0).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case pv.shortcuts.ShortCutKeys[ActionProcessStop].key:
-			name := pv.getSelectedProcName()
-			app.PROJ.StopProcess(name)
-		case pv.shortcuts.ShortCutKeys[ActionProcessStart].key:
-			name := pv.getSelectedProcName()
-			app.PROJ.StartProcess(name)
-		case pv.shortcuts.ShortCutKeys[ActionProcessRestart].key:
-			name := pv.getSelectedProcName()
-			app.PROJ.RestartProcess(name)
-		}
-		return event
-	})
-	columns := []string{
-		"PID", "NAME", "STATUS", "AGE", "READINESS", "RESTARTS", "EXIT CODE",
-	}
-	for i := 0; i < len(columns); i++ {
-		expan := 1
-		align := tview.AlignLeft
-		switch columns[i] {
-		case
-			"PID":
-			expan = 0
-		case
-			"RESTARTS",
-			"EXIT CODE":
-			align = tview.AlignRight
-		}
-
-		table.SetCell(0, i, tview.NewTableCell(columns[i]).
-			SetSelectable(false).SetExpansion(expan).SetAlign(align))
-	}
-	table.SetSelectionChangedFunc(pv.onTableSelectionChange)
-	return table
-}
-
-func (pv *pcView) createStatTable() *tview.Table {
-	table := tview.NewTable().SetBorders(false).SetSelectable(false, false)
-
-	table.SetCell(0, 0, tview.NewTableCell("Version:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	table.SetCell(0, 1, tview.NewTableCell(config.Version).SetSelectable(false).SetExpansion(1))
-
-	table.SetCell(1, 0, tview.NewTableCell("Hostname:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = err.Error()
-	}
-	table.SetCell(1, 1, tview.NewTableCell(hostname).SetSelectable(false).SetExpansion(1))
-
-	table.SetCell(2, 0, tview.NewTableCell("Processes:").SetSelectable(false).SetTextColor(tcell.ColorYellow))
-	pv.procCountCell = tview.NewTableCell(strconv.Itoa(len(pv.procNames))).SetSelectable(false).SetExpansion(1)
-	table.SetCell(2, 1, pv.procCountCell)
-	table.SetCell(0, 2, tview.NewTableCell("").SetSelectable(false).SetExpansion(0))
-
-	table.SetCell(0, 3, tview.NewTableCell("Process Compose 🔥").
-		SetSelectable(false).
-		SetAlign(tview.AlignRight).
-		SetExpansion(1).
-		SetTextColor(tcell.ColorYellow))
-	return table
 }
 
 func (pv *pcView) updateHelpTextView() {
@@ -395,61 +219,6 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionProcessStop].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessRestart].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionQuit].writeButton(pv.helpText)
-}
-
-func (pv *pcView) createGrid() {
-	pv.mainGrid.Clear().
-		SetRows(3, 0, 0, 1).
-		//SetColumns(30, 0, 30).
-		SetBorders(true).
-		AddItem(pv.statTable, 0, 0, 1, 1, 0, 0, false).
-		AddItem(pv.helpText, 3, 0, 1, 1, 0, 0, false)
-
-	var log tview.Primitive
-	if !pv.logSelect {
-		log = pv.logsText
-	} else {
-		log = pv.logsTextArea
-	}
-	switch pv.fullScrState {
-	case LogFull:
-		pv.mainGrid.AddItem(log, 1, 0, 2, 1, 0, 0, true)
-	case ProcFull:
-		pv.mainGrid.AddItem(pv.procTable, 1, 0, 2, 1, 0, 0, true)
-	case LogProcHalf:
-		pv.mainGrid.AddItem(pv.procTable, 1, 0, 1, 1, 0, 0, true)
-		pv.mainGrid.AddItem(log, 2, 0, 1, 1, 0, 0, false)
-	}
-
-	pv.mainGrid.SetTitle("Process Compose")
-	//pv.mainGrid = grid
-}
-
-func (pv *pcView) redrawGrid() {
-	go pv.appView.QueueUpdateDraw(func() {
-		pv.createGrid()
-	})
-}
-
-func (pv *pcView) updateTable() {
-	for {
-		time.Sleep(1000 * time.Millisecond)
-		pv.appView.QueueUpdateDraw(func() {
-			pv.fillTableData()
-		})
-	}
-}
-
-func (pv *pcView) updateLogs() {
-	for {
-		pv.appView.QueueUpdateDraw(func() {
-			pv.logsText.Flush()
-		})
-		if !pv.logFollow {
-			break
-		}
-		time.Sleep(300 * time.Millisecond)
-	}
 }
 
 func (pv *pcView) runOnce() {

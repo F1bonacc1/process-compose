@@ -28,7 +28,6 @@ func (pv *pcView) createProcInfoForm(info *app.ProcessConfig) *tview.Form {
 	f.AddButton("Close", func() {
 		pv.pages.RemovePage(PageDialog)
 	})
-
 	f.SetFocus(f.GetFormItemCount())
 	return f
 }
