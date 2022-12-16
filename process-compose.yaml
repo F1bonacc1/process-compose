@@ -128,3 +128,6 @@ processes:
 environment:
   - 'ABC=222'
 log_location: ./pc.log
+shell:
+  shell_command: "zsh"
+  shell_argument: "-c"

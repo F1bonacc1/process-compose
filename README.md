@@ -569,11 +569,11 @@ The following discovery order is used: `compose.yml, compose.yaml, process-compo
 
 ##### ✅ Linux
 
-The default backend is `bash`. You can define a different backend with a `SHELL` environment variable.
+The default backend is `bash`. You can define a different backend with a `COMPOSE_SHELL` environment variable.
 
 ##### ✅ Windows
 
-The default backend is `cmd`. You can define a different backend with a `SHELL` environment variable.
+The default backend is `cmd`. You can define a different backend with a `COMPOSE_SHELL` environment variable.
 
 ```yaml
 process1:
@@ -590,7 +590,23 @@ process2:
 
 ##### ✅ macOS
 
+The default backend is `bash`. You can define a different backend with a `COMPOSE_SHELL` environment variable.
 
+##### ✅ Configurable Backend
+
+For cases where you process compose requires a non default or transferable backend definition, setting an environment variable won't do. For that you  can configure it directly in the `process-compose.yaml` file:
+
+```yaml
+version: "0.5"
+shell:
+  shell_command: "python3"
+  shell_argument: "-m"
+processes:
+	http:
+		command: "server.py"
+```
+
+**Note**: please make sure that the `shell.shell_command` value is in your `$PATH`
 
 ## How to Contribute
 

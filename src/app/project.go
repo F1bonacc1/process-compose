@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"os"
 	"path/filepath"
@@ -23,6 +24,7 @@ const (
 var PROJ *Project
 
 func (p *Project) init() {
+	p.setConfigDefaults()
 	p.initProcessStates()
 	p.initProcessLogs()
 	p.deprecationCheck()
@@ -65,7 +67,7 @@ func (p *Project) runProcess(proc ProcessConfig) {
 		log.Error().Msgf("Error: Can't get log: %s using empty buffer", err.Error())
 		procLog = pclog.NewLogBuffer(0)
 	}
-	process := NewProcess(p.Environment, procLogger, proc, p.GetProcessState(proc.Name), procLog, 1)
+	process := NewProcess(p.Environment, procLogger, proc, p.GetProcessState(proc.Name), procLog, 1, *p.ShellConfig)
 	p.addRunningProcess(process)
 	p.wg.Add(1)
 	go func() {
@@ -147,6 +149,15 @@ func (p *Project) deprecationCheck() {
 			deprecationHandler("2022-10-30", key, RestartPolicyOnFailureDeprecated, RestartPolicyOnFailure, "restart policy")
 		}
 	}
+}
+
+func (p *Project) setConfigDefaults() {
+	if p.ShellConfig == nil {
+		p.ShellConfig = command.DefaultShellConfig()
+	}
+	log.Info().Msgf("Global shell command: %s %s", p.ShellConfig.ShellCommand, p.ShellConfig.ShellArgument)
+	command.ValidateShellConfig(*p.ShellConfig)
+
 }
 
 func (p *Project) GetProcessState(name string) *ProcessState {

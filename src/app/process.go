@@ -49,6 +49,7 @@ type Process struct {
 	startTime     time.Time
 	liveProber    *health.Prober
 	readyProber   *health.Prober
+	shellConfig   command.ShellConfig
 }
 
 func NewProcess(
@@ -57,7 +58,8 @@ func NewProcess(
 	procConf ProcessConfig,
 	procState *ProcessState,
 	procLog *pclog.ProcessLogBuffer,
-	replica int) *Process {
+	replica int,
+	shellConfig command.ShellConfig) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 
 	proc := &Process{
@@ -71,6 +73,7 @@ func NewProcess(
 		done:          false,
 		replica:       replica,
 		logBuffer:     procLog,
+		shellConfig:   shellConfig,
 		procStateChan: make(chan string, 1),
 		procReadyChan: make(chan string, 1),
 	}
@@ -138,7 +141,7 @@ func (p *Process) run() int {
 
 func (p *Process) getProcessStarter() func() error {
 	return func() error {
-		p.command = command.BuildCommand(p.getCommand())
+		p.command = command.BuildCommandShellArg(p.shellConfig, p.getCommand())
 		p.command.Env = p.getProcessEnvironment()
 		p.command.Dir = p.procConf.WorkingDir
 		p.setProcArgs()
@@ -254,7 +257,7 @@ func (p *Process) doConfiguredStop(params ShutDownParams) error {
 	defer cancel()
 	defer p.notifyDaemonStopped()
 
-	cmd := command.BuildCommandContext(ctx, params.ShutDownCommand)
+	cmd := command.BuildCommandShellArgContext(ctx, p.shellConfig, params.ShutDownCommand)
 	cmd.Env = p.getProcessEnvironment()
 
 	if err := cmd.Run(); err != nil {

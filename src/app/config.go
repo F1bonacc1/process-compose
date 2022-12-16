@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/f1bonacc1/process-compose/src/command"
 	"sync"
 
 	"github.com/f1bonacc1/process-compose/src/health"
@@ -8,12 +9,13 @@ import (
 )
 
 type Project struct {
-	Version     string    `yaml:"version"`
-	LogLocation string    `yaml:"log_location,omitempty"`
-	LogLevel    string    `yaml:"log_level,omitempty"`
-	LogLength   int       `yaml:"log_length,omitempty"`
-	Processes   Processes `yaml:"processes"`
-	Environment []string  `yaml:"environment,omitempty"`
+	Version     string               `yaml:"version"`
+	LogLocation string               `yaml:"log_location,omitempty"`
+	LogLevel    string               `yaml:"log_level,omitempty"`
+	LogLength   int                  `yaml:"log_length,omitempty"`
+	Processes   Processes            `yaml:"processes"`
+	Environment []string             `yaml:"environment,omitempty"`
+	ShellConfig *command.ShellConfig `yaml:"shell,omitempty"`
 
 	runningProcesses map[string]*Process
 	processStates    map[string]*ProcessState
