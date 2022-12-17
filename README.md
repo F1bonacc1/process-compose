@@ -602,8 +602,8 @@ shell:
   shell_command: "python3"
   shell_argument: "-m"
 processes:
-	http:
-		command: "server.py"
+  http:
+	  command: "server.py"
 ```
 
 **Note**: please make sure that the `shell.shell_command` value is in your `$PATH`
