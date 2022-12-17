@@ -9,3 +9,6 @@ process-compose
 
 # nix build .#process-compose output
 result
+
+dist/
+/exports

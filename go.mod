@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/InVisionApp/go-health/v2 v2.1.3
 	github.com/adrg/xdg v0.4.0
+	github.com/f1bonacc1/glippy v0.0.0-20221207220753-a53cdbf9bae7
 	github.com/fatih/color v1.13.0
 	github.com/gdamore/tcell/v2 v2.5.3
 	github.com/gin-gonic/gin v1.8.1
@@ -20,7 +21,6 @@ replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2
 require (
 	github.com/InVisionApp/go-logger v1.0.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/f1bonacc1/glippy v0.0.0-20221207220753-a53cdbf9bae7 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect

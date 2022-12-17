@@ -3,7 +3,7 @@ RM=rm
 VERSION = $(shell git describe --abbrev=0)
 NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
 PKG = github.com/f1bonacc1/process-compose
-
+SHELL := /bin/bash
 LD_FLAGS := -ldflags="-X ${PKG}/src/config.Version=${VERSION} -X ${PKG}/src/config.CheckForUpdates=true -s -w"
 
 ifeq ($(OS),Windows_NT)
@@ -55,3 +55,6 @@ run:
 
 clean:
 	$(RM) bin/${NAME}*
+release:
+	source exports
+	goreleaser release --rm-dist --skip-validate
