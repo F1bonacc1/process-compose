@@ -603,7 +603,7 @@ shell:
   shell_argument: "-m"
 processes:
   http:
-	  command: "server.py"
+    command: "server.py"
 ```
 
 **Note**: please make sure that the `shell.shell_command` value is in your `$PATH`
