@@ -1,10 +1,18 @@
-{ buildGoModule, config, lib, pkgs, installShellFiles, version ? "latest" }:
+{ buildGoModule, config, lib, pkgs, installShellFiles, date, commit }:
 
-buildGoModule {
+buildGoModule rec {
   pname = "process-compose";
-  version = version;
+  version = "0.29.1";
+  pkg = "github.com/f1bonacc1/process-compose/src/config";
+
   src = ./.;
-  ldflags = [ "-X github.com/f1bonacc1/process-compose/src/config.Version=v${version} -s -w" ];
+  ldflags = [
+    "-X ${pkg}.Version=v${version}"
+    "-X ${pkg}.Date=${date}"
+    "-X ${pkg}.Commit=${commit}"
+    "-s"
+    "-w"
+  ];
 
   nativeBuildInputs = [ installShellFiles ];
 
@@ -21,9 +29,9 @@ buildGoModule {
   '';
 
   meta = with lib; {
-    description =
-      "Process Compose is like docker-compose, but for orchestrating a suite of processes, not containers.";
+    description = "A simple and flexible scheduler and orchestrator to manage non-containerized applications";
     homepage = "https://github.com/F1bonacc1/process-compose";
+    changelog = "https://github.com/F1bonacc1/process-compose/releases/tag/v${version}";
     license = licenses.asl20;
     mainProgram = "process-compose";
   };

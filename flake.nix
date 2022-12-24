@@ -16,7 +16,9 @@
       in {
         overlays.default = final: prev: {
           process-compose = final.callPackage ./default.nix {
-            version = self.shortRev or "dirty";
+            #version = self.shortRev or "dirty";
+            date = self.lastModifiedDate;
+            commit = self.shortRev or "dirty";
           };
         };
         overlay = self.overlays.default;

@@ -29,7 +29,11 @@ builds:
         goarch: arm
     dir: src
     ldflags:
-      - -X github.com/f1bonacc1/process-compose/src/config.Version={{.Tag}} -X github.com/f1bonacc1/process-compose/src/config.CheckForUpdates=true -s -w
+      - -X github.com/f1bonacc1/process-compose/src/config.Version={{.Tag}}
+      - -X github.com/f1bonacc1/process-compose/src/config.CheckForUpdates=true
+      - -X github.com/f1bonacc1/process-compose/src/config.Commit={{.ShortCommit}}
+      - -X github.com/f1bonacc1/process-compose/src/config.Date={{.Date}}
+      - -s -w
 archives:
   - replacements:
       darwin: Darwin

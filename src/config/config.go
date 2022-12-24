@@ -9,8 +9,13 @@ import (
 	"path/filepath"
 )
 
-var Version = "undefined"
-var CheckForUpdates = "false"
+var (
+	Version         = "undefined"
+	Commit          = "undefined"
+	Date            = "undefined"
+	CheckForUpdates = "false"
+	License         = "Apache-2.0"
+)
 
 const (
 	pcConfigEnv  = "PROC_COMP_CONFIG"
