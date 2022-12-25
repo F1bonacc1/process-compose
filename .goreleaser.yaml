@@ -32,7 +32,7 @@ builds:
       - -X github.com/f1bonacc1/process-compose/src/config.Version={{.Tag}}
       - -X github.com/f1bonacc1/process-compose/src/config.CheckForUpdates=true
       - -X github.com/f1bonacc1/process-compose/src/config.Commit={{.ShortCommit}}
-      - -X github.com/f1bonacc1/process-compose/src/config.Date={{.Date}}
+      - -X github.com/f1bonacc1/process-compose/src/config.Date={{.CommitDate}}
       - -s -w
 archives:
   - replacements:

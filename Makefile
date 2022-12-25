@@ -2,7 +2,7 @@ NAME=process-compose
 RM=rm
 VERSION = $(shell git describe --abbrev=0)
 GIT_REV    ?= $(shell git rev-parse --short HEAD)
-DATE       ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+DATE       ?= $(shell TZ=UTC0 git show --quiet --date='format-local:%Y-%m-%dT%H:%M:%SZ' --format="%cd")
 NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
 PKG = github.com/f1bonacc1/${NAME}
 SHELL := /bin/bash
