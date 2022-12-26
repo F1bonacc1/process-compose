@@ -1,11 +1,16 @@
 NAME=process-compose
 RM=rm
 VERSION = $(shell git describe --abbrev=0)
+GIT_REV    ?= $(shell git rev-parse --short HEAD)
+DATE       ?= $(shell TZ=UTC0 git show --quiet --date='format-local:%Y-%m-%dT%H:%M:%SZ' --format="%cd")
 NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
-PKG = github.com/f1bonacc1/process-compose
+PKG = github.com/f1bonacc1/${NAME}
 SHELL := /bin/bash
-LD_FLAGS := -ldflags="-X ${PKG}/src/config.Version=${VERSION} -X ${PKG}/src/config.CheckForUpdates=true -s -w"
-
+LD_FLAGS := -ldflags="-X ${PKG}/src/config.Version=${VERSION} \
+            -X ${PKG}/src/config.CheckForUpdates=true \
+            -X ${PKG}/src/config.Commit=${GIT_REV} \
+            -X ${PKG}/src/config.Date=${DATE} \
+            -s -w"
 ifeq ($(OS),Windows_NT)
 	EXT=.exe
 	RM = cmd /C del /Q /F
@@ -58,3 +63,5 @@ clean:
 release:
 	source exports
 	goreleaser release --rm-dist --skip-validate
+snapshot:
+	goreleaser release --snapshot --rm-dist
