@@ -113,7 +113,7 @@ processes:
     disabled: true
 
   pc_log:
-    command: "tail -f -n100 process-compose-eugene.log"
+    command: "tail -f -n100 process-compose-${USER}.log"
     working_dir: "/tmp"
     environment:
       - 'REDACTED=1'

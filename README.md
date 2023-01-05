@@ -366,7 +366,20 @@ processes:
     command: "chmod 666 /path/to/file"
 ```
 
-This setting controls the `process-compose` log level. The processes log level should be defined inside the process. It is recommended to support its definition with an environment variable that can be defined in `process-compose.yaml`
+This setting controls the `process-compose` log level. The processes log level should be defined inside the process. It is recommended to support this definition with an environment variable in `process-compose.yaml`
+
+Default log location: `/tmp/process-compose-$USER.log`
+
+**Tip:** It is recommended to add the following process configuration to your `process-compose.yaml`:
+
+```yaml
+processes:  
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+```
+
+This will allow you to spot any issues with the processes execution, without leaving the `process-compose` TUI.
 
 #### ✅ <u>Health Checks</u>
 
