@@ -15,6 +15,11 @@ var (
 	Date            = "undefined"
 	CheckForUpdates = "false"
 	License         = "Apache-2.0"
+
+	scFiles = []string{
+		"shortcuts.yaml",
+		"shortcuts.yml",
+	}
 )
 
 const (
@@ -25,17 +30,25 @@ const (
 
 var LogFilePath = filepath.Join(os.TempDir(), fmt.Sprintf("process-compose-%s.log", mustUser()))
 
-func ProcCompHome() string {
+func procCompHome() string {
 	if env := os.Getenv(pcConfigEnv); env != "" {
 		return env
 	}
-
 	xdgPcHome, err := xdg.ConfigFile("process-compose")
 	if err != nil {
 		log.Fatal().Err(err).Msg("Unable to create configuration directory for process compose")
 	}
-
 	return xdgPcHome
+}
+
+func GetShortCutsPath() string {
+	for _, path := range scFiles {
+		scPath := filepath.Join(procCompHome(), path)
+		if _, err := os.Stat(scPath); err == nil {
+			return scPath
+		}
+	}
+	return ""
 }
 
 func mustUser() string {

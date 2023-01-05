@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/updater"
-	"path/filepath"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
@@ -26,10 +25,6 @@ const (
 )
 
 var pcv *pcView = nil
-var scFiles = []string{
-	"shortcuts.yaml",
-	"shortcuts.yml",
-}
 
 type pcView struct {
 	procTable     *tview.Table
@@ -86,10 +81,9 @@ func newPcView(logLength int) *pcView {
 }
 
 func (pv *pcView) loadShortcuts() {
-	for _, path := range scFiles {
-		if err := pv.shortcuts.loadFromFile(filepath.Join(config.ProcCompHome(), path)); err == nil {
-			break
-		}
+	path := config.GetShortCutsPath()
+	if len(path) > 0 {
+		pv.shortcuts.loadFromFile(path)
 	}
 }
 
