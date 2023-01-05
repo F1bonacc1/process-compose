@@ -32,5 +32,6 @@ func main() {
 		}
 	}()
 	setupLogger(file)
+	log.Info().Msgf("Process Compose %s", config.Version)
 	cmd.Execute()
 }
