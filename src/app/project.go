@@ -28,6 +28,7 @@ func (p *Project) init() {
 	p.initProcessStates()
 	p.initProcessLogs()
 	p.deprecationCheck()
+	p.validateProcessConfig()
 }
 
 func (p *Project) Run() int {
@@ -158,6 +159,20 @@ func (p *Project) setConfigDefaults() {
 	log.Info().Msgf("Global shell command: %s %s", p.ShellConfig.ShellCommand, p.ShellConfig.ShellArgument)
 	command.ValidateShellConfig(*p.ShellConfig)
 
+}
+
+func (p *Project) validateProcessConfig() {
+	for key, proc := range p.Processes {
+		if len(proc.Extensions) == 0 {
+			continue
+		}
+		for extKey := range proc.Extensions {
+			if strings.HasPrefix(extKey, "x-") {
+				continue
+			}
+			log.Error().Msgf("Unknown key %s found in process %s", extKey, key)
+		}
+	}
 }
 
 func (p *Project) GetProcessState(name string) *ProcessState {
@@ -450,12 +465,13 @@ func NewProject(inputFile string, processesToRun []string, noDeps bool) (*Projec
 	}
 	err = yaml.Unmarshal(yamlFile, project)
 	if err != nil {
-		log.Fatal().Msg(err.Error())
+		fmt.Printf("Failed to parse %s - %s\n", inputFile, err.Error())
+		log.Fatal().Msgf("Failed to parse %s - %s", inputFile, err.Error())
 	}
 	if project.LogLevel != "" {
 		lvl, err := zerolog.ParseLevel(project.LogLevel)
 		if err != nil {
-			log.Error().Msgf("Unknown log level %s defaulting to %s",
+			log.Warn().Msgf("Unknown log level %s defaulting to %s",
 				project.LogLevel, zerolog.GlobalLevel().String())
 		} else {
 			zerolog.SetGlobalLevel(lvl)
