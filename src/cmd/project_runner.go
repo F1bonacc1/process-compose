@@ -40,22 +40,29 @@ func runProject(isDefConfigPath bool, process []string, noDeps bool) {
 	os.Exit(exitCode)
 }
 
-func runHeadless(project *app.Project) int {
+func setSignal(signalHandler func()) {
 	cancelChan := make(chan os.Signal, 1)
-	// catch SIGTERM or SIGINTERRUPT
-	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
-
+	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
 	go func() {
 		sig := <-cancelChan
 		log.Info().Msgf("Caught %v - Shutting down the running processes...", sig)
-		project.ShutDownProject()
+		signalHandler()
 		os.Exit(1)
 	}()
+}
+
+func runHeadless(project *app.Project) int {
+	setSignal(func() {
+		project.ShutDownProject()
+	})
 	exitCode := project.Run()
 	return exitCode
 }
 
 func runTui(project *app.Project) int {
+	setSignal(func() {
+		tui.Stop()
+	})
 	defer quiet()()
 	go tui.SetupTui(project.LogLength)
 	exitCode := project.Run()
