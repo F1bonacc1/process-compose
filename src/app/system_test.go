@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/f1bonacc1/process-compose/src/loader"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -31,12 +32,19 @@ func TestSystem_TestFixtures(t *testing.T) {
 		}
 
 		t.Run(fixture, func(t *testing.T) {
-			project, err := NewProject(fixture, []string{}, false)
+			project, err := loader.Load(&loader.LoaderOptions{
+				FileNames: []string{fixture},
+			})
 			if err != nil {
 				t.Errorf(err.Error())
 				return
 			}
-			project.Run()
+			runner, err := NewProjectRunner(project, []string{}, false)
+			if err != nil {
+				t.Errorf(err.Error())
+				return
+			}
+			runner.Run()
 		})
 	}
 }
@@ -44,20 +52,27 @@ func TestSystem_TestFixtures(t *testing.T) {
 func TestSystem_TestComposeWithLog(t *testing.T) {
 	fixture := filepath.Join("..", "..", "fixtures", "process-compose-with-log.yaml")
 	t.Run(fixture, func(t *testing.T) {
-		project, err := NewProject(fixture, []string{}, false)
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture},
+		})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
 		}
-		project.Run()
-		if _, err := os.Stat(project.LogLocation); err != nil {
-			t.Errorf("log file %s not found", project.LogLocation)
+		runner, err := NewProjectRunner(project, []string{}, false)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
 		}
-		if err := os.Remove(project.LogLocation); err != nil {
-			t.Errorf("failed to delete the log file %s, %s", project.LogLocation, err.Error())
+		runner.Run()
+		if _, err := os.Stat(runner.project.LogLocation); err != nil {
+			t.Errorf("log file %s not found", runner.project.LogLocation)
+		}
+		if err := os.Remove(runner.project.LogLocation); err != nil {
+			t.Errorf("failed to delete the log file %s, %s", runner.project.LogLocation, err.Error())
 		}
 
-		proc6log := project.Processes["process6"].LogLocation
+		proc6log := runner.project.Processes["process6"].LogLocation
 		if _, err := os.Stat(proc6log); err != nil {
 			t.Errorf("log file %s not found", proc6log)
 		}
@@ -70,12 +85,19 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 func TestSystem_TestComposeChain(t *testing.T) {
 	fixture := filepath.Join("..", "..", "fixtures", "process-compose-chain.yaml")
 	t.Run(fixture, func(t *testing.T) {
-		project, err := NewProject(fixture, []string{}, false)
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture},
+		})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
 		}
-		names, err := project.GetDependenciesOrderNames()
+		runner, err := NewProjectRunner(project, []string{}, false)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		names, err := runner.GetDependenciesOrderNames()
 		if err != nil {
 			t.Errorf("GetDependenciesOrderNames() error = %v", err)
 			return
@@ -99,56 +121,22 @@ func TestSystem_TestComposeChain(t *testing.T) {
 func TestSystem_TestComposeChainExit(t *testing.T) {
 	fixture := filepath.Join("..", "..", "fixtures", "process-compose-chain-exit.yaml")
 	t.Run(fixture, func(t *testing.T) {
-		project, err := NewProject(fixture, []string{}, false)
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture},
+		})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
 		}
-		exitCode := project.Run()
+		runner, err := NewProjectRunner(project, []string{}, false)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		exitCode := runner.Run()
 		want := 42
 		if want != exitCode {
 			t.Errorf("Project.Run() = %v, want %v", exitCode, want)
 		}
 	})
-}
-
-func Test_autoDiscoverComposeFile(t *testing.T) {
-	type args struct {
-		pwd string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name: "Should not find",
-			args: args{
-				pwd: "../../fixtures",
-			},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name: "Should find process-compose.yaml",
-			args: args{
-				pwd: "../../",
-			},
-			want:    filepath.Join("..", "..", "process-compose.yaml"),
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := AutoDiscoverComposeFile(tt.args.pwd)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("autoDiscoverComposeFile() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("autoDiscoverComposeFile() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }

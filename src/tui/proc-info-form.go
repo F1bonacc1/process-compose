@@ -1,13 +1,13 @@
 package tui
 
 import (
-	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"strings"
 )
 
-func (pv *pcView) createProcInfoForm(info *app.ProcessConfig) *tview.Form {
+func (pv *pcView) createProcInfoForm(info *types.ProcessConfig) *tview.Form {
 	f := tview.NewForm()
 	f.SetCancelFunc(func() {
 		pv.pages.RemovePage(PageDialog)

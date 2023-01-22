@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"io"
 	"math/rand"
 	"os"
@@ -30,8 +31,8 @@ type Process struct {
 	sync.Mutex
 
 	globalEnv     []string
-	procConf      ProcessConfig
-	procState     *ProcessState
+	procConf      types.ProcessConfig
+	procState     *types.ProcessState
 	stateMtx      sync.Mutex
 	procCond      sync.Cond
 	procStateChan chan string
@@ -55,8 +56,8 @@ type Process struct {
 func NewProcess(
 	globalEnv []string,
 	logger pclog.PcLogger,
-	procConf ProcessConfig,
-	procState *ProcessState,
+	procConf types.ProcessConfig,
+	procState *types.ProcessState,
 	procLog *pclog.ProcessLogBuffer,
 	replica int,
 	shellConfig command.ShellConfig) *Process {
@@ -85,13 +86,13 @@ func NewProcess(
 }
 
 func (p *Process) run() int {
-	if p.isState(ProcessStateTerminating) {
+	if p.isState(types.ProcessStateTerminating) {
 		return 0
 	}
 
 	if err := p.validateProcess(); err != nil {
 		log.Error().Err(err).Msgf("Failed to run command %s for process %s", p.getCommand(), p.getName())
-		p.onProcessEnd(ProcessStateError)
+		p.onProcessEnd(types.ProcessStateError)
 		return 1
 	}
 
@@ -100,7 +101,7 @@ func (p *Process) run() int {
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to run command %s for process %s", p.getCommand(), p.getName())
 			p.logBuffer.Write(err.Error())
-			p.onProcessEnd(ProcessStateError)
+			p.onProcessEnd(types.ProcessStateError)
 			return 1
 		}
 
@@ -121,21 +122,21 @@ func (p *Process) run() int {
 		log.Info().Msgf("%s exited with status %d", p.getName(), p.procState.ExitCode)
 
 		if p.isDaemonLaunched() {
-			p.setState(ProcessStateLaunched)
+			p.setState(types.ProcessStateLaunched)
 			p.waitForDaemonCompletion()
 		}
 
 		if !p.isRestartable() {
 			break
 		}
-		p.setState(ProcessStateRestarting)
+		p.setState(types.ProcessStateRestarting)
 		p.procState.Restarts += 1
 		log.Info().Msgf("Restarting %s in %v second(s)... Restarts: %d",
 			p.procConf.Name, p.getBackoff().Seconds(), p.procState.Restarts)
 
 		time.Sleep(p.getBackoff())
 	}
-	p.onProcessEnd(ProcessStateCompleted)
+	p.onProcessEnd(types.ProcessStateCompleted)
 	return p.procState.ExitCode
 }
 
@@ -174,17 +175,17 @@ func (p *Process) getProcessEnvironment() []string {
 
 func (p *Process) isRestartable() bool {
 	exitCode := p.procState.ExitCode
-	if p.procConf.RestartPolicy.Restart == RestartPolicyNo ||
+	if p.procConf.RestartPolicy.Restart == types.RestartPolicyNo ||
 		p.procConf.RestartPolicy.Restart == "" {
 		return false
 	}
 
-	if exitCode != 0 && p.procConf.RestartPolicy.Restart == RestartPolicyExitOnFailure {
+	if exitCode != 0 && p.procConf.RestartPolicy.Restart == types.RestartPolicyExitOnFailure {
 		return false
 	}
 
-	if exitCode != 0 && (p.procConf.RestartPolicy.Restart == RestartPolicyOnFailureDeprecated ||
-		p.procConf.RestartPolicy.Restart == RestartPolicyOnFailure) {
+	if exitCode != 0 && (p.procConf.RestartPolicy.Restart == types.RestartPolicyOnFailureDeprecated ||
+		p.procConf.RestartPolicy.Restart == types.RestartPolicyOnFailure) {
 		if p.procConf.RestartPolicy.MaxRestarts == 0 {
 			return true
 		}
@@ -192,7 +193,7 @@ func (p *Process) isRestartable() bool {
 	}
 
 	// TODO consider if forking daemon should disable RestartPolicyAlways
-	if p.procConf.RestartPolicy.Restart == RestartPolicyAlways {
+	if p.procConf.RestartPolicy.Restart == types.RestartPolicyAlways {
 		if p.procConf.RestartPolicy.MaxRestarts == 0 {
 			return true
 		}
@@ -219,7 +220,7 @@ func (p *Process) waitUntilReady() bool {
 			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
 			return false
 		case ready := <-p.procReadyChan:
-			if ready == ProcessHealthReady {
+			if ready == types.ProcessHealthReady {
 				return true
 			}
 		}
@@ -227,7 +228,7 @@ func (p *Process) waitUntilReady() bool {
 }
 
 func (p *Process) wontRun() {
-	p.onProcessEnd(ProcessStateCompleted)
+	p.onProcessEnd(types.ProcessStateCompleted)
 
 }
 
@@ -236,10 +237,10 @@ func (p *Process) shutDown() error {
 	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.procState.Status)
 		// prevent pending process from running
-		p.onProcessEnd(ProcessStateTerminating)
+		p.onProcessEnd(types.ProcessStateTerminating)
 		return nil
 	}
-	p.setState(ProcessStateTerminating)
+	p.setState(types.ProcessStateTerminating)
 	p.stopProbes()
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
@@ -247,7 +248,7 @@ func (p *Process) shutDown() error {
 	return p.stop(p.procConf.ShutDownParams.Signal)
 }
 
-func (p *Process) doConfiguredStop(params ShutDownParams) error {
+func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
 	timeout := params.ShutDownTimeout
 	if timeout == UndefinedShutdownTimeoutSec {
 		timeout = DefaultShutdownTimeoutSec
@@ -269,12 +270,12 @@ func (p *Process) doConfiguredStop(params ShutDownParams) error {
 }
 
 func (p *Process) isRunning() bool {
-	return p.isOneOfStates(ProcessStateRunning, ProcessStateLaunched)
+	return p.isOneOfStates(types.ProcessStateRunning, types.ProcessStateLaunched)
 }
 
 func (p *Process) prepareForShutDown() {
 	// prevent restart during global shutdown
-	p.procConf.RestartPolicy.Restart = RestartPolicyNo
+	p.procConf.RestartPolicy.Restart = types.RestartPolicyNo
 }
 
 func (p *Process) onProcessEnd(state string) {
@@ -366,20 +367,20 @@ func (p *Process) setStateAndRun(state string, runnable func() error) error {
 
 func (p *Process) onStateChange(state string) {
 	switch state {
-	case ProcessStateRestarting:
+	case types.ProcessStateRestarting:
 		fallthrough
-	case ProcessStateLaunching:
+	case types.ProcessStateLaunching:
 		fallthrough
-	case ProcessStateTerminating:
-		p.procState.Health = ProcessHealthUnknown
+	case types.ProcessStateTerminating:
+		p.procState.Health = types.ProcessHealthUnknown
 	}
 }
 
 func (p *Process) getStartingStateName() string {
 	if p.procConf.IsDaemon {
-		return ProcessStateLaunching
+		return types.ProcessStateLaunching
 	}
-	return ProcessStateRunning
+	return types.ProcessStateRunning
 }
 
 func (p *Process) setUpProbes() {
@@ -440,15 +441,15 @@ func (p *Process) onLivenessCheckEnd(_, isFatal bool, err string) {
 
 func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 	if isFatal {
-		p.procState.Health = ProcessHealthNotReady
+		p.procState.Health = types.ProcessHealthNotReady
 		log.Info().Msgf("%s is not ready anymore - %s", p.getName(), err)
 		p.logBuffer.Write("Error: readiness check fail - " + err)
 		_ = p.shutDown()
 	} else if isOk {
-		p.procState.Health = ProcessHealthReady
-		p.procReadyChan <- ProcessHealthReady
+		p.procState.Health = types.ProcessHealthReady
+		p.procReadyChan <- types.ProcessHealthReady
 	} else {
-		p.procState.Health = ProcessHealthNotReady
+		p.procState.Health = types.ProcessHealthNotReady
 	}
 }
 

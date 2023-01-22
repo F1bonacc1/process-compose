@@ -52,7 +52,7 @@ testrace:
 	go test -race ./src/...
 
 coverhtml:
-	go test -coverprofile=coverage.out ./src
+	go test -coverprofile=coverage.out ./src/...
 	go tool cover -html=coverage.out
 
 run:

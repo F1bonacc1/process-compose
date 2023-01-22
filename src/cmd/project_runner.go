@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/tui"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -10,30 +11,23 @@ import (
 	"syscall"
 )
 
-func runProject(isDefConfigPath bool, process []string, noDeps bool) {
-	if isDefConfigPath {
-		pwd, err := os.Getwd()
-		if err != nil {
-			log.Fatal().Msg(err.Error())
-		}
-		file, err := app.AutoDiscoverComposeFile(pwd)
-		if err != nil {
-			fmt.Println(err)
-			log.Fatal().Msg(err.Error())
-		}
-		fileName = file
+func runProject(process []string, noDeps bool) {
+	project, err := loader.Load(opts)
+	if err != nil {
+		fmt.Println(err)
+		log.Fatal().Msg(err.Error())
 	}
 
-	project, err := app.NewProject(fileName, process, noDeps)
+	runner, err := app.NewProjectRunner(project, process, noDeps)
 	if err != nil {
 		fmt.Println(err)
 		log.Fatal().Msg(err.Error())
 	}
 	exitCode := 0
 	if isTui {
-		exitCode = runTui(project)
+		exitCode = runTui(runner)
 	} else {
-		exitCode = runHeadless(project)
+		exitCode = runHeadless(runner)
 	}
 
 	log.Info().Msg("Thank you for using process-compose")
@@ -51,7 +45,7 @@ func setSignal(signalHandler func()) {
 	}()
 }
 
-func runHeadless(project *app.Project) int {
+func runHeadless(project *app.ProjectRunner) int {
 	setSignal(func() {
 		project.ShutDownProject()
 	})
@@ -59,12 +53,12 @@ func runHeadless(project *app.Project) int {
 	return exitCode
 }
 
-func runTui(project *app.Project) int {
+func runTui(project *app.ProjectRunner) int {
 	setSignal(func() {
 		tui.Stop()
 	})
 	defer quiet()()
-	go tui.SetupTui(project.LogLength)
+	go tui.SetupTui()
 	exitCode := project.Run()
 	tui.Stop()
 	return exitCode

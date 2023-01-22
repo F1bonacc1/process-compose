@@ -3,6 +3,7 @@ package tui
 import (
 	"github.com/f1bonacc1/glippy"
 	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
 	"time"
 )
@@ -46,7 +47,7 @@ func (pv *pcView) stopFollowLog() {
 func (pv *pcView) followLog(name string) {
 	pv.loggedProc = name
 	pv.logsText.Clear()
-	_ = app.PROJ.WithProcesses([]string{name}, func(process app.ProcessConfig) error {
+	_ = app.PROJ.GetProject().WithProcesses([]string{name}, func(process types.ProcessConfig) error {
 		pv.logsText.useAnsi = !process.DisableAnsiColors
 		return nil
 	})

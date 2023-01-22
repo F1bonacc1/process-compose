@@ -21,4 +21,4 @@ do
   fi
 
 done
-exit $EXIT_CODE
+exit "$EXIT_CODE"

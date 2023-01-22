@@ -9,7 +9,9 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/gdamore/tcell/v2 v2.5.3
 	github.com/gin-gonic/gin v1.8.1
+	github.com/imdario/mergo v0.3.13
 	github.com/joho/godotenv v1.4.0
+	github.com/pkg/errors v0.9.1
 	github.com/rivo/tview v0.0.0-20221128165837-db36428c92d9
 	github.com/spf13/cobra v1.6.1
 	github.com/swaggo/swag v1.8.8

@@ -2,24 +2,23 @@ package cmd
 
 import (
 	"github.com/f1bonacc1/process-compose/src/api"
-	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/spf13/cobra"
 	"os"
 )
 
 var (
-	fileName string
-	port     int
-	isTui    bool
+	port  int
+	isTui bool
+	opts  *loader.LoaderOptions
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
 		Use:   "process-compose",
 		Short: "Processes scheduler and orchestrator",
 		Run: func(cmd *cobra.Command, args []string) {
-			isDefConfigPath := !cmd.Flags().Changed("config")
 			api.StartHttpServer(!isTui, port)
-			runProject(isDefConfigPath, []string{}, false)
+			runProject([]string{}, false)
 		},
 	}
 )
@@ -34,8 +33,10 @@ func Execute() {
 }
 
 func init() {
-
-	rootCmd.Flags().StringVarP(&fileName, "config", "f", app.DefaultFileNames[0], "path to config file to load")
+	opts = &loader.LoaderOptions{
+		FileNames: []string{},
+	}
 	rootCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false)")
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 8080, "port number")
+	rootCmd.PersistentFlags().StringArrayVarP(&opts.FileNames, "config", "f", []string{}, "path to config files to load")
 }

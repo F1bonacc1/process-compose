@@ -45,13 +45,13 @@ type pcView struct {
 	logsTextArea  *tview.TextArea
 }
 
-func newPcView(logLength int) *pcView {
+func newPcView() *pcView {
 	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
 	pv := &pcView{
 		appView:       tview.NewApplication(),
-		logsText:      NewLogView(logLength),
+		logsText:      NewLogView(app.PROJ.GetLogLength()),
 		statusText:    tview.NewTextView().SetDynamicColors(true),
-		procNames:     app.PROJ.GetLexicographicProcessNames(),
+		procNames:     app.PROJ.GetProject().GetLexicographicProcessNames(),
 		logFollow:     true,
 		fullScrState:  LogProcHalf,
 		helpText:      tview.NewTextView().SetDynamicColors(true),
@@ -231,9 +231,9 @@ func (pv *pcView) showUpdateAvailable(version string) {
 	})
 }
 
-func SetupTui(logLength int) {
+func SetupTui() {
 
-	pv := newPcView(logLength)
+	pv := newPcView()
 
 	go pv.updateTable()
 	go pv.updateLogs()

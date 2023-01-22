@@ -1,5 +1,5 @@
 version: "0.5"
-log_level: info
+log_level: debug
 log_length: 3000
 environment:
   - 'ABC=222'
@@ -68,7 +68,7 @@ processes:
         condition: process_healthy
 
   process4:
-    command: "./test_loop.bash process4"
+    command: "./test_loop.bash process4-override"
     disable_ansi_colors: true
     # availability:
     #   restart: on_failure
@@ -84,46 +84,43 @@ processes:
       success_threshold: 1
       failure_threshold: 3
 
-#  nginx:
-#    command: "docker run -d --rm -p80:80 --name nginx_test nginx"
-#    # availability:
-#    #   restart: on_failure
-#    is_daemon: true
-#    shutdown:
-#      command: "docker stop nginx_test"
-#      signal: 15
-#      timeout_seconds: 5
-#    liveness_probe:
-#      exec:
-#        command: "[ $(docker inspect -f '{{.State.Running}}' nginx_test) = 'true' ]"
-#      initial_delay_seconds: 5
-#      period_seconds: 2
-#      timeout_seconds: 5
-#      success_threshold: 1
-#      failure_threshold: 3
-#    readiness_probe:
-#      http_get:
-#        host: 127.0.0.1
-#        path: "/"
-#        port: 80
-#      initial_delay_seconds: 5
-#      period_seconds: 10
-#      timeout_seconds: 5
-#      success_threshold: 1
-#      failure_threshold: 3
-#    availability:
-#      restart: "always"
-#      backoff_seconds: 2
-
-  kcalc:
-    command: "kcalc"
-    disabled: true
+  nginx:
+    command: "docker run -d --rm -p80:80 --name nginx_test nginx"
+    # availability:
+    #   restart: on_failure
+    is_daemon: true
+    shutdown:
+      command: "docker stop nginx_test"
+      signal: 15
+      timeout_seconds: 5
+    liveness_probe:
+      exec:
+        command: "[ $(docker inspect -f '{{.State.Running}}' nginx_test) = 'true' ]"
+      initial_delay_seconds: 5
+      period_seconds: 2
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        path: "/"
+        port: 80
+      initial_delay_seconds: 5
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    availability:
+      restart: "always"
+      backoff_seconds: 2
 
   pc_log:
     command: "tail -f -n100 process-compose-${USER}.log"
     working_dir: "/tmp"
     environment:
       - 'REDACTED=1'
+      - 'ADDED=2'
     depends_on:
       process0:
         condition: process_completed
@@ -131,4 +128,5 @@ processes:
 
   bat_config:
     command: "batcat -f process-compose.yaml"
+
 

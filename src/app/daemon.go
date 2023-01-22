@@ -1,5 +1,7 @@
 package app
 
+import "github.com/f1bonacc1/process-compose/src/types"
+
 func (p *Process) waitForDaemonCompletion() {
 	if !p.isDaemonLaunched() {
 		return
@@ -9,7 +11,7 @@ loop:
 	for {
 		status := <-p.procStateChan
 		switch status {
-		case ProcessStateCompleted:
+		case types.ProcessStateCompleted:
 			break loop
 		}
 	}
@@ -18,7 +20,7 @@ loop:
 
 func (p *Process) notifyDaemonStopped() {
 	if p.isDaemonLaunched() {
-		p.procStateChan <- ProcessStateCompleted
+		p.procStateChan <- types.ProcessStateCompleted
 	}
 }
 

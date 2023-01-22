@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/f1bonacc1/process-compose/src/types"
 	"reflect"
 	"testing"
 )
@@ -10,7 +11,7 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 		Version     string
 		LogLevel    string
 		LogLocation string
-		Processes   map[string]ProcessConfig
+		Processes   map[string]types.ProcessConfig
 		Environment []string
 	}
 	tests := []struct {
@@ -22,22 +23,22 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 		{
 			name: "ShouldBe_4321",
 			fields: fields{
-				Processes: map[string]ProcessConfig{
+				Processes: map[string]types.ProcessConfig{
 					"Process1": {
 						Name: "Process1",
-						DependsOn: DependsOnConfig{
+						DependsOn: types.DependsOnConfig{
 							"Process2": {},
 						},
 					},
 					"Process2": {
 						Name: "Process2",
-						DependsOn: DependsOnConfig{
+						DependsOn: types.DependsOnConfig{
 							"Process3": {},
 						},
 					},
 					"Process3": {
 						Name: "Process3",
-						DependsOn: DependsOnConfig{
+						DependsOn: types.DependsOnConfig{
 							"Process4": {},
 						},
 					},
@@ -52,16 +53,16 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 		{
 			name: "ShouldBe_Err",
 			fields: fields{
-				Processes: map[string]ProcessConfig{
+				Processes: map[string]types.ProcessConfig{
 					"Process1": {
 						Name: "Process1",
-						DependsOn: DependsOnConfig{
+						DependsOn: types.DependsOnConfig{
 							"Process2": {},
 						},
 					},
 					"Process2": {
 						Name: "Process2",
-						DependsOn: DependsOnConfig{
+						DependsOn: types.DependsOnConfig{
 							"Process4": {},
 						},
 					},
@@ -73,10 +74,10 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 		{
 			name: "ShouldBe_1",
 			fields: fields{
-				Processes: map[string]ProcessConfig{
+				Processes: map[string]types.ProcessConfig{
 					"Process1": {
 						Name: "Process1",
-						DependsOn: DependsOnConfig{
+						DependsOn: types.DependsOnConfig{
 							"Process2": {},
 						},
 					},
@@ -92,11 +93,11 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 		{
 			name: "ShouldBe_2",
 			fields: fields{
-				Processes: map[string]ProcessConfig{
+				Processes: map[string]types.ProcessConfig{
 					"Process1": {
 						Name:     "Process1",
 						Disabled: true,
-						DependsOn: DependsOnConfig{
+						DependsOn: types.DependsOnConfig{
 							"Process2": {},
 						},
 					},
@@ -111,7 +112,7 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &Project{
+			p := &types.Project{
 				Version:     tt.fields.Version,
 				LogLocation: tt.fields.LogLocation,
 				Processes:   tt.fields.Processes,

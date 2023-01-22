@@ -3,7 +3,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ func GetProcessesName(address string, port int) ([]string, error) {
 	}
 	defer resp.Body.Close()
 	//Create a variable of the same type as our model
-	var sResp app.ProcessStates
+	var sResp types.ProcessStates
 
 	//Decode the data
 	if err := json.NewDecoder(resp.Body).Decode(&sResp); err != nil {
