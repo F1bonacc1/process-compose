@@ -22,6 +22,7 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 - [Logs caching](#-review-logs)
 - [Functions as both server and client](#-client-mode)
 - Configurable shortcuts (see [Wiki](https://github.com/F1bonacc1/process-compose/wiki/Shortcuts-Configuration))
+- [Merge Configuration Files](#-merge-2-or-more-configuration-files-with-override-values)
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -566,8 +567,6 @@ process-compose -p PORT process -a ADDRESS list
 
 ##### ✅ Override ${var} and $var from environment variables or .env values
 
-##### ❌ Merge 2 or more configuration files with override values
-
 ##### ✅ Specify which configuration files to use
 
 ```shell
@@ -577,6 +576,18 @@ process-compose -f "path/to/process-compose-file.yaml"
 ##### ✅ Auto discover configuration files
 
 The following discovery order is used: `compose.yml, compose.yaml, process-compose.yml, process-compose.yaml`. If multiple files are present the first one will be used.
+
+✅ Merge 2 or more configuration files with override values
+
+```shell
+process-compose -f "path/to/process-compose-file.yaml" -f "path/to/process-compose-override-file.yaml"
+```
+
+Using multiple `process-compose` files lets you to customize a `process-compose` application for different environments or different workflows.
+
+See the `process-compose` wiki for more information on [Multiple Compose Files](https://github.com/F1bonacc1/process-compose/wiki/Multiple-Compose-Files).
+
+
 
 #### ✅ <u>Multi-platform</u>
 
