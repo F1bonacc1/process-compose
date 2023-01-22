@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/imdario/mergo"
-	"github.com/pkg/errors"
 	"reflect"
 	"sort"
 	"strings"
@@ -57,7 +56,7 @@ func mergeSlice(toMap toMapFn, writeValue writeValueFromMapFn) func(dst, src ref
 func sliceToMap(toMap toMapFn, v reflect.Value) (map[interface{}]interface{}, error) {
 	// check if valid
 	if !v.IsValid() {
-		return nil, errors.Errorf("invalid value : %+v", v)
+		return nil, fmt.Errorf("invalid value : %+v", v)
 	}
 	return toMap(v.Interface())
 }
@@ -65,7 +64,7 @@ func sliceToMap(toMap toMapFn, v reflect.Value) (map[interface{}]interface{}, er
 func toEnvVarMap(s interface{}) (map[interface{}]interface{}, error) {
 	envVars, ok := s.(types.Environment)
 	if !ok {
-		return nil, errors.Errorf("not an Environment slice: %v", s)
+		return nil, fmt.Errorf("not an Environment slice: %v", s)
 	}
 	m := map[interface{}]interface{}{}
 	for _, v := range envVars {
@@ -104,10 +103,10 @@ func merge(opts *LoaderOptions) (*types.Project, error) {
 }
 func specialProcessesMerge(dst, src reflect.Value) error {
 	if !dst.IsValid() {
-		return errors.Errorf("invalid value: %+v", dst)
+		return fmt.Errorf("invalid value: %+v", dst)
 	}
 	if !src.IsValid() {
-		return errors.Errorf("invalid value: %+v", src)
+		return fmt.Errorf("invalid value: %+v", src)
 	}
 	var (
 		dstProc types.Processes
@@ -115,10 +114,10 @@ func specialProcessesMerge(dst, src reflect.Value) error {
 		ok      bool
 	)
 	if dstProc, ok = dst.Interface().(types.Processes); !ok {
-		return errors.Errorf("invalid type: %+v", dst)
+		return fmt.Errorf("invalid type: %+v", dst)
 	}
 	if srcProc, ok = src.Interface().(types.Processes); !ok {
-		return errors.Errorf("invalid type: %+v", src)
+		return fmt.Errorf("invalid type: %+v", src)
 	}
 	merged, err := mergeProcesses(dstProc, srcProc)
 	dst.Set(reflect.ValueOf(merged))
