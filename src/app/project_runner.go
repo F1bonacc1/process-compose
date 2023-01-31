@@ -241,9 +241,20 @@ func (p *ProjectRunner) ShutDownProject() {
 	for _, proc := range runProc {
 		proc.prepareForShutDown()
 	}
+	wg := sync.WaitGroup{}
 	for _, proc := range runProc {
-		_ = proc.shutDown()
+		err := proc.shutDown()
+		if err != nil {
+			log.Err(err).Msgf("failed to shutdown %s", proc.getName())
+			continue
+		}
+		wg.Add(1)
+		go func(pr *Process) {
+			pr.waitForCompletion()
+			wg.Done()
+		}(proc)
 	}
+	wg.Wait()
 }
 
 func (p *ProjectRunner) getProcessLog(name string) (*pclog.ProcessLogBuffer, error) {

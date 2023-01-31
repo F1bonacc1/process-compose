@@ -36,7 +36,7 @@ func runProject(process []string, noDeps bool) {
 
 func setSignal(signalHandler func()) {
 	cancelChan := make(chan os.Signal, 1)
-	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(cancelChan, syscall.SIGTERM, os.Interrupt, syscall.SIGHUP)
 	go func() {
 		sig := <-cancelChan
 		log.Info().Msgf("Caught %v - Shutting down the running processes...", sig)

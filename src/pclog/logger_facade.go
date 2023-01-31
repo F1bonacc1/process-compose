@@ -14,6 +14,7 @@ type PCLog struct {
 	file         *os.File
 	logEventChan chan logEvent
 	wg           sync.WaitGroup
+	closer       sync.Once
 }
 
 type logEvent struct {
@@ -73,10 +74,12 @@ func (l *PCLog) error(message string, process string, replica int) {
 }
 
 func (l *PCLog) Close() {
-	close(l.logEventChan)
-	l.wg.Wait()
-	l.writer.Flush()
-	l.file.Close()
+	l.closer.Do(func() {
+		close(l.logEventChan)
+		l.wg.Wait()
+		l.writer.Flush()
+		l.file.Close()
+	})
 }
 
 func (l *PCLog) runCollector() {
