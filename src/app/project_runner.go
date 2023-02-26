@@ -289,8 +289,7 @@ func (p *ProjectRunner) GetProcessLogLength(name string) int {
 	return logs.GetLogLength()
 }
 
-func (p *ProjectRunner) GetLogsAndSubscribe(name string, observer pclog.PcLogObserver) {
-
+func (p *ProjectRunner) GetLogsAndSubscribe(name string, observer pclog.LogObserver) {
 	logs, err := p.getProcessLog(name)
 	if err != nil {
 		return
@@ -298,12 +297,12 @@ func (p *ProjectRunner) GetLogsAndSubscribe(name string, observer pclog.PcLogObs
 	logs.GetLogsAndSubscribe(observer)
 }
 
-func (p *ProjectRunner) UnSubscribeLogger(name string) {
+func (p *ProjectRunner) UnSubscribeLogger(name string, observer pclog.LogObserver) {
 	logs, err := p.getProcessLog(name)
 	if err != nil {
 		return
 	}
-	logs.UnSubscribe()
+	logs.UnSubscribe(observer)
 }
 
 func (p *ProjectRunner) selectRunningProcesses(procList []string) error {

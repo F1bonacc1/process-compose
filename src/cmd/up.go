@@ -17,6 +17,9 @@ var upCmd = &cobra.Command{
 If one or more process names are passed as arguments,
 will start them and their dependencies only`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if !cmd.Flags().Changed("tui") {
+			isTui = getTuiDefault()
+		}
 		api.StartHttpServer(!isTui, port)
 		runProject(args, noDeps)
 	},
@@ -27,4 +30,6 @@ func init() {
 
 	upCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false)")
 	upCmd.Flags().BoolVarP(&noDeps, "no-deps", "", false, "don't start dependent processes")
+	upCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load")
+
 }

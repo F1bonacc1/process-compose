@@ -49,7 +49,7 @@ func init() {
 
 	rootCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false)")
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", getPortDefault(), "port number")
-	rootCmd.PersistentFlags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load")
+	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load")
 }
 
 func getTuiDefault() bool {

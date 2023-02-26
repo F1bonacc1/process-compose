@@ -2,7 +2,9 @@ package tui
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/pclog"
 	"io"
+	"math"
 	"strings"
 	"sync"
 
@@ -16,6 +18,7 @@ type LogView struct {
 	ansiWriter io.Writer
 	mx         sync.Mutex
 	useAnsi    bool
+	uniqueId   string
 }
 
 func NewLogView(maxLines int) *LogView {
@@ -26,8 +29,9 @@ func NewLogView(maxLines int) *LogView {
 			SetDynamicColors(true).
 			SetScrollable(true).
 			SetMaxLines(maxLines),
-		buffer:  &strings.Builder{},
-		useAnsi: false,
+		buffer:   &strings.Builder{},
+		useAnsi:  false,
+		uniqueId: pclog.GenerateUniqueID(10),
 	}
 	l.ansiWriter = tview.ANSIWriter(l)
 	l.SetBorder(true)
@@ -57,6 +61,14 @@ func (l *LogView) AddLines(lines []string) {
 func (l *LogView) SetLines(lines []string) {
 	l.Clear()
 	l.AddLines(lines)
+}
+
+func (l *LogView) GetUniqueID() string {
+	return l.uniqueId
+}
+
+func (l *LogView) GetTailLength() int {
+	return math.MaxInt
 }
 
 func (l *LogView) ToggleWrap() {

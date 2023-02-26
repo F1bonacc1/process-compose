@@ -56,7 +56,7 @@ func (pv *pcView) followLog(name string) {
 
 func (pv *pcView) unFollowLog() {
 	if pv.loggedProc != "" {
-		app.PROJ.UnSubscribeLogger(pv.loggedProc)
+		app.PROJ.UnSubscribeLogger(pv.loggedProc, pv.logsText)
 	}
 	pv.logsText.Flush()
 }

@@ -9,6 +9,7 @@ require (
 	github.com/fatih/color v1.14.1
 	github.com/gdamore/tcell/v2 v2.5.4
 	github.com/gin-gonic/gin v1.8.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/imdario/mergo v0.3.13
 	github.com/joho/godotenv v1.5.1
 	github.com/rivo/tview v0.0.0-20230208211350-7dfff1ce7854

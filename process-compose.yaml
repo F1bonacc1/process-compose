@@ -119,7 +119,7 @@ processes:
     command: "kcalc"
     disabled: true
 
-  pc_log:
+  __pc_log:
     command: "tail -f -n100 process-compose-${USER}.log"
     working_dir: "/tmp"
     environment:
@@ -127,6 +127,10 @@ processes:
     depends_on:
       process0:
         condition: process_completed
+
+  __pc_log_client:
+    command: "tail -f -n100 process-compose-${USER}-client.log"
+    working_dir: "/tmp"
 
 
   bat_config:

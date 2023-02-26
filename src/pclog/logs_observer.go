@@ -1,6 +1,8 @@
 package pclog
 
-type PcLogObserver interface {
+type LogObserver interface {
 	AddLine(line string)
 	SetLines(lines []string)
+	GetTailLength() int
+	GetUniqueID() string
 }

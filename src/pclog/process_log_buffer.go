@@ -9,17 +9,17 @@ const (
 )
 
 type ProcessLogBuffer struct {
-	buffer   []string
-	size     int
-	observer PcLogObserver
-	mx       sync.Mutex
+	buffer    []string
+	size      int
+	observers map[string]LogObserver
+	mx        sync.Mutex
 }
 
 func NewLogBuffer(size int) *ProcessLogBuffer {
 	return &ProcessLogBuffer{
-		size:     size,
-		buffer:   make([]string, 0, size+slack),
-		observer: nil,
+		size:      size,
+		buffer:    make([]string, 0, size+slack),
+		observers: map[string]LogObserver{},
 	}
 }
 
@@ -30,8 +30,8 @@ func (b *ProcessLogBuffer) Write(message string) {
 	if len(b.buffer) > b.size+slack {
 		b.buffer = b.buffer[slack:]
 	}
-	if b.observer != nil {
-		b.observer.AddLine(message)
+	for _, observer := range b.observers {
+		observer.AddLine(message)
 	}
 
 }
@@ -82,15 +82,21 @@ func (b *ProcessLogBuffer) GetLogLength() int {
 	return len(b.buffer)
 }
 
-func (b *ProcessLogBuffer) GetLogsAndSubscribe(observer PcLogObserver) {
+func (b *ProcessLogBuffer) GetLogsAndSubscribe(observer LogObserver) {
 	b.mx.Lock()
 	defer b.mx.Unlock()
-	observer.SetLines(b.buffer)
-	b.observer = observer
+	observer.SetLines(b.GetLogRange(observer.GetTailLength(), 0))
+	b.observers[observer.GetUniqueID()] = observer
 }
 
-func (b *ProcessLogBuffer) UnSubscribe() {
+func (b *ProcessLogBuffer) Subscribe(observer LogObserver) {
 	b.mx.Lock()
 	defer b.mx.Unlock()
-	b.observer = nil
+	b.observers[observer.GetUniqueID()] = observer
+}
+
+func (b *ProcessLogBuffer) UnSubscribe(observer LogObserver) {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+	delete(b.observers, observer.GetUniqueID())
 }
