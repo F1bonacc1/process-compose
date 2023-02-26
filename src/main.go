@@ -21,8 +21,7 @@ func setupLogger(output io.Writer) {
 }
 
 func main() {
-
-	file, err := os.OpenFile(config.LogFilePath, config.LogFileFlags, config.LogFileMode)
+	file, err := os.OpenFile(config.GetLogFilePath(), config.LogFileFlags, config.LogFileMode)
 	if err != nil {
 		panic(err)
 	}

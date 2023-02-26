@@ -28,7 +28,9 @@ const (
 	LogFileMode  = os.FileMode(0600)
 )
 
-var LogFilePath = filepath.Join(os.TempDir(), fmt.Sprintf("process-compose-%s.log", mustUser()))
+func GetLogFilePath() string {
+	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose-%s%s.log", mustUser(), mode()))
+}
 
 func procCompHome() string {
 	if env := os.Getenv(pcConfigEnv); env != "" {
@@ -57,4 +59,18 @@ func mustUser() string {
 		log.Fatal().Err(err).Msg("Failed to retrieve user info")
 	}
 	return usr.Username
+}
+
+func mode() string {
+	if isClient() {
+		return "-client"
+	}
+	return ""
+}
+
+func isClient() bool {
+	if len(os.Args) > 1 {
+		return os.Args[1] == "process"
+	}
+	return false
 }
