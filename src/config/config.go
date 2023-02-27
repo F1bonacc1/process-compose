@@ -69,8 +69,10 @@ func mode() string {
 }
 
 func isClient() bool {
-	if len(os.Args) > 1 {
-		return os.Args[1] == "process"
+	for _, proc := range os.Args {
+		if proc == "process" {
+			return true
+		}
 	}
 	return false
 }
