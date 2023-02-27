@@ -1,6 +1,6 @@
 NAME=process-compose
 RM=rm
-VERSION = v0.40.2
+VERSION = v0.43.1
 #VERSION = $(shell git describe --abbrev=0)
 GIT_REV    ?= $(shell git rev-parse --short HEAD)
 DATE       ?= $(shell TZ=UTC0 git show --quiet --date='format-local:%Y-%m-%dT%H:%M:%SZ' --format="%cd")
