@@ -13,7 +13,7 @@ import (
 func ReadProcessLogs(address string, port int, name string, offset int, follow bool) error {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
-	url := fmt.Sprintf("ws://%s:%d/process/logs/ws/%s/%d/%v", address, port, name, offset, follow)
+	url := fmt.Sprintf("ws://%s:%d/process/logs/ws?name=%s&offset=%d&follow=%v", address, port, name, offset, follow)
 	log.Info().Msgf("Connecting to %s", url)
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {

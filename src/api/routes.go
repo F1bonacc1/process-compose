@@ -46,7 +46,7 @@ func InitRoutes(useLogger bool) *gin.Engine {
 	r.POST("/process/restart/:name", RestartProcess)
 
 	//websocket
-	r.GET("/process/logs/ws/:name/:endOffset/:follow", HandleLogsStream)
+	r.GET("/process/logs/ws", HandleLogsStream)
 
 	return r
 }

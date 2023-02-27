@@ -13,9 +13,9 @@ import (
 var upgrader = websocket.Upgrader{}
 
 func HandleLogsStream(c *gin.Context) {
-	procName := c.Param("name")
-	follow := c.Param("follow") == "true"
-	endOffset, err := strconv.Atoi(c.Param("endOffset"))
+	procName := c.Query("name")
+	follow := c.Query("follow") == "true"
+	endOffset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
