@@ -28,8 +28,8 @@ will start them and their dependencies only`,
 func init() {
 	rootCmd.AddCommand(upCmd)
 
-	upCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false)")
+	upCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false) (env: PC_DISABLE_TUI)")
 	upCmd.Flags().BoolVarP(&noDeps, "no-deps", "", false, "don't start dependent processes")
-	upCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load")
+	upCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load (env: PC_CONFIG_FILES)")
 
 }

@@ -35,5 +35,5 @@ func init() {
 	processCmd.AddCommand(logsCmd)
 
 	logsCmd.Flags().BoolVarP(&follow, "follow", "f", false, "Follow log output")
-	logsCmd.Flags().IntVarP(&tailLength, "tail", "n", math.MaxInt, "Number of lines to show from the end of the logs (default - all)")
+	logsCmd.Flags().IntVarP(&tailLength, "tail", "n", math.MaxInt, "Number of lines to show from the end of the logs")
 }
