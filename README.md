@@ -119,6 +119,12 @@ nix run nixpkgs/master#process-compose -- --help
 nix run github:F1bonacc1/process-compose -- --help
 ```
 
+##### Brew (MacOS and Linux)
+
+```shell
+brew install f1bonacc1/tap/process-compose
+```
+
 ### Documentation
 
 - See [examples](https://github.com/F1bonacc1/process-compose/tree/main/examples) of workflows for best practices
