@@ -1,24 +1,35 @@
 package tui
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/pclog"
+	"github.com/rivo/tview"
 	"io"
 	"math"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
+)
 
-	"github.com/rivo/tview"
+var (
+	regionPattern = regexp.MustCompile(`\["([a-zA-Z0-9_,;: \-\.]*)"\]`)
 )
 
 type LogView struct {
 	tview.TextView
-	isWrapOn   bool
-	buffer     *strings.Builder
-	ansiWriter io.Writer
-	mx         sync.Mutex
-	useAnsi    bool
-	uniqueId   string
+	isWrapOn               bool
+	buffer                 *bytes.Buffer
+	ansiWriter             io.Writer
+	mx                     sync.Mutex
+	useAnsi                bool
+	uniqueId               string
+	searchCurrentSelection int
+	isSearching            bool
+	searchTerm             string
+	searchIndex            int
+	totalSearchCount       int
 }
 
 func NewLogView(maxLines int) *LogView {
@@ -28,10 +39,12 @@ func NewLogView(maxLines int) *LogView {
 		TextView: *tview.NewTextView().
 			SetDynamicColors(true).
 			SetScrollable(true).
+			SetRegions(true).
 			SetMaxLines(maxLines),
-		buffer:   &strings.Builder{},
-		useAnsi:  false,
-		uniqueId: pclog.GenerateUniqueID(10),
+		buffer:                 &bytes.Buffer{},
+		useAnsi:                false,
+		uniqueId:               pclog.GenerateUniqueID(10),
+		searchCurrentSelection: 0,
 	}
 	l.ansiWriter = tview.ANSIWriter(l)
 	l.SetBorder(true)
@@ -84,10 +97,94 @@ func (l *LogView) Flush() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	if l.useAnsi {
-		l.ansiWriter.Write([]byte(l.buffer.String()))
+		l.ansiWriter.Write(l.buffer.Bytes())
 	} else {
-		l.Write([]byte(l.buffer.String()))
+		l.Write(l.buffer.Bytes())
 	}
 
 	l.buffer.Reset()
+}
+
+func (l *LogView) addRegions(regex *regexp.Regexp, text string) string {
+	newText := regex.ReplaceAllStringFunc(text, func(match string) string {
+		region := fmt.Sprintf(`["%d"]%s[""]`, l.totalSearchCount, match)
+		l.totalSearchCount++
+		return region
+	})
+
+	return newText
+}
+
+func (l *LogView) removeRegions() {
+	text := regionPattern.ReplaceAllString(l.GetText(false), "")
+	l.SetText(text)
+}
+
+func (l *LogView) searchString(search string, isRegex, caseSensitive bool) error {
+	if search == "" {
+		return nil
+	}
+	l.resetSearch()
+	searchRegexString := search
+	if !isRegex {
+		searchRegexString = regexp.QuoteMeta(searchRegexString)
+	}
+	if !caseSensitive {
+		searchRegexString = "(?i)" + searchRegexString
+	}
+	searchRegex, err := regexp.Compile(searchRegexString)
+	if err != nil {
+		return err
+	}
+	log := l.GetText(false)
+	l.SetText(l.addRegions(searchRegex, strings.TrimSpace(log)))
+	if l.totalSearchCount > 0 {
+		l.Highlight("0").ScrollToHighlight()
+	}
+	l.isSearching = true
+	l.searchTerm = search
+	return nil
+}
+
+func (l *LogView) SearchNext() {
+	if l.totalSearchCount > 0 {
+		l.searchIndex = (l.searchIndex + 1) % l.totalSearchCount
+		l.Highlight(strconv.Itoa(l.searchIndex)).ScrollToHighlight()
+	}
+}
+
+func (l *LogView) SearchPrev() {
+	if l.totalSearchCount > 0 {
+		l.searchIndex = (l.searchIndex - 1 + l.totalSearchCount) % l.totalSearchCount
+		l.Highlight(strconv.Itoa(l.searchIndex)).ScrollToHighlight()
+	}
+}
+
+func (l *LogView) isSearchActive() bool {
+	return l.isSearching
+}
+
+func (l *LogView) resetSearch() {
+	if l.isSearching {
+		l.isSearching = false
+		l.searchIndex = 0
+		l.totalSearchCount = 0
+		l.Highlight()
+		l.removeRegions()
+	}
+}
+
+func (l *LogView) getSearchTerm() string {
+	return l.searchTerm
+}
+
+func (l *LogView) getCurrentSearchIndex() int {
+	if l.totalSearchCount == 0 {
+		return -1
+	}
+	return l.searchIndex
+}
+
+func (l *LogView) getTotalSearchCount() int {
+	return l.totalSearchCount
 }

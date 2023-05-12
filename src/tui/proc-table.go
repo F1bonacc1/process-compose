@@ -40,6 +40,8 @@ func (pv *pcView) onTableSelectionChange(row, column int) {
 	if len(name) == 0 {
 		return
 	}
+	pv.logsText.resetSearch()
+	pv.updateHelpTextView()
 	pv.logsText.SetBorder(true).SetTitle(name)
 	pv.unFollowLog()
 	pv.followLog(name)

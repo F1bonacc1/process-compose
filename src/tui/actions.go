@@ -23,6 +23,10 @@ const (
 	ActionProcessRestart = ActionName("process_restart")
 	ActionProcessScreen  = ActionName("process_screen")
 	ActionQuit           = ActionName("quit")
+	ActionLogFind        = ActionName("find")
+	ActionLogFindNext    = ActionName("find_next")
+	ActionLogFindPrev    = ActionName("find_prev")
+	ActionLogFindExit    = ActionName("find_exit")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -36,6 +40,10 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionProcessRestart: tcell.KeyCtrlR,
 	ActionProcessScreen:  tcell.KeyF8,
 	ActionQuit:           tcell.KeyF10,
+	ActionLogFind:        tcell.KeyCtrlF,
+	ActionLogFindNext:    tcell.KeyCtrlN,
+	ActionLogFindPrev:    tcell.KeyCtrlP,
+	ActionLogFindExit:    tcell.KeyEsc,
 }
 
 type ShortCuts struct {
@@ -190,6 +198,18 @@ func getDefaultActions() ShortCuts {
 			},
 			ActionQuit: {
 				Description: "Quit",
+			},
+			ActionLogFind: {
+				Description: "Find",
+			},
+			ActionLogFindNext: {
+				Description: "Next",
+			},
+			ActionLogFindPrev: {
+				Description: "Previous",
+			},
+			ActionLogFindExit: {
+				Description: "Exit Search",
 			},
 		},
 	}

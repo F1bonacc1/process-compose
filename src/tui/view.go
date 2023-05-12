@@ -122,10 +122,27 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.terminateAppView()
 	case pv.shortcuts.ShortCutKeys[ActionProcessInfo].key:
 		pv.showInfo()
+	case pv.shortcuts.ShortCutKeys[ActionLogFind].key:
+		pv.showSearch()
+	case pv.shortcuts.ShortCutKeys[ActionLogFindNext].key:
+		pv.logsText.SearchNext()
+		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
+	case pv.shortcuts.ShortCutKeys[ActionLogFindPrev].key:
+		pv.logsText.SearchPrev()
+		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
+	case pv.shortcuts.ShortCutKeys[ActionLogFindExit].key:
+		pv.exitSearch()
+
 	default:
 		return event
 	}
 	return nil
+}
+
+func (pv *pcView) exitSearch() {
+	pv.logsText.resetSearch()
+	pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
+	pv.updateHelpTextView()
 }
 
 func (pv *pcView) terminateAppView() {
@@ -201,11 +218,20 @@ func (pv *pcView) updateHelpTextView() {
 	logScrBool := pv.fullScrState != LogFull
 	procScrBool := pv.fullScrState != ProcFull
 	pv.helpText.Clear()
+	if pv.logsText.isSearchActive() {
+		pv.shortcuts.ShortCutKeys[ActionLogFind].writeButton(pv.helpText)
+		pv.shortcuts.ShortCutKeys[ActionLogFindNext].writeButton(pv.helpText)
+		pv.shortcuts.ShortCutKeys[ActionLogFindPrev].writeButton(pv.helpText)
+		pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
+		pv.shortcuts.ShortCutKeys[ActionLogFindExit].writeButton(pv.helpText)
+		return
+	}
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue:]LOGS:[-:-:-]")
 	pv.shortcuts.ShortCutKeys[ActionLogScreen].writeToggleButton(pv.helpText, logScrBool)
 	pv.shortcuts.ShortCutKeys[ActionFollowLog].writeToggleButton(pv.helpText, !pv.logFollow)
 	pv.shortcuts.ShortCutKeys[ActionWrapLog].writeToggleButton(pv.helpText, !pv.logsText.IsWrapOn())
 	pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
+	pv.shortcuts.ShortCutKeys[ActionLogFind].writeButton(pv.helpText)
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
 	pv.shortcuts.ShortCutKeys[ActionProcessInfo].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessStart].writeButton(pv.helpText)

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/glippy"
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/types"
@@ -12,9 +13,11 @@ func (pv *pcView) toggleLogSelection() {
 	name := pv.getSelectedProcName()
 	pv.logSelect = !pv.logSelect
 	if pv.logSelect {
-		pv.logsTextArea.SetText(pv.logsText.GetText(true), true).
+		row, col := pv.logsText.GetScrollOffset()
+		pv.logsTextArea.SetText(pv.logsText.GetText(true), false).
 			SetBorder(true).
 			SetTitle(name + " [Select & Press Enter to Copy]")
+		pv.logsTextArea.SetOffset(row, col)
 	} else {
 		pv.logsTextArea.SetText("", false)
 	}
@@ -32,6 +35,7 @@ func (pv *pcView) toggleLogFollow() {
 }
 
 func (pv *pcView) startFollowLog(name string) {
+	pv.exitSearch()
 	pv.logFollow = true
 	pv.followLog(name)
 	go pv.updateLogs()
@@ -86,4 +90,12 @@ func (pv *pcView) createLogSelectionTextArea() {
 		}
 		return nil
 	})
+}
+
+func (pv *pcView) getLogTitle(name string) string {
+	if pv.logsText.isSearchActive() {
+		return fmt.Sprintf("Find: %s [%d of %d] - %s", pv.logsText.getSearchTerm(), pv.logsText.getCurrentSearchIndex()+1, pv.logsText.getTotalSearchCount(), name)
+	} else {
+		return name
+	}
 }
