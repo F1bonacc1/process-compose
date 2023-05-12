@@ -50,6 +50,14 @@ checksum:
   name_template: '{{ .ProjectName }}_checksums.txt'
 snapshot:
   name_template: "{{ .Version }}-SNAPSHOT-{{.ShortCommit}}"
+brews:
+  - name: process-compose
+    homepage: https://github.com/F1bonacc1/process-compose
+    tap:
+      owner: f1bonacc1
+      name: homebrew-tap
+    install: |-
+      bin.install "process-compose"
 changelog:
   sort: asc
   filters:
@@ -59,6 +67,7 @@ changelog:
 release:
   draft: true
   replace_existing_draft: true
+  disable: false
 # modelines, feel free to remove those if you don't want/use them:
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
