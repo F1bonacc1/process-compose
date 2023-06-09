@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -12,7 +11,7 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
-func HandleLogsStream(c *gin.Context) {
+func (api *PcApi) HandleLogsStream(c *gin.Context) {
 	procName := c.Query("name")
 	follow := c.Query("follow") == "true"
 	endOffset, err := strconv.Atoi(c.Query("offset"))
@@ -40,23 +39,24 @@ func HandleLogsStream(c *gin.Context) {
 			close(logChan)
 		}
 	},
-		func(message string) {
+		func(message string) (n int, err error) {
 			msg := LogMessage{
 				Message:     message,
 				ProcessName: procName,
 			}
 			logChan <- msg
+			return len(message), nil
 		},
 		endOffset)
-	go handleLog(ws, procName, connector, logChan, done)
+	go api.handleLog(ws, procName, connector, logChan, done)
 	if follow {
 		go handleIncoming(ws, done)
 	}
-	app.PROJ.GetLogsAndSubscribe(procName, connector)
+	api.project.GetLogsAndSubscribe(procName, connector)
 }
 
-func handleLog(ws *websocket.Conn, procName string, connector *pclog.Connector, logChan chan LogMessage, done chan struct{}) {
-	defer app.PROJ.UnSubscribeLogger(procName, connector)
+func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclog.Connector, logChan chan LogMessage, done chan struct{}) {
+	defer api.project.UnSubscribeLogger(procName, connector)
 	defer ws.Close()
 	for {
 		select {

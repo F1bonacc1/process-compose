@@ -86,14 +86,14 @@ func (p *Project) GetDependenciesOrderNames() ([]string, error) {
 	return order, err
 }
 
-func (p *Project) GetLexicographicProcessNames() []string {
+func (p *Project) GetLexicographicProcessNames() ([]string, error) {
 
 	names := []string{}
 	for name := range p.Processes {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	return names
+	return names, nil
 }
 
 func (p *Project) getProcesses(names ...string) ([]ProcessConfig, error) {

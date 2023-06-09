@@ -565,7 +565,17 @@ By default the client will try to use the default port `8080` and default addres
 process-compose -p PORT process -a ADDRESS list
 ```
 
+##### Client in TUI Mode
 
+For situations when process-compose was started in headless mode `-t=false`, another process-compose instance (client) can run in a fully remote TUI mode:
+
+```bash
+process-compose attach
+```
+
+The client can connect to a remote server, docker container, headless and TUI process-compose instances.
+
+In remote mode the Process Compose logo will replaced from 🔥 to ⚡and show server `hostname` instead local `hostname`.
 
 #### ✅ <u>Configuration</u>
 

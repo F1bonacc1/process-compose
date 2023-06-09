@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	port  int
-	isTui bool
-	opts  *loader.LoaderOptions
+	port      int
+	isTui     bool
+	opts      *loader.LoaderOptions
+	pcAddress string
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
@@ -23,8 +24,9 @@ var (
 			if !cmd.Flags().Changed("tui") {
 				isTui = getTuiDefault()
 			}
-			api.StartHttpServer(!isTui, port)
-			runProject([]string{}, false)
+			runner := getProjectRunner([]string{}, false)
+			api.StartHttpServer(!isTui, port, runner)
+			runProject(runner)
 		},
 	}
 )

@@ -9,6 +9,54 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type PcApi struct {
+	project app.IProject
+}
+
+func NewPcApi(project app.IProject) *PcApi {
+	return &PcApi{project}
+}
+
+// @Schemes
+// @Description Retrieves the given process and its status
+// @Tags Process
+// @Summary Get process state
+// @Produce  json
+// @Param name path string true "Process Name"
+// @Success 200 {object} object "Process State"
+// @Router /process/{name} [get]
+func (api *PcApi) GetProcess(c *gin.Context) {
+	name := c.Param("name")
+
+	state, err := api.project.GetProcessState(name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, state)
+}
+
+// @Schemes
+// @Description Retrieves the given process and its config
+// @Tags Process
+// @Summary Get process config
+// @Produce  json
+// @Param name path string true "Process Name"
+// @Success 200 {object} object "Process Config"
+// @Router /process/info/{name} [get]
+func (api *PcApi) GetProcessInfo(c *gin.Context) {
+	name := c.Param("name")
+
+	config, err := api.project.GetProcessInfo(name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
 // @Schemes
 // @Description Retrieves all the configured processes and their status
 // @Tags Process
@@ -16,12 +64,21 @@ import (
 // @Produce  json
 // @Success 200 {object} object "Processes Status"
 // @Router /processes [get]
-func GetProcesses(c *gin.Context) {
-	procs := app.PROJ.GetProject().GetLexicographicProcessNames()
+func (api *PcApi) GetProcesses(c *gin.Context) {
+	procs, err := api.project.GetLexicographicProcessNames()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	states := []*types.ProcessState{}
 	for _, name := range procs {
-		states = append(states, app.PROJ.GetProcessState(name))
+		state, err := api.project.GetProcessState(name)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		states = append(states, state)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": states})
@@ -37,7 +94,7 @@ func GetProcesses(c *gin.Context) {
 // @Param limit path int true "Limit of lines to get (0 will get all the lines till the end)"
 // @Success 200 {object} object "Process Logs"
 // @Router /process/logs/{name}/{endOffset}/{limit} [get]
-func GetProcessLogs(c *gin.Context) {
+func (api *PcApi) GetProcessLogs(c *gin.Context) {
 	name := c.Param("name")
 	endOffset, err := strconv.Atoi(c.Param("endOffset"))
 	if err != nil {
@@ -51,7 +108,7 @@ func GetProcessLogs(c *gin.Context) {
 		return
 	}
 
-	logs, err := app.PROJ.GetProcessLog(name, endOffset, limit)
+	logs, err := api.project.GetProcessLog(name, endOffset, limit)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -68,9 +125,9 @@ func GetProcessLogs(c *gin.Context) {
 // @Param name path string true "Process Name"
 // @Success 200 {string} string "Stopped Process Name"
 // @Router /process/stop/{name} [patch]
-func StopProcess(c *gin.Context) {
+func (api *PcApi) StopProcess(c *gin.Context) {
 	name := c.Param("name")
-	err := app.PROJ.StopProcess(name)
+	err := api.project.StopProcess(name)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -87,9 +144,9 @@ func StopProcess(c *gin.Context) {
 // @Param name path string true "Process Name"
 // @Success 200 {string} string "Started Process Name"
 // @Router /process/start/{name} [post]
-func StartProcess(c *gin.Context) {
+func (api *PcApi) StartProcess(c *gin.Context) {
 	name := c.Param("name")
-	err := app.PROJ.StartProcess(name)
+	err := api.project.StartProcess(name)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -106,9 +163,37 @@ func StartProcess(c *gin.Context) {
 // @Param name path string true "Process Name"
 // @Success 200 {string} string "Restarted Process Name"
 // @Router /process/restart/{name} [post]
-func RestartProcess(c *gin.Context) {
+func (api *PcApi) RestartProcess(c *gin.Context) {
 	name := c.Param("name")
-	err := app.PROJ.RestartProcess(name)
+	err := api.project.RestartProcess(name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"name": name})
+}
+
+// @Schemes
+// @Description Check if server is responding
+// @Tags Liveness
+// @Summary Liveness Check
+// @Produce  json
+// @Success 200
+// @Router /live [get]
+func (api *PcApi) IsAlive(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "alive"})
+}
+
+// @Schemes
+// @Description Get process compose hostname
+// @Tags Hostname
+// @Summary Get Hostname
+// @Produce  json
+// @Success 200
+// @Router /hostname [get]
+func (api *PcApi) GetHostName(c *gin.Context) {
+	name, err := api.project.GetHostName()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

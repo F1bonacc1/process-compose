@@ -1,7 +1,7 @@
 package pclog
 
 type multiLineHandler func(string []string)
-type lineHandler func(string string)
+type lineHandler func(s string) (n int, err error)
 
 type Connector struct {
 	LogObserver
@@ -20,8 +20,8 @@ func NewConnector(mlHandler multiLineHandler, slHandler lineHandler, tail int) *
 	}
 }
 
-func (c *Connector) AddLine(line string) {
-	c.logMessageHandler(line)
+func (c *Connector) WriteString(s string) (n int, err error) {
+	return c.logMessageHandler(s)
 }
 func (c *Connector) SetLines(lines []string) {
 	c.logLinesHandler(lines)

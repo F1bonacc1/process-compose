@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"strconv"
@@ -10,15 +9,16 @@ import (
 )
 
 func (pv *pcView) fillTableData() {
-	if app.PROJ == nil {
+	if pv.project == nil {
 		return
 	}
 	runningProcCount := 0
 	for r, name := range pv.procNames {
-		state := app.PROJ.GetProcessState(name)
-		if state == nil {
+		state, err := pv.project.GetProcessState(name)
+		if err != nil || state == nil {
 			return
 		}
+
 		pv.procTable.SetCell(r+1, 0, tview.NewTableCell(strconv.Itoa(state.Pid)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 1, tview.NewTableCell(state.Name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 2, tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
@@ -59,13 +59,13 @@ func (pv *pcView) createProcTable() *tview.Table {
 		switch event.Key() {
 		case pv.shortcuts.ShortCutKeys[ActionProcessStop].key:
 			name := pv.getSelectedProcName()
-			app.PROJ.StopProcess(name)
+			pv.project.StopProcess(name)
 		case pv.shortcuts.ShortCutKeys[ActionProcessStart].key:
 			name := pv.getSelectedProcName()
-			app.PROJ.StartProcess(name)
+			pv.project.StartProcess(name)
 		case pv.shortcuts.ShortCutKeys[ActionProcessRestart].key:
 			name := pv.getSelectedProcName()
-			app.PROJ.RestartProcess(name)
+			pv.project.RestartProcess(name)
 		}
 		return event
 	})

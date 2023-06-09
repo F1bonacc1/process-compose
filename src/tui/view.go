@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/updater"
 	"time"
@@ -24,6 +25,8 @@ const (
 	PageDialog = "dialog"
 )
 
+const shutDownAfterSec = 10
+
 var pcv *pcView = nil
 
 type pcView struct {
@@ -43,15 +46,16 @@ type pcView struct {
 	procCountCell *tview.TableCell
 	mainGrid      *tview.Grid
 	logsTextArea  *tview.TextArea
+	project       app.IProject
 }
 
-func newPcView() *pcView {
+func newPcView(project app.IProject) *pcView {
 	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
 	pv := &pcView{
-		appView:       tview.NewApplication(),
-		logsText:      NewLogView(app.PROJ.GetLogLength()),
-		statusText:    tview.NewTextView().SetDynamicColors(true),
-		procNames:     app.PROJ.GetProject().GetLexicographicProcessNames(),
+		appView:    tview.NewApplication(),
+		logsText:   NewLogView(project.GetLogLength()),
+		statusText: tview.NewTextView().SetDynamicColors(true),
+
 		logFollow:     true,
 		fullScrState:  LogProcHalf,
 		helpText:      tview.NewTextView().SetDynamicColors(true),
@@ -61,10 +65,13 @@ func newPcView() *pcView {
 		mainGrid:      tview.NewGrid(),
 		logsTextArea:  tview.NewTextArea(),
 		logSelect:     false,
+		project:       project,
 	}
+	pv.statTable = pv.createStatTable()
+	go pv.loadProcNames()
+	pv.startMonitoring()
 	pv.loadShortcuts()
 	pv.procTable = pv.createProcTable()
-	pv.statTable = pv.createStatTable()
 	pv.updateHelpTextView()
 	pv.createGrid()
 	pv.createLogSelectionTextArea()
@@ -78,6 +85,17 @@ func newPcView() *pcView {
 		pv.followLog(name)
 	}
 	return pv
+}
+
+func (pv *pcView) loadProcNames() {
+	for {
+		var err error
+		pv.procNames, err = pv.project.GetLexicographicProcessNames()
+		if err != nil {
+			continue
+		}
+		break
+	}
 }
 
 func (pv *pcView) loadShortcuts() {
@@ -175,7 +193,7 @@ func (pv *pcView) showError(errMessage string) {
 
 func (pv *pcView) showInfo() {
 	name := pv.getSelectedProcName()
-	info, err := app.PROJ.GetProcessInfo(name)
+	info, err := pv.project.GetProcessInfo(name)
 	if err != nil {
 		pv.showError(err.Error())
 		return
@@ -185,16 +203,35 @@ func (pv *pcView) showInfo() {
 }
 
 func (pv *pcView) handleShutDown() {
-	pv.statTable.SetCell(0, 2, tview.NewTableCell("Shutting Down...").
+	pv.attentionMessage("Shutting Down...")
+	pv.project.ShutDownProject()
+	time.Sleep(time.Second)
+	pv.stopFollowLog()
+	pv.appView.Stop()
+}
+func (pv *pcView) attentionMessage(message string) {
+	pv.statTable.SetCell(0, 2, tview.NewTableCell(message).
 		SetSelectable(false).
 		SetAlign(tview.AlignCenter).
 		SetExpansion(0).
 		SetTextColor(tcell.ColorWhite).
 		SetBackgroundColor(tcell.ColorRed))
-	app.PROJ.ShutDownProject()
-	time.Sleep(time.Second)
-	pv.appView.Stop()
+}
 
+func (pv *pcView) hideAttentionMessage() {
+	pv.statTable.SetCell(0, 2, tview.NewTableCell(""))
+}
+
+func (pv *pcView) handleConnectivityError() {
+	if pv.project.IsRemote() {
+		errSecs := pv.project.ErrorForSecs()
+		if errSecs > 0 {
+			pv.attentionMessage(fmt.Sprintf("Reconnecting... Terminating in %d sec", shutDownAfterSec-errSecs))
+		}
+		if errSecs >= shutDownAfterSec {
+			pv.handleShutDown()
+		}
+	}
 }
 
 func (pv *pcView) getSelectedProcName() string {
@@ -257,9 +294,35 @@ func (pv *pcView) showUpdateAvailable(version string) {
 	})
 }
 
-func SetupTui() {
+func (pv *pcView) startMonitoring() {
+	if !pv.project.IsRemote() {
+		return
+	}
+	pcClient, ok := pv.project.(*client.PcClient)
+	if !ok {
+		return
+	}
+	go func(pcClient *client.PcClient) {
+		isErrorDetected := false
+		for {
+			if err := pcClient.IsAlive(); err != nil {
+				pv.handleConnectivityError()
+				isErrorDetected = true
+			} else {
+				if isErrorDetected {
+					isErrorDetected = false
+					pv.hideAttentionMessage()
+				}
+			}
+			time.Sleep(time.Second)
+		}
 
-	pv := newPcView()
+	}(pcClient)
+}
+
+func SetupTui(project app.IProject) {
+
+	pv := newPcView(project)
 
 	go pv.updateTable()
 	go pv.updateLogs()
