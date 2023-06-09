@@ -150,6 +150,8 @@ func (p *Process) getProcessStarter() func() error {
 		stderr, _ := p.command.StderrPipe()
 		go p.handleOutput(stdout, p.handleInfo)
 		go p.handleOutput(stderr, p.handleError)
+		//stdin, _ := p.command.StdinPipe()
+		//go p.handleInput(stdin)
 		return p.command.Start()
 	}
 }
@@ -311,8 +313,19 @@ func (p *Process) updateProcState() {
 	}
 }
 
-func (p *Process) handleOutput(pipe io.ReadCloser,
-	handler func(message string)) {
+func (p *Process) handleInput(pipe io.WriteCloser) {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			log.Error().Msgf("error reading from stdin - %s", err.Error())
+			continue
+		}
+		pipe.Write([]byte(input))
+	}
+}
+
+func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string)) {
 	outscanner := bufio.NewScanner(pipe)
 	outscanner.Split(bufio.ScanLines)
 	for outscanner.Scan() {

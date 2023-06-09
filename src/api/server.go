@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
@@ -12,12 +13,13 @@ import (
 
 const EnvDebugMode = "PC_DEBUG_MODE"
 
-func StartHttpServer(useLogger bool, port int) {
+func StartHttpServer(useLogger bool, port int, project app.IProject) {
 	if os.Getenv(EnvDebugMode) == "" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	routersInit := InitRoutes(useLogger)
+	handler := NewPcApi(project)
+	routersInit := InitRoutes(useLogger, handler)
 	readTimeout := time.Duration(60) * time.Second
 	writeTimeout := time.Duration(60) * time.Second
 	endPoint := fmt.Sprintf(":%d", port)

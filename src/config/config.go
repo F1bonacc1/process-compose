@@ -73,6 +73,9 @@ func isClient() bool {
 		if proc == "process" {
 			return true
 		}
+		if proc == "attach" {
+			return true
+		}
 	}
 	return false
 }

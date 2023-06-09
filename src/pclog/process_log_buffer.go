@@ -31,7 +31,7 @@ func (b *ProcessLogBuffer) Write(message string) {
 		b.buffer = b.buffer[slack:]
 	}
 	for _, observer := range b.observers {
-		observer.AddLine(message)
+		_, _ = observer.WriteString(message)
 	}
 
 }

@@ -20,8 +20,9 @@ will start them and their dependencies only`,
 		if !cmd.Flags().Changed("tui") {
 			isTui = getTuiDefault()
 		}
-		api.StartHttpServer(!isTui, port)
-		runProject(args, noDeps)
+		runner := getProjectRunner([]string{}, false)
+		api.StartHttpServer(!isTui, port, runner)
+		runProject(runner)
 	},
 }
 

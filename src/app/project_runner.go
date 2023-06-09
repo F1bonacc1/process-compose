@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
 )
 
-var PROJ *ProjectRunner
+//var PROJ *ProjectRunner
 
 type ProjectRunner struct {
 	project          *types.Project
@@ -21,6 +22,14 @@ type ProjectRunner struct {
 	logger           pclog.PcLogger
 	waitGroup        sync.WaitGroup
 	exitCode         int
+}
+
+func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
+	return p.project.GetLexicographicProcessNames()
+}
+
+func (p *ProjectRunner) WithProcesses(names []string, fn func(process types.ProcessConfig) error) error {
+	return p.project.WithProcesses(names, fn)
 }
 
 func (p *ProjectRunner) init() {
@@ -65,7 +74,8 @@ func (p *ProjectRunner) runProcess(proc types.ProcessConfig) {
 		log.Error().Msgf("Error: Can't get log: %s using empty buffer", err.Error())
 		procLog = pclog.NewLogBuffer(0)
 	}
-	process := NewProcess(p.project.Environment, procLogger, proc, p.GetProcessState(proc.Name), procLog, 1, *p.project.ShellConfig)
+	procState, _ := p.GetProcessState(proc.Name)
+	process := NewProcess(p.project.Environment, procLogger, proc, procState, procLog, 1, *p.project.ShellConfig)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
 	go func() {
@@ -141,7 +151,7 @@ func (p *ProjectRunner) initProcessLogs() {
 	}
 }
 
-func (p *ProjectRunner) GetProcessState(name string) *types.ProcessState {
+func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error) {
 	if procState, ok := p.processStates[name]; ok {
 		proc := p.getRunningProcess(name)
 		if proc != nil {
@@ -152,11 +162,11 @@ func (p *ProjectRunner) GetProcessState(name string) *types.ProcessState {
 			procState.Health = types.ProcessHealthUnknown
 			procState.IsRunning = false
 		}
-		return procState
+		return procState, nil
 	}
 
 	log.Error().Msgf("Error: process %s doesn't exist", name)
-	return nil
+	return nil, fmt.Errorf("no such process: %s", name)
 }
 
 func (p *ProjectRunner) addRunningProcess(process *Process) {
@@ -257,6 +267,18 @@ func (p *ProjectRunner) ShutDownProject() {
 	wg.Wait()
 }
 
+func (p *ProjectRunner) IsRemote() bool {
+	return false
+}
+
+func (p *ProjectRunner) ErrorForSecs() int {
+	return 0
+}
+
+func (p *ProjectRunner) GetHostName() (string, error) {
+	return os.Hostname()
+}
+
 func (p *ProjectRunner) getProcessLog(name string) (*pclog.ProcessLogBuffer, error) {
 	if procLogs, ok := p.processLogs[name]; ok {
 		return procLogs, nil
@@ -289,20 +311,22 @@ func (p *ProjectRunner) GetProcessLogLength(name string) int {
 	return logs.GetLogLength()
 }
 
-func (p *ProjectRunner) GetLogsAndSubscribe(name string, observer pclog.LogObserver) {
+func (p *ProjectRunner) GetLogsAndSubscribe(name string, observer pclog.LogObserver) error {
 	logs, err := p.getProcessLog(name)
 	if err != nil {
-		return
+		return err
 	}
 	logs.GetLogsAndSubscribe(observer)
+	return nil
 }
 
-func (p *ProjectRunner) UnSubscribeLogger(name string, observer pclog.LogObserver) {
+func (p *ProjectRunner) UnSubscribeLogger(name string, observer pclog.LogObserver) error {
 	logs, err := p.getProcessLog(name)
 	if err != nil {
-		return
+		return err
 	}
 	logs.UnSubscribe(observer)
+	return nil
 }
 
 func (p *ProjectRunner) selectRunningProcesses(procList []string) error {
@@ -368,7 +392,7 @@ func NewProjectRunner(project *types.Project, processesToRun []string, noDeps bo
 	if err != nil {
 		return nil, err
 	}
-	PROJ = runner
+	//PROJ = runner
 	runner.init()
 	return runner, nil
 }

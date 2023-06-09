@@ -1,6 +1,66 @@
 info:
   contact: {}
 paths:
+  /hostname:
+    get:
+      description: Get process compose hostname
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Get Hostname
+      tags:
+      - Hostname
+  /live:
+    get:
+      description: Check if server is responding
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Liveness Check
+      tags:
+      - Liveness
+  /process/{name}:
+    get:
+      description: Retrieves the given process and its status
+      parameters:
+      - description: Process Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Process State
+          schema:
+            type: object
+      summary: Get process state
+      tags:
+      - Process
+  /process/info/{name}:
+    get:
+      description: Retrieves the given process and its config
+      parameters:
+      - description: Process Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Process Config
+          schema:
+            type: object
+      summary: Get process config
+      tags:
+      - Process
   /process/logs/{name}/{endOffset}/{limit}:
     get:
       description: Retrieves the process logs

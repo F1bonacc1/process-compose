@@ -51,23 +51,22 @@ func NewLogView(maxLines int) *LogView {
 	return l
 }
 
-func (l *LogView) AddLine(line string) {
+func (l *LogView) WriteString(line string) (n int, err error) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	if l.useAnsi {
-		fmt.Fprintf(l.buffer, "%s\n", line)
-		return
+		return l.buffer.WriteString(line + "\n")
 	}
 	if strings.Contains(strings.ToLower(line), "error") {
-		fmt.Fprintf(l.buffer, "[deeppink]%s[-:-:-]\n", tview.Escape(line))
+		return fmt.Fprintf(l.buffer, "[deeppink]%s[-:-:-]\n", tview.Escape(line))
 	} else {
-		fmt.Fprintf(l.buffer, "%s\n", tview.Escape(line))
+		return fmt.Fprintf(l.buffer, "%s\n", tview.Escape(line))
 	}
 }
 
 func (l *LogView) AddLines(lines []string) {
 	for _, line := range lines {
-		l.AddLine(line)
+		_, _ = l.WriteString(line)
 	}
 }
 

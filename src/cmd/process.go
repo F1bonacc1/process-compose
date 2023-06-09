@@ -4,10 +4,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	pcAddress string
-)
-
 // processCmd represents the process command
 var processCmd = &cobra.Command{
 	Use:   "process",

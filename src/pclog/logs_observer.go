@@ -1,7 +1,7 @@
 package pclog
 
 type LogObserver interface {
-	AddLine(line string)
+	WriteString(line string) (n int, err error)
 	SetLines(lines []string)
 	GetTailLength() int
 	GetUniqueID() string

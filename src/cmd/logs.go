@@ -1,14 +1,14 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/rs/zerolog/log"
-	"math"
-
 	"github.com/spf13/cobra"
+	"math"
+	"os"
+	"os/signal"
+	"time"
 )
 
 var (
@@ -23,11 +23,23 @@ var logsCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		err := client.ReadProcessLogs(pcAddress, port, name, tailLength, follow)
+		logger := client.LogClient{
+			Format: "%s\n",
+		}
+		err := logger.ReadProcessLogs(pcAddress, port, name, tailLength, follow, os.Stdout)
 		if err != nil {
 			log.Error().Msgf("Failed to fetch logs for process %s: %v", name, err)
 			return
 		}
+		interrupt := make(chan os.Signal, 1)
+		signal.Notify(interrupt, os.Interrupt)
+		select {
+		case <-interrupt:
+			fmt.Println("interrupt")
+			_ = logger.CloseChannel()
+			time.Sleep(time.Second)
+		}
+
 	},
 }
 

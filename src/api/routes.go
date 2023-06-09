@@ -25,28 +25,31 @@ import (
 // @query.collection.format multi
 
 // InitRoutes initialize routing information
-func InitRoutes(useLogger bool) *gin.Engine {
+func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r := gin.New()
 	if useLogger {
 		r.Use(gin.Logger())
 	}
 	r.Use(gin.Recovery())
 
-	//url := ginSwagger.URL("http://localhost:8080/swagger/doc.json") // The url pointing to API definition
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/", func(c *gin.Context) {
 		location := url.URL{Path: "/swagger/index.html"}
 		c.Redirect(http.StatusFound, location.RequestURI())
 	})
 
-	r.GET("/processes", GetProcesses)
-	r.GET("/process/logs/:name/:endOffset/:limit", GetProcessLogs)
-	r.PATCH("/process/stop/:name", StopProcess)
-	r.POST("/process/start/:name", StartProcess)
-	r.POST("/process/restart/:name", RestartProcess)
+	r.GET("/live", handler.IsAlive)
+	r.GET("/hostname", handler.GetHostName)
+	r.GET("/processes", handler.GetProcesses)
+	r.GET("/process/:name", handler.GetProcess)
+	r.GET("/process/info/:name", handler.GetProcessInfo)
+	r.GET("/process/logs/:name/:endOffset/:limit", handler.GetProcessLogs)
+	r.PATCH("/process/stop/:name", handler.StopProcess)
+	r.POST("/process/start/:name", handler.StartProcess)
+	r.POST("/process/restart/:name", handler.RestartProcess)
 
 	//websocket
-	r.GET("/process/logs/ws", HandleLogsStream)
+	r.GET("/process/logs/ws", handler.HandleLogsStream)
 
 	return r
 }

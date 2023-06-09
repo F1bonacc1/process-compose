@@ -135,4 +135,3 @@ processes:
 
   bat_config:
     command: "batcat -f process-compose.yaml"
-

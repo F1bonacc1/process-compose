@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-func runProject(process []string, noDeps bool) {
+func getProjectRunner(process []string, noDeps bool) *app.ProjectRunner {
 	project, err := loader.Load(opts)
 	if err != nil {
 		fmt.Println(err)
@@ -23,6 +23,10 @@ func runProject(process []string, noDeps bool) {
 		fmt.Println(err)
 		log.Fatal().Msg(err.Error())
 	}
+	return runner
+}
+
+func runProject(runner *app.ProjectRunner) {
 	exitCode := 0
 	if isTui {
 		exitCode = runTui(runner)
@@ -58,7 +62,7 @@ func runTui(project *app.ProjectRunner) int {
 		tui.Stop()
 	})
 	defer quiet()()
-	go tui.SetupTui()
+	go tui.SetupTui(project)
 	exitCode := project.Run()
 	tui.Stop()
 	return exitCode

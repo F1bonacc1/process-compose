@@ -3,9 +3,8 @@ package tui
 import (
 	"fmt"
 	"github.com/f1bonacc1/glippy"
-	"github.com/f1bonacc1/process-compose/src/app"
-	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -51,16 +50,21 @@ func (pv *pcView) stopFollowLog() {
 func (pv *pcView) followLog(name string) {
 	pv.loggedProc = name
 	pv.logsText.Clear()
-	_ = app.PROJ.GetProject().WithProcesses([]string{name}, func(process types.ProcessConfig) error {
-		pv.logsText.useAnsi = !process.DisableAnsiColors
-		return nil
-	})
-	app.PROJ.GetLogsAndSubscribe(name, pv.logsText)
+	config, err := pv.project.GetProcessInfo(name)
+	if err != nil {
+		return
+	}
+	pv.logsText.useAnsi = !config.DisableAnsiColors
+	if err := pv.project.GetLogsAndSubscribe(name, pv.logsText); err != nil {
+		return
+	}
 }
 
 func (pv *pcView) unFollowLog() {
 	if pv.loggedProc != "" {
-		app.PROJ.UnSubscribeLogger(pv.loggedProc, pv.logsText)
+		if err := pv.project.UnSubscribeLogger(pv.loggedProc, pv.logsText); err != nil {
+			log.Err(err).Msg("failed to unfollow log")
+		}
 	}
 	pv.logsText.Flush()
 }
