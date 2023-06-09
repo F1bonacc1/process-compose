@@ -119,6 +119,8 @@ nix run nixpkgs/master#process-compose -- --help
 nix run github:F1bonacc1/process-compose -- --help
 ```
 
+To use process-compose declaratively configured in your project `flake.nix`, checkout [process-compose-flake](https://github.com/Platonic-Systems/process-compose-flake).
+
 ##### Brew (MacOS and Linux)
 
 ```shell
