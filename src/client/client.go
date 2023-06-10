@@ -81,6 +81,10 @@ func (p *PcClient) GetProcessState(name string) (*types.ProcessState, error) {
 	return state, err
 }
 
+func (p *PcClient) GetProcessesState() (*types.ProcessesState, error) {
+	return GetProcessesState(p.address, p.port)
+}
+
 func (p *PcClient) StopProcess(name string) error {
 	return StopProcesses(p.address, p.port, name)
 }

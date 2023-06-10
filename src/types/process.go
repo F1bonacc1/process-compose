@@ -1,6 +1,11 @@
 package types
 
-import "github.com/f1bonacc1/process-compose/src/health"
+import (
+	"github.com/f1bonacc1/process-compose/src/health"
+	"time"
+)
+
+const DefaultNamespace = "default"
 
 type Processes map[string]ProcessConfig
 type Environment []string
@@ -18,6 +23,7 @@ type ProcessConfig struct {
 	ShutDownParams    ShutDownParams         `yaml:"shutdown,omitempty"`
 	DisableAnsiColors bool                   `yaml:"disable_ansi_colors,omitempty"`
 	WorkingDir        string                 `yaml:"working_dir"`
+	Namespace         string                 `yaml:"namespace"`
 	Extensions        map[string]interface{} `yaml:",inline"`
 }
 
@@ -33,17 +39,19 @@ func (p ProcessConfig) GetDependencies() []string {
 }
 
 type ProcessState struct {
-	Name       string `json:"name"`
-	Status     string `json:"status"`
-	SystemTime string `json:"system_time"`
-	Health     string `json:"is_ready"`
-	Restarts   int    `json:"restarts"`
-	ExitCode   int    `json:"exit_code"`
-	Pid        int    `json:"pid"`
+	Name       string        `json:"name"`
+	Namespace  string        `json:"namespace"`
+	Status     string        `json:"status"`
+	SystemTime string        `json:"system_time"`
+	Age        time.Duration `json:"age"`
+	Health     string        `json:"is_ready"`
+	Restarts   int           `json:"restarts"`
+	ExitCode   int           `json:"exit_code"`
+	Pid        int           `json:"pid"`
 	IsRunning  bool
 }
 
-type ProcessStates struct {
+type ProcessesState struct {
 	States []ProcessState `json:"data"`
 }
 

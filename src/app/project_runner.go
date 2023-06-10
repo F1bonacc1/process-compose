@@ -131,6 +131,7 @@ func (p *ProjectRunner) initProcessStates() {
 	for key, proc := range p.project.Processes {
 		p.processStates[key] = &types.ProcessState{
 			Name:       key,
+			Namespace:  proc.Namespace,
 			Status:     types.ProcessStatePending,
 			SystemTime: "",
 			Health:     types.ProcessHealthUnknown,
@@ -159,6 +160,7 @@ func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error
 		} else {
 			procState.Pid = 0
 			procState.SystemTime = ""
+			procState.Age = time.Duration(0)
 			procState.Health = types.ProcessHealthUnknown
 			procState.IsRunning = false
 		}
@@ -167,6 +169,20 @@ func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error
 
 	log.Error().Msgf("Error: process %s doesn't exist", name)
 	return nil, fmt.Errorf("no such process: %s", name)
+}
+
+func (p *ProjectRunner) GetProcessesState() (*types.ProcessesState, error) {
+	states := &types.ProcessesState{
+		States: make([]types.ProcessState, 0),
+	}
+	for name, _ := range p.processStates {
+		state, err := p.GetProcessState(name)
+		if err != nil {
+			continue
+		}
+		states.States = append(states.States, *state)
+	}
+	return states, nil
 }
 
 func (p *ProjectRunner) addRunningProcess(process *Process) {

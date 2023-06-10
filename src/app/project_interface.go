@@ -20,6 +20,7 @@ type IProject interface {
 	GetLexicographicProcessNames() ([]string, error)
 	GetProcessInfo(name string) (*types.ProcessConfig, error)
 	GetProcessState(name string) (*types.ProcessState, error)
+	GetProcessesState() (*types.ProcessesState, error)
 	StopProcess(name string) error
 	StartProcess(name string) error
 	RestartProcess(name string) error

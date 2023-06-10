@@ -6,44 +6,38 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
 	"net/http"
+	"sort"
 )
 
 func GetProcessesName(address string, port int) ([]string, error) {
-	url := fmt.Sprintf("http://%s:%d/processes", address, port)
-	resp, err := http.Get(url)
+	states, err := GetProcessesState(address, port)
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
-	defer resp.Body.Close()
-	//Create a variable of the same type as our model
-	var sResp types.ProcessStates
-
-	//Decode the data
-	if err := json.NewDecoder(resp.Body).Decode(&sResp); err != nil {
-		return []string{}, err
-	}
-	procs := make([]string, len(sResp.States))
-	for i, proc := range sResp.States {
+	procs := make([]string, len(states.States))
+	for i, proc := range states.States {
 		procs[i] = proc.Name
 	}
+	sort.Strings(procs)
 	return procs, nil
 }
 
-func GetProcessesState(address string, port int) ([]types.ProcessState, error) {
+func GetProcessesState(address string, port int) (*types.ProcessesState, error) {
 	url := fmt.Sprintf("http://%s:%d/processes", address, port)
 	resp, err := http.Get(url)
 	if err != nil {
-		return []types.ProcessState{}, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	//Create a variable of the same type as our model
-	var sResp types.ProcessStates
+	var sResp types.ProcessesState
 
 	//Decode the data
 	if err := json.NewDecoder(resp.Body).Decode(&sResp); err != nil {
-		return []types.ProcessState{}, err
+		log.Err(err).Msgf("failed to decode process states")
+		return nil, err
 	}
-	return sResp.States, nil
+	return &sResp, nil
 }
 
 func GetProcessState(address string, port int, name string) (*types.ProcessState, error) {
