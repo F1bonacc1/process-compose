@@ -8,22 +8,22 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 
 #### Features:
 
-- [Processes execution (in parallel or/and serially)](#✅ launcher)
-- [Processes dependencies and startup order](#✅ define-process-dependencies)
-- [Defining recovery policies](#✅ auto-restart-on-exit)
-- [Manual process \[re\]start](#✅ disabled-processes)
-- [Processes arguments `bash` or `zsh` style (or define your own shell)](#✅ linux)
-- [Per process and global environment variables](#✅ environment-variables)
-- [Per process or global (single file) logs](#✅ logger)
-- [Health checks (liveness and readiness)](#✅ health-checks)
-- [Terminal User Interface (TUI) or CLI modes](#✅ tui-terminal-user-interface)
-- [Forking (services or daemons) processes](#✅ background-detached-processes)
-- [REST API (OpenAPI a.k.a Swagger)](#✅ rest-api) 
-- [Logs caching](#✅ review-logs)
-- [Functions as both server and client](#✅ client-mode)
+- [Processes execution (in parallel or/and serially)](#launcher)
+- [Processes dependencies and startup order](#define-process-dependencies)
+- [Defining recovery policies](#auto-restart-on-exit)
+- [Manual process \[re\]start](#disabled-processes)
+- [Processes arguments `bash` or `zsh` style (or define your own shell)](#linux)
+- [Per process and global environment variables](#environment-variables)
+- [Per process or global (single file) logs](#logger)
+- [Health checks (liveness and readiness)](#health-checks)
+- [Terminal User Interface (TUI) or CLI modes](#tui-terminal-user-interface)
+- [Forking (services or daemons) processes](#background-detached-processes)
+- [REST API (OpenAPI a.k.a Swagger)](#rest-api) 
+- [Logs caching](#review-logs)
+- [Functions as both server and client](#client-mode)
 - Configurable shortcuts (see [Wiki](https://github.com/F1bonacc1/process-compose/wiki/Shortcuts-Configuration))
-- [Merge Configuration Files](#✅ merge-2-or-more-configuration-files-with-override-values)
-- [Namespaces](#✅ Namespaces)
+- [Merge Configuration Files](#merge-2-or-more-configuration-files-with-override-values)
+- [Namespaces](#Namespaces)
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -133,15 +133,11 @@ brew install f1bonacc1/tap/process-compose
 - See [examples](https://github.com/F1bonacc1/process-compose/tree/main/examples) of workflows for best practices
 - See below
 
-#### List of Features and Planned Features
+## Features
 
-##### ✅ Mostly implemented
+#### <u>Launcher</u>
 
-##### ❌ Implementation not started (Your feedback and ⭐ will motivate further development 😃)
-
-#### ✅ <u>Launcher</u>
-
-##### ✅ Parallel
+##### Parallel
 
 ```yaml
 process1:
@@ -150,7 +146,7 @@ process2:
   command: "sleep 3"
 ```
 
-##### ✅ Serial
+##### Serial
 
 ```yaml
 process1:
@@ -167,7 +163,7 @@ process2:
 
 ##### ❌ Instance Number
 
-##### ✅ Specify a working directory
+##### Specify a working directory
 
 ```yaml
 process1:
@@ -177,7 +173,7 @@ process1:
 
 Make sure that you have the proper access permissions to the specified `working_dir`. If not, the command will fail with a `permission denied` error. The process status in TUI will be `Error`.
 
-##### ✅ Define process dependencies
+##### Define process dependencies
 
 ```yaml
 process2:
@@ -195,7 +191,7 @@ There are 4 condition types that cab be used in process dependencies:
 * `process_healthy` - is the type for waiting until a process is healthy
 * `process_started` - is the type for waiting until a process has started (default)
 
-##### ✅ Run only specific processes
+##### Run only specific processes
 
 For testing and debugging purposes, especially when your `process-compose.yaml` file contains many processes, you might want to specify only a subset of processes to run. For example:
 
@@ -240,7 +236,7 @@ process-compose up process1 process3 --no-deps # will run 'process1', 'process3'
 
 
 
-##### ✅ Termination Parameters
+##### Termination Parameters
 
 ```yaml
 nginx:
@@ -261,7 +257,7 @@ In case the `shutdown.command` is defined:
 2. Wait for `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
 3. In case of timeout, the process will receive the `SIGKILL` signal
 
-##### ✅ Background (detached) Processes
+##### Background (detached) Processes
 
 ```yaml
 nginx:
@@ -279,27 +275,25 @@ nginx:
 
 3. Daemon processes can only be stopped with the `$PROCESSNAME.shutdown.command` as in the example above.
 
-#### ✅ <u>Output Handling</u>
+#### <u>Output Handling</u>
 
-##### ✅ Show process name
+##### Show process name
 
-##### ✅ Different colors per process
+##### Different colors per process
 
-##### ✅ StdErr is printed in Red
+##### StdErr is printed in Red
 
 <img src="./imgs/output.png" alt="output" style="zoom:50%;" />
 
-##### ❌ Silence specific processes
+#### <u>TUI</u> (Terminal User Interface)
 
-#### ✅ <u>TUI</u> (Terminal User Interface)
+##### Review processes status
 
-##### ✅ Review processes status
+##### Start processes (only completed or disabled)
 
-##### ✅ Start processes (only completed or disabled)
+##### Stop processes
 
-##### ✅ Stop processes
-
-##### ✅ Review logs
+##### Review logs
 
 TUI is the default run mode, but it's possible to disable it:
 
@@ -347,20 +341,20 @@ Sorting is performed by pressing `shift` + the letter that appears in `()` next 
 
 For example: To sort by process `AGE(A)` press `shift+A`
 
-#### ✅ <u>Logger</u>
+#### <u>Logger</u>
 
-##### ✅ Per Process Log Collection
+##### Per Process Log Collection
 
 ```yaml
 process2:
   log_location: ./pc.process2.log #if undefined or empty no logs will be saved
 ```
 
-##### ✅ Capture StdOut output
+##### Capture StdOut output
 
-##### ✅ Capture StdErr output
+##### Capture StdErr output
 
-##### ✅ Merge into a single file
+##### Merge into a single file
 
 ```yaml
 processes:
@@ -371,9 +365,7 @@ environment:
 log_location: ./pc.global.log #if undefined or empty no logs will be saved (if also not defined per process)
 ```
 
-##### ❌ Silence specific processes
-
-##### ✅ Process compose console log level
+##### Process compose console log level
 
 ```yaml
 log_level: info # other options: "trace", "debug", "info", "warn", "error", "fatal", "panic"
@@ -397,13 +389,13 @@ processes:
 
 This will allow you to spot any issues with the processes execution, without leaving the `process-compose` TUI.
 
-#### ✅ <u>Health Checks</u>
+#### <u>Health Checks</u>
 
 Many applications running for long periods of time eventually transition to broken states, and cannot recover except by being restarted. Process Compose provides liveness and readiness probes to detect and remedy such situations.
 
 Probes configuration and functionality are designed to work similarly to [Kubernetes liveness and readiness probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/).
 
-##### ✅ Liveness Probe
+##### Liveness Probe
 
 ```yaml
   nginx:
@@ -423,7 +415,7 @@ Probes configuration and functionality are designed to work similarly to [Kubern
       failure_threshold: 3
 ```
 
-##### ✅ Readiness Probe
+##### Readiness Probe
 
 ```yaml
   nginx:
@@ -463,11 +455,11 @@ Probes have a number of fields that you can use to control the behavior of liven
 - `success_threshold`: Minimum consecutive successes for the probe to be considered successful after failing. Defaults to 1. Must be 1 for liveness and startup Probes. The minimum value is 1. **Note**: this value is not respected and was added as a placeholder for future implementation.
 - `failure_threshold`: When a probe fails, Process Compose will try `failure_threshold` times before giving up. Giving up in case of liveness probe means restarting the process. In case of readiness probe, the Pod will be marked Unready. Defaults to 3. The minimum value is 1.
 
-##### ✅ Auto Restart if not Healthy
+##### Auto Restart if not Healthy
 
 In order to ensure that the process is restarted (and not transitioned to completed state) in case of readiness check fail, please make sure to define the `availability` configuration. For background (`is_daemon=true`) processes, the `restart` policy should be `always`.
 
-##### ✅ Auto Restart on Exit
+##### Auto Restart on Exit
 
 ```yaml
 process2:
@@ -477,7 +469,7 @@ process2:
     max_restarts: 5 # default: 0 (unlimited)
 ```
 
-##### ✅ Terminate Process Compose on Failure
+##### Terminate Process Compose on Failure
 
 There are cases when you would like the `process-compose` to terminate immediately when one of the processes exits with non `0` exit code. This can be useful when you would like to perform "pre-flight" validation checks on the environment.
 
@@ -498,9 +490,9 @@ other_proc:
 
 
 
-#### ✅ <u>Environment Variables</u>
+#### <u>Environment Variables</u>
 
-##### ✅ Per Process
+##### Per Process
 
 ```yaml
 process2:
@@ -508,7 +500,7 @@ process2:
     - "I_AM_LOCAL_EV=42"
 ```
 
-##### ✅ Global
+##### Global
 
 ```yaml
 processes:
@@ -526,7 +518,7 @@ Default environment variables:
 
 `PC_REPLICA_NUM` - Defines the process replica number. Useful for port collision avoidance for processes with multiple replicas.
 
-#### ✅ <u>REST API</u>
+#### <u>REST API</u>
 
 A convenient Swagger API is provided: http://localhost:8080
 
@@ -538,7 +530,7 @@ Default port is 8080. Specify your own port:
 process-compose -p PORT
 ```
 
-#### ✅ Client Mode
+#### Client Mode
 
 Process compose can also connect to itself as client. Available commands:
 
@@ -586,23 +578,23 @@ The client can connect to a remote server, docker container, headless and TUI pr
 
 In remote mode the Process Compose logo will replaced from 🔥 to ⚡and show server `hostname` instead local `hostname`.
 
-#### ✅ <u>Configuration</u>
+#### <u>Configuration</u>
 
-##### ✅ Support .env file
+##### Support .env file
 
-##### ✅ Override ${var} and $var from environment variables or .env values
+##### Override ${var} and $var from environment variables or .env values
 
-##### ✅ Specify which configuration files to use
+##### Specify which configuration files to use
 
 ```shell
 process-compose -f "path/to/process-compose-file.yaml"
 ```
 
-##### ✅ Auto discover configuration files
+##### Auto discover configuration files
 
 The following discovery order is used: `compose.yml, compose.yaml, process-compose.yml, process-compose.yaml`. If multiple files are present the first one will be used.
 
-✅ Merge 2 or more configuration files with override values
+Merge 2 or more configuration files with override values
 
 ```shell
 process-compose -f "path/to/process-compose-file.yaml" -f "path/to/process-compose-override-file.yaml"
@@ -612,7 +604,7 @@ Using multiple `process-compose` files lets you to customize a `process-compose`
 
 See the `process-compose` wiki for more information on [Multiple Compose Files](https://github.com/F1bonacc1/process-compose/wiki/Multiple-Compose-Files).
 
-### ✅ Namespaces
+### Namespaces
 
 Assigning namespaces to processes allows better grouping and sorting, especially in TUI:
 
@@ -624,13 +616,13 @@ processes:
     namespace: debug # if not defined 'default' namespaces is automatically assigned to each process
 ```
 
-#### ✅ <u>Multi-platform</u>
+#### <u>Multi-platform</u>
 
-##### ✅ Linux
+##### Linux
 
 The default backend is `bash`. You can define a different backend with a `COMPOSE_SHELL` environment variable.
 
-##### ✅ Windows
+##### Windows
 
 The default backend is `cmd`. You can define a different backend with a `COMPOSE_SHELL` environment variable.
 
@@ -647,11 +639,11 @@ process2:
   command: "powershell.exe ./test.ps1 arg1 arg2 argN"
 ```
 
-##### ✅ macOS
+##### macOS
 
 The default backend is `bash`. You can define a different backend with a `COMPOSE_SHELL` environment variable.
 
-##### ✅ Configurable Backend
+##### Configurable Backend
 
 For cases where you process compose requires a non default or transferable backend definition, setting an environment variable won't do. For that you  can configure it directly in the `process-compose.yaml` file:
 
