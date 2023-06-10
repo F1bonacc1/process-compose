@@ -135,7 +135,7 @@ brew install f1bonacc1/tap/process-compose
 
 ## Features
 
-#### <u>Launcher</u>
+#### Launcher
 
 ##### Parallel
 
@@ -285,7 +285,7 @@ nginx:
 
 <img src="./imgs/output.png" alt="output" style="zoom:50%;" />
 
-#### <u>TUI</u> (Terminal User Interface)
+#### TUI (Terminal User Interface)
 
 ##### Review processes status
 
@@ -341,7 +341,7 @@ Sorting is performed by pressing `shift` + the letter that appears in `()` next 
 
 For example: To sort by process `AGE(A)` press `shift+A`
 
-#### <u>Logger</u>
+#### Logger
 
 ##### Per Process Log Collection
 
@@ -389,7 +389,7 @@ processes:
 
 This will allow you to spot any issues with the processes execution, without leaving the `process-compose` TUI.
 
-#### <u>Health Checks</u>
+#### Health Checks
 
 Many applications running for long periods of time eventually transition to broken states, and cannot recover except by being restarted. Process Compose provides liveness and readiness probes to detect and remedy such situations.
 
@@ -490,7 +490,7 @@ other_proc:
 
 
 
-#### <u>Environment Variables</u>
+#### Environment Variables
 
 ##### Per Process
 
@@ -518,7 +518,7 @@ Default environment variables:
 
 `PC_REPLICA_NUM` - Defines the process replica number. Useful for port collision avoidance for processes with multiple replicas.
 
-#### <u>REST API</u>
+#### REST API
 
 A convenient Swagger API is provided: http://localhost:8080
 
@@ -594,7 +594,7 @@ process-compose -f "path/to/process-compose-file.yaml"
 
 The following discovery order is used: `compose.yml, compose.yaml, process-compose.yml, process-compose.yaml`. If multiple files are present the first one will be used.
 
-Merge 2 or more configuration files with override values
+##### Merge 2 or more configuration files with override values
 
 ```shell
 process-compose -f "path/to/process-compose-file.yaml" -f "path/to/process-compose-override-file.yaml"
