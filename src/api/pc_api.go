@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/f1bonacc1/process-compose/src/types"
 	"net/http"
 	"strconv"
 
@@ -65,23 +64,13 @@ func (api *PcApi) GetProcessInfo(c *gin.Context) {
 // @Success 200 {object} object "Processes Status"
 // @Router /processes [get]
 func (api *PcApi) GetProcesses(c *gin.Context) {
-	procs, err := api.project.GetLexicographicProcessNames()
+	states, err := api.project.GetProcessesState()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	states := []*types.ProcessState{}
-	for _, name := range procs {
-		state, err := api.project.GetProcessState(name)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		states = append(states, state)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": states})
+	c.JSON(http.StatusOK, states)
 }
 
 // @Schemes

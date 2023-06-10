@@ -69,6 +69,7 @@ processes:
 
   process4:
     command: "./test_loop.bash process4-override"
+    namespace: test
     disable_ansi_colors: true
     # availability:
     #   restart: on_failure

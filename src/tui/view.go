@@ -5,6 +5,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/updater"
+	"sync"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
@@ -47,15 +48,17 @@ type pcView struct {
 	mainGrid      *tview.Grid
 	logsTextArea  *tview.TextArea
 	project       app.IProject
+	sortMtx       sync.Mutex
+	stateSorter   StateSorter
+	procColumns   map[ColumnID]string
 }
 
 func newPcView(project app.IProject) *pcView {
 	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
 	pv := &pcView{
-		appView:    tview.NewApplication(),
-		logsText:   NewLogView(project.GetLogLength()),
-		statusText: tview.NewTextView().SetDynamicColors(true),
-
+		appView:       tview.NewApplication(),
+		logsText:      NewLogView(project.GetLogLength()),
+		statusText:    tview.NewTextView().SetDynamicColors(true),
 		logFollow:     true,
 		fullScrState:  LogProcHalf,
 		helpText:      tview.NewTextView().SetDynamicColors(true),
@@ -66,6 +69,11 @@ func newPcView(project app.IProject) *pcView {
 		logsTextArea:  tview.NewTextArea(),
 		logSelect:     false,
 		project:       project,
+		stateSorter: StateSorter{
+			sortByColumn: ProcessStateName,
+			isAsc:        true,
+		},
+		procColumns: map[ColumnID]string{},
 	}
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
@@ -240,7 +248,7 @@ func (pv *pcView) getSelectedProcName() string {
 	}
 	row, _ := pv.procTable.GetSelection()
 	if row > 0 && row <= len(pv.procNames) {
-		return pv.procNames[row-1]
+		return pv.procTable.GetCell(row, 1).Text
 	}
 	return ""
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 	"strconv"
 	"time"
 )
@@ -13,19 +14,26 @@ func (pv *pcView) fillTableData() {
 		return
 	}
 	runningProcCount := 0
-	for r, name := range pv.procNames {
-		state, err := pv.project.GetProcessState(name)
-		if err != nil || state == nil {
-			return
-		}
-
+	states, err := pv.project.GetProcessesState()
+	if err != nil {
+		log.Err(err).Msg("failed to get processes state")
+		return
+	}
+	sorter := pv.getTableSorter()
+	err = sortProcessesState(sorter.sortByColumn, sorter.isAsc, states)
+	if err != nil {
+		log.Err(err).Msg("failed to sort states")
+		return
+	}
+	for r, state := range states.States {
 		pv.procTable.SetCell(r+1, 0, tview.NewTableCell(strconv.Itoa(state.Pid)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 		pv.procTable.SetCell(r+1, 1, tview.NewTableCell(state.Name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 2, tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 3, tview.NewTableCell(state.SystemTime).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 4, tview.NewTableCell(state.Health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 5, tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, 6, tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 2, tview.NewTableCell(state.Namespace).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 3, tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 4, tview.NewTableCell(state.SystemTime).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 5, tview.NewTableCell(state.Health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 6, tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(r+1, 7, tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 		if state.IsRunning {
 			runningProcCount += 1
 		}
@@ -54,7 +62,17 @@ func (pv *pcView) onTableSelectionChange(row, column int) {
 
 func (pv *pcView) createProcTable() *tview.Table {
 	table := tview.NewTable().SetBorders(false).SetSelectable(true, false)
-	//pv.fillTableData()
+	pv.procColumns = map[ColumnID]string{
+		ProcessStatePid:       "PID(P)",
+		ProcessStateName:      "NAME(N)",
+		ProcessStateNamespace: "NAMESPACE(C)",
+		ProcessStateStatus:    "STATUS(S)",
+		ProcessStateAge:       "AGE(A)",
+		ProcessStateHealth:    "HEALTH(H)",
+		ProcessStateRestarts:  "RESTARTS(R)",
+		ProcessStateExit:      "EXIT CODE(E)",
+	}
+
 	table.Select(1, 1).SetFixed(1, 0).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case pv.shortcuts.ShortCutKeys[ActionProcessStop].key:
@@ -66,27 +84,42 @@ func (pv *pcView) createProcTable() *tview.Table {
 		case pv.shortcuts.ShortCutKeys[ActionProcessRestart].key:
 			name := pv.getSelectedProcName()
 			pv.project.RestartProcess(name)
+		case tcell.KeyRune:
+			if event.Rune() == 'S' {
+				pv.setTableSorter(ProcessStateStatus)
+			} else if event.Rune() == 'N' {
+				pv.setTableSorter(ProcessStateName)
+			} else if event.Rune() == 'C' {
+				pv.setTableSorter(ProcessStateNamespace)
+			} else if event.Rune() == 'A' {
+				pv.setTableSorter(ProcessStateAge)
+			} else if event.Rune() == 'H' {
+				pv.setTableSorter(ProcessStateHealth)
+			} else if event.Rune() == 'R' {
+				pv.setTableSorter(ProcessStateRestarts)
+			} else if event.Rune() == 'E' {
+				pv.setTableSorter(ProcessStateExit)
+			} else if event.Rune() == 'P' {
+				pv.setTableSorter(ProcessStatePid)
+			}
 		}
 		return event
 	})
-	columns := []string{
-		"PID", "NAME", "STATUS", "AGE", "READINESS", "RESTARTS", "EXIT CODE",
-	}
-	for i := 0; i < len(columns); i++ {
-		expan := 1
+	for i := 0; i < len(pv.procColumns); i++ {
+		expansion := 10
 		align := tview.AlignLeft
-		switch columns[i] {
+		switch ColumnID(i) {
 		case
-			"PID":
-			expan = 0
+			ProcessStatePid:
+			expansion = 1
 		case
-			"RESTARTS",
-			"EXIT CODE":
+			ProcessStateRestarts,
+			ProcessStateExit:
 			align = tview.AlignRight
 		}
 
-		table.SetCell(0, i, tview.NewTableCell(columns[i]).
-			SetSelectable(false).SetExpansion(expan).SetAlign(align))
+		table.SetCell(0, i, tview.NewTableCell(pv.procColumns[ColumnID(i)]).
+			SetSelectable(false).SetExpansion(expansion).SetAlign(align))
 	}
 	table.SetSelectionChangedFunc(pv.onTableSelectionChange)
 	return table
@@ -99,4 +132,31 @@ func (pv *pcView) updateTable() {
 			pv.fillTableData()
 		})
 	}
+}
+
+func (pv *pcView) setTableSorter(sortBy ColumnID) {
+	pv.sortMtx.Lock()
+	defer pv.sortMtx.Unlock()
+	prevSortColumn := ProcessStateUndefined
+	if pv.stateSorter.sortByColumn == sortBy {
+		pv.stateSorter.isAsc = !pv.stateSorter.isAsc
+	} else {
+		prevSortColumn = pv.stateSorter.sortByColumn
+		pv.stateSorter.sortByColumn = sortBy
+		pv.stateSorter.isAsc = true
+	}
+	order := "[pink]↓[-:-:-]"
+	if !pv.stateSorter.isAsc {
+		order = "[pink]↑[-:-:-]"
+	}
+	pv.procTable.GetCell(0, int(sortBy)).SetText(pv.procColumns[sortBy] + order)
+	if prevSortColumn != ProcessStateUndefined {
+		pv.procTable.GetCell(0, int(prevSortColumn)).SetText(pv.procColumns[prevSortColumn])
+	}
+}
+
+func (pv *pcView) getTableSorter() StateSorter {
+	pv.sortMtx.Lock()
+	defer pv.sortMtx.Unlock()
+	return pv.stateSorter
 }

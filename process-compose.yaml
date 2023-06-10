@@ -127,10 +127,12 @@ processes:
     depends_on:
       process0:
         condition: process_completed
+    namespace: debug
 
   __pc_log_client:
     command: "tail -f -n100 process-compose-${USER}-client.log"
     working_dir: "/tmp"
+    namespace: debug
 
 
   bat_config:

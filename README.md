@@ -23,6 +23,7 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 - [Functions as both server and client](#-client-mode)
 - Configurable shortcuts (see [Wiki](https://github.com/F1bonacc1/process-compose/wiki/Shortcuts-Configuration))
 - [Merge Configuration Files](#-merge-2-or-more-configuration-files-with-override-values)
+- [Namespaces](#-Namespaces)
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -340,6 +341,12 @@ processes:
 
 Even if disabled, it is still listed in the TUI and the REST client, can be started manually when needed.
 
+##### Processes State Columns Sorting
+
+Sorting is performed by pressing `shift` + the letter that appears in `()` next to the column title. Pressing the same combination again will reverse the sort order.
+
+For example: To sort by process `AGE(A)` press `shift+A`
+
 #### ✅ <u>Logger</u>
 
 ##### ✅ Per Process Log Collection
@@ -605,7 +612,17 @@ Using multiple `process-compose` files lets you to customize a `process-compose`
 
 See the `process-compose` wiki for more information on [Multiple Compose Files](https://github.com/F1bonacc1/process-compose/wiki/Multiple-Compose-Files).
 
+### ✅ Namespaces
 
+Assigning namespaces to processes allows better grouping and sorting, especially in TUI:
+
+```yaml
+processes:  
+  process1:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+    namespace: debug # if not defined 'default' namespaces is automatically assigned to each process
+```
 
 #### ✅ <u>Multi-platform</u>
 
