@@ -173,8 +173,12 @@ func (pv *pcView) exitSearch() {
 
 func (pv *pcView) terminateAppView() {
 
+	result := "This will terminate all the running processes."
+	if pv.project.IsRemote() {
+		result = ""
+	}
 	m := tview.NewModal().
-		SetText("Are you sure you want to quit?\nThis will terminate all the running processes.").
+		SetText("Are you sure you want to quit?\n" + result).
 		AddButtons([]string{"Quit", "Cancel"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			if buttonLabel == "Quit" {
