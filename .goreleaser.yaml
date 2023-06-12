@@ -35,12 +35,13 @@ builds:
       - -X github.com/f1bonacc1/process-compose/src/config.Date={{.CommitDate}}
       - -s -w
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+  - id: process-compose
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
 
     format_overrides:
       - goos: windows
@@ -66,7 +67,7 @@ changelog:
       - '^test:'
 release:
   draft: true
-  replace_existing_draft: true
+  replace_existing_draft: false
   disable: false
 # modelines, feel free to remove those if you don't want/use them:
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json

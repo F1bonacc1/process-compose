@@ -1,7 +1,7 @@
 NAME=process-compose
 RM=rm
-VERSION = v0.51.0
-#VERSION = $(shell git describe --abbrev=0)
+#VERSION = v0.51.0
+VERSION = $(shell git describe --abbrev=0)
 GIT_REV    ?= $(shell git rev-parse --short HEAD)
 DATE       ?= $(shell TZ=UTC0 git show --quiet --date='format-local:%Y-%m-%dT%H:%M:%SZ' --format="%cd")
 NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
@@ -63,6 +63,6 @@ clean:
 	$(RM) bin/${NAME}*
 release:
 	source exports
-	goreleaser release --rm-dist --skip-validate
+	goreleaser release --clean --skip-validate
 snapshot:
-	goreleaser release --snapshot --rm-dist
+	goreleaser release --snapshot --clean
