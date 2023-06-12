@@ -18,12 +18,12 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 - [Health checks (liveness and readiness)](#health-checks)
 - [Terminal User Interface (TUI) or CLI modes](#tui-terminal-user-interface)
 - [Forking (services or daemons) processes](#background-detached-processes)
-- [REST API (OpenAPI a.k.a Swagger)](#rest-api) 
+- [REST API (OpenAPI a.k.a Swagger)](#rest-api) 🔥 NEW!
 - [Logs caching](#review-logs)
-- [Functions as both server and client](#client-mode)
+- [Functions as both server and client](#client-mode) 🔥 NEW!
 - Configurable shortcuts (see [Wiki](https://github.com/F1bonacc1/process-compose/wiki/Shortcuts-Configuration))
 - [Merge Configuration Files](#merge-2-or-more-configuration-files-with-override-values)
-- [Namespaces](#Namespaces)
+- [Namespaces](#Namespaces) 🔥 NEW!
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -576,7 +576,7 @@ process-compose attach
 
 The client can connect to a remote server, docker container, headless and TUI process-compose instances.
 
-In remote mode the Process Compose logo will replaced from 🔥 to ⚡and show server `hostname` instead local `hostname`.
+In remote mode the Process Compose logo will be replaced from 🔥 to ⚡and show server `hostname` instead local `hostname`.
 
 #### <u>Configuration</u>
 
