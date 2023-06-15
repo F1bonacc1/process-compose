@@ -1,0 +1,10 @@
+version: "0.5"
+log_level: debug
+
+processes:
+  bad_script:
+    command: "./too_chatty.py"
+
+  _pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
