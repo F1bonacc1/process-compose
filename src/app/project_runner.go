@@ -50,7 +50,8 @@ func (p *ProjectRunner) Run() int {
 	}
 	p.logger = pclog.NewNilLogger()
 	if isStringDefined(p.project.LogLocation) {
-		p.logger = pclog.NewLogger(p.project.LogLocation)
+		p.logger = pclog.NewLogger()
+		p.logger.Open(p.project.LogLocation)
 		defer p.logger.Close()
 	}
 	//zerolog.SetGlobalLevel(zerolog.PanicLevel)
@@ -66,7 +67,7 @@ func (p *ProjectRunner) Run() int {
 func (p *ProjectRunner) runProcess(proc types.ProcessConfig) {
 	procLogger := p.logger
 	if isStringDefined(proc.LogLocation) {
-		procLogger = pclog.NewLogger(proc.LogLocation)
+		procLogger = pclog.NewLogger()
 	}
 	procLog, err := p.getProcessLog(proc.Name)
 	if err != nil {

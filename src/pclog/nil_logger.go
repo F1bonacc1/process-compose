@@ -8,6 +8,9 @@ func NewNilLogger() *PcNilLog {
 	return &PcNilLog{}
 }
 
+func (l *PcNilLog) Open(_ string) {
+}
+
 func (l *PcNilLog) Sync() {
 }
 

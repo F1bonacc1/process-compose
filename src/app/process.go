@@ -96,6 +96,7 @@ func (p *Process) run() int {
 		return 1
 	}
 
+	p.onProcessStart()
 	for {
 		err := p.setStateAndRun(p.getStartingStateName(), p.getProcessStarter())
 		if err != nil {
@@ -278,6 +279,12 @@ func (p *Process) isRunning() bool {
 func (p *Process) prepareForShutDown() {
 	// prevent restart during global shutdown
 	p.procConf.RestartPolicy.Restart = types.RestartPolicyNo
+}
+
+func (p *Process) onProcessStart() {
+	if isStringDefined(p.procConf.LogLocation) {
+		p.logger.Open(p.procConf.LogLocation)
+	}
 }
 
 func (p *Process) onProcessEnd(state string) {

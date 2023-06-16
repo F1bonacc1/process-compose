@@ -2,8 +2,10 @@ package pclog
 
 import (
 	"bufio"
+	"github.com/rs/zerolog/log"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"github.com/rs/zerolog"
 )
@@ -15,6 +17,7 @@ type PCLog struct {
 	logEventChan chan logEvent
 	wg           sync.WaitGroup
 	closer       sync.Once
+	isClosed     atomic.Bool
 }
 
 type logEvent struct {
@@ -24,25 +27,40 @@ type logEvent struct {
 	isErr   bool
 }
 
-func NewLogger(outputPath string) *PCLog {
-	f, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
-	if err != nil {
-		panic(err)
-	}
-	writer := bufio.NewWriter(f)
-
+func NewLogger() *PCLog {
 	log := &PCLog{
-		writer:       writer,
-		file:         f,
-		logger:       zerolog.New(writer),
 		logEventChan: make(chan logEvent, 100),
 	}
-	log.wg.Add(1)
-	go log.runCollector()
+
 	return log
 }
 
+func (l *PCLog) Open(filePath string) {
+	if l.file != nil {
+		log.Error().Msgf("log file for %s is already open", filePath)
+		return
+	}
+	if filePath == "" {
+		log.Error().Msg("empty file path")
+		return
+	}
+	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		l.isClosed.Store(true)
+		log.Err(err).Msgf("failed to open log file %s", filePath)
+	}
+	writer := bufio.NewWriter(f)
+	l.writer = writer
+	l.file = f
+	l.logger = zerolog.New(writer)
+	l.wg.Add(1)
+	go l.runCollector()
+}
+
 func (l *PCLog) Info(message string, process string, replica int) {
+	if l.isClosed.Load() {
+		return
+	}
 	l.logEventChan <- logEvent{
 		message: message,
 		process: process,
@@ -58,6 +76,9 @@ func (l *PCLog) info(message string, process string, replica int) {
 }
 
 func (l *PCLog) Error(message string, process string, replica int) {
+	if l.isClosed.Load() {
+		return
+	}
 	l.logEventChan <- logEvent{
 		message: message,
 		process: process,
@@ -74,7 +95,11 @@ func (l *PCLog) error(message string, process string, replica int) {
 }
 
 func (l *PCLog) Close() {
+	if l.file == nil {
+		return
+	}
 	l.closer.Do(func() {
+		l.isClosed.Store(true)
 		close(l.logEventChan)
 		l.wg.Wait()
 		l.writer.Flush()
