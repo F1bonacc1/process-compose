@@ -668,3 +668,16 @@ processes:
 5. Create new Pull Request
 
 English is not my native language, so PRs correcting grammar or spelling are welcome and appreciated.
+
+## Consider supporting the project ❤️
+
+##### Github (preferred)
+
+https://github.com/sponsors/F1bonacc1
+
+##### Bitcoin
+
+<img src="./imgs/btc.wallet.qr.png" style="zoom:80%;"  alt="3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX"/>
+3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX
+
+Thank **You**! 
