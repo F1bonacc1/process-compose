@@ -8,10 +8,6 @@ import (
 	"runtime"
 )
 
-func BuildCommand(shellCmd string) *exec.Cmd {
-	return exec.Command(getRunnerShell(), getRunnerArg(), shellCmd)
-}
-
 func BuildCommandShellArg(shell ShellConfig, cmd string) *CmdWrapper {
 	return &CmdWrapper{
 		Cmd: exec.Command(shell.ShellCommand, shell.ShellArgument, cmd),
