@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
+	"time"
 )
 
 func getFixtures() []string {
@@ -20,17 +20,6 @@ func getFixtures() []string {
 func TestSystem_TestFixtures(t *testing.T) {
 	fixtures := getFixtures()
 	for _, fixture := range fixtures {
-
-		if strings.Contains(fixture, "process-compose-with-log.yaml") {
-			//there is a dedicated test for that TestSystem_TestComposeWithLog
-			continue
-		}
-
-		if strings.Contains(fixture, "process-compose-chain-exit.yaml") {
-			//there is a dedicated test for that TestSystem_TestComposeWithLog
-			continue
-		}
-
 		t.Run(fixture, func(t *testing.T) {
 			project, err := loader.Load(&loader.LoaderOptions{
 				FileNames: []string{fixture},
@@ -50,7 +39,7 @@ func TestSystem_TestFixtures(t *testing.T) {
 }
 
 func TestSystem_TestComposeWithLog(t *testing.T) {
-	fixture := filepath.Join("..", "..", "fixtures", "process-compose-with-log.yaml")
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-with-log.yaml")
 	t.Run(fixture, func(t *testing.T) {
 		project, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture},
@@ -83,7 +72,7 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 }
 
 func TestSystem_TestComposeChain(t *testing.T) {
-	fixture := filepath.Join("..", "..", "fixtures", "process-compose-chain.yaml")
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-chain.yaml")
 	t.Run(fixture, func(t *testing.T) {
 		project, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture},
@@ -119,7 +108,7 @@ func TestSystem_TestComposeChain(t *testing.T) {
 }
 
 func TestSystem_TestComposeChainExit(t *testing.T) {
-	fixture := filepath.Join("..", "..", "fixtures", "process-compose-chain-exit.yaml")
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-chain-exit.yaml")
 	t.Run(fixture, func(t *testing.T) {
 		project, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture},
@@ -137,6 +126,136 @@ func TestSystem_TestComposeChainExit(t *testing.T) {
 		want := 42
 		if want != exitCode {
 			t.Errorf("Project.Run() = %v, want %v", exitCode, want)
+		}
+	})
+}
+
+//func TestSystem_TestComposeCircular(t *testing.T) {
+//	fixture := filepath.Join("..", "..", "fixtures", "process-compose-circular.yaml")
+//	t.Run(fixture, func(t *testing.T) {
+//		project, err := loader.Load(&loader.LoaderOptions{
+//			FileNames: []string{fixture},
+//		})
+//		if err != nil {
+//			t.Errorf(err.Error())
+//			return
+//		}
+//		runner, err := NewProjectRunner(project, []string{}, false)
+//		if err != nil {
+//			t.Errorf(err.Error())
+//			return
+//		}
+//		exitCode := runner.Run()
+//		want := 42
+//		if want != exitCode {
+//			t.Errorf("Project.Run() = %v, want %v", exitCode, want)
+//		}
+//	})
+//}
+
+func TestSystem_TestComposeScale(t *testing.T) {
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-scale.yaml")
+	t.Run(fixture, func(t *testing.T) {
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		runner, err := NewProjectRunner(project, []string{}, false)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		go runner.Run()
+		time.Sleep(200 * time.Millisecond)
+		states, err := runner.GetProcessesState()
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		want := 4
+		if len(states.States) != want {
+			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
+		}
+
+		//scale to 10
+		err = runner.ScaleProcess("process1-0", 10)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		states, err = runner.GetProcessesState()
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		want = 12
+		if len(states.States) != want {
+			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
+		}
+
+		//check scale to 0 - should fail
+		err = runner.ScaleProcess("process1-00", 0)
+		if err == nil {
+			t.Errorf("should fail on scale 0")
+			return
+		}
+
+		//scale to 1 and new name with -00
+		err = runner.ScaleProcess("process1-00", 1)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		states, err = runner.GetProcessesState()
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		want = 3
+		if len(states.States) != want {
+			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
+		}
+
+		//scale to 5 process2
+		err = runner.ScaleProcess("process2", 5)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		states, err = runner.GetProcessesState()
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		want = 7
+		if len(states.States) != want {
+			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
+		}
+
+		//check no change
+		err = runner.ScaleProcess("process2-0", 5)
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		states, err = runner.GetProcessesState()
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		want = 7
+		if len(states.States) != want {
+			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
+		}
+
+		//wrong process name
+		err = runner.ScaleProcess("process2-00", 5)
+		if err == nil {
+			t.Errorf("should fail on wrong process name")
+			return
 		}
 	})
 }

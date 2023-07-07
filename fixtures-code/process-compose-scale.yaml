@@ -1,0 +1,23 @@
+version: "0.5"
+processes:
+  process1:
+    command: "echo process1 ; sleep 2"
+    replicas: 2
+    depends_on:
+      process2:
+        condition: process_completed_successfully
+
+  process2:
+    command: "echo process2; sleep 2"
+    availability:
+      restart: "on_failure"
+    depends_on:
+      process3:
+        condition: process_completed_successfully
+
+  process3:
+    command: "echo process3; sleep 2"
+    availability:
+      restart: "on_failure"
+      backoff_seconds: 2
+
