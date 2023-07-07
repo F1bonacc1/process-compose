@@ -49,7 +49,7 @@ func (pv *pcView) fillTableData() {
 	}
 }
 
-func (pv *pcView) onTableSelectionChange(row, column int) {
+func (pv *pcView) onTableSelectionChange(_, _ int) {
 	name := pv.getSelectedProcName()
 	if len(name) == 0 {
 		return

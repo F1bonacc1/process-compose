@@ -171,7 +171,7 @@ func (p *ProjectRunner) GetProcessesState() (*types.ProcessesState, error) {
 	states := &types.ProcessesState{
 		States: make([]types.ProcessState, 0),
 	}
-	for name, _ := range p.project.Processes {
+	for name := range p.project.Processes {
 		state, err := p.GetProcessState(name)
 		if err != nil {
 			return nil, err

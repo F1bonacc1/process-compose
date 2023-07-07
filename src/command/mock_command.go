@@ -28,7 +28,7 @@ func (c *MockCommand) Start() error {
 	go c.infoNoiseMaker.Run(ctx)
 	return nil
 }
-func (c *MockCommand) Stop(i int) error {
+func (c *MockCommand) Stop(_ int) error {
 	c.stopChan <- struct{}{}
 	c.cancel()
 	return nil
