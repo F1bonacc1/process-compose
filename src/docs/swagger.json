@@ -204,6 +204,35 @@
                 }
             }
         },
+        "/process/scale/{name}/{scale}": {
+            "post": {
+                "description": "Scale a process",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Scale a process to a given replicas count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Process Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Scaled Process Name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/process/start/{name}": {
             "post": {
                 "description": "Starts the process if the state is not 'running' or 'pending'",

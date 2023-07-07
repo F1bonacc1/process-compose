@@ -28,6 +28,7 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.Pro
 	if ports != nil {
 		addCSVIfNotEmpty("TCP Ports:", ports.TcpPorts, f)
 	}
+	f.AddInputField("Replica:", fmt.Sprintf("%d/%d", info.ReplicaNum+1, info.Replicas), 0, nil, nil)
 	f.AddCheckbox("Is Disabled:", info.Disabled, nil)
 	f.AddCheckbox("Is Daemon:", info.IsDaemon, nil)
 	f.AddButton("Close", func() {

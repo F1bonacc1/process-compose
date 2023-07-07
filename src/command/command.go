@@ -10,7 +10,7 @@ import (
 
 func BuildCommandShellArg(shell ShellConfig, cmd string) *CmdWrapper {
 	return &CmdWrapper{
-		Cmd: exec.Command(shell.ShellCommand, shell.ShellArgument, cmd),
+		cmd: exec.Command(shell.ShellCommand, shell.ShellArgument, cmd),
 	}
 	//return NewMockCommand()
 }
