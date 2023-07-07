@@ -109,6 +109,25 @@ paths:
       summary: Restart a process
       tags:
       - Process
+  /process/scale/{name}/{scale}:
+    post:
+      description: Scale a process
+      parameters:
+      - description: Process Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Scaled Process Name
+          schema:
+            type: string
+      summary: Scale a process to a given replicas count
+      tags:
+      - Process
   /process/start/{name}:
     post:
       description: Starts the process if the state is not 'running' or 'pending'

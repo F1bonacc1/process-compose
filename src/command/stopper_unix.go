@@ -1,6 +1,6 @@
 //go:build !windows
 
-package app
+package command
 
 import (
 	"syscall"
@@ -11,20 +11,20 @@ const (
 	max_sig = 31
 )
 
-func (p *Process) stop(sig int) error {
-	if p.command == nil {
+func (c *CmdWrapper) Stop(sig int) error {
+	if c.Cmd == nil {
 		return nil
 	}
 	if sig < min_sig || sig > max_sig {
 		sig = int(syscall.SIGTERM)
 	}
-	pgid, err := syscall.Getpgid(p.command.Process.Pid)
+	pgid, err := syscall.Getpgid(c.Pid())
 	if err == nil {
 		return syscall.Kill(-pgid, syscall.Signal(sig))
 	}
 	return err
 }
 
-func (p *Process) setProcArgs() {
-	p.command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+func (c *CmdWrapper) SetCmdArgs() {
+	c.Cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 }

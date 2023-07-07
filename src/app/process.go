@@ -8,8 +8,8 @@ import (
 	"io"
 	"math/rand"
 	"os"
-	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -29,9 +29,8 @@ const (
 
 type Process struct {
 	sync.Mutex
-
 	globalEnv     []string
-	procConf      types.ProcessConfig
+	procConf      *types.ProcessConfig
 	procState     *types.ProcessState
 	stateMtx      sync.Mutex
 	procCond      sync.Cond
@@ -44,35 +43,26 @@ type Process struct {
 	redColor      func(a ...interface{}) string
 	logBuffer     *pclog.ProcessLogBuffer
 	logger        pclog.PcLogger
-	command       *exec.Cmd
+	command       Commander
 	done          bool
-	replica       int
 	startTime     time.Time
 	liveProber    *health.Prober
 	readyProber   *health.Prober
 	shellConfig   command.ShellConfig
 }
 
-func NewProcess(
-	globalEnv []string,
-	logger pclog.PcLogger,
-	procConf types.ProcessConfig,
-	procState *types.ProcessState,
-	procLog *pclog.ProcessLogBuffer,
-	replica int,
-	shellConfig command.ShellConfig) *Process {
+func NewProcess(globalEnv []string, logger pclog.PcLogger, procConf *types.ProcessConfig, processState *types.ProcessState, procLog *pclog.ProcessLogBuffer, shellConfig command.ShellConfig) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 
 	proc := &Process{
 		globalEnv:     globalEnv,
 		procConf:      procConf,
+		procState:     processState,
 		procColor:     color.New(color.Attribute(colNumeric), color.Bold).SprintFunc(),
 		redColor:      color.New(color.FgHiRed).SprintFunc(),
 		noColor:       color.New(color.Reset).SprintFunc(),
 		logger:        logger,
-		procState:     procState,
 		done:          false,
-		replica:       replica,
 		logBuffer:     procLog,
 		shellConfig:   shellConfig,
 		procStateChan: make(chan string, 1),
@@ -107,7 +97,7 @@ func (p *Process) run() int {
 		}
 
 		p.startTime = time.Now()
-		p.procState.Pid = p.command.Process.Pid
+		p.procState.Pid = p.command.Pid()
 		log.Info().Msgf("%s started", p.getName())
 
 		p.startProbes()
@@ -118,7 +108,7 @@ func (p *Process) run() int {
 		time.Sleep(50 * time.Millisecond)
 		_ = p.command.Wait()
 		p.Lock()
-		p.procState.ExitCode = p.command.ProcessState.ExitCode()
+		p.procState.ExitCode = p.command.ExitCode()
 		p.Unlock()
 		log.Info().Msgf("%s exited with status %d", p.getName(), p.procState.ExitCode)
 
@@ -133,7 +123,7 @@ func (p *Process) run() int {
 		p.setState(types.ProcessStateRestarting)
 		p.procState.Restarts += 1
 		log.Info().Msgf("Restarting %s in %v second(s)... Restarts: %d",
-			p.procConf.Name, p.getBackoff().Seconds(), p.procState.Restarts)
+			p.getName(), p.getBackoff().Seconds(), p.procState.Restarts)
 
 		time.Sleep(p.getBackoff())
 	}
@@ -144,9 +134,9 @@ func (p *Process) run() int {
 func (p *Process) getProcessStarter() func() error {
 	return func() error {
 		p.command = command.BuildCommandShellArg(p.shellConfig, p.getCommand())
-		p.command.Env = p.getProcessEnvironment()
-		p.command.Dir = p.procConf.WorkingDir
-		p.setProcArgs()
+		p.command.SetEnv(p.getProcessEnvironment())
+		p.command.SetDir(p.procConf.WorkingDir)
+		p.command.SetCmdArgs()
 		stdout, _ := p.command.StdoutPipe()
 		stderr, _ := p.command.StderrPipe()
 		go p.handleOutput(stdout, p.handleInfo)
@@ -168,7 +158,7 @@ func (p *Process) getBackoff() time.Duration {
 func (p *Process) getProcessEnvironment() []string {
 	env := []string{
 		"PC_PROC_NAME=" + p.getName(),
-		"PC_REPLICA_NUM=" + strconv.Itoa(p.replica),
+		"PC_REPLICA_NUM=" + strconv.Itoa(p.procConf.ReplicaNum),
 	}
 	env = append(env, os.Environ()...)
 	env = append(env, p.globalEnv...)
@@ -236,6 +226,12 @@ func (p *Process) wontRun() {
 }
 
 // perform graceful process shutdown if defined in configuration
+func (p *Process) shutDownNoRestart() error {
+	p.prepareForShutDown()
+	return p.shutDown()
+}
+
+// perform graceful process shutdown if defined in configuration
 func (p *Process) shutDown() error {
 	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.procState.Status)
@@ -248,7 +244,7 @@ func (p *Process) shutDown() error {
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
 	}
-	return p.stop(p.procConf.ShutDownParams.Signal)
+	return p.command.Stop(p.procConf.ShutDownParams.Signal)
 }
 
 func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
@@ -267,7 +263,7 @@ func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
 	if err := cmd.Run(); err != nil {
 		// the process termination timedout and it will be killed
 		log.Error().Msgf("terminating %s with timeout %d failed - %s", p.getName(), timeout, err.Error())
-		return p.stop(int(syscall.SIGKILL))
+		return p.command.Stop(int(syscall.SIGKILL))
 	}
 	return nil
 }
@@ -277,13 +273,13 @@ func (p *Process) isRunning() bool {
 }
 
 func (p *Process) prepareForShutDown() {
-	// prevent restart during global shutdown
+	// prevent restart during global shutdown or scale down
 	p.procConf.RestartPolicy.Restart = types.RestartPolicyNo
 }
 
 func (p *Process) onProcessStart() {
 	if isStringDefined(p.procConf.LogLocation) {
-		p.logger.Open(p.procConf.LogLocation)
+		p.logger.Open(p.getLogPath())
 	}
 }
 
@@ -300,12 +296,32 @@ func (p *Process) onProcessEnd(state string) {
 	p.procCond.Broadcast()
 }
 
-func (p *Process) getName() string {
-	return p.procConf.Name
+func (p *Process) getLogPath() string {
+	logLocation := p.procConf.LogLocation
+
+	if strings.Contains(logLocation, "{PC_LOG}") {
+		replicaStr := strconv.Itoa(p.procConf.ReplicaNum)
+		logLocation = strings.Replace(logLocation, "{PC_LOG}", replicaStr, -1)
+	} else if p.procConf.Replicas > 1 {
+		logLocation = fmt.Sprintf("%s.%d", logLocation, p.procConf.ReplicaNum)
+	}
+
+	return logLocation
 }
 
-func (p *Process) getNameWithReplica() string {
-	return fmt.Sprintf("%s_%d", p.procConf.Name, p.replica)
+func (p *Process) getName() string {
+	return p.procConf.ReplicaName
+}
+
+func (p *Process) setName(replicaName string) {
+	p.procConf.ReplicaName = replicaName
+}
+
+func (p *Process) getNameWithSmartReplica() string {
+	if p.procConf.Replicas > 1 {
+		return p.getName()
+	}
+	return p.procConf.Name
 }
 
 func (p *Process) getCommand() string {
@@ -318,6 +334,7 @@ func (p *Process) updateProcState() {
 		p.procState.SystemTime = durationToString(dur)
 		p.procState.Age = dur
 		p.procState.IsRunning = true
+		p.procState.Name = p.getName()
 	}
 }
 
@@ -335,21 +352,25 @@ func (p *Process) handleInput(pipe io.WriteCloser) {
 
 func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string)) {
 	outscanner := bufio.NewScanner(pipe)
+	//outscanner.Buffer(make([]byte, 0, 1024), 1024*1024*10)
 	outscanner.Split(bufio.ScanLines)
 	for outscanner.Scan() {
 		handler(outscanner.Text())
 	}
+	if err := outscanner.Err(); err != nil {
+		log.Error().Msgf("error reading from stdout - %s", err.Error())
+	}
 }
 
 func (p *Process) handleInfo(message string) {
-	p.logger.Info(message, p.getName(), p.replica)
-	fmt.Printf("[%s\t] %s\n", p.procColor(p.getNameWithReplica()), message)
+	p.logger.Info(message, p.getName(), p.procConf.ReplicaNum)
+	fmt.Printf("[%s\t] %s\n", p.procColor(p.getName()), message)
 	p.logBuffer.Write(message)
 }
 
 func (p *Process) handleError(message string) {
-	p.logger.Error(message, p.getName(), p.replica)
-	fmt.Printf("[%s\t] %s\n", p.procColor(p.getNameWithReplica()), p.redColor(message))
+	p.logger.Error(message, p.getName(), p.procConf.ReplicaNum)
+	fmt.Printf("[%s\t] %s\n", p.procColor(p.getName()), p.redColor(message))
 	p.logBuffer.Write(message)
 }
 
@@ -375,7 +396,13 @@ func (p *Process) setState(state string) {
 	defer p.stateMtx.Unlock()
 	p.procState.Status = state
 	p.onStateChange(state)
+}
 
+func (p *Process) getState() *types.ProcessState {
+	p.updateProcState()
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
+	return p.procState
 }
 
 func (p *Process) setStateAndRun(state string, runnable func() error) error {

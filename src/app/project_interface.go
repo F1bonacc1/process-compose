@@ -24,4 +24,5 @@ type IProject interface {
 	StopProcess(name string) error
 	StartProcess(name string) error
 	RestartProcess(name string) error
+	ScaleProcess(name string, scale int) error
 }
