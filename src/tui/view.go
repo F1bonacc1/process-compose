@@ -5,11 +5,13 @@ import (
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/updater"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -146,6 +148,8 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.updateHelpTextView()
 	case tcell.KeyCtrlC:
 		pv.terminateAppView()
+	case pv.shortcuts.ShortCutKeys[ActionProcessScale].key:
+		pv.showScale()
 	case pv.shortcuts.ShortCutKeys[ActionProcessInfo].key:
 		pv.showInfo()
 	case pv.shortcuts.ShortCutKeys[ActionLogFind].key:
@@ -203,6 +207,38 @@ func (pv *pcView) showError(errMessage string) {
 	pv.pages.AddPage(PageDialog, createDialogPage(m, 50, 50), true, true)
 }
 
+func (pv *pcView) showScale() {
+	f := tview.NewForm()
+	f.SetCancelFunc(func() {
+		pv.pages.RemovePage(PageDialog)
+	})
+	f.SetItemPadding(3)
+	f.SetBorder(true)
+	f.SetFieldBackgroundColor(tcell.ColorBlack)
+	f.SetFieldTextColor(tcell.ColorLightSkyBlue)
+	name := pv.getSelectedProcName()
+	f.SetTitle("Scale " + name + " Process")
+	f.AddInputField("Replicas:", "1", 0, nil, nil)
+	f.AddButton("Scale", func() {
+		scale, err := strconv.Atoi(f.GetFormItem(0).(*tview.InputField).GetText())
+		if err != nil {
+			pv.showError("Invalid Scale: " + err.Error())
+			return
+		}
+		log.Info().Msgf("Scaling %s to %d", name, scale)
+		err = pv.project.ScaleProcess(name, scale)
+		if err != nil {
+			pv.showError("Invalid Scale: " + err.Error())
+		}
+		pv.pages.RemovePage(PageDialog)
+	})
+	f.AddButton("Cancel", func() {
+		pv.pages.RemovePage(PageDialog)
+	})
+	f.SetButtonsAlign(tview.AlignCenter)
+	pv.showDialog(f, 60, 10)
+}
+
 func (pv *pcView) showInfo() {
 	name := pv.getSelectedProcName()
 	info, err := pv.project.GetProcessInfo(name)
@@ -211,7 +247,7 @@ func (pv *pcView) showInfo() {
 		return
 	}
 	form := pv.createProcInfoForm(info)
-	pv.showDialog(form)
+	pv.showDialog(form, 0, 0)
 }
 
 func (pv *pcView) handleShutDown() {
@@ -251,7 +287,7 @@ func (pv *pcView) getSelectedProcName() string {
 		return ""
 	}
 	row, _ := pv.procTable.GetSelection()
-	if row > 0 && row <= len(pv.procNames) {
+	if row > 0 {
 		return pv.procTable.GetCell(row, 1).Text
 	}
 	return ""
@@ -282,6 +318,7 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
 	pv.shortcuts.ShortCutKeys[ActionLogFind].writeButton(pv.helpText)
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
+	pv.shortcuts.ShortCutKeys[ActionProcessScale].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessInfo].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessStart].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessScreen].writeToggleButton(pv.helpText, procScrBool)

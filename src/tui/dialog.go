@@ -4,8 +4,8 @@ import (
 	"github.com/rivo/tview"
 )
 
-func (pv *pcView) showDialog(primitive tview.Primitive) {
-	pv.pages.AddPage(PageDialog, createDialogPage(primitive, 0, 0), true, true)
+func (pv *pcView) showDialog(primitive tview.Primitive, width, height int) {
+	pv.pages.AddPage(PageDialog, createDialogPage(primitive, width, height), true, true)
 	pv.appView.SetFocus(primitive)
 }
 

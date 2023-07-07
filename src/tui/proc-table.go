@@ -38,6 +38,12 @@ func (pv *pcView) fillTableData() {
 			runningProcCount += 1
 		}
 	}
+	// remove unnecessary rows, don't forget the title row (-1)
+	if pv.procTable.GetRowCount()-1 > len(states.States) {
+		for i := len(states.States); i < pv.procTable.GetRowCount()-1; i++ {
+			pv.procTable.RemoveRow(i)
+		}
+	}
 	if pv.procCountCell != nil {
 		pv.procCountCell.SetText(fmt.Sprintf("%d/%d", runningProcCount, len(pv.procNames)))
 	}

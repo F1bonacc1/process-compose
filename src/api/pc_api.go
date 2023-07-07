@@ -164,6 +164,30 @@ func (api *PcApi) RestartProcess(c *gin.Context) {
 }
 
 // @Schemes
+// @Description Scale a process
+// @Tags Process
+// @Summary Scale a process to a given replicas count
+// @Produce  json
+// @Param name path string true "Process Name"
+// @Success 200 {string} string "Scaled Process Name"
+// @Router /process/scale/{name}/{scale} [post]
+func (api *PcApi) ScaleProcess(c *gin.Context) {
+	name := c.Param("name")
+	scale, err := strconv.Atoi(c.Param("scale"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err = api.project.ScaleProcess(name, scale)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"name": name})
+}
+
+// @Schemes
 // @Description Check if server is responding
 // @Tags Liveness
 // @Summary Liveness Check

@@ -1,6 +1,6 @@
 //go:build !windows
 
-package app
+package command
 
 import (
 	"github.com/rs/zerolog/log"
@@ -12,8 +12,8 @@ const (
 	max_sig = 31
 )
 
-func (p *Process) stop(sig int, parentOnly bool) error {
-	if p.command == nil {
+func (c *CmdWrapper) Stop(sig int, parentOnly bool) error {
+	if c.cmd == nil {
 		return nil
 	}
 	if sig < min_sig || sig > max_sig {
@@ -22,16 +22,16 @@ func (p *Process) stop(sig int, parentOnly bool) error {
 
 	log.
 		Debug().
-		Int("pid", p.command.Process.Pid).
+		Int("pid", c.Pid()).
 		Int("signal", sig).
 		Bool("parentOnly", parentOnly).
 		Msg("Stop Unix process.")
 
 	if parentOnly {
-		return syscall.Kill(p.command.Process.Pid, syscall.Signal(sig))
+		return syscall.Kill(c.Pid(), syscall.Signal(sig))
 	}
 
-	pgid, err := syscall.Getpgid(p.command.Process.Pid)
+	pgid, err := syscall.Getpgid(c.Pid())
 	if err == nil {
 		return syscall.Kill(-pgid, syscall.Signal(sig))
 	}
@@ -39,6 +39,6 @@ func (p *Process) stop(sig int, parentOnly bool) error {
 	return err
 }
 
-func (p *Process) setProcArgs() {
-	p.command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+func (c *CmdWrapper) SetCmdArgs() {
+	c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 }

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -21,6 +22,7 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig) *tview.Form {
 	addStringIfNotEmpty("Command:", info.Command, f)
 	addStringIfNotEmpty("Working Directory:", info.WorkingDir, f)
 	addStringIfNotEmpty("Log Location:", info.LogLocation, f)
+	f.AddInputField("Replica:", fmt.Sprintf("%d/%d", info.ReplicaNum+1, info.Replicas), 0, nil, nil)
 	addSliceIfNotEmpty("Environment:", info.Environment, f)
 	addSliceIfNotEmpty("Depends On:", mapKeysToSlice(info.DependsOn), f)
 	f.AddCheckbox("Is Disabled:", info.Disabled, nil)

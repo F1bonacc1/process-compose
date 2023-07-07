@@ -34,7 +34,7 @@ processes:
 
   _process2:
     command: "./test_loop.bash process2"
-    log_location: ./pc.proc2.log
+    log_location: ./pc.proc2.{PC_LOG}.log
     availability:
       restart: "on_failure"
     # depends_on:
@@ -59,7 +59,7 @@ processes:
       failure_threshold: 3
 
   process3:
-    command: "./test_loop.bash process3"
+    command: "./test_loop.bash $PROC4"
     availability:
       restart: "always"
       backoff_seconds: 2
@@ -70,6 +70,8 @@ processes:
   process4:
     command: "./test_loop.bash process4-override"
     namespace: test
+    replicas: 2
+
     disable_ansi_colors: true
     # availability:
     #   restart: on_failure

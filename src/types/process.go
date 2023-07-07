@@ -1,7 +1,9 @@
 package types
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/health"
+	"math"
 	"time"
 )
 
@@ -24,10 +26,13 @@ type ProcessConfig struct {
 	DisableAnsiColors bool                   `yaml:"disable_ansi_colors,omitempty"`
 	WorkingDir        string                 `yaml:"working_dir"`
 	Namespace         string                 `yaml:"namespace"`
+	Replicas          int                    `yaml:"replicas"`
 	Extensions        map[string]interface{} `yaml:",inline"`
+	ReplicaNum        int
+	ReplicaName       string
 }
 
-func (p ProcessConfig) GetDependencies() []string {
+func (p *ProcessConfig) GetDependencies() []string {
 	dependencies := make([]string, len(p.DependsOn))
 
 	i := 0
@@ -36,6 +41,33 @@ func (p ProcessConfig) GetDependencies() []string {
 		i++
 	}
 	return dependencies
+}
+
+func (p *ProcessConfig) CalculateReplicaName() string {
+	if p.Replicas <= 1 {
+		return p.Name
+	}
+	myWidth := 1 + int(math.Log10(float64(p.Replicas)))
+	return fmt.Sprintf("%s-%0*d", p.Name, myWidth, p.ReplicaNum)
+}
+
+func NewProcessState(proc *ProcessConfig) *ProcessState {
+	state := &ProcessState{
+		Name:       proc.ReplicaName,
+		Namespace:  proc.Namespace,
+		Status:     ProcessStatePending,
+		SystemTime: "",
+		Age:        time.Duration(0),
+		IsRunning:  false,
+		Health:     ProcessHealthUnknown,
+		Restarts:   0,
+		ExitCode:   0,
+		Pid:        0,
+	}
+	if proc.Disabled {
+		state.Status = ProcessStateDisabled
+	}
+	return state
 }
 
 type ProcessState struct {

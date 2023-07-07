@@ -100,3 +100,7 @@ func (b *ProcessLogBuffer) UnSubscribe(observer LogObserver) {
 	defer b.mx.Unlock()
 	delete(b.observers, observer.GetUniqueID())
 }
+
+func (b *ProcessLogBuffer) Close() {
+	b.observers = map[string]LogObserver{}
+}

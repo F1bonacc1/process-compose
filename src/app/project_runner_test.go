@@ -17,7 +17,7 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    []string
+		want    [][]string
 		wantErr bool
 	}{
 		{
@@ -25,29 +25,35 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 			fields: fields{
 				Processes: map[string]types.ProcessConfig{
 					"Process1": {
-						Name: "Process1",
+						Name:        "Process1",
+						ReplicaName: "Process1",
 						DependsOn: types.DependsOnConfig{
 							"Process2": {},
 						},
 					},
 					"Process2": {
-						Name: "Process2",
+						Name:        "Process2",
+						ReplicaName: "Process2",
 						DependsOn: types.DependsOnConfig{
 							"Process3": {},
 						},
 					},
 					"Process3": {
-						Name: "Process3",
+						Name:        "Process3",
+						ReplicaName: "Process3",
 						DependsOn: types.DependsOnConfig{
 							"Process4": {},
 						},
 					},
 					"Process4": {
-						Name: "Process4",
+						Name:        "Process4",
+						ReplicaName: "Process4",
 					},
 				},
 			},
-			want:    []string{"Process4", "Process3", "Process2", "Process1"},
+			want: [][]string{
+				{"Process4", "Process3", "Process2", "Process1"},
+			},
 			wantErr: false,
 		},
 		{
@@ -55,20 +61,22 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 			fields: fields{
 				Processes: map[string]types.ProcessConfig{
 					"Process1": {
-						Name: "Process1",
+						Name:        "Process1",
+						ReplicaName: "Process1",
 						DependsOn: types.DependsOnConfig{
 							"Process2": {},
 						},
 					},
 					"Process2": {
-						Name: "Process2",
+						Name:        "Process2",
+						ReplicaName: "Process2",
 						DependsOn: types.DependsOnConfig{
 							"Process4": {},
 						},
 					},
 				},
 			},
-			want:    []string{},
+			want:    [][]string{},
 			wantErr: true,
 		},
 		{
@@ -76,7 +84,8 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 			fields: fields{
 				Processes: map[string]types.ProcessConfig{
 					"Process1": {
-						Name: "Process1",
+						Name:        "Process1",
+						ReplicaName: "Process1",
 						DependsOn: types.DependsOnConfig{
 							"Process2": {},
 						},
@@ -87,7 +96,7 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 					},
 				},
 			},
-			want:    []string{"Process1"},
+			want:    [][]string{{"Process1"}},
 			wantErr: false,
 		},
 		{
@@ -102,14 +111,118 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 						},
 					},
 					"Process2": {
-						Name: "Process2",
+						Name:        "Process2",
+						ReplicaName: "Process2",
 					},
 				},
 			},
-			want:    []string{"Process2"},
+			want:    [][]string{{"Process2"}},
+			wantErr: false,
+		},
+		{
+			name: "WithReplicaDependees",
+			fields: fields{
+				Processes: map[string]types.ProcessConfig{
+					"Process1": {
+						Name:        "Process1",
+						ReplicaName: "Process1",
+						DependsOn: types.DependsOnConfig{
+							"Process2": {},
+						},
+					},
+					"Process2-0": {
+						Name:        "Process2",
+						ReplicaName: "Process2-0",
+						Replicas:    2,
+					},
+					"Process2-1": {
+						Name:        "Process2",
+						ReplicaName: "Process2-1",
+						Replicas:    2,
+					},
+				},
+			},
+			want: [][]string{
+
+				{"Process2-0", "Process2-1", "Process1"},
+				{"Process2-1", "Process2-0", "Process1"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "WithReplicas",
+			fields: fields{
+				Processes: map[string]types.ProcessConfig{
+					"Process1": {
+						Name:        "Process1",
+						ReplicaName: "Process1",
+					},
+					"Process2-0": {
+						Name:        "Process2",
+						ReplicaName: "Process2-0",
+						Replicas:    2,
+						DependsOn: types.DependsOnConfig{
+							"Process1": {},
+						},
+					},
+					"Process2-1": {
+						Name:        "Process2",
+						ReplicaName: "Process2-1",
+						Replicas:    2,
+						DependsOn: types.DependsOnConfig{
+							"Process1": {},
+						},
+					},
+				},
+			},
+			want: [][]string{
+				{"Process1", "Process2-1", "Process2-0"},
+				{"Process1", "Process2-0", "Process2-1"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "WithReplicasBoth",
+			fields: fields{
+				Processes: map[string]types.ProcessConfig{
+					"Process1-0": {
+						Name:        "Process1",
+						ReplicaName: "Process1-0",
+						Replicas:    2,
+					},
+					"Process1-1": {
+						Name:        "Process1",
+						ReplicaName: "Process1-1",
+						Replicas:    2,
+					},
+					"Process2-0": {
+						Name:        "Process2",
+						ReplicaName: "Process2-0",
+						Replicas:    2,
+						DependsOn: types.DependsOnConfig{
+							"Process1": {},
+						},
+					},
+					"Process2-1": {
+						Name:        "Process2",
+						ReplicaName: "Process2-1",
+						Replicas:    2,
+						DependsOn: types.DependsOnConfig{
+							"Process1": {},
+						},
+					},
+				},
+			},
+			want: [][]string{
+				{"Process1-0", "Process1-1", "Process2-0", "Process2-1"},
+				{"Process1-0", "Process1-1", "Process2-1", "Process2-0"},
+				{"Process1-1", "Process1-0", "Process2-0", "Process2-1"},
+				{"Process1-1", "Process1-0", "Process2-1", "Process2-0"},
+			},
 			wantErr: false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &types.Project{
@@ -123,8 +236,18 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 				t.Errorf("Project.GetDependenciesOrderNames() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Project.GetDependenciesOrderNames() = %v, want %v", got, tt.want)
+			//if !reflect.DeepEqual(got, tt.want) && (tt.wantOr != nil && !reflect.DeepEqual(got, tt.wantOr)) {
+			//	t.Errorf("Project.GetDependenciesOrderNames() = %v, want %v", got, tt.want)
+			//}
+			found := false
+			for _, want := range tt.want {
+				if reflect.DeepEqual(got, want) {
+					found = true
+					break
+				}
+			}
+			if !found && !tt.wantErr {
+				t.Errorf("Project.GetDependenciesOrderNames() = %v, want one of %v", got, tt.want)
 			}
 		})
 	}

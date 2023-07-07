@@ -27,7 +27,7 @@ func (p *Project) GetDependenciesOrderNames() ([]string, error) {
 
 	order := []string{}
 	err := p.WithProcesses([]string{}, func(process ProcessConfig) error {
-		order = append(order, process.Name)
+		order = append(order, process.ReplicaName)
 		return nil
 	})
 	return order, err
@@ -46,11 +46,10 @@ func (p *Project) GetLexicographicProcessNames() ([]string, error) {
 func (p *Project) getProcesses(names ...string) ([]ProcessConfig, error) {
 	processes := []ProcessConfig{}
 	if len(names) == 0 {
-		for name, proc := range p.Processes {
+		for _, proc := range p.Processes {
 			if proc.Disabled {
 				continue
 			}
-			proc.Name = name
 			processes = append(processes, proc)
 		}
 		return processes, nil
@@ -60,10 +59,21 @@ func (p *Project) getProcesses(names ...string) ([]ProcessConfig, error) {
 			if proc.Disabled {
 				continue
 			}
-			proc.Name = name
 			processes = append(processes, proc)
 		} else {
-			return processes, fmt.Errorf("no such process: %s", name)
+			found := false
+			for _, proc := range p.Processes {
+				if proc.Name == name {
+					found = true
+					if proc.Disabled {
+						continue
+					}
+					processes = append(processes, proc)
+				}
+			}
+			if !found {
+				return processes, fmt.Errorf("no such process: %s", name)
+			}
 		}
 	}
 
@@ -76,10 +86,10 @@ func (p *Project) withProcesses(names []string, fn ProcessFunc, done map[string]
 		return err
 	}
 	for _, process := range processes {
-		if done[process.Name] {
+		if done[process.ReplicaName] {
 			continue
 		}
-		done[process.Name] = true
+		done[process.ReplicaName] = true
 
 		dependencies := process.GetDependencies()
 		if len(dependencies) > 0 {

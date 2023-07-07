@@ -97,6 +97,10 @@ func (p *PcClient) RestartProcess(name string) error {
 	return RestartProcesses(p.address, p.port, name)
 }
 
+func (p *PcClient) ScaleProcess(name string, scale int) error {
+	return ScaleProcess(p.address, p.port, name, scale)
+}
+
 func (p *PcClient) IsAlive() error {
 	return p.logError(isAlive(p.address, p.port))
 }

@@ -18,6 +18,7 @@ const (
 	ActionWrapLog        = ActionName("log_wrap")
 	ActionLogSelection   = ActionName("log_select")
 	ActionProcessStart   = ActionName("process_start")
+	ActionProcessScale   = ActionName("process_scale")
 	ActionProcessInfo    = ActionName("process_info")
 	ActionProcessStop    = ActionName("process_stop")
 	ActionProcessRestart = ActionName("process_restart")
@@ -34,6 +35,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionFollowLog:      tcell.KeyF5,
 	ActionWrapLog:        tcell.KeyF6,
 	ActionLogSelection:   tcell.KeyCtrlS,
+	ActionProcessScale:   tcell.KeyF2,
 	ActionProcessInfo:    tcell.KeyF3,
 	ActionProcessStart:   tcell.KeyF7,
 	ActionProcessStop:    tcell.KeyF9,
@@ -177,6 +179,9 @@ func getDefaultActions() ShortCuts {
 					true:  "Select On",
 					false: "Select Off",
 				},
+			},
+			ActionProcessScale: {
+				Description: "Scale",
 			},
 			ActionProcessInfo: {
 				Description: "Info",
