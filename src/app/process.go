@@ -45,6 +45,7 @@ type Process struct {
 	logger        pclog.PcLogger
 	command       Commander
 	done          bool
+	timeMutex     sync.Mutex
 	startTime     time.Time
 	liveProber    *health.Prober
 	readyProber   *health.Prober
@@ -96,8 +97,10 @@ func (p *Process) run() int {
 			return 1
 		}
 
-		p.startTime = time.Now()
+		p.setStartTime(time.Now())
+		p.stateMtx.Lock()
 		p.procState.Pid = p.command.Pid()
+		p.stateMtx.Unlock()
 		log.Info().Msgf("%s started", p.getName())
 
 		p.startProbes()
@@ -331,12 +334,23 @@ func (p *Process) getCommand() string {
 
 func (p *Process) updateProcState() {
 	if p.isRunning() {
-		dur := time.Since(p.startTime)
+		dur := time.Since(p.getStartTime())
 		p.procState.SystemTime = durationToString(dur)
 		p.procState.Age = dur
 		p.procState.IsRunning = true
 		p.procState.Name = p.getName()
 	}
+}
+func (p *Process) setStartTime(startTime time.Time) {
+	p.timeMutex.Lock()
+	defer p.timeMutex.Unlock()
+	p.startTime = startTime
+}
+
+func (p *Process) getStartTime() time.Time {
+	p.timeMutex.Lock()
+	defer p.timeMutex.Unlock()
+	return p.startTime
 }
 
 func (p *Process) handleInput(pipe io.WriteCloser) {
