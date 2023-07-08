@@ -169,8 +169,9 @@ func (api *PcApi) RestartProcess(c *gin.Context) {
 // @Summary Scale a process to a given replicas count
 // @Produce  json
 // @Param name path string true "Process Name"
+// @Param scale path int true "New amount of process replicas"
 // @Success 200 {string} string "Scaled Process Name"
-// @Router /process/scale/{name}/{scale} [post]
+// @Router /process/scale/{name}/{scale} [patch]
 func (api *PcApi) ScaleProcess(c *gin.Context) {
 	name := c.Param("name")
 	scale, err := strconv.Atoi(c.Param("scale"))
