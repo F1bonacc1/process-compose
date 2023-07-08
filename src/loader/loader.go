@@ -27,7 +27,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		opts.projects = append(opts.projects, p)
 	}
 	mergedProject, err := merge(opts)
-	mergedProject.ValidateAfterMerge()
+	err = mergedProject.ValidateAfterMerge()
 	return mergedProject, err
 
 }
