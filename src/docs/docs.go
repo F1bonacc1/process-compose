@@ -217,7 +217,7 @@ const docTemplate = `{
             }
         },
         "/process/scale/{name}/{scale}": {
-            "post": {
+            "patch": {
                 "description": "Scale a process",
                 "produces": [
                     "application/json"
@@ -231,6 +231,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Process Name",
                         "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "New amount of process replicas",
+                        "name": "scale",
                         "in": "path",
                         "required": true
                     }

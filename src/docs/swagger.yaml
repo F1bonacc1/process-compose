@@ -153,7 +153,7 @@ paths:
       tags:
       - Process
   /process/scale/{name}/{scale}:
-    post:
+    patch:
       description: Scale a process
       parameters:
       - description: Process Name
@@ -161,6 +161,11 @@ paths:
         name: name
         required: true
         type: string
+      - description: New amount of process replicas
+        in: path
+        name: scale
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
