@@ -8,18 +8,13 @@ processes:
 
   process2:
     command: "echo process2"
-    availability:
-      restart: "on_failure"
     depends_on:
-      process3:
+      process1:
         condition: process_completed_successfully
 
   process3:
     command: "echo process3"
-    availability:
-      restart: "on_failure"
-      backoff_seconds: 2
-#    depends_on:
-#      process1:
-#        condition: process_completed_successfully
+    depends_on:
+      process1:
+        condition: process_completed_successfully
 

@@ -130,28 +130,27 @@ func TestSystem_TestComposeChainExit(t *testing.T) {
 	})
 }
 
-//func TestSystem_TestComposeCircular(t *testing.T) {
-//	fixture := filepath.Join("..", "..", "fixtures", "process-compose-circular.yaml")
-//	t.Run(fixture, func(t *testing.T) {
-//		project, err := loader.Load(&loader.LoaderOptions{
-//			FileNames: []string{fixture},
-//		})
-//		if err != nil {
-//			t.Errorf(err.Error())
-//			return
-//		}
-//		runner, err := NewProjectRunner(project, []string{}, false)
-//		if err != nil {
-//			t.Errorf(err.Error())
-//			return
-//		}
-//		exitCode := runner.Run()
-//		want := 42
-//		if want != exitCode {
-//			t.Errorf("Project.Run() = %v, want %v", exitCode, want)
-//		}
-//	})
-//}
+func TestSystem_TestComposeCircular(t *testing.T) {
+	fixture1 := filepath.Join("..", "..", "fixtures-code", "process-compose-circular.yaml")
+	fixture2 := filepath.Join("..", "..", "fixtures-code", "process-compose-non-circular.yaml")
+	t.Run(fixture1, func(t *testing.T) {
+		_, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture1},
+		})
+		if err == nil {
+			t.Errorf("should fail on cirlcular dependency")
+			return
+		}
+
+		_, err = loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture2},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+	})
+}
 
 func TestSystem_TestComposeScale(t *testing.T) {
 	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-scale.yaml")

@@ -1,0 +1,11 @@
+version: "0.5"
+processes:
+  process1:
+    command: "echo process1"
+
+  process3:
+    command: "echo process3"
+    depends_on:
+      process1:
+        condition: process_completed_successfully
+

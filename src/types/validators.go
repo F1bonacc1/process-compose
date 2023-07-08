@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -14,9 +15,10 @@ func (p *Project) Validate() {
 	p.validateProcessConfig()
 }
 
-func (p *Project) ValidateAfterMerge() {
+func (p *Project) ValidateAfterMerge() error {
 	p.assignDefaultProcessValues()
 	p.cloneReplicas()
+	return p.validateNoCircularDependencies()
 }
 
 func (p *Project) validateLogLevel() {
@@ -99,4 +101,42 @@ func (p *Project) cloneReplicas() {
 	for _, proc := range procsToAdd {
 		p.Processes[proc.ReplicaName] = proc
 	}
+}
+
+func (p *Project) validateNoCircularDependencies() error {
+	visited := make(map[string]bool, len(p.Processes))
+	stack := make(map[string]bool)
+	for name := range p.Processes {
+		if !visited[name] {
+			if p.isCyclicHelper(name, visited, stack) {
+				return fmt.Errorf("circular dependency found in %s", name)
+			}
+		}
+	}
+	return nil
+}
+
+func (p *Project) isCyclicHelper(procName string, visited map[string]bool, stack map[string]bool) bool {
+	visited[procName] = true
+	stack[procName] = true
+
+	processes, err := p.getProcesses(procName)
+	if err != nil {
+		return false
+	}
+	for _, process := range processes {
+		dependencies := process.GetDependencies()
+		for _, neighbor := range dependencies {
+			if !visited[neighbor] {
+				if p.isCyclicHelper(neighbor, visited, stack) {
+					return true
+				}
+			} else if stack[neighbor] {
+				return true
+			}
+		}
+	}
+
+	stack[procName] = false
+	return false
 }
