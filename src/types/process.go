@@ -83,6 +83,12 @@ type ProcessState struct {
 	IsRunning  bool
 }
 
+type ProcessPorts struct {
+	Name     string   `json:"name"`
+	TcpPorts []uint16 `json:"tcp_ports"`
+	UdpPorts []uint16 `json:"udp_ports"`
+}
+
 type ProcessesState struct {
 	States []ProcessState `json:"data"`
 }

@@ -215,3 +215,23 @@ func (api *PcApi) GetHostName(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"name": name})
 }
+
+// @Schemes
+// @Description Retrieves process open ports
+// @Tags Process
+// @Summary Get process ports
+// @Produce  json
+// @Param name path string true "Process Name"
+// @Success 200 {object} object "Process Ports"
+// @Router /process/ports/{name} [get]
+func (api *PcApi) GetProcessPorts(c *gin.Context) {
+	name := c.Param("name")
+
+	ports, err := api.project.GetProcessPorts(name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, ports)
+}

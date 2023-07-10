@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/cakturk/go-netstat/netstat"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"io"
 	"math/rand"
@@ -160,7 +161,7 @@ func (p *Process) getBackoff() time.Duration {
 
 func (p *Process) getProcessEnvironment() []string {
 	env := []string{
-		"PC_PROC_NAME=" + p.getName(),
+		"PC_PROC_NAME=" + p.procConf.Name,
 		"PC_REPLICA_NUM=" + strconv.Itoa(p.procConf.ReplicaNum),
 	}
 	env = append(env, os.Environ()...)
@@ -523,6 +524,23 @@ func (p *Process) validateProcess() error {
 		}
 		if !stat.IsDir() {
 			return fmt.Errorf("%s is not a directory", p.procConf.WorkingDir)
+		}
+	}
+	return nil
+}
+
+func (p *Process) getOpenPorts(ports *types.ProcessPorts) error {
+	socks, err := netstat.TCPSocks(func(s *netstat.SockTabEntry) bool {
+		return s.State == netstat.Listen
+	})
+	if err != nil {
+		log.Err(err).Msgf("failed to get open ports for %s", p.getName())
+		return err
+	}
+	for _, e := range socks {
+		if e.Process != nil && e.Process.Pid == p.procState.Pid {
+			log.Debug().Msgf("%s is listening on %d", p.getName(), e.LocalAddr.Port)
+			ports.TcpPorts = append(ports.TcpPorts, e.LocalAddr.Port)
 		}
 	}
 	return nil

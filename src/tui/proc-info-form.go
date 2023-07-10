@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (pv *pcView) createProcInfoForm(info *types.ProcessConfig) *tview.Form {
+func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.ProcessPorts) *tview.Form {
 	f := tview.NewForm()
 	f.SetCancelFunc(func() {
 		pv.pages.RemovePage(PageDialog)
@@ -23,8 +23,11 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig) *tview.Form {
 	addStringIfNotEmpty("Working Directory:", info.WorkingDir, f)
 	addStringIfNotEmpty("Log Location:", info.LogLocation, f)
 	f.AddInputField("Replica:", fmt.Sprintf("%d/%d", info.ReplicaNum+1, info.Replicas), 0, nil, nil)
-	addSliceIfNotEmpty("Environment:", info.Environment, f)
-	addSliceIfNotEmpty("Depends On:", mapKeysToSlice(info.DependsOn), f)
+	addDropDownIfNotEmpty("Environment:", info.Environment, f)
+	addCSVIfNotEmpty("Depends On:", mapKeysToSlice(info.DependsOn), f)
+	if ports != nil {
+		addCSVIfNotEmpty("TCP Ports:", ports.TcpPorts, f)
+	}
 	f.AddCheckbox("Is Disabled:", info.Disabled, nil)
 	f.AddCheckbox("Is Daemon:", info.IsDaemon, nil)
 	f.AddButton("Close", func() {
@@ -40,9 +43,16 @@ func addStringIfNotEmpty(label, value string, f *tview.Form) {
 	}
 }
 
-func addSliceIfNotEmpty(label string, value []string, f *tview.Form) {
+func addDropDownIfNotEmpty(label string, value []string, f *tview.Form) {
 	if len(value) > 0 {
 		f.AddDropDown(label, value, 0, nil)
+	}
+}
+
+func addCSVIfNotEmpty[K comparable](label string, value []K, f *tview.Form) {
+	if len(value) > 0 {
+		csvPorts := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(value)), ":"), "[]")
+		f.AddInputField(label, csvPorts, 0, nil, nil)
 	}
 }
 

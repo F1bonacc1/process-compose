@@ -122,6 +122,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/process/ports/{name}": {
+            "get": {
+                "description": "Retrieves process open ports",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Get process ports",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Process Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Process Ports",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/process/restart/{name}": {
             "post": {
                 "description": "Restarts the process",
