@@ -11,6 +11,6 @@ func (c *CmdWrapper) Stop(sig int) error {
 	return kill.Run()
 }
 
-func (p *Process) SetCmdArgs() {
+func (p *CmdWrapper) SetCmdArgs() {
 	//empty for windows
 }
