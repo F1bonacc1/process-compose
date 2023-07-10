@@ -19,8 +19,7 @@ var startCmd = &cobra.Command{
 		name := args[0]
 		err := client.StartProcesses(pcAddress, port, name)
 		if err != nil {
-			log.Error().Msgf("Failed to start processes %s: %v", name, err)
-			return
+			logFatal(err, "failed to start process %s", name)
 		}
 		log.Info().Msgf("Process %s started", name)
 	},

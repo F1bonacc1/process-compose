@@ -1,6 +1,3 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -18,8 +15,7 @@ var stopCmd = &cobra.Command{
 		name := args[0]
 		err := client.StopProcesses(pcAddress, port, name)
 		if err != nil {
-			log.Error().Msgf("Failed to stop processes %s: %v", name, err)
-			return
+			logFatal(err, "failed to stop process %s", name)
 		}
 		log.Info().Msgf("Process %s stopped", name)
 	},

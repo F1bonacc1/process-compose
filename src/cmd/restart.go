@@ -15,8 +15,7 @@ var restartCmd = &cobra.Command{
 		name := args[0]
 		err := client.RestartProcesses(pcAddress, port, name)
 		if err != nil {
-			log.Error().Msgf("Failed to restart processes %s: %v", name, err)
-			return
+			logFatal(err, "failed to restart process %s", name)
 		}
 		log.Info().Msgf("Process %s restarted", name)
 	},
