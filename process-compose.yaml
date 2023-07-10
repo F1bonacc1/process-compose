@@ -84,36 +84,8 @@ processes:
       success_threshold: 1
       failure_threshold: 3
 
-#  nginx:
-#    command: "docker run -d --rm -p80:80 --name nginx_test nginx"
-#    # availability:
-#    #   restart: on_failure
-#    is_daemon: true
-#    shutdown:
-#      command: "docker stop nginx_test"
-#      signal: 15
-#      timeout_seconds: 5
-#    liveness_probe:
-#      exec:
-#        command: "[ $(docker inspect -f '{{.State.Running}}' nginx_test) = 'true' ]"
-#      initial_delay_seconds: 5
-#      period_seconds: 2
-#      timeout_seconds: 5
-#      success_threshold: 1
-#      failure_threshold: 3
-#    readiness_probe:
-#      http_get:
-#        host: 127.0.0.1
-#        path: "/"
-#        port: 80
-#      initial_delay_seconds: 5
-#      period_seconds: 10
-#      timeout_seconds: 5
-#      success_threshold: 1
-#      failure_threshold: 3
-#    availability:
-#      restart: "always"
-#      backoff_seconds: 2
+  server:
+    command: "python3 -m http.server 4040"
 
   kcalc:
     command: "kcalc"

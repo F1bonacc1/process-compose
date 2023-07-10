@@ -246,7 +246,8 @@ func (pv *pcView) showInfo() {
 		pv.showError(err.Error())
 		return
 	}
-	form := pv.createProcInfoForm(info)
+	ports, _ := pv.project.GetProcessPorts(name)
+	form := pv.createProcInfoForm(info, ports)
 	pv.showDialog(form, 0, 0)
 }
 

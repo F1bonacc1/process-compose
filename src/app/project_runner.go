@@ -260,6 +260,24 @@ func (p *ProjectRunner) GetProcessInfo(name string) (*types.ProcessConfig, error
 	}
 }
 
+func (p *ProjectRunner) GetProcessPorts(name string) (*types.ProcessPorts, error) {
+	proc := p.getRunningProcess(name)
+	if proc == nil {
+		return nil, fmt.Errorf("can't get ports: process %s is not running", name)
+	}
+
+	ports := &types.ProcessPorts{
+		Name:     name,
+		TcpPorts: make([]uint16, 0),
+		UdpPorts: make([]uint16, 0),
+	}
+	err := proc.getOpenPorts(ports)
+	if err != nil {
+		return nil, err
+	}
+	return ports, nil
+}
+
 func (p *ProjectRunner) ShutDownProject() {
 	p.runProcMutex.Lock()
 	defer p.runProcMutex.Unlock()

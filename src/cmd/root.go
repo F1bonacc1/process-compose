@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/rs/zerolog/log"
@@ -78,4 +79,11 @@ func getConfigDefault() []string {
 		return strings.Split(val, ",")
 	}
 	return []string{}
+}
+
+func logFatal(err error, format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+	fmt.Printf(": %v\n", err)
+	log.Err(err).Msgf(format, args...)
+	os.Exit(1)
 }

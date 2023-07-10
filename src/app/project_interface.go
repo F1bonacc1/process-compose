@@ -25,4 +25,5 @@ type IProject interface {
 	StartProcess(name string) error
 	RestartProcess(name string) error
 	ScaleProcess(name string, scale int) error
+	GetProcessPorts(name string) (*types.ProcessPorts, error)
 }

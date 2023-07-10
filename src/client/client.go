@@ -72,8 +72,11 @@ func (p *PcClient) GetLexicographicProcessNames() ([]string, error) {
 }
 
 func (p *PcClient) GetProcessInfo(name string) (*types.ProcessConfig, error) {
-	config, err := GetProcessInfo(p.address, p.port, name)
-	return config, err
+	return GetProcessInfo(p.address, p.port, name)
+}
+
+func (p *PcClient) GetProcessPorts(name string) (*types.ProcessPorts, error) {
+	return GetProcessPorts(p.address, p.port, name)
 }
 
 func (p *PcClient) GetProcessState(name string) (*types.ProcessState, error) {

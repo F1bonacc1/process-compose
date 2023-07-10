@@ -90,6 +90,25 @@ paths:
       summary: Get process logs
       tags:
       - Process
+  /process/ports/{name}:
+    get:
+      description: Retrieves process open ports
+      parameters:
+      - description: Process Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Process Ports
+          schema:
+            type: object
+      summary: Get process ports
+      tags:
+      - Process
   /process/restart/{name}:
     post:
       description: Restarts the process

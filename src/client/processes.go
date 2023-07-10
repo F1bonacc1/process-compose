@@ -65,8 +65,25 @@ func GetProcessInfo(address string, port int, name string) (*types.ProcessConfig
 		return nil, err
 	}
 	defer resp.Body.Close()
-	//Create a variable of the same type as our model
 	var sResp types.ProcessConfig
+
+	//Decode the data
+	if err := json.NewDecoder(resp.Body).Decode(&sResp); err != nil {
+		log.Err(err).Msgf("what I got: %s", err.Error())
+		return nil, err
+	}
+
+	return &sResp, nil
+}
+
+func GetProcessPorts(address string, port int, name string) (*types.ProcessPorts, error) {
+	url := fmt.Sprintf("http://%s:%d/process/ports/%s", address, port, name)
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var sResp types.ProcessPorts
 
 	//Decode the data
 	if err := json.NewDecoder(resp.Body).Decode(&sResp); err != nil {
