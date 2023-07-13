@@ -26,6 +26,8 @@ import (
 const (
 	UndefinedShutdownTimeoutSec = 0
 	DefaultShutdownTimeoutSec   = 10
+	EnvReplicaNum               = "PC_REPLICA_NUM"
+	LogReplicaNum               = "{" + EnvReplicaNum + "}"
 )
 
 type Process struct {
@@ -162,7 +164,7 @@ func (p *Process) getBackoff() time.Duration {
 func (p *Process) getProcessEnvironment() []string {
 	env := []string{
 		"PC_PROC_NAME=" + p.procConf.Name,
-		"PC_REPLICA_NUM=" + strconv.Itoa(p.procConf.ReplicaNum),
+		EnvReplicaNum + strconv.Itoa(p.procConf.ReplicaNum),
 	}
 	env = append(env, os.Environ()...)
 	env = append(env, p.globalEnv...)
@@ -304,9 +306,9 @@ func (p *Process) onProcessEnd(state string) {
 func (p *Process) getLogPath() string {
 	logLocation := p.procConf.LogLocation
 
-	if strings.Contains(logLocation, "{PC_LOG}") {
+	if strings.Contains(logLocation, LogReplicaNum) {
 		replicaStr := strconv.Itoa(p.procConf.ReplicaNum)
-		logLocation = strings.Replace(logLocation, "{PC_LOG}", replicaStr, -1)
+		logLocation = strings.Replace(logLocation, LogReplicaNum, replicaStr, -1)
 	} else if p.procConf.Replicas > 1 {
 		logLocation = fmt.Sprintf("%s.%d", logLocation, p.procConf.ReplicaNum)
 	}

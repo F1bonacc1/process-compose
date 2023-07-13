@@ -34,7 +34,7 @@ processes:
 
   _process2:
     command: "./test_loop.bash process2"
-    log_location: ./pc.proc2.{PC_LOG}.log
+    log_location: ./pc.proc2.{PC_REPLICA_NUM}.log
     availability:
       restart: "on_failure"
     # depends_on:
