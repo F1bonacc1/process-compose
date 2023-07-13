@@ -17,7 +17,7 @@ do
   fi
 
   if [[ $i -eq 7 ]]; then
-    echo "test loop $i this is error $1 $PC_PROC_NAME" >&2
+    echo "test loop $i this is error $1 $PC_PROC_NAME - $PC_REPLICA_NUM" >&2
   fi
 
 done
