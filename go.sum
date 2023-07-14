@@ -30,6 +30,8 @@ github.com/f1bonacc1/glippy v0.0.0-20230203184233-82c6562cecd1 h1:95zO7aZ1MnbBlb
 github.com/f1bonacc1/glippy v0.0.0-20230203184233-82c6562cecd1/go.mod h1:4FvlEkhBa/BJMEuMGVlocGYDJAvO7FwhJhHH9MY6vaM=
 github.com/f1bonacc1/go-health/v2 v2.1.3 h1:UbiB5hSNpnqAAs7tsCZ8aA/ScdIpuGbDo2r7lhfIGkQ=
 github.com/f1bonacc1/go-health/v2 v2.1.3/go.mod h1:Iz2FZRfK3sJecRvGCIgyBsKOjILdKTdLGiGFaO+JDYc=
+github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7 h1:CNJScrucGEDyOro3AJabLI7Vvb0XbvGiwwB3eC/LTd8=
+github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7/go.mod h1:jtAfVaU/2cu1+wdSRPWE2c1N2qeAA3K4RH9pYgqwets=
 github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
 github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
@@ -128,8 +130,6 @@ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
-github.com/mololab/netstat v0.0.0-20221129160431-27c9226a45b1 h1:3k8Fbl7pFlde2/847ox7l/Wqql9Ww644JsQoPaY3/1o=
-github.com/mololab/netstat v0.0.0-20221129160431-27c9226a45b1/go.mod h1:jtAfVaU/2cu1+wdSRPWE2c1N2qeAA3K4RH9pYgqwets=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/onsi/ginkgo v1.6.0 h1:Ix8l273rp3QzYgXSR+c8d1fTG7UPgYkOSELPhiY/YGw=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=

@@ -17,12 +17,11 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/swaggo/swag v1.16.1
 	gopkg.in/yaml.v2 v2.4.0
-//github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 )
 
 replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2 v2.1.3
 
-replace github.com/cakturk/go-netstat => github.com/mololab/netstat v0.0.0-20221129160431-27c9226a45b1
+replace github.com/cakturk/go-netstat => github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7
 
 require (
 	github.com/InVisionApp/go-logger v1.0.1 // indirect
