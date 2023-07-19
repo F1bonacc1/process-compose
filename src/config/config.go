@@ -23,12 +23,17 @@ var (
 )
 
 const (
-	pcConfigEnv  = "PROC_COMP_CONFIG"
-	LogFileFlags = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
-	LogFileMode  = os.FileMode(0600)
+	pcConfigEnv       = "PROC_COMP_CONFIG"
+	LogPathEnvVarName = "PC_LOG_FILE"
+	LogFileFlags      = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
+	LogFileMode       = os.FileMode(0600)
 )
 
 func GetLogFilePath() string {
+	val, found := os.LookupEnv(LogPathEnvVarName)
+	if found {
+		return val
+	}
 	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose-%s%s.log", mustUser(), mode()))
 }
 

@@ -3,12 +3,16 @@ package cmd
 import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -16,25 +20,43 @@ var (
 	isTui     bool
 	opts      *loader.LoaderOptions
 	pcAddress string
+	logPath   string
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
 		Use:   "process-compose",
 		Short: "Processes scheduler and orchestrator",
-		Run: func(cmd *cobra.Command, args []string) {
-			if !cmd.Flags().Changed("tui") {
-				isTui = getTuiDefault()
-			}
-			runner := getProjectRunner([]string{}, false)
-			api.StartHttpServer(!isTui, port, runner)
-			runProject(runner)
-		},
+		Run:   run,
 	}
 )
 
 const (
-	defaultPortNum = 8080
+	defaultPortNum   = 8080
+	portEnvVarName   = "PC_PORT_NUM"
+	tuiEnvVarName    = "PC_DISABLE_TUI"
+	configEnvVarName = "PC_CONFIG_FILES"
 )
+
+func run(cmd *cobra.Command, args []string) {
+	file, err := os.OpenFile(logPath, config.LogFileFlags, config.LogFileMode)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if file != nil {
+			_ = file.Close()
+		}
+	}()
+	setupLogger(file)
+	log.Info().Msgf("Process Compose %s", config.Version)
+
+	if !cmd.Flags().Changed("tui") {
+		isTui = getTuiDefault()
+	}
+	runner := getProjectRunner([]string{}, false)
+	api.StartHttpServer(!isTui, port, runner)
+	runProject(runner)
+}
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -50,18 +72,19 @@ func init() {
 		FileNames: []string{},
 	}
 
-	rootCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false) (env: PC_DISABLE_TUI)")
-	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", getPortDefault(), "port number (env: PC_PORT_NUM)")
-	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load (env: PC_CONFIG_FILES)")
+	rootCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false) (env: "+tuiEnvVarName+")")
+	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", getPortDefault(), "port number (env: "+portEnvVarName+")")
+	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load (env: "+configEnvVarName+")")
+	rootCmd.Flags().StringVarP(&logPath, "logFile", "", config.GetLogFilePath(), "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 }
 
 func getTuiDefault() bool {
-	_, found := os.LookupEnv("PC_DISABLE_TUI")
+	_, found := os.LookupEnv(tuiEnvVarName)
 	return !found
 }
 
 func getPortDefault() int {
-	val, found := os.LookupEnv("PC_PORT_NUM")
+	val, found := os.LookupEnv(portEnvVarName)
 	if found {
 		port, err := strconv.Atoi(val)
 		if err != nil {
@@ -74,7 +97,7 @@ func getPortDefault() int {
 }
 
 func getConfigDefault() []string {
-	val, found := os.LookupEnv("PC_CONFIG_FILES")
+	val, found := os.LookupEnv(configEnvVarName)
 	if found {
 		return strings.Split(val, ",")
 	}
@@ -86,4 +109,14 @@ func logFatal(err error, format string, args ...interface{}) {
 	fmt.Printf(": %v\n", err)
 	log.Err(err).Msgf(format, args...)
 	os.Exit(1)
+}
+
+func setupLogger(output io.Writer) {
+
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:        output,
+		TimeFormat: "06-01-02 15:04:05.000",
+	})
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 }
