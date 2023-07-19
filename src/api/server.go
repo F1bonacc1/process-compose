@@ -35,5 +35,10 @@ func StartHttpServer(useLogger bool, port int, project app.IProject) {
 
 	log.Info().Msgf("start http server listening %s", endPoint)
 
-	go server.ListenAndServe()
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			log.Fatal().Err(err).Msgf("start http server on %s failed", endPoint)
+		}
+	}()
 }
