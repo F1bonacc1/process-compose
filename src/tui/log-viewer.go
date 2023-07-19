@@ -55,7 +55,7 @@ func (l *LogView) WriteString(line string) (n int, err error) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	if l.useAnsi {
-		return l.buffer.WriteString(line + "\n")
+		return l.buffer.WriteString(tview.Escape(line) + "\n")
 	}
 	if strings.Contains(strings.ToLower(line), "error") {
 		return fmt.Fprintf(l.buffer, "[deeppink]%s[-:-:-]\n", tview.Escape(line))
