@@ -329,14 +329,6 @@ func (p *ProjectRunner) GetProcessLog(name string, offsetFromEnd, limit int) ([]
 	return logs.GetLogRange(offsetFromEnd, limit), nil
 }
 
-func (p *ProjectRunner) GetProcessLogLine(name string, lineIndex int) (string, error) {
-	logs, err := p.getProcessLog(name)
-	if err != nil {
-		return "", err
-	}
-	return logs.GetLogLine(lineIndex), nil
-}
-
 func (p *ProjectRunner) GetProcessLogLength(name string) int {
 	logs, err := p.getProcessLog(name)
 	if err != nil {
@@ -528,7 +520,7 @@ func (p *ProjectRunner) selectRunningProcessesNoDeps(procList []string) error {
 	for _, procName := range procList {
 		if conf, ok := p.project.Processes[procName]; ok {
 			conf.DependsOn = types.DependsOnConfig{}
-			newProcMap[procName] = conf
+			newProcMap[conf.ReplicaName] = conf
 		} else {
 			err := fmt.Errorf("no such process: %s", procName)
 			log.Err(err).Msgf("Failed select processes")

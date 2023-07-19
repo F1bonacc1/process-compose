@@ -62,22 +62,6 @@ func (b *ProcessLogBuffer) GetLogRange(offsetFromEnd, limit int) []string {
 	return b.buffer[len(b.buffer)-offsetFromEnd : offsetFromEnd+limit]
 }
 
-func (b *ProcessLogBuffer) GetLogLine(lineIndex int) string {
-	if len(b.buffer) == 0 {
-		return ""
-	}
-
-	if lineIndex >= len(b.buffer) {
-		lineIndex = len(b.buffer) - 1
-	}
-
-	if lineIndex < 0 {
-		lineIndex = 0
-	}
-
-	return b.buffer[lineIndex]
-}
-
 func (b *ProcessLogBuffer) GetLogLength() int {
 	return len(b.buffer)
 }
