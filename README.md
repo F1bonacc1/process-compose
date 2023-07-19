@@ -245,17 +245,20 @@ nginx:
     command: "docker stop nginx_test"
     timeout_seconds: 10 # default 10
     signal: 15 # default 15, but only if the 'command' is not defined or empty
+    parent_only: no  # default no. If yes, only signal the running process instead of its whole process group
 ```
 
-`shutdown` is optional and can be omitted. The default behavior in this case: `SIGTERM` is issued to the running process.
+`shutdown` is optional and can be omitted. The default behavior in this case: `SIGTERM` is issued to the process group of the running process.
 
-In case only `shutdown.signal` is defined `[1..31] ` the running process will be terminated with its value.
+In case only `shutdown.signal` is defined `[1..31] ` the running process group will be terminated with its value.
+
+If `shutdown.parent_only` is yes, the signal is only sent to the running process and not to the whole process group.
 
 In case the `shutdown.command` is defined:
 
 1. The `shutdown.command` is executed with all the Environment Variables of the primary process
 2. Wait for `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
-3. In case of timeout, the process will receive the `SIGKILL` signal
+3. In case of timeout, the process group will receive the `SIGKILL` signal (irrespective of the `shutdown.parent_only` option).
 
 ##### Background (detached) Processes
 

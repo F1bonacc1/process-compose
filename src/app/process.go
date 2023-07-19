@@ -248,7 +248,8 @@ func (p *Process) shutDown() error {
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
 	}
-	return p.stop(p.procConf.ShutDownParams.Signal)
+
+	return p.stop(p.procConf.ShutDownParams.Signal, p.procConf.ShutDownParams.ParentOnly)
 }
 
 func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
@@ -267,7 +268,7 @@ func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
 	if err := cmd.Run(); err != nil {
 		// the process termination timedout and it will be killed
 		log.Error().Msgf("terminating %s with timeout %d failed - %s", p.getName(), timeout, err.Error())
-		return p.stop(int(syscall.SIGKILL))
+		return p.stop(int(syscall.SIGKILL), false)
 	}
 	return nil
 }
