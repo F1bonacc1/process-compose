@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-func (p *Process) stop(sig int) error {
+func (p *Process) stop(sig int, _parentOnly bool) error {
 	//p.command.Process.Kill()
 	kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(p.command.Process.Pid))
 	return kill.Run()

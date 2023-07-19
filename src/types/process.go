@@ -91,6 +91,7 @@ type ShutDownParams struct {
 	ShutDownCommand string `yaml:"command,omitempty"`
 	ShutDownTimeout int    `yaml:"timeout_seconds,omitempty"`
 	Signal          int    `yaml:"signal,omitempty"`
+	ParentOnly      bool   `yaml:"parent_only,omitempty"`
 }
 
 const (
