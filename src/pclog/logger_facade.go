@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"github.com/rs/zerolog/log"
 	"os"
+	"path"
 	"sync"
 	"sync/atomic"
 
@@ -43,6 +44,11 @@ func (l *PCLog) Open(filePath string) {
 	if filePath == "" {
 		log.Error().Msg("empty file path")
 		return
+	}
+	dirName := path.Dir(filePath)
+	if err := os.MkdirAll(dirName, 0700); err != nil && !os.IsExist(err) {
+		l.isClosed.Store(true)
+		log.Err(err).Msgf("failed to create log file directory %s", dirName)
 	}
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
