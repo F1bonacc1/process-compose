@@ -115,7 +115,8 @@ func (p *Prober) getHttpChecker() (health.ICheckable, error) {
 
 func (p *Prober) getExecChecker() (health.ICheckable, error) {
 	return &execChecker{
-		command: p.probe.Exec.Command,
-		timeout: p.probe.TimeoutSeconds,
+		command:    p.probe.Exec.Command,
+		timeout:    p.probe.TimeoutSeconds,
+		workingDir: p.probe.Exec.WorkingDir,
 	}, nil
 }

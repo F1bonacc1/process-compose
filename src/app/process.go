@@ -265,7 +265,8 @@ func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
 	defer p.notifyDaemonStopped()
 
 	cmd := command.BuildCommandShellArgContext(ctx, p.shellConfig, params.ShutDownCommand)
-	cmd.Env = p.getProcessEnvironment()
+	cmd.SetEnv(p.getProcessEnvironment())
+	cmd.SetDir(p.procConf.WorkingDir)
 
 	if err := cmd.Run(); err != nil {
 		// the process termination timedout and it will be killed

@@ -17,7 +17,8 @@ type Probe struct {
 }
 
 type ExecProbe struct {
-	Command string `yaml:"command,omitempty"`
+	Command    string `yaml:"command,omitempty"`
+	WorkingDir string `yaml:"working_dir,omitempty"`
 }
 
 type HttpProbe struct {

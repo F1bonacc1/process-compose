@@ -18,6 +18,7 @@ func (p *Project) Validate() {
 func (p *Project) ValidateAfterMerge() error {
 	p.assignDefaultProcessValues()
 	p.cloneReplicas()
+	p.copyWorkingDirToProbes()
 	return p.validateNoCircularDependencies()
 }
 
@@ -73,6 +74,22 @@ func (p *Project) assignDefaultProcessValues() {
 			proc.Replicas = 1
 		}
 		proc.Name = name
+		p.Processes[name] = proc
+	}
+}
+
+func (p *Project) copyWorkingDirToProbes() {
+	for name, proc := range p.Processes {
+		if proc.LivenessProbe != nil &&
+			proc.LivenessProbe.Exec != nil &&
+			proc.LivenessProbe.Exec.WorkingDir == "" {
+			proc.LivenessProbe.Exec.WorkingDir = proc.WorkingDir
+		}
+		if proc.ReadinessProbe != nil &&
+			proc.ReadinessProbe.Exec != nil &&
+			proc.ReadinessProbe.Exec.WorkingDir == "" {
+			proc.ReadinessProbe.Exec.WorkingDir = proc.WorkingDir
+		}
 		p.Processes[name] = proc
 	}
 }

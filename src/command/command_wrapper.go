@@ -6,37 +6,41 @@ import (
 )
 
 type CmdWrapper struct {
-	Cmd *exec.Cmd
+	cmd *exec.Cmd
 }
 
 func (c *CmdWrapper) Start() error {
-	return c.Cmd.Start()
+	return c.cmd.Start()
+}
+
+func (c *CmdWrapper) Run() error {
+	return c.cmd.Run()
 }
 
 func (c *CmdWrapper) Wait() error {
-	return c.Cmd.Wait()
+	return c.cmd.Wait()
 }
 
 func (c *CmdWrapper) ExitCode() int {
-	return c.Cmd.ProcessState.ExitCode()
+	return c.cmd.ProcessState.ExitCode()
 }
 
 func (c *CmdWrapper) Pid() int {
-	return c.Cmd.Process.Pid
+	return c.cmd.Process.Pid
 }
 
 func (c *CmdWrapper) StdoutPipe() (io.ReadCloser, error) {
-	return c.Cmd.StdoutPipe()
+	return c.cmd.StdoutPipe()
 }
 
 func (c *CmdWrapper) StderrPipe() (io.ReadCloser, error) {
-	return c.Cmd.StderrPipe()
+	return c.cmd.StderrPipe()
 }
 
 func (c *CmdWrapper) SetEnv(env []string) {
-	c.Cmd.Env = env
+	c.cmd.Env = env
 }
 
 func (c *CmdWrapper) SetDir(dir string) {
-	c.Cmd.Dir = dir
+	c.cmd.Dir = dir
 }

@@ -15,12 +15,16 @@ func BuildCommandShellArg(shell ShellConfig, cmd string) *CmdWrapper {
 	//return NewMockCommand()
 }
 
-func BuildCommandContext(ctx context.Context, shellCmd string) *exec.Cmd {
-	return exec.CommandContext(ctx, getRunnerShell(), getRunnerArg(), shellCmd)
+func BuildCommandContext(ctx context.Context, shellCmd string) *CmdWrapper {
+	return &CmdWrapper{
+		cmd: exec.CommandContext(ctx, getRunnerShell(), getRunnerArg(), shellCmd),
+	}
 }
 
-func BuildCommandShellArgContext(ctx context.Context, shell ShellConfig, cmd string) *exec.Cmd {
-	return exec.CommandContext(ctx, shell.ShellCommand, shell.ShellArgument, cmd)
+func BuildCommandShellArgContext(ctx context.Context, shell ShellConfig, cmd string) *CmdWrapper {
+	return &CmdWrapper{
+		cmd: exec.CommandContext(ctx, shell.ShellCommand, shell.ShellArgument, cmd),
+	}
 }
 
 func getRunnerShell() string {

@@ -7,8 +7,9 @@ import (
 )
 
 type execChecker struct {
-	command string
-	timeout int
+	command    string
+	timeout    int
+	workingDir string
 }
 
 func (c *execChecker) Status() (interface{}, error) {
@@ -16,10 +17,11 @@ func (c *execChecker) Status() (interface{}, error) {
 	defer cancel()
 
 	cmd := command.BuildCommandContext(ctx, c.command)
+	cmd.SetDir(c.workingDir)
 
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
 
-	return map[string]int{"exit_code": cmd.ProcessState.ExitCode()}, nil
+	return map[string]int{"exit_code": cmd.ExitCode()}, nil
 }
