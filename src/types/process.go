@@ -85,6 +85,7 @@ type RestartPolicyConfig struct {
 	Restart        string `yaml:",omitempty"`
 	BackoffSeconds int    `yaml:"backoff_seconds,omitempty"`
 	MaxRestarts    int    `yaml:"max_restarts,omitempty"`
+	ExitOnEnd      bool   `yaml:"exit_on_end,omitempty"`
 }
 
 type ShutDownParams struct {

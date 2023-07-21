@@ -121,7 +121,8 @@ func (p *ProjectRunner) waitIfNeeded(process types.ProcessConfig) error {
 }
 
 func (p *ProjectRunner) onProcessEnd(exitCode int, procConf types.ProcessConfig) {
-	if exitCode != 0 && procConf.RestartPolicy.Restart == types.RestartPolicyExitOnFailure {
+	if (exitCode != 0 && procConf.RestartPolicy.Restart == types.RestartPolicyExitOnFailure) ||
+		procConf.RestartPolicy.ExitOnEnd {
 		p.ShutDownProject()
 		p.exitCode = exitCode
 	}
