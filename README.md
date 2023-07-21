@@ -224,7 +224,7 @@ process1:
     process2:
       condition: process_completed_successfully
 process2:
-  command: "echo 'Hi from Process2'"      
+  command: "echo 'Hi from Process2'"
 process3:
   command: "echo 'Hi from Process3'"
 ```
@@ -293,9 +293,9 @@ nginx:
     signal: 15 # default 15, but only if command is not defined or empty
 ```
 
-1. For processes that start services / daemons in the background, please use the `is_daemon` flag set to `true`. 
+1. For processes that start services / daemons in the background, please use the `is_daemon` flag set to `true`.
 
-2. In case a process is daemon it will be considered running until stopped. 
+2. In case a process is daemon it will be considered running until stopped.
 
 3. Daemon processes can only be stopped with the `$PROCESSNAME.shutdown.command` as in the example above.
 
@@ -403,7 +403,7 @@ Default log location: `/tmp/process-compose-$USER.log`
 **Tip:** It is recommended to add the following process configuration to your `process-compose.yaml`:
 
 ```yaml
-processes:  
+processes:
   pc_log:
     command: "tail -f -n100 process-compose-${USER}.log"
     working_dir: "/tmp"
@@ -494,7 +494,7 @@ process2:
 
 ##### Terminate Process Compose on Failure
 
-There are cases when you might like `process-compose` to terminate immediately when one of the processes exits with non `0` exit code. This can be useful when you would like to perform "pre-flight" validation checks on the environment.
+There are cases when you might want `process-compose` to terminate immediately when one of the processes exits with non `0` exit code. This can be useful when you would like to perform "pre-flight" validation checks on the environment.
 
 To achieve that, use `exit_on_failure` restart policy. If defined, `process-compose` will gracefully shut down all the other running processes and exit with the same exit code as the failed process.
 
@@ -513,7 +513,7 @@ other_proc:
 
 ##### Terminate Process Compose once given process ends
 
-There are cases when you might like `process-compose` to terminate immediately when one of the processes exits (regardless of exit code). For example when running tests which depend on other processes like databases etc.. You might want the processes, on which the test process depends, to start first, then run the tests, and finally terminate all processes once the test process exits, reporting the code returned by the test process.
+There are cases when you might want `process-compose` to terminate immediately when one of the processes exits (regardless of exit code). For example when running tests which depend on other processes like databases etc.. You might want the processes, on which the test process depends, to start first, then run the tests, and finally terminate all processes once the test process exits, reporting the code returned by the test process.
 
 To achieve that, set `availability.exit_on_end` to `true`, and `process-compose` will gracefully shut down all the other running processes and exit with the same exit code as the given process.
 
@@ -541,10 +541,10 @@ postgres:
       command: postgres-health-check
 ```
 
-> **Note**
+> :bulb:
 > setting `restart: exit_on_failure` together with `exit_on_end: true` is not needed as the latter causes termination regardless of the exit code. However it might be sometimes useful to `exit_on_end` with `restart: on_failure` and `max_restarts` in case you want the process to recover from failure and only cause termination on success.
 
-> **Note**
+> :bulb:
 > `exit_on_end` can be set on more than one process, for example when running multiple tasks in parallel and wishing to terminate as soon as any one finished.
 
 #### Environment Variables
@@ -672,7 +672,7 @@ See the `process-compose` wiki for more information on [Multiple Compose Files](
 Assigning namespaces to processes allows better grouping and sorting, especially in TUI:
 
 ```yaml
-processes:  
+processes:
   process1:
     command: "tail -f -n100 process-compose-${USER}.log"
     working_dir: "/tmp"
@@ -743,4 +743,4 @@ https://github.com/sponsors/F1bonacc1
 <img src="./imgs/btc.wallet.qr.png" style="zoom:80%;"  alt="3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX"/>
 3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX
 
-Thank **You**! 
+Thank **You**!
