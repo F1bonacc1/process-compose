@@ -474,7 +474,7 @@ process2:
 
 ##### Terminate Process Compose on Failure
 
-There are cases when you would like the `process-compose` to terminate immediately when one of the processes exits with non `0` exit code. This can be useful when you would like to perform "pre-flight" validation checks on the environment.
+There are cases when you might like `process-compose` to terminate immediately when one of the processes exits with non `0` exit code. This can be useful when you would like to perform "pre-flight" validation checks on the environment.
 
 To achieve that, use `exit_on_failure` restart policy. If defined, `process-compose` will gracefully shut down all the other running processes and exit with the same exit code as the failed process.
 
@@ -491,7 +491,41 @@ other_proc:
       condition: process_completed_successfuly
 ```
 
+##### Terminate Process Compose once given process ends
 
+There are cases when you might like `process-compose` to terminate immediately when one of the processes exits (regardless of exit code). For example when running tests which depend on other processes like databases etc.. You might want the processes, on which the test process depends, to start first, then run the tests, and finally terminate all processes once the test process exits, reporting the code returned by the test process.
+
+To achieve that, set `availability.exit_on_end` to `true`, and `process-compose` will gracefully shut down all the other running processes and exit with the same exit code as the given process.
+
+```yaml
+tests:
+  command: tests-run
+  availability:
+    # NOTE: `restart: exit_on_failure` is not needed since
+    # exit_on_end implies it.
+    exit_on_end: true
+  depends_on:
+    redis: process_healthy
+    postgres: process_healthy
+
+redis:
+  command: redis-start
+  readiness_probe:
+    exec:
+      command: redis-health-check
+
+postgres:
+  command: postgres-start
+  readiness_probe:
+    exec:
+      command: postgres-health-check
+```
+
+> **Note**
+> setting `restart: exit_on_failure` together with `exit_on_end: true` is not needed as the latter causes termination regardless of the exit code. However it might be sometimes useful to `exit_on_end` with `restart: on_failure` and `max_restarts` in case you want the process to recover from failure and only cause termination on success.
+
+> **Note**
+> `exit_on_end` can be set on more than one process, for example when running multiple tasks in parallel and wishing to terminate as soon as any one finished.
 
 #### Environment Variables
 
