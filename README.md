@@ -18,12 +18,13 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 - [Health checks (liveness and readiness)](#health-checks)
 - [Terminal User Interface (TUI) or CLI modes](#tui-terminal-user-interface)
 - [Forking (services or daemons) processes](#background-detached-processes)
-- [REST API (OpenAPI a.k.a Swagger)](#rest-api) 🔥 NEW!
+- [REST API (OpenAPI a.k.a Swagger)](#rest-api)
 - [Logs caching](#review-logs)
-- [Functions as both server and client](#client-mode) 🔥 NEW!
+- [Functions as both server and client](#client-mode)
 - Configurable shortcuts (see [Wiki](https://github.com/F1bonacc1/process-compose/wiki/Shortcuts-Configuration))
 - [Merge Configuration Files](#merge-2-or-more-configuration-files-with-override-values)
-- [Namespaces](#Namespaces) 🔥 NEW!
+- [Namespaces](#Namespaces)
+- [Run Multiple Replicas of a Process](#multiple-replicas-of-a-process) 🔥 NEW!
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -161,7 +162,27 @@ process2:
       condition: process_completed_successfully # or "process_completed" if you don't care about errors
 ```
 
-##### ❌ Instance Number
+##### Multiple Replicas of a Process
+
+You can ran multiple replicas of a process by adding `processes.process_name.replicas` parameter (default: 1)
+
+```yaml
+processes:
+  process_name:
+    command: "sleep 2"
+    log_location: ./log_file.{PC_REPLICA_NUM}.log  # <- {PC_REPLICA_NUM} will be replaced with replica number. If more than one replica and PC_REPLICA_NUM not specified, the replica number will be concatinated to the file end.
+    replicas: 2  # <- NEW
+```
+
+To scale a process on the fly CLI:
+
+```shell
+process-compose process scale process_name 3
+```
+
+To scale a process on the fly TUI: `F2` or Process Compose in client mode (`process-compose attach`).
+
+> **Note**: Starting multiple processes using the same port, will fail. Please use the injected `PC_REPLICA_NUM` environment variable to increment the used port number.
 
 ##### Specify a working directory
 
@@ -278,15 +299,11 @@ nginx:
 
 3. Daemon processes can only be stopped with the `$PROCESSNAME.shutdown.command` as in the example above.
 
-#### <u>Output Handling</u>
+#### Output Handling
 
-##### Show process name
-
-##### Different colors per process
-
-##### StdErr is printed in Red
-
-<img src="./imgs/output.png" alt="output" style="zoom:50%;" />
+- Show process name
+- Different colors per process
+- StdErr is printed in Red
 
 #### TUI (Terminal User Interface)
 
@@ -314,7 +331,7 @@ processes:
     command: "ls -R /"
 ```
 
-**Note**: Using a too large buffer will put a significant penalty on your CPU.
+> **Note**: Using a too large buffer will put a significant penalty on your CPU.
 
 By default `process-compose` uses the standard ANSI colors mode to display logs. However, you can disable it for each process:
 
@@ -324,6 +341,8 @@ processes:
     command: "ls -R /"
     disable_ansi_colors: true #default false
 ```
+
+> **Note**: Too long log lines (above 2^16 bytes long) can cause the log collector to hang.
 
 ##### Disabled Processes
 
@@ -411,6 +430,7 @@ Probes configuration and functionality are designed to work similarly to [Kubern
     liveness_probe:
       exec:
         command: "[ $(docker inspect -f '{{.State.Running}}' nginx_test) = 'true' ]"
+        working_dir: /tmp # if not specified the process working dir will be used
       initial_delay_seconds: 5
       period_seconds: 2
       timeout_seconds: 5
@@ -564,7 +584,13 @@ A convenient Swagger API is provided: http://localhost:8080
 Default port is 8080. Specify your own port:
 
 ```shell
-process-compose -p PORT
+process-compose -p 8080
+```
+
+Alternatively use `PC_PORT_NUM` environment variable:
+
+```shell
+PC_PORT_NUM=8080 process-compose
 ```
 
 #### Client Mode
@@ -694,7 +720,7 @@ processes:
     command: "server.py"
 ```
 
-**Note**: please make sure that the `shell.shell_command` value is in your `$PATH`
+> **Note**: please make sure that the `shell.shell_command` value is in your `$PATH`
 
 ## How to Contribute
 
