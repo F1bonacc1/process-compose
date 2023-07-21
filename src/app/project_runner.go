@@ -247,9 +247,10 @@ func (p *ProjectRunner) StopProcesses(names []string) ([]string, error) {
 func (p *ProjectRunner) RestartProcess(name string) error {
 	proc := p.getRunningProcess(name)
 	if proc != nil {
-		_ = proc.shutDown()
-		if proc.isRestartable() {
-			return nil
+		err := proc.shutDownNoRestart()
+		if err != nil {
+			log.Err(err).Msgf("failed to stop process %s", name)
+			return err
 		}
 		time.Sleep(proc.getBackoff())
 	}
