@@ -164,7 +164,7 @@ func (p *Process) getBackoff() time.Duration {
 func (p *Process) getProcessEnvironment() []string {
 	env := []string{
 		"PC_PROC_NAME=" + p.procConf.Name,
-		EnvReplicaNum + strconv.Itoa(p.procConf.ReplicaNum),
+		EnvReplicaNum + "=" + strconv.Itoa(p.procConf.ReplicaNum),
 	}
 	env = append(env, os.Environ()...)
 	env = append(env, p.globalEnv...)
@@ -173,7 +173,9 @@ func (p *Process) getProcessEnvironment() []string {
 }
 
 func (p *Process) isRestartable() bool {
+	p.Lock()
 	exitCode := p.procState.ExitCode
+	p.Unlock()
 	if p.procConf.RestartPolicy.Restart == types.RestartPolicyNo ||
 		p.procConf.RestartPolicy.Restart == "" {
 		return false
@@ -183,8 +185,7 @@ func (p *Process) isRestartable() bool {
 		return false
 	}
 
-	if exitCode != 0 && (p.procConf.RestartPolicy.Restart == types.RestartPolicyOnFailureDeprecated ||
-		p.procConf.RestartPolicy.Restart == types.RestartPolicyOnFailure) {
+	if exitCode != 0 && p.procConf.RestartPolicy.Restart == types.RestartPolicyOnFailure {
 		if p.procConf.RestartPolicy.MaxRestarts == 0 {
 			return true
 		}

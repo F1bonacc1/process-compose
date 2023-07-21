@@ -94,11 +94,10 @@ type ProcessesState struct {
 }
 
 const (
-	RestartPolicyAlways              = "always"
-	RestartPolicyOnFailureDeprecated = "on-failure"
-	RestartPolicyOnFailure           = "on_failure"
-	RestartPolicyExitOnFailure       = "exit_on_failure"
-	RestartPolicyNo                  = "no"
+	RestartPolicyAlways        = "always"
+	RestartPolicyOnFailure     = "on_failure"
+	RestartPolicyExitOnFailure = "exit_on_failure"
+	RestartPolicyNo            = "no"
 )
 
 const (

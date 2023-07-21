@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func StartProcesses(address string, port int, name string) error {
+func StartProcess(address string, port int, name string) error {
 	url := fmt.Sprintf("http://%s:%d/process/start/%s", address, port, name)
 	resp, err := http.Post(url, "application/json", nil)
 	if err != nil {

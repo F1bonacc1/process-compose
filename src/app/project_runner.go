@@ -86,7 +86,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 	go func() {
 		defer p.removeRunningProcess(process)
 		defer p.waitGroup.Done()
-		if err := p.waitIfNeeded(process.procConf); err != nil {
+		if err = p.waitIfNeeded(process.procConf); err != nil {
 			log.Error().Msgf("Error: %s", err.Error())
 			log.Error().Msgf("Error: process %s won't run", process.getName())
 			process.wontRun()
@@ -230,6 +230,18 @@ func (p *ProjectRunner) StopProcess(name string) error {
 		log.Err(err).Msgf("failed to stop process %s", name)
 	}
 	return nil
+}
+
+func (p *ProjectRunner) StopProcesses(names []string) ([]string, error) {
+	stopped := make([]string, 0)
+	for _, name := range names {
+		if err := p.StopProcess(name); err == nil {
+			stopped = append(stopped, name)
+		} else {
+			return nil, err
+		}
+	}
+	return stopped, nil
 }
 
 func (p *ProjectRunner) RestartProcess(name string) error {

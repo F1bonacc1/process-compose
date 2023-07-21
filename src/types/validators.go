@@ -44,11 +44,7 @@ func (p *Project) setConfigDefaults() {
 }
 
 func (p *Project) deprecationCheck() {
-	for key, proc := range p.Processes {
-		if proc.RestartPolicy.Restart == RestartPolicyOnFailureDeprecated {
-			deprecationHandler("2022-10-30", key, RestartPolicyOnFailureDeprecated, RestartPolicyOnFailure, "restart policy")
-		}
-	}
+	// TODO: Add deprecation check
 }
 
 func (p *Project) validateProcessConfig() {

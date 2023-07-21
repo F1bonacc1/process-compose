@@ -13,6 +13,6 @@ type Commander interface {
 	SetDir(string)
 	StdoutPipe() (io.ReadCloser, error)
 	StderrPipe() (io.ReadCloser, error)
-	Stop(int) error
+	Stop(int, bool) error
 	SetCmdArgs()
 }

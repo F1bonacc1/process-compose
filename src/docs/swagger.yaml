@@ -152,30 +152,6 @@ paths:
       summary: Scale a process to a given replicas count
       tags:
       - Process
-  /process/scale/{name}/{scale}:
-    patch:
-      description: Scale a process
-      parameters:
-      - description: Process Name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: New amount of process replicas
-        in: path
-        name: scale
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Scaled Process Name
-          schema:
-            type: string
-      summary: Scale a process to a given replicas count
-      tags:
-      - Process
   /process/start/{name}:
     post:
       description: Starts the process if the state is not 'running' or 'pending'
@@ -225,6 +201,28 @@ paths:
           schema:
             type: object
       summary: Get all processes
+      tags:
+      - Process
+  /processes/stop:
+    patch:
+      description: Sends kill signal to the processes list
+      parameters:
+      - description: Processes Names
+        in: body
+        name: '[]string'
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stopped Processes Names
+          schema:
+            type: string
+      summary: Stop processes
       tags:
       - Process
 swagger: "2.0"

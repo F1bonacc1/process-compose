@@ -89,15 +89,19 @@ func (p *PcClient) GetProcessesState() (*types.ProcessesState, error) {
 }
 
 func (p *PcClient) StopProcess(name string) error {
-	return StopProcesses(p.address, p.port, name)
+	return StopProcess(p.address, p.port, name)
+}
+
+func (p *PcClient) StopProcesses(names []string) ([]string, error) {
+	return StopProcesses(p.address, p.port, names)
 }
 
 func (p *PcClient) StartProcess(name string) error {
-	return StartProcesses(p.address, p.port, name)
+	return StartProcess(p.address, p.port, name)
 }
 
 func (p *PcClient) RestartProcess(name string) error {
-	return RestartProcesses(p.address, p.port, name)
+	return RestartProcess(p.address, p.port, name)
 }
 
 func (p *PcClient) ScaleProcess(name string, scale int) error {

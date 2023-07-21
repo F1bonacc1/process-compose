@@ -216,42 +216,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/process/scale/{name}/{scale}": {
-            "patch": {
-                "description": "Scale a process",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Scale a process to a given replicas count",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Process Name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "New amount of process replicas",
-                        "name": "scale",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Scaled Process Name",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/process/start/{name}": {
             "post": {
                 "description": "Starts the process if the state is not 'running' or 'pending'",
@@ -354,6 +318,40 @@ const docTemplate = `{
                         "description": "Processes Status",
                         "schema": {
                             "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/processes/stop": {
+            "patch": {
+                "description": "Sends kill signal to the processes list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Stop processes",
+                "parameters": [
+                    {
+                        "description": "Processes Names",
+                        "name": "[]string",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stopped Processes Names",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }

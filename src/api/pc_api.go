@@ -126,6 +126,29 @@ func (api *PcApi) StopProcess(c *gin.Context) {
 }
 
 // @Schemes
+// @Description Sends kill signal to the processes list
+// @Tags Process
+// @Summary Stop processes
+// @Produce  json
+// @Param []string body []string true "Processes Names"
+// @Success 200 {object} string "Stopped Processes Names"
+// @Router /processes/stop [patch]
+func (api *PcApi) StopProcesses(c *gin.Context) {
+	var names []string
+	if err := c.ShouldBindJSON(&names); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	stopped, err := api.project.StopProcesses(names)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stopped)
+}
+
+// @Schemes
 // @Description Starts the process if the state is not 'running' or 'pending'
 // @Tags Process
 // @Summary Start a process

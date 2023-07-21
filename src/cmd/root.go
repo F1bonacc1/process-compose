@@ -8,7 +8,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -38,17 +37,6 @@ const (
 )
 
 func run(cmd *cobra.Command, args []string) {
-	file, err := os.OpenFile(logPath, config.LogFileFlags, config.LogFileMode)
-	if err != nil {
-		panic(err)
-	}
-	defer func() {
-		if file != nil {
-			_ = file.Close()
-		}
-	}()
-	setupLogger(file)
-	log.Info().Msgf("Process Compose %s", config.Version)
 
 	if !cmd.Flags().Changed("tui") {
 		isTui = getTuiDefault()
@@ -61,7 +49,16 @@ func run(cmd *cobra.Command, args []string) {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
+	file, err := setupLogger()
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	log.Info().Msgf("Process Compose %s", config.Version)
+	err = rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -107,16 +104,19 @@ func getConfigDefault() []string {
 func logFatal(err error, format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 	fmt.Printf(": %v\n", err)
-	log.Err(err).Msgf(format, args...)
-	os.Exit(1)
+	log.Fatal().Err(err).Msgf(format, args...)
 }
 
-func setupLogger(output io.Writer) {
-
+func setupLogger() (*os.File, error) {
+	file, err := os.OpenFile(logPath, config.LogFileFlags, config.LogFileMode)
+	if err != nil {
+		return nil, err
+	}
 	log.Logger = log.Output(zerolog.ConsoleWriter{
-		Out:        output,
+		Out:        file,
 		TimeFormat: "06-01-02 15:04:05.000",
 	})
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	return file, nil
 }
