@@ -164,13 +164,13 @@ process2:
 
 ##### Multiple Replicas of a Process
 
-You can ran multiple replicas of a process by adding `processes.process_name.replicas` parameter (default: 1)
+You can run multiple replicas of a process by adding `processes.process_name.replicas` parameter (default: 1)
 
 ```yaml
 processes:
   process_name:
     command: "sleep 2"
-    log_location: ./log_file.{PC_REPLICA_NUM}.log  # <- {PC_REPLICA_NUM} will be replaced with replica number. If more than one replica and PC_REPLICA_NUM not specified, the replica number will be concatinated to the file end.
+    log_location: ./log_file.{PC_REPLICA_NUM}.log  # <- {PC_REPLICA_NUM} will be replaced with replica number. If more than one replica and PC_REPLICA_NUM is not specified, the replica number will be concatenated to the file end.
     replicas: 2  # <- NEW
 ```
 
@@ -205,10 +205,10 @@ process2:
       condition: process_completed_successfully
 ```
 
-There are 4 condition types that cab be used in process dependencies:
+There are 4 condition types that can be used in process dependencies:
 
-* `process_completed` - is the type for waiting until a process has completed (any exit code)
-* `process_completed_successfully` - is the type for waiting until a process has completed successfully (exit code 0)
+* `process_completed` - is the type for waiting until a process has been completed (any exit code)
+* `process_completed_successfully` - is the type for waiting until a process has been completed successfully (exit code 0)
 * `process_healthy` - is the type for waiting until a process is healthy
 * `process_started` - is the type for waiting until a process has started (default)
 
@@ -355,7 +355,7 @@ processes:
     disabled: true #default false
 ```
 
-Even if disabled, it is still listed in the TUI and the REST client, can be started manually when needed.
+Even if disabled, it is still listed in the TUI and the REST client can be started manually when needed.
 
 ##### Processes State Columns Sorting
 
@@ -459,14 +459,14 @@ Probes configuration and functionality are designed to work similarly to [Kubern
       failure_threshold: 3
 ```
 
-Each probe type (`liveness_probe` or `readiness_probe`) can be configured in to use one of the 2 mutually exclusive modes:
+Each probe type (`liveness_probe` or `readiness_probe`) can be configured to use one of the 2 mutually exclusive modes:
 
 1. `exec`: Will run a configured `command` and based on the `exit code` decide if the process is in a correct state. 0 indicates success. Any other value indicates failure.
 2. `http_get`: For an HTTP probe, the Process Compose sends an HTTP request to the specified path and port to perform the check. Response code 200 indicates success. Any other value indicates failure.
    - `host`: Host name to connect to.
    - `scheme`: Scheme to use for connecting to the host (HTTP or HTTPS). Defaults to HTTP.
    - `path`: Path to access on the HTTP server. Defaults to /.
-   - `port`: Number of the port to access on the process. Number must be in the range 1 to 65535.
+   - `port`: Number of port to access the process. The number must be in the range 1 to 65535.
 
 ##### Configure Probes
 
@@ -480,7 +480,7 @@ Probes have a number of fields that you can use to control the behavior of liven
 
 ##### Auto Restart if not Healthy
 
-In order to ensure that the process is restarted (and not transitioned to completed state) in case of readiness check fail, please make sure to define the `availability` configuration. For background (`is_daemon=true`) processes, the `restart` policy should be `always`.
+In order to ensure that the process is restarted (and not transitioned to a completed state) in case of readiness check fail, please make sure to define the `availability` configuration. For background (`is_daemon=true`) processes, the `restart` policy should be `always`.
 
 ##### Auto Restart on Exit
 
@@ -494,7 +494,7 @@ process2:
 
 ##### Terminate Process Compose on Failure
 
-There are cases when you might want `process-compose` to terminate immediately when one of the processes exits with non `0` exit code. This can be useful when you would like to perform "pre-flight" validation checks on the environment.
+There are cases when you might want `process-compose` to terminate immediately when one of the processes exits with a non `0` exit code. This can be useful when you would like to perform "pre-flight" validation checks on the environment.
 
 To achieve that, use `exit_on_failure` restart policy. If defined, `process-compose` will gracefully shut down all the other running processes and exit with the same exit code as the failed process.
 
@@ -513,7 +513,7 @@ other_proc:
 
 ##### Terminate Process Compose once given process ends
 
-There are cases when you might want `process-compose` to terminate immediately when one of the processes exits (regardless of exit code). For example when running tests which depend on other processes like databases etc.. You might want the processes, on which the test process depends, to start first, then run the tests, and finally terminate all processes once the test process exits, reporting the code returned by the test process.
+There are cases when you might want `process-compose` to terminate immediately when one of the processes exits (regardless of the exit code). For example when running tests that depend on other processes like databases etc. You might want the processes, on which the test process depends, to start first, then run the tests, and finally terminate all processes once the test process exits, reporting the code returned by the test process.
 
 To achieve that, set `availability.exit_on_end` to `true`, and `process-compose` will gracefully shut down all the other running processes and exit with the same exit code as the given process.
 
@@ -542,7 +542,7 @@ postgres:
 ```
 
 > :bulb:
-> setting `restart: exit_on_failure` together with `exit_on_end: true` is not needed as the latter causes termination regardless of the exit code. However it might be sometimes useful to `exit_on_end` with `restart: on_failure` and `max_restarts` in case you want the process to recover from failure and only cause termination on success.
+> setting `restart: exit_on_failure` together with `exit_on_end: true` is not needed as the latter causes termination regardless of the exit code. However, it might be sometimes useful to `exit_on_end` with `restart: on_failure` and `max_restarts` in case you want the process to recover from failure and only cause termination on success.
 
 > :bulb:
 > `exit_on_end` can be set on more than one process, for example when running multiple tasks in parallel and wishing to terminate as soon as any one finished.
@@ -595,7 +595,7 @@ PC_PORT_NUM=8080 process-compose
 
 #### Client Mode
 
-Process compose can also connect to itself as client. Available commands:
+Process compose can also connect to itself as a client. Available commands:
 
 ##### Processes List
 
@@ -623,7 +623,7 @@ process-compose process restart [PROCESS] #restarts one of the available process
 
 Restart will wait `process.availability.backoff_seconds` seconds between `stop` and `start` of the process. If not configured the default value is 1s.
 
-By default the client will try to use the default port `8080` and default address `localhost` to connect to the locally running instance of process-compose. You can provide deferent values:
+By default, the client will try to use the default port `8080` and default address `localhost` to connect to the locally running instance of process-compose. You can provide deferent values:
 
 ```shell
 process-compose -p PORT process -a ADDRESS list
@@ -663,7 +663,7 @@ The following discovery order is used: `compose.yml, compose.yaml, process-compo
 process-compose -f "path/to/process-compose-file.yaml" -f "path/to/process-compose-override-file.yaml"
 ```
 
-Using multiple `process-compose` files lets you to customize a `process-compose` application for different environments or different workflows.
+Using multiple `process-compose` files lets you customize a `process-compose` application for different environments or different workflows.
 
 See the `process-compose` wiki for more information on [Multiple Compose Files](https://github.com/F1bonacc1/process-compose/wiki/Multiple-Compose-Files).
 
@@ -676,7 +676,7 @@ processes:
   process1:
     command: "tail -f -n100 process-compose-${USER}.log"
     working_dir: "/tmp"
-    namespace: debug # if not defined 'default' namespaces is automatically assigned to each process
+    namespace: debug # if not defined 'default' namespace is automatically assigned to each process
 ```
 
 #### <u>Multi-platform</u>
@@ -695,7 +695,7 @@ process1:
   #note that the same command for bash/zsh would look like: "python -c 'print(str(40+2))'"
 ```
 
-Using `powershell` backend had some funky behaviour (like missing `command1 && command2` functionality in older versions). If you need to run powershell scripts, use the following syntax:
+Using `powershell` backend had some funky behavior (like missing `command1 && command2` functionality in older versions). If you need to run powershell scripts, use the following syntax:
 
 ```yaml
 process2:
@@ -708,7 +708,7 @@ The default backend is `bash`. You can define a different backend with a `COMPOS
 
 ##### Configurable Backend
 
-For cases where you process compose requires a non default or transferable backend definition, setting an environment variable won't do. For that you  can configure it directly in the `process-compose.yaml` file:
+For cases where your process compose requires a non default or transferable backend definition, setting an environment variable won't do. For that, you  can configure it directly in the `process-compose.yaml` file:
 
 ```yaml
 version: "0.5"
