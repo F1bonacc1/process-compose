@@ -7,14 +7,16 @@
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }:
+    let
+      mkPackage = pkgs: pkgs.callPackage ./default.nix {
+        #version = self.shortRev or "dirty";
+        date = self.lastModifiedDate;
+        commit = self.shortRev or "dirty";
+      };
+    in
     (flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ self.overlays."${system}".default ];
-        };
-      in {
-        packages = { inherit (pkgs) process-compose; };
+      {
+        packages.process-compose = mkPackage nixpkgs.legacyPackages.${system};
         defaultPackage = self.packages."${system}".process-compose;
         apps.process-compose = flake-utils.lib.mkApp {
           drv = self.packages."${system}".process-compose;
@@ -23,11 +25,7 @@
       })
     ) // {
       overlays.default = final: prev: {
-        process-compose = final.callPackage ./default.nix {
-          #version = self.shortRev or "dirty";
-          date = self.lastModifiedDate;
-          commit = self.shortRev or "dirty";
-        };
+        process-compose = mkPackage final;
       };
     }
   ;
