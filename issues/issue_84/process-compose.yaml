@@ -1,0 +1,9 @@
+version: "0.5"
+log_level: debug
+log_length: 300
+
+processes:
+  clientA:
+    command: "sleep 5 && touch ready"
+
+

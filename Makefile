@@ -25,7 +25,7 @@ swag:
 	~/go/bin/swag init --dir src --output src/docs --parseDependency --parseInternal --parseDepth 1
 
 build:
-	go build -o bin/${NAME}${EXT} ${LD_FLAGS} ./src
+	CGO_ENABLED=0 go build -o bin/${NAME}${EXT} ${LD_FLAGS} ./src
 
 build-nix:
 	nix build .
