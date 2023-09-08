@@ -34,7 +34,11 @@ func GetLogFilePath() string {
 	if found {
 		return val
 	}
-	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose-%s%s.log", mustUser(), mode()))
+	userName := getUser()
+	if len(userName) != 0 {
+		userName = "-" + userName
+	}
+	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose%s%s.log", userName, mode()))
 }
 
 func procCompHome() string {
@@ -58,10 +62,11 @@ func GetShortCutsPath() string {
 	return ""
 }
 
-func mustUser() string {
+func getUser() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to retrieve user info")
+		log.Warn().Err(err).Msg("Failed to retrieve user info.")
+		return ""
 	}
 	return usr.Username
 }
