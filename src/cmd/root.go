@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -20,12 +21,17 @@ var (
 	opts      *loader.LoaderOptions
 	pcAddress string
 	logPath   string
+	logFile   *os.File
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
 		Use:   "process-compose",
 		Short: "Processes scheduler and orchestrator",
-		Run:   run,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			logFile = setupLogger()
+			log.Info().Msgf("Process Compose %s", config.Version)
+		},
+		Run: run,
 	}
 )
 
@@ -41,6 +47,9 @@ func run(cmd *cobra.Command, args []string) {
 	if !cmd.Flags().Changed("tui") {
 		isTui = getTuiDefault()
 	}
+	defer func() {
+		_ = logFile.Close()
+	}()
 	runner := getProjectRunner([]string{}, false)
 	api.StartHttpServer(!isTui, port, runner)
 	runProject(runner)
@@ -49,16 +58,8 @@ func run(cmd *cobra.Command, args []string) {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	file, err := setupLogger()
-	if err != nil {
-		panic(err)
-	}
-	defer func() {
-		_ = file.Close()
-	}()
 
-	log.Info().Msgf("Process Compose %s", config.Version)
-	err = rootCmd.Execute()
+	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -69,10 +70,10 @@ func init() {
 		FileNames: []string{},
 	}
 
-	rootCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "disable tui (-t=false) (env: "+tuiEnvVarName+")")
+	rootCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "enable tui (-t=false) (env: "+tuiEnvVarName+")")
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", getPortDefault(), "port number (env: "+portEnvVarName+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load (env: "+configEnvVarName+")")
-	rootCmd.Flags().StringVarP(&logPath, "logFile", "", config.GetLogFilePath(), "Specify the log file path (env: "+config.LogPathEnvVarName+")")
+	rootCmd.PersistentFlags().StringVarP(&logPath, "log-file", "L", config.GetLogFilePath(), "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 }
 
 func getTuiDefault() bool {
@@ -107,10 +108,15 @@ func logFatal(err error, format string, args ...interface{}) {
 	log.Fatal().Err(err).Msgf(format, args...)
 }
 
-func setupLogger() (*os.File, error) {
+func setupLogger() *os.File {
+	dirName := path.Dir(logPath)
+	if err := os.MkdirAll(dirName, 0700); err != nil && !os.IsExist(err) {
+		fmt.Printf("Failed to create log directory: %s - %v\n", dirName, err)
+		os.Exit(1)
+	}
 	file, err := os.OpenFile(logPath, config.LogFileFlags, config.LogFileMode)
 	if err != nil {
-		return nil, err
+		logFatal(err, "Failed to open log file: %s", logPath)
 	}
 	log.Logger = log.Output(zerolog.ConsoleWriter{
 		Out:        file,
@@ -118,5 +124,5 @@ func setupLogger() (*os.File, error) {
 	})
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	return file, nil
+	return file
 }
