@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func getProjectRunner(process []string, noDeps bool) *app.ProjectRunner {
@@ -62,7 +63,7 @@ func runTui(project *app.ProjectRunner) int {
 		tui.Stop()
 	})
 	defer quiet()()
-	go tui.SetupTui(project)
+	go tui.SetupTui(project, time.Duration(*pcFlags.RefreshRate)*time.Second)
 	exitCode := project.Run()
 	tui.Stop()
 	return exitCode

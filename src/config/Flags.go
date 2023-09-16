@@ -4,7 +4,7 @@ import "math"
 
 const (
 	// DefaultRefreshRate represents the refresh interval.
-	DefaultRefreshRate = 2 // secs
+	DefaultRefreshRate = 1 // secs
 
 	// DefaultLogLevel represents the default log level.
 	DefaultLogLevel = "info"

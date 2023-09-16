@@ -53,7 +53,8 @@ func init() {
 		FileNames: []string{},
 	}
 
-	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", true, "enable tui (-t=false) (env: "+config.TuiEnvVarName+")")
+	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", true, "enable TUI (-t=false) (env: "+config.TuiEnvVarName+")")
+	rootCmd.Flags().IntVarP(pcFlags.RefreshRate, "ref-rate", "r", *pcFlags.RefreshRate, "TUI refresh rate in seconds")
 	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.PortEnvVarName+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.ConfigEnvVarName+")")
 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
