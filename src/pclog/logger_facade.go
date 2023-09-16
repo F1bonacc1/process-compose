@@ -29,11 +29,11 @@ type logEvent struct {
 }
 
 func NewLogger() *PCLog {
-	log := &PCLog{
+	l := &PCLog{
 		logEventChan: make(chan logEvent, 100),
 	}
 
-	return log
+	return l
 }
 
 func (l *PCLog) Open(filePath string) {
