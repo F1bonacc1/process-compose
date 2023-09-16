@@ -53,9 +53,10 @@ type pcView struct {
 	sortMtx       sync.Mutex
 	stateSorter   StateSorter
 	procColumns   map[ColumnID]string
+	refreshRate   time.Duration
 }
 
-func newPcView(project app.IProject) *pcView {
+func newPcView(project app.IProject, refreshRate time.Duration) *pcView {
 	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
 	pv := &pcView{
 		appView:       tview.NewApplication(),
@@ -76,6 +77,7 @@ func newPcView(project app.IProject) *pcView {
 			isAsc:        true,
 		},
 		procColumns: map[ColumnID]string{},
+		refreshRate: refreshRate,
 	}
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
@@ -370,9 +372,9 @@ func (pv *pcView) startMonitoring() {
 	}(pcClient)
 }
 
-func SetupTui(project app.IProject) {
+func SetupTui(project app.IProject, refreshRate time.Duration) {
 
-	pv := newPcView(project)
+	pv := newPcView(project, refreshRate)
 
 	go pv.updateTable()
 	go pv.updateLogs()

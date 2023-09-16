@@ -133,10 +133,10 @@ func (pv *pcView) createProcTable() *tview.Table {
 
 func (pv *pcView) updateTable() {
 	for {
-		time.Sleep(1000 * time.Millisecond)
 		pv.appView.QueueUpdateDraw(func() {
 			pv.fillTableData()
 		})
+		time.Sleep(pv.refreshRate)
 	}
 }
 
