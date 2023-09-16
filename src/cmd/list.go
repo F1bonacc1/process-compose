@@ -13,7 +13,7 @@ var listCmd = &cobra.Command{
 	Short:   "List available processes",
 	Aliases: []string{"ls"},
 	Run: func(cmd *cobra.Command, args []string) {
-		processNames, err := client.GetProcessesName(pcAddress, port)
+		processNames, err := client.GetProcessesName(*pcFlags.Address, *pcFlags.PortNum)
 		if err != nil {
 			logFatal(err, "failed to list processes")
 		}

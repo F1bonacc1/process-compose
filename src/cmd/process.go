@@ -13,5 +13,5 @@ var processCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(processCmd)
-	processCmd.PersistentFlags().StringVarP(&pcAddress, "address", "a", "localhost", "address of a running process compose server")
+	processCmd.PersistentFlags().StringVarP(pcFlags.Address, "address", "a", *pcFlags.Address, "address of a running process compose server")
 }

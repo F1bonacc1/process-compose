@@ -19,7 +19,7 @@ var scaleCmd = &cobra.Command{
 		if err != nil {
 			logFatal(err, "second argument must be an integer")
 		}
-		err = client.ScaleProcess(pcAddress, port, name, count)
+		err = client.ScaleProcess(*pcFlags.Address, *pcFlags.PortNum, name, count)
 		if err != nil {
 			logFatal(err, "failed to scale process %s", name)
 		}

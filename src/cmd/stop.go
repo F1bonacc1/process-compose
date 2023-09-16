@@ -11,7 +11,7 @@ var stopCmd = &cobra.Command{
 	Use:   "stop [PROCESS...]",
 	Short: "Stop a running process",
 	Run: func(cmd *cobra.Command, args []string) {
-		stopped, err := client.StopProcesses(pcAddress, port, args)
+		stopped, err := client.StopProcesses(*pcFlags.Address, *pcFlags.PortNum, args)
 		if err != nil {
 			logFatal(err, "failed to stop processes %v", args)
 		}

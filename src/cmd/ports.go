@@ -15,7 +15,7 @@ var portsCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		ports, err := client.GetProcessPorts(pcAddress, port, name)
+		ports, err := client.GetProcessPorts(*pcFlags.Address, *pcFlags.PortNum, name)
 		if err != nil {
 			logFatal(err, "failed to get process %s ports", name)
 			return

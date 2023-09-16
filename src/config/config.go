@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 var (
@@ -39,6 +41,32 @@ func GetLogFilePath() string {
 		userName = "-" + userName
 	}
 	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose%s%s.log", userName, mode()))
+}
+
+func GetTuiDefault() bool {
+	_, found := os.LookupEnv(TuiEnvVarName)
+	return !found
+}
+
+func getPortDefault() int {
+	val, found := os.LookupEnv(PortEnvVarName)
+	if found {
+		port, err := strconv.Atoi(val)
+		if err != nil {
+			log.Fatal().Msgf("Invalid port number: %s", val)
+			return DefaultPortNum
+		}
+		return port
+	}
+	return DefaultPortNum
+}
+
+func GetConfigDefault() []string {
+	val, found := os.LookupEnv(ConfigEnvVarName)
+	if found {
+		return strings.Split(val, ",")
+	}
+	return []string{}
 }
 
 func procCompHome() string {
