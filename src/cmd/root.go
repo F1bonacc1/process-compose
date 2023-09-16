@@ -10,18 +10,12 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"path"
-	"strconv"
-	"strings"
 	"time"
 )
 
 var (
-	port      int
-	isTui     bool
-	opts      *loader.LoaderOptions
-	pcAddress string
-	logPath   string
-	logFile   *os.File
+	opts    *loader.LoaderOptions
+	logFile *os.File
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
@@ -35,23 +29,12 @@ var (
 	}
 )
 
-const (
-	defaultPortNum   = 8080
-	portEnvVarName   = "PC_PORT_NUM"
-	tuiEnvVarName    = "PC_DISABLE_TUI"
-	configEnvVarName = "PC_CONFIG_FILES"
-)
-
 func run(cmd *cobra.Command, args []string) {
-
-	if !cmd.Flags().Changed("tui") {
-		isTui = getTuiDefault()
-	}
 	defer func() {
 		_ = logFile.Close()
 	}()
 	runner := getProjectRunner([]string{}, false)
-	api.StartHttpServer(!isTui, port, runner)
+	api.StartHttpServer(!*pcFlags.Headless, *pcFlags.PortNum, runner)
 	runProject(runner)
 }
 
@@ -70,36 +53,10 @@ func init() {
 		FileNames: []string{},
 	}
 
-	rootCmd.Flags().BoolVarP(&isTui, "tui", "t", true, "enable tui (-t=false) (env: "+tuiEnvVarName+")")
-	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", getPortDefault(), "port number (env: "+portEnvVarName+")")
-	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", getConfigDefault(), "path to config files to load (env: "+configEnvVarName+")")
-	rootCmd.PersistentFlags().StringVarP(&logPath, "log-file", "L", config.GetLogFilePath(), "Specify the log file path (env: "+config.LogPathEnvVarName+")")
-}
-
-func getTuiDefault() bool {
-	_, found := os.LookupEnv(tuiEnvVarName)
-	return !found
-}
-
-func getPortDefault() int {
-	val, found := os.LookupEnv(portEnvVarName)
-	if found {
-		port, err := strconv.Atoi(val)
-		if err != nil {
-			log.Fatal().Msgf("Invalid port number: %s", val)
-			return defaultPortNum
-		}
-		return port
-	}
-	return defaultPortNum
-}
-
-func getConfigDefault() []string {
-	val, found := os.LookupEnv(configEnvVarName)
-	if found {
-		return strings.Split(val, ",")
-	}
-	return []string{}
+	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", true, "enable tui (-t=false) (env: "+config.TuiEnvVarName+")")
+	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.PortEnvVarName+")")
+	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.ConfigEnvVarName+")")
+	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 }
 
 func logFatal(err error, format string, args ...interface{}) {
@@ -109,14 +66,14 @@ func logFatal(err error, format string, args ...interface{}) {
 }
 
 func setupLogger() *os.File {
-	dirName := path.Dir(logPath)
+	dirName := path.Dir(*pcFlags.LogFile)
 	if err := os.MkdirAll(dirName, 0700); err != nil && !os.IsExist(err) {
 		fmt.Printf("Failed to create log directory: %s - %v\n", dirName, err)
 		os.Exit(1)
 	}
-	file, err := os.OpenFile(logPath, config.LogFileFlags, config.LogFileMode)
+	file, err := os.OpenFile(*pcFlags.LogFile, config.LogFileFlags, config.LogFileMode)
 	if err != nil {
-		logFatal(err, "Failed to open log file: %s", logPath)
+		logFatal(err, "Failed to open log file: %s", *pcFlags.LogFile)
 	}
 	log.Logger = log.Output(zerolog.ConsoleWriter{
 		Out:        file,

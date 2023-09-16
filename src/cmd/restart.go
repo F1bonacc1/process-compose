@@ -13,7 +13,7 @@ var restartCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		err := client.RestartProcess(pcAddress, port, name)
+		err := client.RestartProcess(*pcFlags.Address, *pcFlags.PortNum, name)
 		if err != nil {
 			logFatal(err, "failed to restart process %s", name)
 		}

@@ -5,15 +5,9 @@ import (
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"math"
 	"os"
 	"os/signal"
 	"time"
-)
-
-var (
-	follow     bool
-	tailLength int
 )
 
 // logsCmd represents the logs command
@@ -26,7 +20,7 @@ var logsCmd = &cobra.Command{
 		logger := client.LogClient{
 			Format: "%s\n",
 		}
-		err := logger.ReadProcessLogs(pcAddress, port, name, tailLength, follow, os.Stdout)
+		err := logger.ReadProcessLogs(*pcFlags.Address, *pcFlags.PortNum, name, *pcFlags.LogTailLength, *pcFlags.LogFollow, os.Stdout)
 		if err != nil {
 			log.Error().Msgf("Failed to fetch logs for process %s: %v", name, err)
 			return
@@ -46,6 +40,6 @@ var logsCmd = &cobra.Command{
 func init() {
 	processCmd.AddCommand(logsCmd)
 
-	logsCmd.Flags().BoolVarP(&follow, "follow", "f", false, "Follow log output")
-	logsCmd.Flags().IntVarP(&tailLength, "tail", "n", math.MaxInt, "Number of lines to show from the end of the logs")
+	logsCmd.Flags().BoolVarP(pcFlags.LogFollow, "follow", "f", *pcFlags.LogFollow, "Follow log output")
+	logsCmd.Flags().IntVarP(pcFlags.LogTailLength, "tail", "n", *pcFlags.LogTailLength, "Number of lines to show from the end of the logs")
 }

@@ -28,7 +28,7 @@ func getProjectRunner(process []string, noDeps bool) *app.ProjectRunner {
 
 func runProject(runner *app.ProjectRunner) {
 	exitCode := 0
-	if isTui {
+	if *pcFlags.Headless {
 		exitCode = runTui(runner)
 	} else {
 		exitCode = runHeadless(runner)
