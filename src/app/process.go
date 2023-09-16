@@ -241,7 +241,8 @@ func (p *Process) shutDownNoRestart() error {
 // perform graceful process shutdown if defined in configuration
 func (p *Process) shutDown() error {
 	if !p.isRunning() {
-		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.procState.Status)
+		state := p.getState()
+		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), state.Status)
 		// prevent pending process from running
 		p.onProcessEnd(types.ProcessStateTerminating)
 		return nil
