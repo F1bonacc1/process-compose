@@ -679,6 +679,12 @@ processes:
     namespace: debug # if not defined 'default' namespace is automatically assigned to each process
 ```
 
+Note: By default `process-compose` will start process from all the configured namespaces. To start a sub set of the configured namespaces (`ns1`, `ns2`, `ns3`):
+
+```shell
+process-compose -n ns1 -n ns3 # will start only ns1 and ns3. ns2 namespace won't run and won't be visible in the TUI
+```
+
 #### <u>Multi-platform</u>
 
 ##### Linux

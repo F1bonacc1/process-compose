@@ -96,9 +96,6 @@ processes:
     working_dir: "/tmp"
     environment:
       - 'REDACTED=1'
-    depends_on:
-      process0:
-        condition: process_completed
     namespace: debug
 
   __pc_log_client:
