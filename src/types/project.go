@@ -62,13 +62,13 @@ func (p *Project) getProcesses(names ...string) ([]ProcessConfig, error) {
 			processes = append(processes, proc)
 		} else {
 			found := false
-			for _, proc := range p.Processes {
-				if proc.Name == name {
+			for _, process := range p.Processes {
+				if process.Name == name {
 					found = true
-					if proc.Disabled {
+					if process.Disabled {
 						continue
 					}
-					processes = append(processes, proc)
+					processes = append(processes, process)
 				}
 			}
 			if !found {
@@ -85,6 +85,7 @@ func (p *Project) withProcesses(names []string, fn ProcessFunc, done map[string]
 	if err != nil {
 		return err
 	}
+	var finalErr error
 	for _, process := range processes {
 		if done[process.ReplicaName] {
 			continue
@@ -93,14 +94,15 @@ func (p *Project) withProcesses(names []string, fn ProcessFunc, done map[string]
 
 		dependencies := process.GetDependencies()
 		if len(dependencies) > 0 {
-			err := p.withProcesses(dependencies, fn, done)
+			err = p.withProcesses(dependencies, fn, done)
 			if err != nil {
-				return err
+				finalErr = fmt.Errorf("error in process %s dependency: %w", process.Name, err)
+				continue
 			}
 		}
-		if err := fn(process); err != nil {
+		if err = fn(process); err != nil {
 			return err
 		}
 	}
-	return nil
+	return finalErr
 }

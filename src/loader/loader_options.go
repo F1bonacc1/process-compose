@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"path/filepath"
@@ -10,9 +11,14 @@ type LoaderOptions struct {
 	workingDir string
 	FileNames  []string
 	projects   []*types.Project
+	admitters  []admitter.Admitter
 }
 
-func (o LoaderOptions) getWorkingDir() (string, error) {
+func (o *LoaderOptions) AddAdmitter(adm ...admitter.Admitter) {
+	o.admitters = append(o.admitters, adm...)
+}
+
+func (o *LoaderOptions) getWorkingDir() (string, error) {
 	if o.workingDir != "" {
 		return o.workingDir, nil
 	}

@@ -43,10 +43,13 @@ func (p *ProjectRunner) init() {
 func (p *ProjectRunner) Run() int {
 	p.runningProcesses = make(map[string]*Process)
 	runOrder := []types.ProcessConfig{}
-	_ = p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
+	err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
 		runOrder = append(runOrder, process)
 		return nil
 	})
+	if err != nil {
+		log.Error().Msgf("Failed to build project run order: %s", err.Error())
+	}
 	var nameOrder []string
 	for _, v := range runOrder {
 		nameOrder = append(nameOrder, v.ReplicaName)

@@ -28,8 +28,23 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	}
 	mergedProject, err := merge(opts)
 	err = mergedProject.ValidateAfterMerge()
+	admitProcesses(opts, mergedProject)
 	return mergedProject, err
+}
 
+func admitProcesses(opts *LoaderOptions, p *types.Project) *types.Project {
+	if opts.admitters == nil {
+		return p
+	}
+	for _, process := range p.Processes {
+		for _, adm := range opts.admitters {
+			if !adm.Admit(&process) {
+				log.Info().Msgf("Process %s was removed due to admission policy", process.ReplicaName)
+				delete(p.Processes, process.ReplicaName)
+			}
+		}
+	}
+	return p
 }
 
 func mustLoadProjectFromFile(inputFile string) *types.Project {

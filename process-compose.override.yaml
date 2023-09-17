@@ -12,6 +12,7 @@ processes:
   process0:
     command: "ls -lFa --color=always"
     working_dir: "/"
+    namespace: "ns1"
 
   process1:
     command: "./test_loop.bash ${PROC4}"

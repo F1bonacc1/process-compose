@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
@@ -53,10 +54,14 @@ func init() {
 		FileNames: []string{},
 	}
 
+	nsAdmitter := &admitter.NamespaceAdmitter{}
+	opts.AddAdmitter(nsAdmitter)
+
 	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", true, "enable TUI (-t=false) (env: "+config.TuiEnvVarName+")")
 	rootCmd.Flags().IntVarP(pcFlags.RefreshRate, "ref-rate", "r", *pcFlags.RefreshRate, "TUI refresh rate in seconds")
 	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.PortEnvVarName+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.ConfigEnvVarName+")")
+	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 }
 
