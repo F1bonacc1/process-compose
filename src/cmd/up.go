@@ -31,5 +31,6 @@ func init() {
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("config"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("ref-rate"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("tui"))
+	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("hide-disabled"))
 
 }
