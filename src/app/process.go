@@ -104,7 +104,9 @@ func (p *Process) run() int {
 		p.stateMtx.Lock()
 		p.procState.Pid = p.command.Pid()
 		p.stateMtx.Unlock()
-		log.Info().Msgf("%s started", p.getName())
+		log.Info().
+			Str("process", p.getName()).
+			Msg("Started")
 
 		p.startProbes()
 
@@ -116,7 +118,10 @@ func (p *Process) run() int {
 		p.Lock()
 		p.procState.ExitCode = p.command.ExitCode()
 		p.Unlock()
-		log.Info().Msgf("%s exited with status %d", p.getName(), p.procState.ExitCode)
+		log.Info().
+			Int("exit_code", p.procState.ExitCode).
+			Str("process", p.getName()).
+			Msg("Exited")
 
 		if p.isDaemonLaunched() {
 			p.setState(types.ProcessStateLaunched)
@@ -364,7 +369,9 @@ func (p *Process) handleInput(pipe io.WriteCloser) {
 	for {
 		input, err := reader.ReadString('\n')
 		if err != nil {
-			log.Error().Msgf("error reading from stdin - %s", err.Error())
+			log.Err(err).
+				Str("process", p.getName()).
+				Msg("error reading from stdin")
 			continue
 		}
 		pipe.Write([]byte(input))
@@ -379,7 +386,9 @@ func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string))
 		handler(outscanner.Text())
 	}
 	if err := outscanner.Err(); err != nil {
-		log.Error().Msgf("error reading from stdout - %s", err.Error())
+		log.Err(err).
+			Str("process", p.getName()).
+			Msg("error reading from stdout")
 	}
 }
 
@@ -424,6 +433,13 @@ func (p *Process) getState() *types.ProcessState {
 	p.stateMtx.Lock()
 	defer p.stateMtx.Unlock()
 	return p.procState
+}
+
+func (p *Process) getStatusName() string {
+	p.updateProcState()
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
+	return p.procState.Status
 }
 
 func (p *Process) setStateAndRun(state string, runnable func() error) error {
