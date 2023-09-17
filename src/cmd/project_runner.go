@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/tui"
@@ -13,6 +14,9 @@ import (
 )
 
 func getProjectRunner(process []string, noDeps bool) *app.ProjectRunner {
+	if *pcFlags.HideDisabled {
+		opts.AddAdmitter(&admitter.DisabledProcAdmitter{})
+	}
 	project, err := loader.Load(opts)
 	if err != nil {
 		fmt.Println(err)

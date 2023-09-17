@@ -57,7 +57,8 @@ func init() {
 	nsAdmitter := &admitter.NamespaceAdmitter{}
 	opts.AddAdmitter(nsAdmitter)
 
-	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", true, "enable TUI (-t=false) (env: "+config.TuiEnvVarName+")")
+	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", *pcFlags.Headless, "enable TUI (-t=false) (env: "+config.TuiEnvVarName+")")
+	rootCmd.Flags().BoolVarP(pcFlags.HideDisabled, "hide-disabled", "d", *pcFlags.HideDisabled, "hide disabled processes")
 	rootCmd.Flags().IntVarP(pcFlags.RefreshRate, "ref-rate", "r", *pcFlags.RefreshRate, "TUI refresh rate in seconds")
 	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.PortEnvVarName+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.ConfigEnvVarName+")")

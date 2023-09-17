@@ -37,10 +37,9 @@ type Flags struct {
 	LogTailLength  *int
 	Headless       *bool
 	Command        *string
-	AllNamespaces  *bool
-	ReadOnly       *bool
 	Write          *bool
 	NoDependencies *bool
+	HideDisabled   *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -55,9 +54,8 @@ func NewFlags() *Flags {
 		LogFile:        strPtr(GetLogFilePath()),
 		LogFollow:      boolPtr(false),
 		LogTailLength:  intPtr(math.MaxInt),
-		AllNamespaces:  boolPtr(false),
-		ReadOnly:       boolPtr(false),
 		NoDependencies: boolPtr(false),
+		HideDisabled:   boolPtr(false),
 	}
 }
 
