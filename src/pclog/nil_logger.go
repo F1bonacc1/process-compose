@@ -1,5 +1,7 @@
 package pclog
 
+import "github.com/f1bonacc1/process-compose/src/types"
+
 type PcNilLog struct {
 }
 
@@ -8,7 +10,7 @@ func NewNilLogger() *PcNilLog {
 	return &PcNilLog{}
 }
 
-func (l *PcNilLog) Open(_ string) {
+func (l *PcNilLog) Open(filePath string, rotation *types.LogRotationConfig) {
 }
 
 func (l *PcNilLog) Sync() {

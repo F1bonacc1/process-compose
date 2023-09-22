@@ -2,7 +2,10 @@ package pclog
 
 import (
 	"bufio"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"io"
 	"os"
 	"path"
 	"sync"
@@ -14,7 +17,7 @@ import (
 type PCLog struct {
 	logger       zerolog.Logger
 	writer       *bufio.Writer
-	file         *os.File
+	file         io.WriteCloser
 	logEventChan chan logEvent
 	wg           sync.WaitGroup
 	closer       sync.Once
@@ -36,7 +39,7 @@ func NewLogger() *PCLog {
 	return l
 }
 
-func (l *PCLog) Open(filePath string) {
+func (l *PCLog) Open(filePath string, rotation *types.LogRotationConfig) {
 	if l.file != nil {
 		log.Error().Msgf("log file for %s is already open", filePath)
 		return
@@ -45,22 +48,54 @@ func (l *PCLog) Open(filePath string) {
 		log.Error().Msg("empty file path")
 		return
 	}
+
+	f, err := l.getWriter(filePath, rotation)
+	if err != nil {
+		l.isClosed.Store(true)
+		log.Err(err).Msgf("failed to create file %s", filePath)
+	}
+	l.writer = bufio.NewWriter(f)
+	l.file = f
+	l.logger = zerolog.New(l.writer)
+	l.wg.Add(1)
+	go l.runCollector()
+}
+
+func (l *PCLog) getWriter(filePath string, rotation *types.LogRotationConfig) (io.WriteCloser, error) {
 	dirName := path.Dir(filePath)
 	if err := os.MkdirAll(dirName, 0700); err != nil && !os.IsExist(err) {
 		l.isClosed.Store(true)
 		log.Err(err).Msgf("failed to create log file directory %s", dirName)
+		return nil, err
 	}
+	if rotation == nil {
+		log.Debug().Str("filePath", filePath).Msg("no rotation config")
+		return l.getFileWriter(filePath)
+	} else {
+		log.Debug().Str("filePath", filePath).Msg("rotation config")
+		return l.getRollingWriter(filePath, rotation)
+	}
+}
+
+func (l *PCLog) getFileWriter(filePath string) (io.WriteCloser, error) {
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		l.isClosed.Store(true)
 		log.Err(err).Msgf("failed to open log file %s", filePath)
+		return nil, err
 	}
-	writer := bufio.NewWriter(f)
-	l.writer = writer
-	l.file = f
-	l.logger = zerolog.New(writer)
-	l.wg.Add(1)
-	go l.runCollector()
+	return f, nil
+}
+
+func (l *PCLog) getRollingWriter(filePath string, rotation *types.LogRotationConfig) (io.WriteCloser, error) {
+	return &lumberjack.Logger{
+		Filename:   filePath,
+		MaxBackups: rotation.MaxBackups, // files
+		MaxSize:    rotation.MaxSize,    // megabytes
+		MaxAge:     rotation.MaxAge,     // days
+		LocalTime:  true,
+		Compress:   rotation.Compress,
+	}, nil
 }
 
 func (l *PCLog) Info(message string, process string, replica int) {

@@ -1,6 +1,7 @@
 ## Process Compose
 
-[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/F1bonacc1/process-compose/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose) [![Releases](https://img.shields.io/github/downloads/F1bonacc1/process-compose/total.svg)]()
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/F1bonacc1/process-compose/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose) [![Releases](https://img.shields.io/github/downloads/F1bonacc1/process-compose/total.svg)]()![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/ProcessCompose?style=flat-square&logo=twitter&logoColor=white)
+
 
 Process Compose is a simple and flexible scheduler and orchestrator to manage non-containerized applications.
 
@@ -376,7 +377,7 @@ process2:
 
 ##### Capture StdErr output
 
-##### Merge into a single file
+##### Merge into a single file (Unified Logging)
 
 ```yaml
 processes:
@@ -397,6 +398,32 @@ processes:
 ```
 
 This setting controls the `process-compose` log level. The processes log level should be defined inside the process. It is recommended to support this definition with an environment variable in `process-compose.yaml`
+
+##### Log Rotation
+
+```yaml
+# unified log
+version: "0.5"
+log_level: info 
+log_location: /tmp/pc.log
+log_rotation:
+  max_size_mb: 1  # the max size in MB of the logfile before it's rolled
+  max_age_days: 3 # the max age in days to keep a logfile
+  max_backups: 3  # the max number of rolled files to keep
+  compress: true  # determines if the rotated log files should be compressed using gzip. The default is false
+
+#process level logging (same syntax)
+processes:
+  someProc:
+    command: "some command"
+    log_rotation:
+      max_size_mb: 1  # the max size in MB of the logfile before it's rolled
+      max_age_days: 3 # the max age in days to keep a logfile
+      max_backups: 3  # the max number of rolled files to keep
+      compress: true  # determines if the rotated log files should be compressed using gzip. The default is false
+```
+
+##### Process Compose Internal Log
 
 Default log location: `/tmp/process-compose-$USER.log`
 

@@ -1,6 +1,11 @@
 version: "0.5"
 log_level: info
 log_length: 3000
+log_rotation:
+  max_size_mb: 1
+  max_age_days: 3
+  max_backups: 3
+  compress: true
 environment:
   - 'ABC=222'
 log_location: ./pc.log

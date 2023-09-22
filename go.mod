@@ -16,6 +16,7 @@ require (
 	github.com/rivo/tview v0.0.0-20230530133550-8bd761dda819
 	github.com/spf13/cobra v1.7.0
 	github.com/swaggo/swag v1.16.1
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 

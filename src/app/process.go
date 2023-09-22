@@ -294,7 +294,7 @@ func (p *Process) prepareForShutDown() {
 
 func (p *Process) onProcessStart() {
 	if isStringDefined(p.procConf.LogLocation) {
-		p.logger.Open(p.getLogPath())
+		p.logger.Open(p.getLogPath(), p.procConf.LogRotation)
 	}
 }
 

@@ -57,7 +57,7 @@ func (p *ProjectRunner) Run() int {
 	p.logger = pclog.NewNilLogger()
 	if isStringDefined(p.project.LogLocation) {
 		p.logger = pclog.NewLogger()
-		p.logger.Open(p.project.LogLocation)
+		p.logger.Open(p.project.LogLocation, p.project.LogRotation)
 		defer p.logger.Close()
 	}
 	//zerolog.SetGlobalLevel(zerolog.PanicLevel)

@@ -36,6 +36,11 @@ processes:
   _process2:
     command: "./test_loop.bash process2"
     log_location: ./pc.proc2.{PC_REPLICA_NUM}.log
+    log_rotation:
+      max_size_mb: 1
+      max_age_days: 3
+      max_backups: 3
+      compress: true
     availability:
       restart: "on_failure"
     # depends_on:

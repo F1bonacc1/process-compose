@@ -11,6 +11,7 @@ type Project struct {
 	LogLocation string               `yaml:"log_location,omitempty"`
 	LogLevel    string               `yaml:"log_level,omitempty"`
 	LogLength   int                  `yaml:"log_length,omitempty"`
+	LogRotation *LogRotationConfig   `yaml:"log_rotation,omitempty"`
 	Processes   Processes            `yaml:"processes"`
 	Environment Environment          `yaml:"environment,omitempty"`
 	ShellConfig *command.ShellConfig `yaml:"shell,omitempty"`
