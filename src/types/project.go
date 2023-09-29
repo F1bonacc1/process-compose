@@ -7,14 +7,15 @@ import (
 )
 
 type Project struct {
-	Version     string               `yaml:"version"`
-	LogLocation string               `yaml:"log_location,omitempty"`
-	LogLevel    string               `yaml:"log_level,omitempty"`
-	LogLength   int                  `yaml:"log_length,omitempty"`
-	LogRotation *LogRotationConfig   `yaml:"log_rotation,omitempty"`
-	Processes   Processes            `yaml:"processes"`
-	Environment Environment          `yaml:"environment,omitempty"`
-	ShellConfig *command.ShellConfig `yaml:"shell,omitempty"`
+	Version      string               `yaml:"version"`
+	LogLocation  string               `yaml:"log_location,omitempty"`
+	LogLevel     string               `yaml:"log_level,omitempty"`
+	LogLength    int                  `yaml:"log_length,omitempty"`
+	LoggerConfig *LoggerConfig        `yaml:"log_configuration,omitempty"`
+	LogFormat    string               `yaml:"log_format,omitempty"`
+	Processes    Processes            `yaml:"processes"`
+	Environment  Environment          `yaml:"environment,omitempty"`
+	ShellConfig  *command.ShellConfig `yaml:"shell,omitempty"`
 }
 
 type ProcessFunc func(process ProcessConfig) error

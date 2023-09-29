@@ -17,7 +17,7 @@ type ProcessConfig struct {
 	IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
 	Command           string                 `yaml:"command"`
 	LogLocation       string                 `yaml:"log_location,omitempty"`
-	LogRotation       *LogRotationConfig     `yaml:"log_rotation,omitempty"`
+	LoggerConfig      *LoggerConfig          `yaml:"log_configuration,omitempty"`
 	Environment       Environment            `yaml:"environment,omitempty"`
 	RestartPolicy     RestartPolicyConfig    `yaml:"availability,omitempty"`
 	DependsOn         DependsOnConfig        `yaml:"depends_on,omitempty"`

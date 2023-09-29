@@ -36,11 +36,16 @@ processes:
   _process2:
     command: "./test_loop.bash process2"
     log_location: ./pc.proc2.{PC_REPLICA_NUM}.log
-    log_rotation:
-      max_size_mb: 1
-      max_age_days: 3
-      max_backups: 3
-      compress: true
+    log_configuration:
+      rotation:
+        max_size_mb: 1
+        max_age_days: 3
+        max_backups: 3
+        compress: true
+      no_metadata: true
+      add_timestamp: true
+      timestamp_format: "06-01-02 15:04:05.000"
+
     availability:
       restart: "on_failure"
     # depends_on:

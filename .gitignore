@@ -3,6 +3,7 @@ coverage.out
 .idea
 bin/process*
 *.log
+*.log.gz
 .env
 # local build output via go build
 process-compose

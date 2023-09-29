@@ -3,6 +3,7 @@ package pclog
 import (
 	"bufio"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
@@ -10,8 +11,6 @@ import (
 	"path"
 	"sync"
 	"sync/atomic"
-
-	"github.com/rs/zerolog"
 )
 
 type PCLog struct {
@@ -22,6 +21,7 @@ type PCLog struct {
 	wg           sync.WaitGroup
 	closer       sync.Once
 	isClosed     atomic.Bool
+	noMetaData   bool
 }
 
 type logEvent struct {
@@ -39,7 +39,7 @@ func NewLogger() *PCLog {
 	return l
 }
 
-func (l *PCLog) Open(filePath string, rotation *types.LogRotationConfig) {
+func (l *PCLog) Open(filePath string, config *types.LoggerConfig) {
 	if l.file != nil {
 		log.Error().Msgf("log file for %s is already open", filePath)
 		return
@@ -49,36 +49,63 @@ func (l *PCLog) Open(filePath string, rotation *types.LogRotationConfig) {
 		return
 	}
 
-	f, err := l.getWriter(filePath, rotation)
+	f, err := l.getWriter(filePath, config)
 	if err != nil {
 		l.isClosed.Store(true)
 		log.Err(err).Msgf("failed to create file %s", filePath)
 	}
 	l.writer = bufio.NewWriter(f)
 	l.file = f
-	l.logger = zerolog.New(l.writer)
+	if config == nil || !config.DisableJSON {
+		l.logger = zerolog.New(l.writer)
+	} else {
+		out := zerolog.NewConsoleWriter(
+			func(w *zerolog.ConsoleWriter) {
+				w.Out = l.writer
+				if len(config.FieldsOrder) > 0 {
+					w.PartsOrder = config.FieldsOrder
+				}
+				if len(config.TimestampFormat) > 0 {
+					w.TimeFormat = config.TimestampFormat
+				}
+				w.NoColor = config.NoColor
+			},
+		)
+		l.logger = zerolog.New(out)
+	}
+	if config != nil {
+		l.noMetaData = config.NoMetadata
+		if config.AddTimestamp {
+			l.logger = l.logger.With().Timestamp().Logger()
+			if len(config.TimestampFormat) > 0 {
+				zerolog.TimeFieldFormat = config.TimestampFormat
+			}
+		}
+	}
+
 	l.wg.Add(1)
 	go l.runCollector()
 }
 
-func (l *PCLog) getWriter(filePath string, rotation *types.LogRotationConfig) (io.WriteCloser, error) {
+func (l *PCLog) getWriter(filePath string, config *types.LoggerConfig) (io.WriteCloser, error) {
+	isRotationEnabled := config != nil && config.Rotation != nil
+	log.Debug().Str("filePath", filePath).Bool("rotation", isRotationEnabled).Send()
+	if !isRotationEnabled {
+		return l.getFileWriter(filePath, config)
+	} else {
+		return l.getRollingWriter(filePath, config.Rotation)
+	}
+}
+
+func (l *PCLog) getFileWriter(filePath string, config *types.LoggerConfig) (io.WriteCloser, error) {
 	dirName := path.Dir(filePath)
-	if err := os.MkdirAll(dirName, 0700); err != nil && !os.IsExist(err) {
+	if err := os.MkdirAll(dirName, 0755); err != nil && !os.IsExist(err) {
 		l.isClosed.Store(true)
 		log.Err(err).Msgf("failed to create log file directory %s", dirName)
 		return nil, err
 	}
-	if rotation == nil {
-		log.Debug().Str("filePath", filePath).Msg("no rotation config")
-		return l.getFileWriter(filePath)
-	} else {
-		log.Debug().Str("filePath", filePath).Msg("rotation config")
-		return l.getRollingWriter(filePath, rotation)
-	}
-}
-
-func (l *PCLog) getFileWriter(filePath string) (io.WriteCloser, error) {
-	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	flags := os.O_WRONLY | os.O_CREATE | os.O_APPEND | os.O_TRUNC
+	f, err := os.OpenFile(filePath, flags, 0600)
 	if err != nil {
 		l.isClosed.Store(true)
 		log.Err(err).Msgf("failed to open log file %s", filePath)
@@ -109,12 +136,6 @@ func (l *PCLog) Info(message string, process string, replica int) {
 		isErr:   false,
 	}
 }
-func (l *PCLog) info(message string, process string, replica int) {
-	l.logger.Info().
-		Str("process", process).
-		Int("replica", replica).
-		Msg(message)
-}
 
 func (l *PCLog) Error(message string, process string, replica int) {
 	if l.isClosed.Load() {
@@ -126,13 +147,6 @@ func (l *PCLog) Error(message string, process string, replica int) {
 		replica: replica,
 		isErr:   true,
 	}
-}
-
-func (l *PCLog) error(message string, process string, replica int) {
-	l.logger.Error().
-		Str("process", process).
-		Int("replica", replica).
-		Msg(message)
 }
 
 func (l *PCLog) Close() {
@@ -154,11 +168,15 @@ func (l *PCLog) runCollector() {
 		if !open {
 			break
 		}
+
+		level := l.logger.Info()
 		if event.isErr {
-			l.error(event.message, event.process, event.replica)
-		} else {
-			l.info(event.message, event.process, event.replica)
+			level = l.logger.Error()
 		}
+		if !l.noMetaData {
+			level = level.Str("process", event.process).Int("replica", event.replica)
+		}
+		level.Msg(event.message)
 	}
 	l.wg.Done()
 }

@@ -1,11 +1,20 @@
 version: "0.5"
 log_level: info
 log_length: 3000
-log_rotation:
-  max_size_mb: 1
-  max_age_days: 3
-  max_backups: 3
-  compress: true
+log_configuration:
+  rotation:
+    max_size_mb: 1
+    max_age_days: 3
+    max_backups: 3
+    compress: true
+  fields_order: ["time", "level", "message"]
+  disable_json: true
+#  timestamp_format: "06-01-02 15:04:05.000"
+  timestamp_format: "06-01-02"
+  no_metadata: false
+  add_timestamp: true
+
+
 environment:
   - 'ABC=222'
 log_location: ./pc.log

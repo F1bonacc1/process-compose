@@ -55,7 +55,14 @@ type Process struct {
 	shellConfig   command.ShellConfig
 }
 
-func NewProcess(globalEnv []string, logger pclog.PcLogger, procConf *types.ProcessConfig, processState *types.ProcessState, procLog *pclog.ProcessLogBuffer, shellConfig command.ShellConfig) *Process {
+func NewProcess(
+	globalEnv []string,
+	logger pclog.PcLogger,
+	procConf *types.ProcessConfig,
+	processState *types.ProcessState,
+	procLog *pclog.ProcessLogBuffer,
+	shellConfig command.ShellConfig,
+) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 
 	proc := &Process{
@@ -119,8 +126,8 @@ func (p *Process) run() int {
 		p.procState.ExitCode = p.command.ExitCode()
 		p.Unlock()
 		log.Info().
-			Int("exit_code", p.procState.ExitCode).
 			Str("process", p.getName()).
+			Int("exit_code", p.procState.ExitCode).
 			Msg("Exited")
 
 		if p.isDaemonLaunched() {
@@ -294,7 +301,7 @@ func (p *Process) prepareForShutDown() {
 
 func (p *Process) onProcessStart() {
 	if isStringDefined(p.procConf.LogLocation) {
-		p.logger.Open(p.getLogPath(), p.procConf.LogRotation)
+		p.logger.Open(p.getLogPath(), p.procConf.LoggerConfig)
 	}
 }
 

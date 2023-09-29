@@ -10,7 +10,7 @@ func NewNilLogger() *PcNilLog {
 	return &PcNilLog{}
 }
 
-func (l *PcNilLog) Open(filePath string, rotation *types.LogRotationConfig) {
+func (l *PcNilLog) Open(filePath string, rotation *types.LoggerConfig) {
 }
 
 func (l *PcNilLog) Sync() {

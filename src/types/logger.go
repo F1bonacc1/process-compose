@@ -16,3 +16,20 @@ type LogRotationConfig struct {
 	// using gzip. The default is not to perform compression.
 	Compress bool `json:"compress" yaml:"compress"`
 }
+
+type LoggerConfig struct {
+	// Rotation is the configuration for logging rotation
+	Rotation *LogRotationConfig `yaml:"rotation"`
+	// FieldsOrder is the order in which fields are logged
+	FieldsOrder []string `yaml:"fields_order"`
+	// DisableJSON disables log JSON formatting
+	DisableJSON bool `yaml:"disable_json"`
+	// TimestampFormat is the format of the timestamp
+	TimestampFormat string `yaml:"timestamp_format"`
+	// NoColor disables coloring
+	NoColor bool `yaml:"no_color"`
+	// NoMetadata disables log metadata (process, replica)
+	NoMetadata bool `yaml:"no_metadata"`
+	// AddTimestamp adds timestamp to log
+	AddTimestamp bool `yaml:"add_timestamp"`
+}
