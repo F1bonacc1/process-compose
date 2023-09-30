@@ -31,6 +31,14 @@ const (
 	LogFileMode       = os.FileMode(0600)
 )
 
+var (
+	clientCommands = []string{
+		"down",
+		"attach",
+		"process",
+	}
+)
+
 func GetLogFilePath() string {
 	val, found := os.LookupEnv(LogPathEnvVarName)
 	if found {
@@ -108,11 +116,10 @@ func mode() string {
 
 func isClient() bool {
 	for _, proc := range os.Args {
-		if proc == "process" {
-			return true
-		}
-		if proc == "attach" {
-			return true
+		for _, cmd := range clientCommands {
+			if proc == cmd {
+				return true
+			}
 		}
 	}
 	return false

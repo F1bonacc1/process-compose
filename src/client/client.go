@@ -3,7 +3,6 @@ package client
 import (
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"sync"
 	"time"
@@ -37,8 +36,8 @@ func NewClient(address string, port, logLength int) *PcClient {
 
 }
 
-func (p *PcClient) ShutDownProject() {
-	log.Info().Msg("client detached")
+func (p *PcClient) ShutDownProject() error {
+	return p.shutDownProject()
 }
 
 func (p *PcClient) IsRemote() bool {

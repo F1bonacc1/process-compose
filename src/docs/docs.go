@@ -356,6 +356,23 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/project/stop": {
+            "post": {
+                "description": "Shuts down the server",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Stops all the processes and the server",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     }
 }`

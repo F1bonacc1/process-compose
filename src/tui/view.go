@@ -255,7 +255,9 @@ func (pv *pcView) showInfo() {
 
 func (pv *pcView) handleShutDown() {
 	pv.attentionMessage("Shutting Down...")
-	pv.project.ShutDownProject()
+	if !pv.project.IsRemote() {
+		_ = pv.project.ShutDownProject()
+	}
 	time.Sleep(time.Second)
 	pv.stopFollowLog()
 	pv.appView.Stop()

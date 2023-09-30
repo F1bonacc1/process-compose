@@ -7,7 +7,7 @@ import (
 
 // IProject holds all the functions from the project struct that are being consumed by the tui package
 type IProject interface {
-	ShutDownProject()
+	ShutDownProject() error
 	IsRemote() bool
 	ErrorForSecs() int
 	GetHostName() (string, error)

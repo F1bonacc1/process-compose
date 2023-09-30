@@ -295,7 +295,7 @@ func (p *ProjectRunner) GetProcessPorts(name string) (*types.ProcessPorts, error
 	return ports, nil
 }
 
-func (p *ProjectRunner) ShutDownProject() {
+func (p *ProjectRunner) ShutDownProject() error {
 	p.runProcMutex.Lock()
 	defer p.runProcMutex.Unlock()
 	runProc := p.runningProcesses
@@ -316,6 +316,7 @@ func (p *ProjectRunner) ShutDownProject() {
 		}(proc)
 	}
 	wg.Wait()
+	return nil
 }
 
 func (p *ProjectRunner) IsRemote() bool {

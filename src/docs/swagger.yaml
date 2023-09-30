@@ -225,4 +225,15 @@ paths:
       summary: Stop processes
       tags:
       - Process
+  /project/stop:
+    post:
+      description: Shuts down the server
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Stops all the processes and the server
+      tags:
+      - Project
 swagger: "2.0"
