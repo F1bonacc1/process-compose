@@ -9,8 +9,7 @@ log_configuration:
     compress: true
   fields_order: ["time", "level", "message"]
   disable_json: true
-#  timestamp_format: "06-01-02 15:04:05.000"
-  timestamp_format: "06-01-02"
+  timestamp_format: "06-01-02 15:04:05.000"
   no_metadata: false
   add_timestamp: true
 
