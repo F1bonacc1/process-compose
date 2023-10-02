@@ -26,17 +26,18 @@ var (
 			logFile = setupLogger()
 			log.Info().Msgf("Process Compose %s", config.Version)
 		},
-		Run: run,
+		RunE: run,
 	}
 )
 
-func run(cmd *cobra.Command, args []string) {
+func run(cmd *cobra.Command, args []string) error {
 	defer func() {
 		_ = logFile.Close()
 	}()
 	runner := getProjectRunner([]string{}, false)
 	api.StartHttpServer(!*pcFlags.Headless, *pcFlags.PortNum, runner)
 	runProject(runner)
+	return nil
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -64,6 +65,8 @@ func init() {
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.ConfigEnvVarName+")")
 	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
+	rootCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
+	rootCmd.Flags().AddFlag(commonFlags.Lookup("sort"))
 }
 
 func logFatal(err error, format string, args ...interface{}) {

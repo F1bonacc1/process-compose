@@ -32,5 +32,7 @@ func init() {
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("ref-rate"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("tui"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("hide-disabled"))
+	upCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
+	upCmd.Flags().AddFlag(commonFlags.Lookup("sort"))
 
 }

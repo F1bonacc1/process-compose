@@ -56,7 +56,7 @@ type pcView struct {
 	refreshRate   time.Duration
 }
 
-func newPcView(project app.IProject, refreshRate time.Duration) *pcView {
+func newPcView(project app.IProject) *pcView {
 	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
 	pv := &pcView{
 		appView:       tview.NewApplication(),
@@ -72,12 +72,12 @@ func newPcView(project app.IProject, refreshRate time.Duration) *pcView {
 		logsTextArea:  tview.NewTextArea(),
 		logSelect:     false,
 		project:       project,
+		refreshRate:   time.Second,
 		stateSorter: StateSorter{
 			sortByColumn: ProcessStateName,
 			isAsc:        true,
 		},
 		procColumns: map[ColumnID]string{},
-		refreshRate: refreshRate,
 	}
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
@@ -374,9 +374,14 @@ func (pv *pcView) startMonitoring() {
 	}(pcClient)
 }
 
-func SetupTui(project app.IProject, refreshRate time.Duration) {
+func SetupTui(project app.IProject, options ...Option) {
 
-	pv := newPcView(project, refreshRate)
+	pv := newPcView(project)
+	for _, option := range options {
+		if err := option(pv); err != nil {
+			log.Error().Err(err).Msg("Failed to apply option")
+		}
+	}
 
 	go pv.updateTable()
 	go pv.updateLogs()

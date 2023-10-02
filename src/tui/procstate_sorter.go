@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"sort"
+	"strings"
 )
 
 type ColumnID int
@@ -19,6 +20,52 @@ const (
 	ProcessStateRestarts  ColumnID = 6
 	ProcessStateExit      ColumnID = 7
 )
+
+var columnNames = map[ColumnID]string{
+	ProcessStateUndefined: "",
+	ProcessStatePid:       "PID",
+	ProcessStateName:      "NAME",
+	ProcessStateNamespace: "NAMESPACE",
+	ProcessStateStatus:    "STATUS",
+	ProcessStateAge:       "AGE",
+	ProcessStateHealth:    "HEALTH",
+	ProcessStateRestarts:  "RESTARTS",
+	ProcessStateExit:      "EXIT",
+}
+
+var columnIDs = map[string]ColumnID{
+	"":          ProcessStateUndefined,
+	"PID":       ProcessStatePid,
+	"NAME":      ProcessStateName,
+	"NAMESPACE": ProcessStateNamespace,
+	"STATUS":    ProcessStateStatus,
+	"AGE":       ProcessStateAge,
+	"HEALTH":    ProcessStateHealth,
+	"RESTARTS":  ProcessStateRestarts,
+	"EXIT":      ProcessStateExit,
+}
+
+func (c ColumnID) String() string {
+	return columnNames[c]
+}
+
+func StringToColumnID(s string) (ColumnID, error) {
+	id, ok := columnIDs[strings.ToUpper(s)]
+	if !ok {
+		return ProcessStateUndefined, fmt.Errorf("unknown column name: %s", s)
+	}
+	return id, nil
+}
+func ColumnNames() []string {
+	var names []string
+	for _, name := range columnNames {
+		if name != "" {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names
+}
 
 type StateSorter struct {
 	sortByColumn ColumnID

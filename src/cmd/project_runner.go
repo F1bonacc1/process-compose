@@ -56,7 +56,7 @@ func setSignal(signalHandler func()) {
 
 func runHeadless(project *app.ProjectRunner) int {
 	setSignal(func() {
-		project.ShutDownProject()
+		_ = project.ShutDownProject()
 	})
 	exitCode := project.Run()
 	return exitCode
@@ -67,10 +67,22 @@ func runTui(project *app.ProjectRunner) int {
 		tui.Stop()
 	})
 	defer quiet()()
-	go tui.SetupTui(project, time.Duration(*pcFlags.RefreshRate)*time.Second)
+	go startTui(project)
 	exitCode := project.Run()
 	tui.Stop()
 	return exitCode
+}
+
+func startTui(runner app.IProject) {
+	col, err := tui.StringToColumnID(*pcFlags.SortColumn)
+	if err != nil {
+		log.Err(err).Msgf("Invalid column name %s provided. Using %s", *pcFlags.SortColumn, tui.ProcessStateName)
+		col = tui.ProcessStateName
+	}
+	tui.SetupTui(runner,
+		tui.WithRefreshRate(time.Duration(*pcFlags.RefreshRate)*time.Second),
+		tui.WithStateSorter(col, !*pcFlags.IsReverseSort),
+	)
 }
 
 func quiet() func() {

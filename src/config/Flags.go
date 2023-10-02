@@ -1,6 +1,8 @@
 package config
 
-import "math"
+import (
+	"math"
+)
 
 const (
 	// DefaultRefreshRate represents the refresh interval.
@@ -17,6 +19,9 @@ const (
 
 	// DefaultLogLength represents the default log length.
 	DefaultLogLength = 1000
+
+	// DefaultSortColumn represents the default sort column.
+	DefaultSortColumn = "NAME"
 )
 
 const (
@@ -40,6 +45,8 @@ type Flags struct {
 	Write          *bool
 	NoDependencies *bool
 	HideDisabled   *bool
+	SortColumn     *string
+	IsReverseSort  *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -56,6 +63,8 @@ func NewFlags() *Flags {
 		LogTailLength:  intPtr(math.MaxInt),
 		NoDependencies: boolPtr(false),
 		HideDisabled:   boolPtr(false),
+		SortColumn:     strPtr(DefaultSortColumn),
+		IsReverseSort:  boolPtr(false),
 	}
 }
 
