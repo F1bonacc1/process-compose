@@ -19,10 +19,12 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.Pro
 	f.SetFieldTextColor(tcell.ColorBlack)
 	f.SetButtonsAlign(tview.AlignCenter)
 	f.SetTitle("Process " + info.Name + " Info")
-	addStringIfNotEmpty("Command:", info.Command, f)
+	addStringIfNotEmpty("Entrypoint:", strings.Join(*info.Entrypoint, " "), f)
+	if info.Command != nil {
+		addStringIfNotEmpty("Command:", *info.Command, f)
+	}
 	addStringIfNotEmpty("Working Directory:", info.WorkingDir, f)
 	addStringIfNotEmpty("Log Location:", info.LogLocation, f)
-	f.AddInputField("Replica:", fmt.Sprintf("%d/%d", info.ReplicaNum+1, info.Replicas), 0, nil, nil)
 	addDropDownIfNotEmpty("Environment:", info.Environment, f)
 	addCSVIfNotEmpty("Depends On:", mapKeysToSlice(info.DependsOn), f)
 	if ports != nil {

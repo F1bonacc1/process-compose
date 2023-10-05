@@ -2,6 +2,7 @@ package command
 
 import (
 	"io"
+	"os"
 	"os/exec"
 )
 
@@ -35,6 +36,12 @@ func (c *CmdWrapper) StdoutPipe() (io.ReadCloser, error) {
 
 func (c *CmdWrapper) StderrPipe() (io.ReadCloser, error) {
 	return c.cmd.StderrPipe()
+}
+
+func (c *CmdWrapper) AttachIo() () {
+	c.cmd.Stdin = os.Stdin
+	c.cmd.Stdout = os.Stdout
+	c.cmd.Stderr = os.Stderr
 }
 
 func (c *CmdWrapper) SetEnv(env []string) {

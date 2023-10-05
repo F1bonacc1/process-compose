@@ -14,7 +14,7 @@ var upCmd = &cobra.Command{
 If one or more process names are passed as arguments,
 will start them and their dependencies only`,
 	Run: func(cmd *cobra.Command, args []string) {
-		runner := getProjectRunner(args, *pcFlags.NoDependencies)
+		runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
 		api.StartHttpServer(!*pcFlags.Headless, *pcFlags.PortNum, runner)
 		runProject(runner)
 	},

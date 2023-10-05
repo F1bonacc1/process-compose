@@ -19,6 +19,7 @@ func (p *Project) ValidateAfterMerge() error {
 	p.assignDefaultProcessValues()
 	p.cloneReplicas()
 	p.copyWorkingDirToProbes()
+	p.validateProcessCommand()
 	return p.validateNoCircularDependencies()
 }
 
@@ -70,6 +71,42 @@ func (p *Project) assignDefaultProcessValues() {
 			proc.Replicas = 1
 		}
 		proc.Name = name
+		p.Processes[name] = proc
+	}
+}
+
+func (p *Project) validateProcessCommand() {
+	for name, proc := range p.Processes {
+		if proc.Entrypoint == nil {
+			if proc.Command == nil {
+				message := fmt.Sprintf("Error: Neither command nor entrypoint is set for process: %s", name)
+				fmt.Println(message)
+				log.Fatal().Msg(message)
+			}
+			proc.Entrypoint = &[]string{
+				p.ShellConfig.ShellCommand,
+				p.ShellConfig.ShellArgument,
+			}
+		} else {
+			if len(*proc.Entrypoint) == 0 && (proc.Command == nil || *proc.Command == "") {
+				message := fmt.Sprintf("If entrypoint is empty, command needs to be non-empty (procces: %s)", name)
+				fmt.Println(message)
+				log.Fatal().Msg(message)
+			}
+		}
+
+		if len(*proc.Entrypoint) == 0 {
+			proc.Executable = *proc.Command
+			proc.Args = []string{}
+		} else {
+			entrypoint := *proc.Entrypoint
+			proc.Executable = entrypoint[0]
+			proc.Args = entrypoint[1:]
+			if proc.Command != nil {
+				proc.Args = append(proc.Args, *proc.Command)
+			}
+		}
+
 		p.Processes[name] = proc
 	}
 }
