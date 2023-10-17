@@ -14,14 +14,19 @@
         commit = self.shortRev or "dirty";
       };
     in
-    (flake-utils.lib.eachDefaultSystem (system:
-      {
-        packages.process-compose = mkPackage nixpkgs.legacyPackages.${system};
+    (flake-utils.lib.eachDefaultSystem (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in {
+        packages.process-compose = mkPackage pkgs;
         defaultPackage = self.packages."${system}".process-compose;
         apps.process-compose = flake-utils.lib.mkApp {
           drv = self.packages."${system}".process-compose;
         };
         apps.default = self.apps."${system}".process-compose;
+        checks.default = self.packages."${system}".process-compose.overrideAttrs (prev: {
+          doCheck = true;
+          nativeBuildInputs = prev.nativeBuildInputs ++ (with pkgs; [python3]);
+        });
       })
     ) // {
       overlays.default = final: prev: {
