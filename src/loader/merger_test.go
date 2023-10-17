@@ -8,11 +8,13 @@ import (
 )
 
 func getBaseProcess() *types.ProcessConfig {
+	command := "command"
+
 	return &types.ProcessConfig{
 		Name:        "proc1",
 		Disabled:    false,
 		IsDaemon:    false,
-		Command:     "command",
+		Command:     &command,
 		LogLocation: "",
 		Environment: types.Environment{
 			"k1=v1",
@@ -57,11 +59,13 @@ func getBaseProcess() *types.ProcessConfig {
 }
 
 func getOverrideProcess() *types.ProcessConfig {
+	command := "override command"
+
 	return &types.ProcessConfig{
 		Name:        "proc1",
 		Disabled:    false,
 		IsDaemon:    false,
-		Command:     "override command",
+		Command:     &command,
 		LogLocation: "",
 		Environment: types.Environment{
 			"k0=v0",
@@ -120,11 +124,13 @@ func getOverrideProcess() *types.ProcessConfig {
 }
 
 func getMergedProcess() *types.ProcessConfig {
+	command := "override command"
+
 	return &types.ProcessConfig{
 		Name:        "proc1",
 		Disabled:    false,
 		IsDaemon:    false,
-		Command:     "override command",
+		Command:     &command,
 		LogLocation: "",
 		Environment: types.Environment{
 			"k0=v0",
