@@ -1,9 +1,9 @@
 package loader
 
 import (
+	"dario.cat/mergo"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
-	"github.com/imdario/mergo"
 	"reflect"
 	"sort"
 	"strings"
