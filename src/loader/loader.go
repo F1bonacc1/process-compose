@@ -27,7 +27,22 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		opts.projects = append(opts.projects, p)
 	}
 	mergedProject, err := merge(opts)
-	err = mergedProject.ValidateAfterMerge()
+	if err != nil {
+		return nil, err
+	}
+
+	apply(mergedProject,
+		setDefaultShell,
+		assignDefaultProcessValues,
+		cloneReplicas,
+		copyWorkingDirToProbes,
+	)
+	err = validate(mergedProject,
+		validateLogLevel,
+		validateProcessConfig,
+		validateNoCircularDependencies,
+		validateShellConfig,
+	)
 	admitProcesses(opts, mergedProject)
 	return mergedProject, err
 }
@@ -70,7 +85,10 @@ func mustLoadProjectFromFile(inputFile string) *types.Project {
 		log.Fatal().Msgf("Failed to parse %s - %s", inputFile, err.Error())
 	}
 
-	project.Validate()
+	if err != nil {
+		fmt.Printf("Failed to validate %s - %s\n", inputFile, err.Error())
+		log.Fatal().Msgf("Failed to validate %s - %s", inputFile, err.Error())
+	}
 	log.Info().Msgf("Loaded project from %s", inputFile)
 	return project
 }

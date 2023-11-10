@@ -16,6 +16,7 @@ type Project struct {
 	Processes    Processes            `yaml:"processes"`
 	Environment  Environment          `yaml:"environment,omitempty"`
 	ShellConfig  *command.ShellConfig `yaml:"shell,omitempty"`
+	IsStrict     bool                 `yaml:"is_strict"`
 }
 
 type ProcessFunc func(process ProcessConfig) error
@@ -45,7 +46,7 @@ func (p *Project) GetLexicographicProcessNames() ([]string, error) {
 	return names, nil
 }
 
-func (p *Project) getProcesses(names ...string) ([]ProcessConfig, error) {
+func (p *Project) GetProcesses(names ...string) ([]ProcessConfig, error) {
 	processes := []ProcessConfig{}
 	if len(names) == 0 {
 		for _, proc := range p.Processes {
@@ -83,7 +84,7 @@ func (p *Project) getProcesses(names ...string) ([]ProcessConfig, error) {
 }
 
 func (p *Project) withProcesses(names []string, fn ProcessFunc, done map[string]bool) error {
-	processes, err := p.getProcesses(names...)
+	processes, err := p.GetProcesses(names...)
 	if err != nil {
 		return err
 	}
