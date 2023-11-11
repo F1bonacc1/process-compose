@@ -225,6 +225,19 @@ paths:
       summary: Stop processes
       tags:
       - Process
+  /project/state:
+    get:
+      description: Retrieves project state information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project State
+          schema:
+            type: object
+      summary: Get project state
+      tags:
+      - Project
   /project/stop:
     post:
       description: Shuts down the server

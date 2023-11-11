@@ -357,6 +357,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/project/state": {
+            "get": {
+                "description": "Retrieves project state information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Get project state",
+                "responses": {
+                    "200": {
+                        "description": "Project State",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/project/stop": {
             "post": {
                 "description": "Shuts down the server",

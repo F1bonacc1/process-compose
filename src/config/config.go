@@ -36,6 +36,7 @@ var (
 		"down",
 		"attach",
 		"process",
+		"project",
 	}
 )
 

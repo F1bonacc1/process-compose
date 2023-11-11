@@ -30,6 +30,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	if err != nil {
 		return nil, err
 	}
+	mergedProject.FileNames = opts.FileNames
 
 	apply(mergedProject,
 		setDefaultShell,

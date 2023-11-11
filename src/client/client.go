@@ -133,3 +133,7 @@ func (p *PcClient) logError(err error) error {
 	}
 	return err
 }
+
+func (p *PcClient) GetProjectState() (*types.ProjectState, error) {
+	return p.getProjectState()
+}

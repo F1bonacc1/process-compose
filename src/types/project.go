@@ -17,17 +17,17 @@ type Project struct {
 	Environment  Environment          `yaml:"environment,omitempty"`
 	ShellConfig  *command.ShellConfig `yaml:"shell,omitempty"`
 	IsStrict     bool                 `yaml:"is_strict"`
+	FileNames    []string
 }
 
 type ProcessFunc func(process ProcessConfig) error
 
-// WithProcesses run ProcesseFunc on each Process and dependencies in dependency order
+// WithProcesses run ProcessFunc on each Process and dependencies in dependency order
 func (p *Project) WithProcesses(names []string, fn ProcessFunc) error {
 	return p.withProcesses(names, fn, map[string]bool{})
 }
 
 func (p *Project) GetDependenciesOrderNames() ([]string, error) {
-
 	order := []string{}
 	err := p.WithProcesses([]string{}, func(process ProcessConfig) error {
 		order = append(order, process.ReplicaName)

@@ -2,16 +2,16 @@ package app
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
+	"os/user"
 	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
 )
-
-//var PROJ *ProjectRunner
 
 type ProjectRunner struct {
 	procConfMutex    sync.Mutex
@@ -25,6 +25,7 @@ type ProjectRunner struct {
 	logger           pclog.PcLogger
 	waitGroup        sync.WaitGroup
 	exitCode         int
+	projectState     *types.ProjectState
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -328,7 +329,7 @@ func (p *ProjectRunner) ErrorForSecs() int {
 }
 
 func (p *ProjectRunner) GetHostName() (string, error) {
-	return os.Hostname()
+	return p.projectState.HostName, nil
 }
 
 func (p *ProjectRunner) getProcessLog(name string) (*pclog.ProcessLogBuffer, error) {
@@ -557,17 +558,47 @@ func (p *ProjectRunner) GetDependenciesOrderNames() ([]string, error) {
 	return p.project.GetDependenciesOrderNames()
 }
 
-func (p *ProjectRunner) GetProject() *types.Project {
-	return p.project
+func (p *ProjectRunner) GetProjectState() (*types.ProjectState, error) {
+	runningProcesses := 0
+	for name := range p.project.Processes {
+		state, err := p.GetProcessState(name)
+		if err != nil {
+			return nil, err
+		}
+		if state.IsRunning {
+			runningProcesses++
+		}
+	}
+	p.projectState.RunningProcessNum = runningProcesses
+	p.projectState.UpTime = time.Since(p.projectState.StartTime)
+	return p.projectState, nil
 }
 
 func NewProjectRunner(project *types.Project, processesToRun []string, noDeps bool) (*ProjectRunner, error) {
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Err(err).Msg("Failed get hostname")
+		hostname = "unknown"
+	}
+	current, err := user.Current()
+	username := "unknown-user"
+	if err != nil {
+		log.Err(err).Msg("Failed get user")
+	} else {
+		username = current.Username
+	}
 	runner := &ProjectRunner{
 		project: project,
+		projectState: &types.ProjectState{
+			FileNames: project.FileNames,
+			StartTime: time.Now(),
+			UserName:  username,
+			HostName:  hostname,
+			Version:   config.Version,
+		},
 	}
 
-	var err error
 	if noDeps {
 		err = runner.selectRunningProcessesNoDeps(processesToRun)
 	} else {
@@ -576,7 +607,7 @@ func NewProjectRunner(project *types.Project, processesToRun []string, noDeps bo
 	if err != nil {
 		return nil, err
 	}
-	//PROJ = runner
+	runner.projectState.ProcessNum = len(runner.project.Processes)
 	runner.init()
 	return runner, nil
 }

@@ -270,3 +270,20 @@ func (api *PcApi) ShutDownProject(c *gin.Context) {
 	api.project.ShutDownProject()
 	c.JSON(http.StatusOK, gin.H{"status": "stopped"})
 }
+
+// @Schemes
+// @Description Retrieves project state information
+// @Tags Project
+// @Summary Get project state
+// @Produce  json
+// @Success 200 {object} object "Project State"
+// @Router /project/state [get]
+func (api *PcApi) GetProjectState(c *gin.Context) {
+	ports, err := api.project.GetProjectState()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, ports)
+}
