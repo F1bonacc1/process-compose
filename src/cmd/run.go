@@ -10,7 +10,7 @@ import (
 // runCmd represents the up command
 var runCmd = &cobra.Command{
 	Use:   "run PROCESS [flags] -- [process_args]",
-	Short: "Run PROCESS in the foreground, and it's dependencies in the background",
+	Short: "Run PROCESS in the foreground, and its dependencies in the background",
 	Long: `Run selected process with std(in|out|err) attached, while other processes run in the background.
 Command line arguments, provided after --, are passed to the PROCESS.`,
 	Args: cobra.MinimumNArgs(1),
