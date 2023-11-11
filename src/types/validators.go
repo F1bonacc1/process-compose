@@ -5,6 +5,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"os"
 	"strings"
 )
 
@@ -80,10 +81,10 @@ func (p *Project) validateProcessCommand() {
 		command := proc.Command
 		entrypoint := proc.Entrypoint
 
-		if command != "" {
+		if command != "" || len(entrypoint) == 0 {
 			if len(entrypoint) > 0 {
 				message := fmt.Sprintf("Both command and entrypoint are set! Using command and ignoring entrypoint (procces: %s)", name)
-				fmt.Println(message)
+				fmt.Fprintln(os.Stderr, "process-compose:", message)
 				log.Error().Msg(message)
 			}
 
@@ -92,13 +93,9 @@ func (p *Project) validateProcessCommand() {
 				p.ShellConfig.ShellArgument,
 				command,
 			}
-		} else if len(entrypoint) > 0 {
+		} else {
 			proc.Executable = entrypoint[0]
 			proc.Args = entrypoint[1:]
-		} else {
-			message := fmt.Sprintf("Either command or entrypoint need to be non-empty (procces: %s)", name)
-			fmt.Println(message)
-			log.Fatal().Msg(message)
 		}
 
 		p.Processes[name] = proc
