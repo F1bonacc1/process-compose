@@ -15,8 +15,8 @@ type ProcessConfig struct {
 	Name              string
 	Disabled          bool                   `yaml:"disabled,omitempty"`
 	IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
-	Command           *string                `yaml:"command,omitempty"`
-	Entrypoint        *[]string              `yaml:"entrypoint,omitempty"`
+	Command           string                 `yaml:"command"`
+	Entrypoint        []string               `yaml:"entrypoint"`
 	LogLocation       string                 `yaml:"log_location,omitempty"`
 	LoggerConfig      *LoggerConfig          `yaml:"log_configuration,omitempty"`
 	Environment       Environment            `yaml:"environment,omitempty"`

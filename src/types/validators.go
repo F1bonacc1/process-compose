@@ -77,34 +77,28 @@ func (p *Project) assignDefaultProcessValues() {
 
 func (p *Project) validateProcessCommand() {
 	for name, proc := range p.Processes {
-		if proc.Entrypoint == nil {
-			if proc.Command == nil {
-				message := fmt.Sprintf("Error: Neither command nor entrypoint is set for process: %s", name)
-				fmt.Println(message)
-				log.Fatal().Msg(message)
-			}
-			proc.Entrypoint = &[]string{
-				p.ShellConfig.ShellCommand,
-				p.ShellConfig.ShellArgument,
-			}
-		} else {
-			if len(*proc.Entrypoint) == 0 && (proc.Command == nil || *proc.Command == "") {
-				message := fmt.Sprintf("If entrypoint is empty, command needs to be non-empty (procces: %s)", name)
-				fmt.Println(message)
-				log.Fatal().Msg(message)
-			}
-		}
+		command := proc.Command
+		entrypoint := proc.Entrypoint
 
-		if len(*proc.Entrypoint) == 0 {
-			proc.Executable = *proc.Command
-			proc.Args = []string{}
-		} else {
-			entrypoint := *proc.Entrypoint
+		if command != "" {
+			if len(entrypoint) > 0 {
+				message := fmt.Sprintf("Both command and entrypoint are set! Using command and ignoring entrypoint (procces: %s)", name)
+				fmt.Println(message)
+				log.Error().Msg(message)
+			}
+
+			proc.Executable = p.ShellConfig.ShellCommand;
+			proc.Args = []string{
+				p.ShellConfig.ShellArgument,
+				command,
+			}
+		} else if len(entrypoint) > 0 {
 			proc.Executable = entrypoint[0]
 			proc.Args = entrypoint[1:]
-			if proc.Command != nil {
-				proc.Args = append(proc.Args, *proc.Command)
-			}
+		} else {
+			message := fmt.Sprintf("Either command or entrypoint need to be non-empty (procces: %s)", name)
+			fmt.Println(message)
+			log.Fatal().Msg(message)
 		}
 
 		p.Processes[name] = proc

@@ -19,10 +19,8 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.Pro
 	f.SetFieldTextColor(tcell.ColorBlack)
 	f.SetButtonsAlign(tview.AlignCenter)
 	f.SetTitle("Process " + info.Name + " Info")
-	addStringIfNotEmpty("Entrypoint:", strings.Join(*info.Entrypoint, " "), f)
-	if info.Command != nil {
-		addStringIfNotEmpty("Command:", *info.Command, f)
-	}
+	addStringIfNotEmpty("Entrypoint:", strings.Join(info.Entrypoint, " "), f)
+	addStringIfNotEmpty("Command:", info.Command, f)
 	addStringIfNotEmpty("Working Directory:", info.WorkingDir, f)
 	addStringIfNotEmpty("Log Location:", info.LogLocation, f)
 	addDropDownIfNotEmpty("Environment:", info.Environment, f)
