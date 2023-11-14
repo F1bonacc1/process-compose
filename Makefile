@@ -21,6 +21,11 @@ endif
 
 buildrun: build run
 
+setup:
+	go mod tidy
+
+ci: setup build testrace
+
 swag:
 	~/go/bin/swag init --dir src --output src/docs --parseDependency --parseInternal --parseDepth 1
 
