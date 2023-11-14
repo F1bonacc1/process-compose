@@ -1,0 +1,82 @@
+site_name: Process Compose
+site_url: https://github.com/F1bonacc1/process-compose
+repo_url: https://github.com/F1bonacc1/process-compose
+repo_name: process-compose
+nav:
+  - Home: index.md
+  - Getting Started:
+    - 'Quick Start': intro.md
+    - Installation: installation.md
+  - Documentation:
+    - 'Processes Lifetime': launcher.md
+    - Logger: logging.md
+    - 'Health Checks': health.md
+    - Configuration: configuration.md
+    - 'Merging Configuration': merge.md
+    - 'Remote Client': client.md
+    - TUI: tui.md
+
+theme:
+  name: material
+  favicon: img/favicon.ico
+  logo: img/favicon.ico
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.path
+    # - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline 
+        name: Switch to dark mode
+      primary: blue-grey
+      accent: purple 
+    - scheme: slate 
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode    
+      primary: black
+      accent: lime
+
+plugins:
+  - social
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/f1bonacc1
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/ProcessCompose
+
+markdown_extensions:
+  - toc:
+      title: Table of contents
+      toc_depth: 3
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+copyright: |
+  &copy; 2023 <a href="https://github.com/f1bonacc1"  target="_blank" rel="noopener">Eugene Berger</a>
