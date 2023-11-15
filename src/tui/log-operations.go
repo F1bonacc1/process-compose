@@ -55,9 +55,10 @@ func (pv *pcView) followLog(name string) {
 		return
 	}
 	pv.logsText.useAnsi = !config.DisableAnsiColors
-	if err := pv.project.GetLogsAndSubscribe(name, pv.logsText); err != nil {
+	if err = pv.project.GetLogsAndSubscribe(name, pv.logsText); err != nil {
 		return
 	}
+	pv.logsText.ScrollToEnd()
 }
 
 func (pv *pcView) unFollowLog() {
