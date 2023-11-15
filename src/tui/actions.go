@@ -158,20 +158,20 @@ func getDefaultActions() ShortCuts {
 		ShortCutKeys: map[ActionName]*Action{
 			ActionLogScreen: {
 				ToggleDescription: map[bool]string{
-					true:  "Full Screen",
-					false: "Half Screen",
+					true:  "Maximize",
+					false: "Minimize",
 				},
 			},
 			ActionFollowLog: {
 				ToggleDescription: map[bool]string{
-					true:  "Follow On",
-					false: "Follow Off",
+					true:  "Follow",
+					false: "Unfollow",
 				},
 			},
 			ActionWrapLog: {
 				ToggleDescription: map[bool]string{
-					true:  "Wrap On",
-					false: "Wrap Off",
+					true:  "Wrap",
+					false: "Unwrap",
 				},
 			},
 			ActionLogSelection: {
@@ -191,8 +191,8 @@ func getDefaultActions() ShortCuts {
 			},
 			ActionProcessScreen: {
 				ToggleDescription: map[bool]string{
-					true:  "Full Screen",
-					false: "Half Screen",
+					true:  "Maximize",
+					false: "Minimize",
 				},
 			},
 			ActionProcessStop: {
