@@ -33,13 +33,13 @@ It is heavily inspired by [docker-compose](https://github.com/docker/compose), b
 
 ## Get Process Compose
 
-[Installation Instructions](https://f1bonacc1.github.io/installation/)
+[Installation Instructions](https://f1bonacc1.github.io/process-compose/installation/)
 
 ## Documentation
 
-[Quick Start](https://f1bonacc1.github.io/intro/)
+[Quick Start](https://f1bonacc1.github.io/process-compose/intro/)
 
-[Documentation](https://f1bonacc1.github.io/launcher/)
+[Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 
 ## How to Contribute
 
