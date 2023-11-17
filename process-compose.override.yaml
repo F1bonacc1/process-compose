@@ -7,6 +7,12 @@ log_location: ./pc.log
 shell:
   shell_command: "zsh"
   shell_argument: "-c"
+vars:
+  HI: Cool Dude
+  LOCATION: Europe
+  VERSION: v0.75.0
+  PWD: /tmp
+  DISABLED: true
 
 processes:
   process0:
@@ -142,5 +148,9 @@ processes:
 
   bat_config:
     command: "batcat -f process-compose.yaml"
+
+  template:
+    command: "echo 'Hi {{or .HI 123 }} from {{.LOCATION}} version {{.VERSION}}'"
+    working_dir: "{{ .PWD }}"
 
 

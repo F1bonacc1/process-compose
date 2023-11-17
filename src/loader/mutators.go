@@ -1,12 +1,24 @@
 package loader
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
 )
 
 type mutatorFunc func(p *types.Project)
+type mutatorFuncE func(p *types.Project) error
+
+func applyWithErr(p *types.Project, m ...mutatorFuncE) error {
+	for _, mut := range m {
+		if err := mut(p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func apply(p *types.Project, m ...mutatorFunc) {
 	for _, mut := range m {
@@ -75,4 +87,22 @@ func cloneReplicas(p *types.Project) {
 	for _, proc := range procsToAdd {
 		p.Processes[proc.ReplicaName] = proc
 	}
+}
+
+func renderTemplates(p *types.Project) error {
+	if len(p.Vars) == 0 {
+		return nil
+	}
+	tpl := templater.Templater{Vars: &p.Vars}
+	for name, proc := range p.Processes {
+		proc.Command = tpl.Render(proc.Command)
+		proc.WorkingDir = tpl.Render(proc.WorkingDir)
+		proc.LogLocation = tpl.Render(proc.LogLocation)
+
+		if tpl.GetError() != nil {
+			return fmt.Errorf("error rendering template for process %s: %w", name, tpl.GetError())
+		}
+		p.Processes[name] = proc
+	}
+	return nil
 }

@@ -38,6 +38,13 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		cloneReplicas,
 		copyWorkingDirToProbes,
 	)
+	err = applyWithErr(mergedProject,
+		renderTemplates,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	err = validate(mergedProject,
 		validateLogLevel,
 		validateProcessConfig,

@@ -6,6 +6,8 @@ import (
 	"sort"
 )
 
+type Vars map[string]any
+
 type Project struct {
 	Version      string               `yaml:"version"`
 	LogLocation  string               `yaml:"log_location,omitempty"`
@@ -17,6 +19,7 @@ type Project struct {
 	Environment  Environment          `yaml:"environment,omitempty"`
 	ShellConfig  *command.ShellConfig `yaml:"shell,omitempty"`
 	IsStrict     bool                 `yaml:"is_strict"`
+	Vars         Vars                 `yaml:"vars"`
 	FileNames    []string
 }
 
