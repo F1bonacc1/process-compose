@@ -150,7 +150,8 @@ processes:
     command: "batcat -f process-compose.yaml"
 
   template:
-    command: "echo 'Hi {{or .HI 123 }} from {{.LOCATION}} version {{.VERSION}}'"
+    description: A process for testing templates
+    command: "echo 'Hi {{or .HI 123 }} from {{.LOCATION}} version {{or \"${VERSION}\" .VERSION}}'"
     working_dir: "{{ .PWD }}"
 
 

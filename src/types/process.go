@@ -29,6 +29,7 @@ type ProcessConfig struct {
 	Namespace         string                 `yaml:"namespace"`
 	Replicas          int                    `yaml:"replicas"`
 	Extensions        map[string]interface{} `yaml:",inline"`
+	Description       string                 `yaml:"description,omitempty"`
 	ReplicaNum        int
 	ReplicaName       string
 }

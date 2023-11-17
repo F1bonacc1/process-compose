@@ -98,6 +98,7 @@ func renderTemplates(p *types.Project) error {
 		proc.Command = tpl.Render(proc.Command)
 		proc.WorkingDir = tpl.Render(proc.WorkingDir)
 		proc.LogLocation = tpl.Render(proc.LogLocation)
+		proc.Description = tpl.Render(proc.Description)
 
 		if tpl.GetError() != nil {
 			return fmt.Errorf("error rendering template for process %s: %w", name, tpl.GetError())
