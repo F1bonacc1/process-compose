@@ -14,14 +14,15 @@ import (
 )
 
 type PCLog struct {
-	logger       zerolog.Logger
-	writer       *bufio.Writer
-	file         io.WriteCloser
-	logEventChan chan logEvent
-	wg           sync.WaitGroup
-	closer       sync.Once
-	isClosed     atomic.Bool
-	noMetaData   bool
+	logger        zerolog.Logger
+	writer        *bufio.Writer
+	file          io.WriteCloser
+	logEventChan  chan logEvent
+	wg            sync.WaitGroup
+	closer        sync.Once
+	isClosed      atomic.Bool
+	noMetaData    bool
+	flushEachLine bool
 }
 
 type logEvent struct {
@@ -75,6 +76,7 @@ func (l *PCLog) Open(filePath string, config *types.LoggerConfig) {
 	}
 	if config != nil {
 		l.noMetaData = config.NoMetadata
+		l.flushEachLine = config.FlushEachLine
 		if config.AddTimestamp {
 			l.logger = l.logger.With().Timestamp().Logger()
 			if len(config.TimestampFormat) > 0 {
@@ -177,6 +179,10 @@ func (l *PCLog) runCollector() {
 			level = level.Str("process", event.process).Int("replica", event.replica)
 		}
 		level.Msg(event.message)
+		if l.flushEachLine {
+			log.Debug().Msg("flushing")
+			l.writer.Flush()
+		}
 	}
 	l.wg.Done()
 }

@@ -32,4 +32,6 @@ type LoggerConfig struct {
 	NoMetadata bool `yaml:"no_metadata"`
 	// AddTimestamp adds timestamp to log
 	AddTimestamp bool `yaml:"add_timestamp"`
+	// FlushEachLine flushes the logger on each line
+	FlushEachLine bool `yaml:"flush_each_line"`
 }
