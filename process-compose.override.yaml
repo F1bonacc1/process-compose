@@ -151,6 +151,8 @@ processes:
 
   template:
     description: A process for testing templates
+    vars:
+      LOCATION: USA
     command: "echo 'Hi {{or .HI 123 }} from {{.LOCATION}} version {{or \"${VERSION}\" .VERSION}}'"
     working_dir: "{{ .PWD }}"
 

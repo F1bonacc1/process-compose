@@ -3,19 +3,28 @@ package templater
 import (
 	"bytes"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"maps"
 	"text/template"
 )
 
 type Templater struct {
-	Vars *types.Vars
+	vars types.Vars
 	err  error
 }
 
-func (t *Templater) Render(template string) string {
-	return t.render(template, t.Vars)
+func New(vars types.Vars) *Templater {
+	return &Templater{vars: vars}
 }
 
-func (t *Templater) render(str string, vars *types.Vars) string {
+func (t *Templater) Render(str string) string {
+	return t.render(str, nil)
+}
+
+func (t *Templater) RenderWithExtraVars(str string, extra types.Vars) string {
+	return t.render(str, extra)
+}
+
+func (t *Templater) render(str string, extra types.Vars) string {
 	if str == "" || t.err != nil {
 		return ""
 	}
@@ -25,7 +34,13 @@ func (t *Templater) render(str string, vars *types.Vars) string {
 		return ""
 	}
 	var buf bytes.Buffer
-	err = tpl.Execute(&buf, vars)
+	if extra == nil {
+		err = tpl.Execute(&buf, t.vars)
+	} else {
+		m := maps.Clone(t.vars)
+		maps.Copy(m, extra)
+		err = tpl.Execute(&buf, m)
+	}
 	if err != nil {
 		t.err = err
 		return ""

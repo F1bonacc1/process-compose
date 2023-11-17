@@ -93,12 +93,12 @@ func renderTemplates(p *types.Project) error {
 	if len(p.Vars) == 0 {
 		return nil
 	}
-	tpl := templater.Templater{Vars: &p.Vars}
+	tpl := templater.New(p.Vars)
 	for name, proc := range p.Processes {
-		proc.Command = tpl.Render(proc.Command)
-		proc.WorkingDir = tpl.Render(proc.WorkingDir)
-		proc.LogLocation = tpl.Render(proc.LogLocation)
-		proc.Description = tpl.Render(proc.Description)
+		proc.Command = tpl.RenderWithExtraVars(proc.Command, proc.Vars)
+		proc.WorkingDir = tpl.RenderWithExtraVars(proc.WorkingDir, proc.Vars)
+		proc.LogLocation = tpl.RenderWithExtraVars(proc.LogLocation, proc.Vars)
+		proc.Description = tpl.RenderWithExtraVars(proc.Description, proc.Vars)
 
 		if tpl.GetError() != nil {
 			return fmt.Errorf("error rendering template for process %s: %w", name, tpl.GetError())
