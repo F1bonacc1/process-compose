@@ -1,0 +1,28 @@
+version: "0.5"
+log_level: info
+log_length: 300
+
+processes:
+  watcher:
+    command: "sleep 1 && echo SUCCESS && sleep 9"
+    log_location: ./watcher.log
+    log_configuration:
+      flush_each_line: true
+    readiness_probe:
+      exec:
+        command: "grep -q SUCCESS ./watcher.log"
+      initial_delay_seconds: 1
+      period_seconds: 2
+      timeout_seconds: 2
+      success_threshold: 1
+      failure_threshold: 100
+
+  wait4it:
+    command: "echo watcher is healthy"
+    depends_on:
+      watcher:
+        condition: process_healthy
+
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
