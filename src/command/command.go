@@ -8,9 +8,10 @@ import (
 	"runtime"
 )
 
-func BuildCommandShellArg(shell ShellConfig, cmd string) *CmdWrapper {
+
+func BuildCommand(cmd string, args []string) *CmdWrapper {
 	return &CmdWrapper{
-		cmd: exec.Command(shell.ShellCommand, shell.ShellArgument, cmd),
+		cmd: exec.Command(cmd, args...),
 	}
 	//return NewMockCommand()
 }

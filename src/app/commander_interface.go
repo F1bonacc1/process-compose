@@ -15,4 +15,5 @@ type Commander interface {
 	StderrPipe() (io.ReadCloser, error)
 	Stop(int, bool) error
 	SetCmdArgs()
+	AttachIo()
 }

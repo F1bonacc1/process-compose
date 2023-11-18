@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func getProjectRunner(process []string, noDeps bool) *app.ProjectRunner {
+func getProjectRunner(process []string, noDeps bool, mainProcess string, mainProcessArgs []string) *app.ProjectRunner {
 	if *pcFlags.HideDisabled {
 		opts.AddAdmitter(&admitter.DisabledProcAdmitter{})
 	}
@@ -23,7 +23,7 @@ func getProjectRunner(process []string, noDeps bool) *app.ProjectRunner {
 		log.Fatal().Msg(err.Error())
 	}
 
-	runner, err := app.NewProjectRunner(project, process, noDeps)
+	runner, err := app.NewProjectRunner(project, process, noDeps, mainProcess, mainProcessArgs)
 	if err != nil {
 		fmt.Println(err)
 		log.Fatal().Msg(err.Error())

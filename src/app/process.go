@@ -53,6 +53,9 @@ type Process struct {
 	liveProber    *health.Prober
 	readyProber   *health.Prober
 	shellConfig   command.ShellConfig
+	printLogs     bool
+	isMain        bool
+	extraArgs     []string
 }
 
 func NewProcess(
@@ -62,6 +65,9 @@ func NewProcess(
 	processState *types.ProcessState,
 	procLog *pclog.ProcessLogBuffer,
 	shellConfig command.ShellConfig,
+	printLogs bool,
+	isMain bool,
+	extraArgs []string,
 ) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 
@@ -78,6 +84,9 @@ func NewProcess(
 		shellConfig:   shellConfig,
 		procStateChan: make(chan string, 1),
 		procReadyChan: make(chan string, 1),
+		printLogs:     printLogs,
+		isMain:        isMain,
+		extraArgs:     extraArgs,
 	}
 
 	proc.procReadyCtx, proc.readyCancelFn = context.WithCancel(context.Background())
@@ -92,7 +101,7 @@ func (p *Process) run() int {
 	}
 
 	if err := p.validateProcess(); err != nil {
-		log.Error().Err(err).Msgf("Failed to run command %s for process %s", p.getCommand(), p.getName())
+		log.Error().Err(err).Msgf(`Failed to run command ["%v"] for process %s`, strings.Join(p.getCommand(), `" "`), p.getName())
 		p.onProcessEnd(types.ProcessStateError)
 		return 1
 	}
@@ -101,7 +110,7 @@ func (p *Process) run() int {
 	for {
 		err := p.setStateAndRun(p.getStartingStateName(), p.getProcessStarter())
 		if err != nil {
-			log.Error().Err(err).Msgf("Failed to run command %s for process %s", p.getCommand(), p.getName())
+			log.Error().Err(err).Msgf(`Failed to run command ["%v"] for process %s`, strings.Join(p.getCommand(), `" "`), p.getName())
 			p.logBuffer.Write(err.Error())
 			p.onProcessEnd(types.ProcessStateError)
 			return 1
@@ -151,16 +160,23 @@ func (p *Process) run() int {
 
 func (p *Process) getProcessStarter() func() error {
 	return func() error {
-		p.command = command.BuildCommandShellArg(p.shellConfig, p.getCommand())
+		p.command = command.BuildCommand(
+			p.procConf.Executable,
+			append(p.procConf.Args, p.extraArgs...),
+		)
 		p.command.SetEnv(p.getProcessEnvironment())
 		p.command.SetDir(p.procConf.WorkingDir)
-		p.command.SetCmdArgs()
-		stdout, _ := p.command.StdoutPipe()
-		stderr, _ := p.command.StderrPipe()
-		go p.handleOutput(stdout, p.handleInfo)
-		go p.handleOutput(stderr, p.handleError)
-		//stdin, _ := p.command.StdinPipe()
-		//go p.handleInput(stdin)
+
+		if p.isMain {
+			p.command.AttachIo()
+		} else {
+			p.command.SetCmdArgs()
+			stdout, _ := p.command.StdoutPipe()
+			stderr, _ := p.command.StderrPipe()
+			go p.handleOutput(stdout, p.handleInfo)
+			go p.handleOutput(stderr, p.handleError)
+		}
+
 		return p.command.Start()
 	}
 }
@@ -346,8 +362,11 @@ func (p *Process) getNameWithSmartReplica() string {
 	return p.procConf.Name
 }
 
-func (p *Process) getCommand() string {
-	return p.procConf.Command
+func (p *Process) getCommand() []string {
+	return append(
+		[]string{(*p.procConf).Executable},
+		append(p.procConf.Args, p.extraArgs...)...,
+	)
 }
 
 func (p *Process) updateProcState() {
@@ -401,13 +420,17 @@ func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string))
 
 func (p *Process) handleInfo(message string) {
 	p.logger.Info(message, p.getName(), p.procConf.ReplicaNum)
-	fmt.Printf("[%s\t] %s\n", p.procColor(p.getName()), message)
+	if p.printLogs {
+		fmt.Printf("[%s\t] %s\n", p.procColor(p.getName()), message)
+	}
 	p.logBuffer.Write(message)
 }
 
 func (p *Process) handleError(message string) {
 	p.logger.Error(message, p.getName(), p.procConf.ReplicaNum)
-	fmt.Printf("[%s\t] %s\n", p.procColor(p.getName()), p.redColor(message))
+	if p.printLogs {
+		fmt.Printf("[%s\t] %s\n", p.procColor(p.getName()), p.redColor(message))
+	}
 	p.logBuffer.Write(message)
 }
 

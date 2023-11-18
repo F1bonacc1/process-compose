@@ -26,6 +26,8 @@ type ProjectRunner struct {
 	waitGroup        sync.WaitGroup
 	exitCode         int
 	projectState     *types.ProjectState
+	mainProcess      string
+	mainProcessArgs  []string
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -84,7 +86,25 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		procLog = pclog.NewLogBuffer(0)
 	}
 	procState, _ := p.GetProcessState(config.ReplicaName)
-	process := NewProcess(p.project.Environment, procLogger, config, procState, procLog, *p.project.ShellConfig)
+	isMain := config.Name == p.mainProcess
+	hasMain := p.mainProcess != ""
+	printLogs := !hasMain
+	extraArgs := []string{}
+	if isMain {
+		extraArgs = p.mainProcessArgs
+		config.RestartPolicy.ExitOnEnd = true
+	}
+	process := NewProcess(
+		p.project.Environment,
+		procLogger,
+		config,
+		procState,
+		procLog,
+		*p.project.ShellConfig,
+		printLogs,
+		isMain,
+		extraArgs,
+	)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
 	go func() {
@@ -574,7 +594,13 @@ func (p *ProjectRunner) GetProjectState() (*types.ProjectState, error) {
 	return p.projectState, nil
 }
 
-func NewProjectRunner(project *types.Project, processesToRun []string, noDeps bool) (*ProjectRunner, error) {
+func NewProjectRunner(
+	project *types.Project,
+	processesToRun []string,
+	noDeps bool,
+	mainProcess string,
+	mainProcessArgs []string,
+) (*ProjectRunner, error) {
 
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -590,6 +616,8 @@ func NewProjectRunner(project *types.Project, processesToRun []string, noDeps bo
 	}
 	runner := &ProjectRunner{
 		project: project,
+		mainProcess: mainProcess,
+		mainProcessArgs: mainProcessArgs,
 		projectState: &types.ProjectState{
 			FileNames: project.FileNames,
 			StartTime: time.Now(),

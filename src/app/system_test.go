@@ -28,7 +28,7 @@ func TestSystem_TestFixtures(t *testing.T) {
 				t.Errorf(err.Error())
 				return
 			}
-			runner, err := NewProjectRunner(project, []string{}, false)
+			runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
 			if err != nil {
 				t.Errorf(err.Error())
 				return
@@ -48,7 +48,7 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		runner, err := NewProjectRunner(project, []string{}, false)
+		runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
@@ -81,7 +81,7 @@ func TestSystem_TestComposeChain(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		runner, err := NewProjectRunner(project, []string{}, false)
+		runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
@@ -117,7 +117,7 @@ func TestSystem_TestComposeChainExit(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		runner, err := NewProjectRunner(project, []string{}, false)
+		runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
@@ -162,7 +162,7 @@ func TestSystem_TestComposeScale(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		runner, err := NewProjectRunner(project, []string{}, false)
+		runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
 		if err != nil {
 			t.Errorf(err.Error())
 			return

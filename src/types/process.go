@@ -16,6 +16,7 @@ type ProcessConfig struct {
 	Disabled          bool                   `yaml:"disabled,omitempty"`
 	IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
 	Command           string                 `yaml:"command"`
+	Entrypoint        []string               `yaml:"entrypoint"`
 	LogLocation       string                 `yaml:"log_location,omitempty"`
 	LoggerConfig      *LoggerConfig          `yaml:"log_configuration,omitempty"`
 	Environment       Environment            `yaml:"environment,omitempty"`
@@ -33,6 +34,8 @@ type ProcessConfig struct {
 	Vars              Vars                   `yaml:"vars"`
 	ReplicaNum        int
 	ReplicaName       string
+	Executable        string
+	Args              []string
 }
 
 func (p *ProcessConfig) GetDependencies() []string {
