@@ -266,3 +266,221 @@ func Test_cloneReplicas(t *testing.T) {
 		}
 	}
 }
+
+func Test_renderTemplates(t *testing.T) {
+	procNoWorkingDir := "noWorkingDir"
+
+	type args struct {
+		p *types.Project
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "no vars",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						procNoWorkingDir: {
+							Name:    procNoWorkingDir,
+							Command: "echo {{ .TEST }}",
+							LivenessProbe: &health.Probe{
+								Exec: &health.ExecProbe{
+									Command: "echo {{ .TEST }}",
+								},
+							},
+							ReadinessProbe: &health.Probe{
+								Exec: &health.ExecProbe{
+									Command: "echo {{ .TEST }}",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "no proc vars",
+			args: args{
+				p: &types.Project{
+					Vars: map[string]any{
+						"TEST": "test",
+					},
+					Processes: types.Processes{
+						procNoWorkingDir: {
+							Name:    procNoWorkingDir,
+							Command: "echo {{ .TEST }}",
+							LivenessProbe: &health.Probe{
+								Exec: &health.ExecProbe{
+									Command: "echo {{ .PROC_TEST }}",
+								},
+							},
+							ReadinessProbe: &health.Probe{
+								Exec: &health.ExecProbe{
+									Command: "echo {{ .PROC_TEST }}",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "with all vars",
+			args: args{
+				p: &types.Project{
+					Vars: map[string]any{
+						"TEST": "test",
+					},
+					Processes: types.Processes{
+						procNoWorkingDir: {
+							Vars: map[string]any{
+								"PROC_TEST": "proc test",
+							},
+							Name:    procNoWorkingDir,
+							Command: "echo {{ .TEST }}",
+							LivenessProbe: &health.Probe{
+								Exec: &health.ExecProbe{
+									Command: "echo {{ .PROC_TEST }}",
+								},
+							},
+							ReadinessProbe: &health.Probe{
+								Exec: &health.ExecProbe{
+									Command: "echo {{ .PROC_TEST }}",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "no global vars",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						procNoWorkingDir: {
+							Vars: map[string]any{
+								"PROC_TEST": "proc test",
+							},
+							Name:    procNoWorkingDir,
+							Command: "echo {{ .TEST }}",
+							LivenessProbe: &health.Probe{
+								Exec: &health.ExecProbe{
+									Command: "echo {{ .PROC_TEST }}",
+								},
+							},
+							ReadinessProbe: &health.Probe{
+								Exec: &health.ExecProbe{
+									Command: "echo {{ .PROC_TEST }}",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "with http",
+			args: args{
+				p: &types.Project{
+					Vars: map[string]any{
+						"PROJ_PATH": "prj_path",
+						"HOST":      "host",
+						"SCHEME":    "https",
+					},
+					Processes: types.Processes{
+						procNoWorkingDir: {
+							Vars: map[string]any{
+								"PROC_PATH": "proc_path",
+								"TEST":      "test",
+							},
+							Name:    procNoWorkingDir,
+							Command: "echo {{ .TEST }}",
+							LivenessProbe: &health.Probe{
+								HttpGet: &health.HttpProbe{
+									Path:   "/{{.PROJ_PATH}}/{{.PROC_PATH}}",
+									Scheme: "{{.SCHEME}}",
+									Host:   "{{.HOST}}",
+								},
+							},
+							ReadinessProbe: &health.Probe{
+								HttpGet: &health.HttpProbe{
+									Path:   "/{{.PROJ_PATH}}/{{.PROC_PATH}}",
+									Scheme: "{{.SCHEME}}",
+									Host:   "{{.HOST}}",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "with error",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						procNoWorkingDir: {
+							Vars: map[string]any{
+								"TEST": "test",
+							},
+							Name:    procNoWorkingDir,
+							Command: "echo {{ TEST }}",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := renderTemplates(tt.args.p); (err != nil) != tt.wantErr {
+				t.Errorf("renderTemplates() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			for _, p := range tt.args.p.Processes {
+				switch tt.name {
+				case "no vars":
+					expected := "echo {{ .TEST }}"
+					compareStrings(t, expected, p.ReadinessProbe.Exec.Command, "readiness probe command")
+					compareStrings(t, expected, p.LivenessProbe.Exec.Command, "liveness probe command")
+					compareStrings(t, expected, p.Command, "process command")
+				case "no proc vars":
+					compareStrings(t, "echo <no value>", p.ReadinessProbe.Exec.Command, "readiness probe command")
+					compareStrings(t, "echo <no value>", p.LivenessProbe.Exec.Command, "liveness probe command")
+					compareStrings(t, "echo test", p.Command, "process command")
+				case "with all vars":
+					compareStrings(t, "echo proc test", p.ReadinessProbe.Exec.Command, "readiness probe command")
+					compareStrings(t, "echo proc test", p.LivenessProbe.Exec.Command, "liveness probe command")
+					compareStrings(t, "echo test", p.Command, "process command")
+				case "no global vars":
+					compareStrings(t, "echo proc test", p.ReadinessProbe.Exec.Command, "readiness probe command")
+					compareStrings(t, "echo proc test", p.LivenessProbe.Exec.Command, "liveness probe command")
+					compareStrings(t, "echo <no value>", p.Command, "process command")
+				case "with http":
+					compareStrings(t, "/prj_path/proc_path", p.ReadinessProbe.HttpGet.Path, "readiness probe path")
+					compareStrings(t, "host", p.ReadinessProbe.HttpGet.Host, "readiness probe host")
+					compareStrings(t, "https", p.ReadinessProbe.HttpGet.Scheme, "readiness probe scheme")
+					compareStrings(t, "https", p.LivenessProbe.HttpGet.Scheme, "liveness probe scheme")
+					compareStrings(t, "host", p.LivenessProbe.HttpGet.Host, "liveness probe host")
+					compareStrings(t, "/prj_path/proc_path", p.LivenessProbe.HttpGet.Path, "liveness probe path")
+					compareStrings(t, "echo test", p.Command, "process command")
+				}
+			}
+		})
+	}
+}
+
+func compareStrings(t *testing.T, expected, actual, scope string) {
+	if expected != actual {
+		t.Errorf("Expected %s '%s' to be '%s'", scope, expected, actual)
+	}
+}

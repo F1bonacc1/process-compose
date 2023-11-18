@@ -115,7 +115,8 @@ processes:
       timeout_seconds: 5
     liveness_probe:
       exec:
-        command: "[ $(docker inspect -f '{{.State.Running}}' nginx_test) = 'true' ]"
+        command: '[ $(docker inspect -f {{ "{{.State.Running}}" }} nginx_test) = true ]'
+#        command: '[ $(docker inspect -f "{{.State.Running}}" nginx_test) = true ]'
       initial_delay_seconds: 5
       period_seconds: 2
       timeout_seconds: 5
@@ -153,7 +154,9 @@ processes:
     description: A process for testing templates
     vars:
       LOCATION: USA
-    command: "echo 'Hi {{or .HI 123 }} from {{.LOCATION}} version {{or \"${VERSION}\" .VERSION}}'"
+      FTR_A_ENABLED: true
+      FTR_B_ENABLED: true
+    command: "echo 'Hi {{or .HI 123 }} from {{.LOCATION}} version {{or \"${VERSION}\" .VERSION}} {{if and .FTR_A_ENABLED .FTR_B_ENABLED}}Not Supported{{end}}'"
     working_dir: "{{ .PWD }}"
 
 
