@@ -159,4 +159,19 @@ processes:
     command: "echo 'Hi {{or .HI 123 }} from {{.LOCATION}} version {{or \"${VERSION}\" .VERSION}} {{if and .FTR_A_ENABLED .FTR_B_ENABLED}}Not Supported{{end}}'"
     working_dir: "{{ .PWD }}"
 
+  entrypoint:
+    description: "run process with entrypoint and no command"
+    command: "echo you should not see ls"
+    entrypoint:
+      - ls
+      - -lFa
+      - --color=always
+      - /tmp
+      - /
 
+  vim:
+    description: "run process with entrypoint and no command"
+    command: "vim"
+#    entrypoint:
+#      - vim
+    disabled: true

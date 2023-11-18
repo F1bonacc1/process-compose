@@ -122,6 +122,7 @@ func (p *Process) run() int {
 		p.stateMtx.Unlock()
 		log.Info().
 			Str("process", p.getName()).
+			Strs("command", p.getCommand()).
 			Msg("Started")
 
 		p.startProbes()
@@ -162,7 +163,7 @@ func (p *Process) getProcessStarter() func() error {
 	return func() error {
 		p.command = command.BuildCommand(
 			p.procConf.Executable,
-			append(p.procConf.Args, p.extraArgs...),
+			p.mergeExtraArgs(),
 		)
 		p.command.SetEnv(p.getProcessEnvironment())
 		p.command.SetDir(p.procConf.WorkingDir)
@@ -179,6 +180,22 @@ func (p *Process) getProcessStarter() func() error {
 
 		return p.command.Start()
 	}
+}
+
+func (p *Process) mergeExtraArgs() []string {
+	if len(p.extraArgs) == 0 {
+		return p.procConf.Args
+	}
+	tmp := make([]string, len(p.procConf.Args))
+	copy(tmp, p.procConf.Args)
+	if isStringDefined(p.procConf.Command) {
+		lastArg := p.procConf.Args[len(p.procConf.Args)-1]
+		lastArg += " " + strings.Join(p.extraArgs, " ")
+		return append(tmp[:len(tmp)-1], lastArg)
+	} else if len(p.procConf.Entrypoint) > 0 {
+		return append(tmp, p.extraArgs...)
+	}
+	return p.procConf.Args
 }
 
 func (p *Process) getBackoff() time.Duration {
@@ -365,7 +382,7 @@ func (p *Process) getNameWithSmartReplica() string {
 func (p *Process) getCommand() []string {
 	return append(
 		[]string{(*p.procConf).Executable},
-		append(p.procConf.Args, p.extraArgs...)...,
+		p.mergeExtraArgs()...,
 	)
 }
 

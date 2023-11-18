@@ -7,6 +7,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
+	"os"
 )
 
 type mutatorFunc func(p *types.Project)
@@ -87,6 +88,26 @@ func cloneReplicas(p *types.Project) {
 	}
 	for _, proc := range procsToAdd {
 		p.Processes[proc.ReplicaName] = proc
+	}
+}
+
+func assignExecutableAndArgs(p *types.Project) {
+	for name, proc := range p.Processes {
+		if proc.Command != "" || len(proc.Entrypoint) == 0 {
+			if len(proc.Entrypoint) > 0 {
+				message := fmt.Sprintf("'command' and 'entrypoint' are set! Using command (process: %s)", name)
+				_, _ = fmt.Fprintln(os.Stderr, "process-compose:", message)
+				log.Warn().Msg(message)
+			}
+
+			proc.Executable = p.ShellConfig.ShellCommand
+			proc.Args = []string{p.ShellConfig.ShellArgument, proc.Command}
+		} else {
+			proc.Executable = proc.Entrypoint[0]
+			proc.Args = proc.Entrypoint[1:]
+		}
+
+		p.Processes[name] = proc
 	}
 }
 
