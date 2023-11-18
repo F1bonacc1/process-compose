@@ -5,10 +5,14 @@
 ```yaml
 processes:
   process1:
+  	description: This process will sleep for 2 seconds
     command: "sleep 3"
   process2:
+  	description: This process will sleep for 3 seconds
     command: "sleep 3"
 ```
+
+> :bulb: It's recommended to add a process description. It will be shown in the Process Info Dialog (`F3`) in the TUI.
 
 ## Start Serially
 

@@ -2,12 +2,13 @@
 
 ## Environment Variables
 
-### Per Process
+### Local (Per Process)
 
 ```yaml
-process2:
-  environment:
-    - "I_AM_LOCAL_EV=42"
+processes:
+  process2:
+    environment:
+      - "I_AM_LOCAL_EV=42"
 ```
 
 ### Global
@@ -15,6 +16,7 @@ process2:
 ```yaml
 environment:
   - "I_AM_GLOBAL_EV=42"
+
 processes:
   process2:
     command: "chmod 666 /path/to/file"
@@ -46,6 +48,102 @@ processes:
     environment:
       - 'OUTPUT_DIR=/path/to/B/data'
 ```
+
+## Variables
+
+Variables in Process Compose rely on [Go template engine](https://pkg.go.dev/text/template)
+
+#### Rendered Parameters:
+
+* `processes.process.command`
+* `processes.process.working_dir`
+* `processes.process.log_location`
+* `processes.process.description`
+* For `readiness_probe`and `liveness_probe`:
+  * `processes.process.<probe>.exec.command`
+  * `processes.process.<probe>.http_get.host`
+  * `processes.process.<probe>.http_get.path`
+  * `processes.process.<probe>.http_get.scheme`
+
+### Local (Per Process)
+
+```yaml hl_lines="3-7 9-10 13"
+processes:
+  watcher:
+    vars:
+      LOG_LOCATION: "./watcher.log"
+      OK: SUCCESS
+      PRE: 2
+      POST: 8
+
+    command: "slepp {{.PRE}} && echo {{.OK}} && sleep {{.POST}}"
+    log_location: {{.LOG_LOCATION}}
+    readiness_probe:
+      exec:
+        command: "grep -q {{.OK}} {{.LOG_LOCATION}}"
+      initial_delay_seconds: 1
+      period_seconds: 1
+      timeout_seconds: 1
+      success_threshold: 1      
+```
+
+> :bulb: Notice the `.` (dot) before each `.VARIABLE`
+
+### Global
+
+```yaml
+vars:
+  VERSION: v1.2.3
+  FTR_A_ENABLED: true
+  FTR_B_ENABLED: true
+
+processes:
+  version:
+    # Environment and Process Compose variables can complement each other
+    command: "echo 'version {{or \"${VERSION}\" .VERSION}}'"
+  feature:
+    command: "echo '{{if .FTR_A_ENABLED}}Feature A Enabled{{else}}Feature A Disalbed{{end}}'"
+  not_supported:
+    command: "echo 'Hi {{if and .FTR_A_ENABLED .FTR_B_ENABLED}}Not Supported{{end}}'"
+```
+```shell
+#output:
+version v1.2.3 #if $VERSION environment variable is undefined. The value of $VERSION if it is. 
+Feature A Enabled
+Not Supported
+```
+
+### Template Escaping
+
+In a scenario where Go template syntax is part of your command, you will want to escape it:
+
+```go
+{{ "{{ .SOME_VAR }}" }}
+```
+
+For example:
+
+```yaml hl_lines="6"
+processes:
+  nginx:
+    command: "docker run -d --rm -p80:80 --name nginx_test nginx"
+    liveness_probe:
+      exec:
+        command: '[ $(docker inspect -f "{{.State.Running}}" nginx_test) = true ]'
+```
+
+Will become:
+
+```yaml hl_lines="6"
+processes:
+  nginx:
+    command: "docker run -d --rm -p80:80 --name nginx_test nginx"
+    liveness_probe:
+      exec:
+        command: '[ $(docker inspect -f {{ "{{.State.Running}}" }} nginx_test) = true ]'
+```
+
+> :bulb: For backward compatibility, if neither global or local variables exist in `process-compose.yaml` the template engine won't run.
 
 ## Specify which configuration files to use
 

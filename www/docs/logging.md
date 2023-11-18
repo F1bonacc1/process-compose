@@ -65,7 +65,8 @@ log_configuration:
   timestamp_format: "06-01-02 15:04:05.000"  # timestamp format. The default is RFC3339
   no_metadata: true                          # don't log process name and replica number
   add_timestamp: true                        # add timestamp to the logger. Default is false
-  no_color: true	                         # disable ANSII colors in the logger. Default is false
+  no_color: true                             # disable ANSII colors in the logger. Default is false
+  flush_each_line: true                      # disable buffering and flush each line to the log file. Default is false
 ```
 
 | Parameter Name     | Description                                                  | Depends On                                                   | Default Value                                                |
@@ -76,6 +77,7 @@ log_configuration:
 | `no_metadata`      | Don't log the process name and replica number.               |                                                              | `false`                                                      |
 | `add_timestamp`    | Add timestamp to the logger. Useful for processes without an internal logger. |                                                              | `false`                                                      |
 | `no_color`         | Disable ANSII colors in the log file.                        | `disable_json: true`                                         | `false`                                                      |
+| `flush_each_line`  | Disable buffering and flush each line to the log file.       |                                                              | `false`                                                      |
 
 ## Process Compose Internal Log
 
