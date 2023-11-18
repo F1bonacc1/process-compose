@@ -21,7 +21,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2 v2.1.3
+replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2 v2.1.4
 
 replace github.com/cakturk/go-netstat => github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7
 
