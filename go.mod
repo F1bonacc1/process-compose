@@ -11,7 +11,7 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/gdamore/tcell/v2 v2.6.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/websocket v1.5.1
 	github.com/joho/godotenv v1.5.1
 	github.com/rivo/tview v0.0.0-20231102183219-1b91b8131c43
 	github.com/spf13/cobra v1.7.0
