@@ -8,7 +8,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
-	github.com/fatih/color v1.15.0
+	github.com/fatih/color v1.16.0
 	github.com/gdamore/tcell/v2 v2.6.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gorilla/websocket v1.5.1
@@ -74,5 +74,5 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
 )
