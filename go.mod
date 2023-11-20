@@ -14,7 +14,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/joho/godotenv v1.5.1
 	github.com/rivo/tview v0.0.0-20231102183219-1b91b8131c43
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/swaggo/swag v1.16.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
