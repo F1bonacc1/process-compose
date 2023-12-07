@@ -22,6 +22,7 @@ func printVersion() {
 	fmt.Printf(format, "Commit:", config.Commit)
 	fmt.Printf(format, "Date (UTC):", config.Date)
 	fmt.Printf(format, "License:", config.License)
+	fmt.Printf(format, "Discord:", config.Discord)
 	fmt.Println("\nWritten by Eugene Berger")
 }
 
