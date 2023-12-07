@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -85,8 +86,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 			name := pv.getSelectedProcName()
 			pv.project.StopProcess(name)
 		case pv.shortcuts.ShortCutKeys[ActionProcessStart].key:
-			name := pv.getSelectedProcName()
-			pv.project.StartProcess(name)
+			pv.startProcess()
 		case pv.shortcuts.ShortCutKeys[ActionProcessRestart].key:
 			name := pv.getSelectedProcName()
 			pv.project.RestartProcess(name)
@@ -131,12 +131,20 @@ func (pv *pcView) createProcTable() *tview.Table {
 	return table
 }
 
-func (pv *pcView) updateTable() {
+func (pv *pcView) updateTable(ctx context.Context) {
+	pv.appView.QueueUpdateDraw(func() {
+		pv.fillTableData()
+	})
 	for {
-		pv.appView.QueueUpdateDraw(func() {
-			pv.fillTableData()
-		})
-		time.Sleep(pv.refreshRate)
+		select {
+		case <-ctx.Done():
+			log.Debug().Msg("Table monitoring canceled")
+			return
+		case <-time.After(pv.refreshRate):
+			pv.appView.QueueUpdateDraw(func() {
+				pv.fillTableData()
+			})
+		}
 	}
 }
 

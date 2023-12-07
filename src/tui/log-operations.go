@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"github.com/f1bonacc1/glippy"
 	"github.com/gdamore/tcell/v2"
@@ -37,12 +38,18 @@ func (pv *pcView) startFollowLog(name string) {
 	pv.exitSearch()
 	pv.logFollow = true
 	pv.followLog(name)
-	go pv.updateLogs()
+	var ctx context.Context
+	ctx, pv.cancelLogFn = context.WithCancel(context.Background())
+	go pv.updateLogs(ctx)
 	pv.updateHelpTextView()
 }
 
 func (pv *pcView) stopFollowLog() {
 	pv.logFollow = false
+	if pv.cancelLogFn != nil {
+		pv.cancelLogFn()
+		pv.cancelLogFn = nil
+	}
 	pv.unFollowLog()
 	pv.updateHelpTextView()
 }
@@ -70,15 +77,23 @@ func (pv *pcView) unFollowLog() {
 	pv.logsText.Flush()
 }
 
-func (pv *pcView) updateLogs() {
+func (pv *pcView) updateLogs(ctx context.Context) {
+	pv.appView.QueueUpdateDraw(func() {
+		pv.logsText.Flush()
+	})
 	for {
-		pv.appView.QueueUpdateDraw(func() {
-			pv.logsText.Flush()
-		})
-		if !pv.logFollow {
-			break
+		select {
+		case <-ctx.Done():
+			log.Debug().Msg("Logs monitoring canceled")
+			return
+		case <-time.After(300 * time.Millisecond):
+			pv.appView.QueueUpdateDraw(func() {
+				pv.logsText.Flush()
+			})
+			//if !pv.logFollow {
+			//	return
+			//}
 		}
-		time.Sleep(300 * time.Millisecond)
 	}
 }
 

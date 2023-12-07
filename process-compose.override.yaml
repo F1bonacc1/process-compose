@@ -116,7 +116,6 @@ processes:
     liveness_probe:
       exec:
         command: '[ $(docker inspect -f {{ "{{.State.Running}}" }} nginx_test) = true ]'
-#        command: '[ $(docker inspect -f "{{.State.Running}}" nginx_test) = true ]'
       initial_delay_seconds: 5
       period_seconds: 2
       timeout_seconds: 5
@@ -161,7 +160,6 @@ processes:
 
   entrypoint:
     description: "run process with entrypoint and no command"
-    command: "echo you should not see ls"
     entrypoint:
       - ls
       - -lFa
@@ -170,8 +168,6 @@ processes:
       - /
 
   vim:
-    description: "run process with entrypoint and no command"
-    command: "vim"
-#    entrypoint:
-#      - vim
-    disabled: true
+    description: "run a foreground process"
+    command: "vim process-compose.override.yaml"
+    is_foreground: true

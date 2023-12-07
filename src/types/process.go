@@ -32,6 +32,7 @@ type ProcessConfig struct {
 	Extensions        map[string]interface{} `yaml:",inline"`
 	Description       string                 `yaml:"description,omitempty"`
 	Vars              Vars                   `yaml:"vars"`
+	IsForeground      bool                   `yaml:"is_foreground"`
 	ReplicaNum        int
 	ReplicaName       string
 	Executable        string
@@ -57,6 +58,10 @@ func (p *ProcessConfig) CalculateReplicaName() string {
 	return fmt.Sprintf("%s-%0*d", p.Name, myWidth, p.ReplicaNum)
 }
 
+func (p *ProcessConfig) IsDeferred() bool {
+	return p.IsForeground || p.Disabled
+}
+
 func NewProcessState(proc *ProcessConfig) *ProcessState {
 	state := &ProcessState{
 		Name:       proc.ReplicaName,
@@ -72,6 +77,8 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 	}
 	if proc.Disabled {
 		state.Status = ProcessStateDisabled
+	} else if proc.IsForeground {
+		state.Status = ProcessStateForeground
 	}
 	return state
 }
@@ -108,6 +115,7 @@ const (
 
 const (
 	ProcessStateDisabled    = "Disabled"
+	ProcessStateForeground  = "Foreground"
 	ProcessStatePending     = "Pending"
 	ProcessStateRunning     = "Running"
 	ProcessStateLaunching   = "Launching"

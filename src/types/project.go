@@ -53,7 +53,7 @@ func (p *Project) GetProcesses(names ...string) ([]ProcessConfig, error) {
 	processes := []ProcessConfig{}
 	if len(names) == 0 {
 		for _, proc := range p.Processes {
-			if proc.Disabled {
+			if proc.IsDeferred() {
 				continue
 			}
 			processes = append(processes, proc)
@@ -62,7 +62,7 @@ func (p *Project) GetProcesses(names ...string) ([]ProcessConfig, error) {
 	}
 	for _, name := range names {
 		if proc, ok := p.Processes[name]; ok {
-			if proc.Disabled {
+			if proc.IsDeferred() {
 				continue
 			}
 			processes = append(processes, proc)
@@ -71,7 +71,7 @@ func (p *Project) GetProcesses(names ...string) ([]ProcessConfig, error) {
 			for _, process := range p.Processes {
 				if process.Name == name {
 					found = true
-					if process.Disabled {
+					if process.IsDeferred() {
 						continue
 					}
 					processes = append(processes, process)

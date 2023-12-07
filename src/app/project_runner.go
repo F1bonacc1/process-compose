@@ -29,6 +29,7 @@ type ProjectRunner struct {
 	projectState     *types.ProjectState
 	mainProcess      string
 	mainProcessArgs  []string
+	isTuiOn          bool
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -89,7 +90,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 	procState, _ := p.GetProcessState(config.ReplicaName)
 	isMain := config.Name == p.mainProcess
 	hasMain := p.mainProcess != ""
-	printLogs := !hasMain
+	printLogs := !hasMain && !p.isTuiOn
 	extraArgs := []string{}
 	if isMain {
 		extraArgs = p.mainProcessArgs
@@ -599,13 +600,6 @@ func (p *ProjectRunner) GetProjectState(checkMem bool) (*types.ProjectState, err
 	return p.projectState, nil
 }
 
-func NewProjectRunner(
-	project *types.Project,
-	processesToRun []string,
-	noDeps bool,
-	mainProcess string,
-	mainProcessArgs []string,
-) (*ProjectRunner, error) {
 func getMemoryUsage() *types.MemoryState {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
@@ -622,6 +616,8 @@ func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
 }
 
+func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Err(err).Msg("Failed get hostname")
@@ -635,11 +631,12 @@ func bToMb(b uint64) uint64 {
 		username = current.Username
 	}
 	runner := &ProjectRunner{
-		project: project,
-		mainProcess: mainProcess,
-		mainProcessArgs: mainProcessArgs,
+		project:         opts.project,
+		mainProcess:     opts.mainProcess,
+		mainProcessArgs: opts.mainProcessArgs,
+		isTuiOn:         opts.isTuiOn,
 		projectState: &types.ProjectState{
-			FileNames: project.FileNames,
+			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),
 			UserName:  username,
 			HostName:  hostname,
@@ -647,10 +644,10 @@ func bToMb(b uint64) uint64 {
 		},
 	}
 
-	if noDeps {
-		err = runner.selectRunningProcessesNoDeps(processesToRun)
+	if opts.noDeps {
+		err = runner.selectRunningProcessesNoDeps(opts.processesToRun)
 	} else {
-		err = runner.selectRunningProcesses(processesToRun)
+		err = runner.selectRunningProcesses(opts.processesToRun)
 	}
 	if err != nil {
 		return nil, err

@@ -23,7 +23,16 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 		log.Fatal().Msg(err.Error())
 	}
 
-	runner, err := app.NewProjectRunner(project, process, noDeps, mainProcess, mainProcessArgs)
+	prjOpts := app.ProjectOpts{}
+
+	runner, err := app.NewProjectRunner(
+		prjOpts.WithIsTuiOn(*pcFlags.Headless).
+			WithMainProcess(mainProcess).
+			WithMainProcessArgs(mainProcessArgs).
+			WithProject(project).
+			WithProcessesToRun(process).
+			WithNoDeps(noDeps),
+	)
 	if err != nil {
 		fmt.Println(err)
 		log.Fatal().Msg(err.Error())
@@ -63,10 +72,10 @@ func runHeadless(project *app.ProjectRunner) int {
 }
 
 func runTui(project *app.ProjectRunner) int {
-	setSignal(func() {
+	/*setSignal(func() {
 		tui.Stop()
-	})
-	defer quiet()()
+	})*/
+	//defer quiet()()
 	go startTui(project)
 	exitCode := project.Run()
 	tui.Stop()

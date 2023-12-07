@@ -1,14 +1,18 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/updater"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"os"
+	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
@@ -54,6 +58,9 @@ type pcView struct {
 	stateSorter   StateSorter
 	procColumns   map[ColumnID]string
 	refreshRate   time.Duration
+	cancelFn      context.CancelFunc
+	cancelLogFn   context.CancelFunc
+	cancelSigFn   context.CancelFunc
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -370,8 +377,37 @@ func (pv *pcView) startMonitoring() {
 			}
 			time.Sleep(time.Second)
 		}
-
 	}(pcClient)
+}
+
+// Halt stop the application event loop.
+func (pv *pcView) halt() {
+	if pv.cancelFn != nil {
+		pv.cancelFn()
+		pv.cancelFn = nil
+	}
+	if pv.cancelLogFn != nil {
+		pv.cancelLogFn()
+		pv.cancelLogFn = nil
+	}
+	if pv.cancelSigFn != nil {
+		pv.cancelSigFn()
+		pv.cancelSigFn = nil
+	}
+}
+
+// Resume restarts the app event loop.
+func (pv *pcView) resume() {
+	var ctxTbl context.Context
+	var ctxLog context.Context
+	var ctxSig context.Context
+	ctxTbl, pv.cancelFn = context.WithCancel(context.Background())
+	ctxLog, pv.cancelLogFn = context.WithCancel(context.Background())
+	ctxSig, pv.cancelSigFn = context.WithCancel(context.Background())
+
+	go pv.updateTable(ctxTbl)
+	go pv.updateLogs(ctxLog)
+	go setSignal(ctxSig)
 }
 
 func SetupTui(project app.IProject, options ...Option) {
@@ -383,8 +419,7 @@ func SetupTui(project app.IProject, options ...Option) {
 		}
 	}
 
-	go pv.updateTable()
-	go pv.updateLogs()
+	pv.resume()
 	if config.CheckForUpdates == "true" {
 		go pv.runOnce()
 	}
@@ -392,6 +427,19 @@ func SetupTui(project app.IProject, options ...Option) {
 	pcv = pv
 	if err := pv.appView.Run(); err != nil {
 		panic(err)
+	}
+}
+
+func setSignal(ctx context.Context) {
+	cancelChan := make(chan os.Signal, 1)
+	signal.Notify(cancelChan, syscall.SIGTERM, os.Interrupt, syscall.SIGHUP)
+	select {
+	case sig := <-cancelChan:
+		log.Info().Msgf("Caught %v - Shutting down the running processes...", sig)
+		Stop()
+		os.Exit(1)
+	case <-ctx.Done():
+		log.Debug().Msg("TUI Signal handler stopped")
 	}
 }
 

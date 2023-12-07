@@ -28,7 +28,14 @@ func TestSystem_TestFixtures(t *testing.T) {
 				t.Errorf(err.Error())
 				return
 			}
-			runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
+			runner, err := NewProjectRunner(&ProjectOpts{
+				project:         project,
+				processesToRun:  []string{},
+				noDeps:          false,
+				mainProcess:     "",
+				mainProcessArgs: []string{},
+				isTuiOn:         false,
+			})
 			if err != nil {
 				t.Errorf(err.Error())
 				return
@@ -48,7 +55,11 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{},
+			mainProcessArgs: []string{},
+		})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
@@ -81,7 +92,11 @@ func TestSystem_TestComposeChain(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{},
+			mainProcessArgs: []string{},
+		})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
@@ -117,7 +132,11 @@ func TestSystem_TestComposeChainExit(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{},
+			mainProcessArgs: []string{},
+		})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
@@ -162,7 +181,11 @@ func TestSystem_TestComposeScale(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		runner, err := NewProjectRunner(project, []string{}, false, "", []string{})
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{},
+			mainProcessArgs: []string{},
+		})
 		if err != nil {
 			t.Errorf(err.Error())
 			return
