@@ -38,6 +38,9 @@ build-nix:
 nixver:
 	sed -i 's/version = ".*"/version = "${NUMVER}"/' default.nix
 
+build-pi:
+	GOOS=linux GOARCH=arm go build ${LD_FLAGS} -o bin/${NAME}-linux-arm  ./src
+
 compile:
 	for arch in amd64 386 arm64 arm; do \
 		GOOS=linux GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-linux-$$arch  ./src ; \
