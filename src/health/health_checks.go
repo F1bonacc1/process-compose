@@ -81,6 +81,9 @@ func (p *Prober) healthCheckCompleted(state *health.State) {
 	if state.Status == OK {
 		ok = true
 	}
+	if p.stopped {
+		return
+	}
 	p.onCheckEndFunc(ok, fatal, state.Err)
 }
 

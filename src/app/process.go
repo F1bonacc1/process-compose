@@ -38,9 +38,10 @@ type Process struct {
 	stateMtx      sync.Mutex
 	procCond      sync.Cond
 	procStateChan chan string
-	procReadyChan chan string
 	procReadyCtx  context.Context
 	readyCancelFn context.CancelFunc
+	procRunCtx    context.Context
+	runCancelFn   context.CancelFunc
 	procColor     func(a ...interface{}) string
 	noColor       func(a ...interface{}) string
 	redColor      func(a ...interface{}) string
@@ -83,13 +84,13 @@ func NewProcess(
 		logBuffer:     procLog,
 		shellConfig:   shellConfig,
 		procStateChan: make(chan string, 1),
-		procReadyChan: make(chan string, 1),
 		printLogs:     printLogs,
 		isMain:        isMain,
 		extraArgs:     extraArgs,
 	}
 
 	proc.procReadyCtx, proc.readyCancelFn = context.WithCancel(context.Background())
+	proc.procRunCtx, proc.runCancelFn = context.WithCancel(context.Background())
 	proc.setUpProbes()
 	proc.procCond = *sync.NewCond(proc)
 	return proc
@@ -153,7 +154,14 @@ func (p *Process) run() int {
 		log.Info().Msgf("Restarting %s in %v second(s)... Restarts: %d",
 			p.getName(), p.getBackoff().Seconds(), p.procState.Restarts)
 
-		time.Sleep(p.getBackoff())
+		select {
+		case <-p.procRunCtx.Done():
+			log.Debug().Str("process", p.getName()).Msg("process stopped while waiting to restart")
+			break
+		case <-time.After(p.getBackoff()):
+			p.handleInfo("\n")
+			continue
+		}
 	}
 	p.onProcessEnd(types.ProcessStateCompleted)
 	return p.procState.ExitCode
@@ -262,19 +270,17 @@ func (p *Process) waitUntilReady() bool {
 	for {
 		select {
 		case <-p.procReadyCtx.Done():
-			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
-			return false
-		case ready := <-p.procReadyChan:
-			if ready == types.ProcessHealthReady {
+			if p.procState.Health == types.ProcessHealthReady {
 				return true
 			}
+			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
+			return false
 		}
 	}
 }
 
 func (p *Process) wontRun() {
 	p.onProcessEnd(types.ProcessStateCompleted)
-
 }
 
 // perform graceful process shutdown if defined in configuration
@@ -285,6 +291,7 @@ func (p *Process) shutDownNoRestart() error {
 
 // perform graceful process shutdown if defined in configuration
 func (p *Process) shutDown() error {
+	p.runCancelFn()
 	if !p.isRunning() {
 		state := p.getState()
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), state.Status)
@@ -579,7 +586,7 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 		_ = p.shutDown()
 	} else if isOk {
 		p.procState.Health = types.ProcessHealthReady
-		p.procReadyChan <- types.ProcessHealthReady
+		p.readyCancelFn()
 	} else {
 		p.procState.Health = types.ProcessHealthNotReady
 	}

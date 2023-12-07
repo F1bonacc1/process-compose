@@ -1,0 +1,20 @@
+> go tool pprof heap.out
+File: process-compose
+Type: inuse_space
+Time: Dec 2, 2023 at 2:32am (IST)
+Duration: 30.01s, Total samples = 1.52MB
+Entering interactive mode (type "help" for commands, "o" for options)
+(pprof) top
+Showing nodes accounting for -528.06kB, 34.02% of 1552.40kB total
+Showing top 10 nodes out of 30
+      flat  flat%   sum%        cum   cum%
+ -528.17kB 34.02% 34.02%  -528.17kB 34.02%  regexp.(*bitState).reset
+  512.17kB 32.99%  1.03%   512.17kB 32.99%  internal/profile.(*Profile).postDecode
+ -512.06kB 32.99% 34.02%  -512.06kB 32.99%  github.com/rivo/tview.(*TextView).parseAhead
+         0     0% 34.02%  -528.17kB 34.02%  github.com/f1bonacc1/process-compose/src/app.(*Process).handleInfo
+         0     0% 34.02%  -528.17kB 34.02%  github.com/f1bonacc1/process-compose/src/app.(*Process).handleOutput
+         0     0% 34.02%  -512.06kB 32.99%  github.com/f1bonacc1/process-compose/src/cmd.startTui
+         0     0% 34.02%  -528.17kB 34.02%  github.com/f1bonacc1/process-compose/src/pclog.(*ProcessLogBuffer).Write
+         0     0% 34.02%  -528.17kB 34.02%  github.com/f1bonacc1/process-compose/src/tui.(*LogView).WriteString
+         0     0% 34.02%  -512.06kB 32.99%  github.com/f1bonacc1/process-compose/src/tui.(*pcView).updateLogs.(*Application).QueueUpdateDraw.func4
+         0     0% 34.02%  -512.06kB 32.99%  github.com/f1bonacc1/process-compose/src/tui.SetupTui

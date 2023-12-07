@@ -1,0 +1,22 @@
+> go tool pprof -alloc_space heap.out
+File: process-compose
+Type: alloc_space
+Time: Dec 2, 2023 at 2:32am (IST)
+Duration: 30.01s, Total samples = 206.33MB
+Entering interactive mode (type "help" for commands, "o" for options)
+(pprof) top
+Showing nodes accounting for 199.44MB, 96.66% of 206.33MB total
+Dropped 72 nodes (cum <= 1.03MB)
+Showing top 10 nodes out of 26
+      flat  flat%   sum%        cum   cum%
+  187.04MB 90.65% 90.65%   187.04MB 90.65%  github.com/rivo/tview.(*TextView).parseAhead
+    5.90MB  2.86% 93.51%     5.90MB  2.86%  strings.(*Builder).WriteString (inline)
+       3MB  1.45% 94.97%     3.50MB  1.70%  github.com/rivo/tview.step
+       3MB  1.45% 96.42%   196.44MB 95.21%  github.com/rivo/tview.(*TextView).Draw
+    0.50MB  0.24% 96.66%     3.50MB  1.70%  github.com/rivo/tview.(*Table).Draw
+         0     0% 96.66%        2MB  0.97%  github.com/InVisionApp/go-health/v2.(*Health).startRunner.func1
+         0     0% 96.66%        2MB  0.97%  github.com/InVisionApp/go-health/v2.(*Health).startRunner.func2
+         0     0% 96.66%   200.44MB 97.15%  github.com/f1bonacc1/process-compose/src/cmd.startTui
+         0     0% 96.66%   140.93MB 68.30%  github.com/f1bonacc1/process-compose/src/tui.(*pcView).updateLogs.(*Application).QueueUpdateDraw.func4
+         0     0% 96.66%    59.51MB 28.84%  github.com/f1bonacc1/process-compose/src/tui.(*pcView).updateTable.(*Application).QueueUpdateDraw.func4
+(pprof)

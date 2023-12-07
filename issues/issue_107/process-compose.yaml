@@ -1,0 +1,104 @@
+version: "0.5"
+
+log_level: debug
+log_length: 1000
+
+processes:
+  redis:
+    command: "sleep 999999999"
+    readiness_probe:
+      exec:
+        command: "pidof process-compose"
+      initial_delay_seconds: 1
+      period_seconds: 1
+      timeout_seconds: 1
+      success_threshold: 1
+      failure_threshold: 20
+
+  webserver-a:
+    command: "sleep 999999999"
+    readiness_probe:
+      http_get:
+        host: localhost
+        scheme: http
+        path: "/live"
+        port: 8080
+      initial_delay_seconds: 1
+      period_seconds: 1
+      timeout_seconds: 1
+      success_threshold: 1
+      failure_threshold: 20
+    depends_on:
+      redis:
+        condition: process_healthy
+
+  webserver-b:
+    command: "sleep 999999999"
+    readiness_probe:
+      http_get:
+        host: localhost
+        scheme: http
+        path: "/live"
+        port: 8080
+      initial_delay_seconds: 1
+      period_seconds: 1
+      timeout_seconds: 1
+      success_threshold: 1
+      failure_threshold: 20
+    depends_on:
+      redis:
+        condition: process_started
+    shutdown:
+      parent_only: true
+
+  rpyc-client:
+    command: "sleep 999999999"
+    depends_on:
+      webserver-b:
+        condition: process_healthy
+    shutdown:
+      signal: 1 # SIGHUP
+      timeout_seconds: 5
+    availability:
+      restart: on_failure
+      backoff_seconds: 10
+      max_restarts: 3
+
+  webserver-c:
+    command: "sleep 999999999"
+    readiness_probe:
+      http_get:
+        host: localhost
+        scheme: http
+        path: "/live"
+        port: 8080
+      initial_delay_seconds: 20
+      period_seconds: 30
+      timeout_seconds: 10
+      success_threshold: 1
+      failure_threshold: 4
+    depends_on:
+      webserver-b:
+        condition: process_healthy
+    availability:
+      restart: on_failure
+      backoff_seconds: 10
+      max_restarts: 3
+
+  httpclient:
+    command: "sleep 999999999"
+    depends_on:
+      webserver-b:
+        condition: process_healthy
+
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+    namespace: debug
+
+  memory:
+    command: "./bin/process-compose project state --with-memory"
+    availability:
+      restart: always
+      backoff_seconds: 60
+    namespace: debug
