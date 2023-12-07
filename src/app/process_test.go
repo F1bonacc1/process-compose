@@ -54,7 +54,14 @@ func TestDurationToString(t *testing.T) {
 			args: args{
 				dur: 25*time.Hour + 50*time.Minute,
 			},
-			want: "25h",
+			want: "1d1h",
+		},
+		{
+			name: "above 48h",
+			args: args{
+				dur: 49*time.Hour + 50*time.Minute,
+			},
+			want: "2d",
 		},
 	}
 	for _, tt := range tests {
