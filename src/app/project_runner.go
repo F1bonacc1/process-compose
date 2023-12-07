@@ -7,6 +7,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"os/user"
+	"runtime"
 	"sync"
 	"time"
 
@@ -270,6 +271,7 @@ func (p *ProjectRunner) StopProcesses(names []string) ([]string, error) {
 }
 
 func (p *ProjectRunner) RestartProcess(name string) error {
+	log.Debug().Msgf("Restarting %s", name)
 	proc := p.getRunningProcess(name)
 	if proc != nil {
 		err := proc.shutDownNoRestart()
@@ -578,7 +580,7 @@ func (p *ProjectRunner) GetDependenciesOrderNames() ([]string, error) {
 	return p.project.GetDependenciesOrderNames()
 }
 
-func (p *ProjectRunner) GetProjectState() (*types.ProjectState, error) {
+func (p *ProjectRunner) GetProjectState(checkMem bool) (*types.ProjectState, error) {
 	runningProcesses := 0
 	for name := range p.project.Processes {
 		state, err := p.GetProcessState(name)
@@ -591,6 +593,9 @@ func (p *ProjectRunner) GetProjectState() (*types.ProjectState, error) {
 	}
 	p.projectState.RunningProcessNum = runningProcesses
 	p.projectState.UpTime = time.Since(p.projectState.StartTime)
+	if checkMem {
+		p.projectState.MemoryState = getMemoryUsage()
+	}
 	return p.projectState, nil
 }
 
@@ -601,6 +606,21 @@ func NewProjectRunner(
 	mainProcess string,
 	mainProcessArgs []string,
 ) (*ProjectRunner, error) {
+func getMemoryUsage() *types.MemoryState {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	return &types.MemoryState{
+		Allocated:      bToMb(m.Alloc),
+		TotalAllocated: bToMb(m.TotalAlloc),
+		SystemMemory:   bToMb(m.Sys),
+		GcCycles:       m.NumGC,
+	}
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
+}
 
 	hostname, err := os.Hostname()
 	if err != nil {

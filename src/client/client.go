@@ -134,6 +134,6 @@ func (p *PcClient) logError(err error) error {
 	return err
 }
 
-func (p *PcClient) GetProjectState() (*types.ProjectState, error) {
-	return p.getProjectState()
+func (p *PcClient) GetProjectState(withMemory bool) (*types.ProjectState, error) {
+	return p.getProjectState(withMemory)
 }

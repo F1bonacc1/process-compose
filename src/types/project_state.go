@@ -11,4 +11,12 @@ type ProjectState struct {
 	UserName          string        `json:"userName"`
 	HostName          string        `json:"hostName"`
 	Version           string        `json:"version"`
+	MemoryState       *MemoryState  `json:"memoryState,omitempty"`
+}
+
+type MemoryState struct {
+	Allocated      uint64 `json:"allocated"`
+	TotalAllocated uint64 `json:"totalAllocated"`
+	SystemMemory   uint64 `json:"systemMemory"`
+	GcCycles       uint32 `json:"gcCycles"`
 }

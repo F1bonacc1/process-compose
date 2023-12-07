@@ -26,8 +26,8 @@ func (p *PcClient) shutDownProject() error {
 	}
 }
 
-func (p *PcClient) getProjectState() (*types.ProjectState, error) {
-	url := fmt.Sprintf("http://%s:%d/project/state", p.address, p.port)
+func (p *PcClient) getProjectState(withMemory bool) (*types.ProjectState, error) {
+	url := fmt.Sprintf("http://%s:%d/project/state/?withMemory=%v", p.address, p.port, withMemory)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err

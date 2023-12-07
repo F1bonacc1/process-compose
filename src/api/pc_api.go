@@ -279,7 +279,10 @@ func (api *PcApi) ShutDownProject(c *gin.Context) {
 // @Success 200 {object} object "Project State"
 // @Router /project/state [get]
 func (api *PcApi) GetProjectState(c *gin.Context) {
-	ports, err := api.project.GetProjectState()
+	withMemory := c.DefaultQuery("withMemory", "false")
+	checkMem, _ := strconv.ParseBool(withMemory)
+	ports, err := api.project.GetProjectState(checkMem)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
