@@ -6,6 +6,21 @@
 Process Compose is a simple and flexible scheduler and orchestrator to manage non-containerized applications.
 
 **Why?** Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
+Since it's written in Go, Process Compose is a single binary file and has no other dependencies.
+
+Once [installed](https://f1bonacc1.github.io/process-compose/installation/), you just need to describe your workflow using a simple [YAML](http://yaml.org/) schema in a file called `porcess-compose.yaml`:
+
+```yaml
+version: "0.5"
+
+processes:
+  hello:
+    command: echo 'Hello World from Process Compose'
+```
+
+And start it by running `process-compose` from your terminal.
+
+Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/) for more advanced use cases.
 
 #### Features:
 
@@ -26,7 +41,7 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 - Merge Configuration Files
 - Namespaces
 - Run Multiple Replicas of a Process
-- Run Foreground Process 
+- Run a Foreground Process 
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -52,7 +67,7 @@ It is heavily inspired by [docker-compose](https://github.com/docker/compose), b
 
 English is not my native language, so PRs correcting grammar or spelling are welcome and appreciated.
 
-## Consider supporting the project ❤️
+### Consider supporting the project ❤️
 
 ##### Github (preferred)
 
@@ -61,6 +76,7 @@ https://github.com/sponsors/F1bonacc1
 ##### Bitcoin
 
 <img src="./imgs/btc.wallet.qr.png" style="zoom:80%;"  alt="3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX"/>
+
 3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX
 
 Thank **You**!

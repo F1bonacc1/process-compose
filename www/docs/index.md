@@ -5,6 +5,21 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 ## Why was it made?
 
 Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
+Since it's written in Go, Process Compose is a single binary file and has no other dependencies.
+
+Once [installed](installation.md), you just need to describe your workflow using a simple [YAML](http://yaml.org/) schema in a file called `porcess-compose.yaml`:
+
+```yaml
+version: "0.5"
+
+processes:
+  hello:
+    command: echo 'Hello World from Process Compose'
+```
+
+And start it by running `process-compose up` from your terminal.
+
+Check the [Documentation](launcher.md) for more advanced use cases.
 
 <img src="https://github.com/F1bonacc1/process-compose/raw/main/imgs/tui.png" alt="TUI" style="zoom:67%;" />
 
@@ -27,4 +42,4 @@ Because sometimes you just don't want to deal with docker files, volume definiti
 - Merge Configuration Files
 - Namespaces
 - Run Multiple Replicas of a Process
-- Run Foreground Process 
+- Run a Foreground Process 
