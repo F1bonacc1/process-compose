@@ -281,3 +281,29 @@ func TestSystem_TestComposeScale(t *testing.T) {
 		}
 	})
 }
+
+func TestSystem_TestTransitiveDependency(t *testing.T) {
+	fixture1 := filepath.Join("..", "..", "fixtures-code", "process-compose-transitive-dep.yaml")
+	t.Run(fixture1, func(t *testing.T) {
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture1},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{},
+			mainProcessArgs: []string{},
+		})
+		runner.Run()
+
+		states, err := runner.GetProcessesState()
+		for _, state := range states.States {
+			if state.ExitCode != 1 {
+				t.Errorf("process %s exit code is not 1", state.Name)
+			}
+		}
+	})
+}

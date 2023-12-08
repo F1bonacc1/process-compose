@@ -123,6 +123,7 @@ const (
 	ProcessStateRestarting  = "Restarting"
 	ProcessStateTerminating = "Terminating"
 	ProcessStateCompleted   = "Completed"
+	ProcessStateSkipped     = "Skipped"
 	ProcessStateError       = "Error"
 )
 

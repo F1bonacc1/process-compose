@@ -33,6 +33,7 @@ const (
 type Process struct {
 	sync.Mutex
 	globalEnv     []string
+	confMtx       sync.Mutex
 	procConf      *types.ProcessConfig
 	procState     *types.ProcessState
 	stateMtx      sync.Mutex
@@ -134,11 +135,11 @@ func (p *Process) run() int {
 		time.Sleep(50 * time.Millisecond)
 		_ = p.command.Wait()
 		p.Lock()
-		p.procState.ExitCode = p.command.ExitCode()
+		p.setExitCode(p.command.ExitCode())
 		p.Unlock()
 		log.Info().
 			Str("process", p.getName()).
-			Int("exit_code", p.procState.ExitCode).
+			Int("exit_code", p.getExitCode()).
 			Msg("Exited")
 
 		if p.isDaemonLaunched() {
@@ -164,7 +165,7 @@ func (p *Process) run() int {
 		}
 	}
 	p.onProcessEnd(types.ProcessStateCompleted)
-	return p.procState.ExitCode
+	return p.getExitCode()
 }
 
 func (p *Process) getProcessStarter() func() error {
@@ -227,7 +228,7 @@ func (p *Process) getProcessEnvironment() []string {
 
 func (p *Process) isRestartable() bool {
 	p.Lock()
-	exitCode := p.procState.ExitCode
+	exitCode := p.getExitCode()
 	p.Unlock()
 	if p.procConf.RestartPolicy.Restart == types.RestartPolicyNo ||
 		p.procConf.RestartPolicy.Restart == "" {
@@ -263,7 +264,7 @@ func (p *Process) waitForCompletion() int {
 	for !p.done {
 		p.procCond.Wait()
 	}
-	return p.procState.ExitCode
+	return p.getExitCode()
 }
 
 func (p *Process) waitUntilReady() bool {
@@ -274,13 +275,14 @@ func (p *Process) waitUntilReady() bool {
 				return true
 			}
 			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
+			p.setExitCode(1)
 			return false
 		}
 	}
 }
 
 func (p *Process) wontRun() {
-	p.onProcessEnd(types.ProcessStateCompleted)
+	p.onProcessEnd(types.ProcessStateSkipped)
 }
 
 // perform graceful process shutdown if defined in configuration
@@ -506,6 +508,8 @@ func (p *Process) setStateAndRun(state string, runnable func() error) error {
 
 func (p *Process) onStateChange(state string) {
 	switch state {
+	case types.ProcessStateSkipped:
+		p.setExitCode(1)
 	case types.ProcessStateRestarting:
 		fallthrough
 	case types.ProcessStateLaunching:
@@ -620,4 +624,16 @@ func (p *Process) getOpenPorts(ports *types.ProcessPorts) error {
 		}
 	}
 	return nil
+}
+
+func (p *Process) getExitCode() int {
+	defer p.confMtx.Unlock()
+	p.confMtx.Lock()
+	return p.procState.ExitCode
+}
+
+func (p *Process) setExitCode(code int) {
+	defer p.confMtx.Unlock()
+	p.confMtx.Lock()
+	p.procState.ExitCode = code
 }

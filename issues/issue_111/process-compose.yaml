@@ -1,0 +1,26 @@
+version: "0.5"
+
+log_level: debug
+log_length: 1000
+
+processes:
+  procA:
+    command: "exit 1"
+
+  procB:
+    command: echo "I shouldn't run"
+    depends_on:
+      procA:
+        condition: process_completed_successfully
+
+  procC:
+    command: echo "I shouldn't run"
+    depends_on:
+      procB:
+        condition: process_completed_successfully
+
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+    namespace: debug
+

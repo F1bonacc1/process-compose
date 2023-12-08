@@ -109,18 +109,18 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 	)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
-	go func() {
-		defer p.removeRunningProcess(process)
+	go func(proc *Process) {
+		defer p.removeRunningProcess(proc)
 		defer p.waitGroup.Done()
-		if err = p.waitIfNeeded(process.procConf); err != nil {
+		if err = p.waitIfNeeded(proc.procConf); err != nil {
 			log.Error().Msgf("Error: %s", err.Error())
-			log.Error().Msgf("Error: process %s won't run", process.getName())
-			process.wontRun()
+			log.Error().Msgf("Error: process %s won't run", proc.getName())
+			proc.wontRun()
 		} else {
-			exitCode := process.run()
-			p.onProcessEnd(exitCode, process.procConf)
+			exitCode := proc.run()
+			p.onProcessEnd(exitCode, proc.procConf)
 		}
-	}()
+	}(process)
 }
 
 func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
@@ -145,7 +145,10 @@ func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
 				}
 
 			}
+		} else {
+			log.Error().Msgf("Error: process %s depends on %s, but it isn't running", process.ReplicaName, k)
 		}
+
 	}
 	return nil
 }
