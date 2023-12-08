@@ -26,6 +26,7 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 - Merge Configuration Files
 - Namespaces
 - Run Multiple Replicas of a Process
+- Run Foreground Process 
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 

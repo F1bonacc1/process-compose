@@ -27,3 +27,4 @@ Because sometimes you just don't want to deal with docker files, volume definiti
 - Merge Configuration Files
 - Namespaces
 - Run Multiple Replicas of a Process
+- Run Foreground Process 

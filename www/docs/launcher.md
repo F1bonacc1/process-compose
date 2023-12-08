@@ -172,6 +172,21 @@ processes:
 
 3. Daemon processes can only be stopped with the `$PROCESSNAME.shutdown.command` as in the example above.
 
+## Foreground Processes
+
+```yaml hl_lines="4"
+processes:
+  vim:
+    command: "vim process-compose.yaml"
+    is_foreground: true
+```
+Foreground processes are useful for cases when a full `tty` access is required (e.g. `vim`, `top`, `gdb -tui`)
+
+1. Foreground process have to be started manually (`F7`). They can be started multiple times.
+2. They are available in TUI mode only.
+3. To return to TUI, exit the foreground process.
+4. In [TUI Client](client.md#tui-client) mode, a local process will be started.
+
 ## Disabled Processes
 
 Process execution can be disabled:
@@ -183,7 +198,7 @@ processes:
     disabled: true #default false
 ```
 
-Even if disabled, it is still listed in the TUI and the REST client can be started manually when needed.
+Even if disabled, the process is still listed in the TUI and the REST client, and can be started manually when needed.
 
 ## Auto Restart on Exit
 
