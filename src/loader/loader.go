@@ -23,7 +23,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	}
 
 	for _, file := range opts.FileNames {
-		p := mustLoadProjectFromFile(file)
+		p := loadProjectFromFile(file)
 		opts.projects = append(opts.projects, p)
 	}
 	mergedProject, err := merge(opts)
@@ -71,12 +71,13 @@ func admitProcesses(opts *LoaderOptions, p *types.Project) *types.Project {
 	return p
 }
 
-func mustLoadProjectFromFile(inputFile string) *types.Project {
+func loadProjectFromFile(inputFile string) *types.Project {
 	yamlFile, err := os.ReadFile(inputFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Error().Msgf("File %s doesn't exist", inputFile)
 		}
+		fmt.Printf("Failed to read %s - %s\n", inputFile, err.Error())
 		log.Fatal().Msg(err.Error())
 	}
 
