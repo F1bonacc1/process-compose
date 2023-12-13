@@ -7,7 +7,7 @@ Process Compose is a simple and flexible scheduler and orchestrator to manage no
 Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
 Since it's written in Go, Process Compose is a single binary file and has no other dependencies.
 
-Once [installed](installation.md), you just need to describe your workflow using a simple [YAML](http://yaml.org/) schema in a file called `porcess-compose.yaml`:
+Once [installed](installation.md), you just need to describe your workflow using a simple [YAML](http://yaml.org/) schema in a file called `process-compose.yaml`:
 
 ```yaml
 version: "0.5"
