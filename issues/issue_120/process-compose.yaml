@@ -1,0 +1,11 @@
+version: "0.5"
+
+environment:
+  - "I_AM_GLOBAL_EV=5"
+vars:
+  EV: 5
+
+processes:
+  process1:
+    description: This process will sleep for 2 seconds
+    command: "echo {{ .EV }} > /tmp/output"
