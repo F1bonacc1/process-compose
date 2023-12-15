@@ -37,7 +37,6 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		assignDefaultProcessValues,
 		cloneReplicas,
 		copyWorkingDirToProbes,
-		assignExecutableAndArgs,
 	)
 	err = applyWithErr(mergedProject,
 		renderTemplates,
@@ -45,6 +44,9 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	if err != nil {
 		return nil, err
 	}
+	apply(mergedProject,
+		assignExecutableAndArgs,
+	)
 
 	err = validate(mergedProject,
 		validateLogLevel,
