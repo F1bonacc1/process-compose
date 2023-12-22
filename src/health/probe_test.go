@@ -9,7 +9,7 @@ import (
 func TestProbe_validateAndSetDefaults(t *testing.T) {
 	type fields struct {
 		Exec             *ExecProbe
-		HttpGet          *HttpProbe
+		Http             *HttpProbe
 		InitialDelay     int
 		PeriodSeconds    int
 		TimeoutSeconds   int
@@ -71,7 +71,7 @@ func TestProbe_validateAndSetDefaults(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Probe{
 				Exec:             tt.fields.Exec,
-				HttpGet:          tt.fields.HttpGet,
+				Http:             tt.fields.Http,
 				InitialDelay:     tt.fields.InitialDelay,
 				PeriodSeconds:    tt.fields.PeriodSeconds,
 				TimeoutSeconds:   tt.fields.TimeoutSeconds,
