@@ -553,7 +553,12 @@ func (p *ProjectRunner) selectRunningProcesses(procList []string) error {
 		log.Err(err).Msgf("Failed select processes")
 		return err
 	}
-	p.project.Processes = newProcMap
+	for name, proc := range p.project.Processes {
+		if _, ok := newProcMap[name]; !ok {
+			proc.Disabled = true
+			p.project.Processes[name] = proc
+		}
+	}
 	return nil
 }
 
@@ -561,18 +566,23 @@ func (p *ProjectRunner) selectRunningProcessesNoDeps(procList []string) error {
 	if len(procList) == 0 {
 		return nil
 	}
-	newProcMap := types.Processes{}
-	for _, procName := range procList {
-		if conf, ok := p.project.Processes[procName]; ok {
-			conf.DependsOn = types.DependsOnConfig{}
-			newProcMap[conf.ReplicaName] = conf
+	for name, proc := range p.project.Processes {
+		found := false
+		for _, procName := range procList {
+			if proc.Name == procName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			proc.Disabled = true
+			p.project.Processes[name] = proc
 		} else {
-			err := fmt.Errorf("no such process: %s", procName)
-			log.Err(err).Msgf("Failed select processes")
-			return err
+			proc.DependsOn = types.DependsOnConfig{}
+			p.project.Processes[name] = proc
 		}
 	}
-	p.project.Processes = newProcMap
+
 	return nil
 }
 

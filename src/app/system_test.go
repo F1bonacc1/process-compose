@@ -307,3 +307,102 @@ func TestSystem_TestTransitiveDependency(t *testing.T) {
 		}
 	})
 }
+
+func TestSystem_TestProcListToRun(t *testing.T) {
+	fixture1 := filepath.Join("..", "..", "fixtures-code", "process-compose-transitive-dep.yaml")
+	t.Run("Single Proc", func(t *testing.T) {
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture1},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		numProc := len(project.Processes)
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{"procA"},
+			mainProcessArgs: []string{},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		if len(runner.project.Processes) != numProc {
+			t.Errorf("should have %d processes", numProc)
+		}
+		for name, proc := range runner.project.Processes {
+			if name == "procA" {
+				if proc.Disabled {
+					t.Errorf("process %s is disabled", name)
+				}
+			} else {
+				if !proc.Disabled {
+					t.Errorf("process %s is not disabled", name)
+				}
+			}
+		}
+
+	})
+	t.Run("Single Proc with deps", func(t *testing.T) {
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture1},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		numProc := len(project.Processes)
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{"procC"},
+			mainProcessArgs: []string{},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		if len(runner.project.Processes) != numProc {
+			t.Errorf("should have %d processes", numProc)
+		}
+		for name, proc := range runner.project.Processes {
+			if proc.Disabled {
+				t.Errorf("process %s is disabled", name)
+			}
+		}
+	})
+	t.Run("Single Proc no deps", func(t *testing.T) {
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture1},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		numProc := len(project.Processes)
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{"procC"},
+			mainProcessArgs: []string{},
+			noDeps:          true,
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		if len(runner.project.Processes) != numProc {
+			t.Errorf("should have %d processes", numProc)
+		}
+		for name, proc := range runner.project.Processes {
+			if name == "procC" {
+				if proc.Disabled {
+					t.Errorf("process %s is disabled", name)
+				}
+			} else {
+				if !proc.Disabled {
+					t.Errorf("process %s is not disabled", name)
+				}
+			}
+		}
+	})
+}
