@@ -9,6 +9,7 @@ import (
 
 type Probe struct {
 	Exec             *ExecProbe `yaml:"exec,omitempty"`
+	HttpGet          *HttpProbe `yaml:"http_get,omitempty"`
 	Http             *HttpProbe `yaml:"http,omitempty"`
 	InitialDelay     int        `yaml:"initial_delay_seconds,omitempty"`
 	PeriodSeconds    int        `yaml:"period_seconds,omitempty"`
