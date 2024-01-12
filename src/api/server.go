@@ -14,8 +14,10 @@ import (
 const EnvDebugMode = "PC_DEBUG_MODE"
 
 func StartHttpServer(useLogger bool, port int, project app.IProject) {
+
 	if os.Getenv(EnvDebugMode) == "" {
 		gin.SetMode(gin.ReleaseMode)
+		useLogger = false
 	}
 
 	handler := NewPcApi(project)
