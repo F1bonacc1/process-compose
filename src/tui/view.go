@@ -300,7 +300,7 @@ func (pv *pcView) getSelectedProcName() string {
 	}
 	row, _ := pv.procTable.GetSelection()
 	if row > 0 {
-		return pv.procTable.GetCell(row, 1).Text
+		return pv.procTable.GetCell(row, int(ProcessStateName)).Text
 	}
 	return ""
 }

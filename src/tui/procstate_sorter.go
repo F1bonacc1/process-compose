@@ -11,14 +11,15 @@ type ColumnID int
 
 const (
 	ProcessStateUndefined ColumnID = -1
-	ProcessStatePid       ColumnID = 0
-	ProcessStateName      ColumnID = 1
-	ProcessStateNamespace ColumnID = 2
-	ProcessStateStatus    ColumnID = 3
-	ProcessStateAge       ColumnID = 4
-	ProcessStateHealth    ColumnID = 5
-	ProcessStateRestarts  ColumnID = 6
-	ProcessStateExit      ColumnID = 7
+	ProcessStateIcon      ColumnID = 0
+	ProcessStatePid       ColumnID = 1
+	ProcessStateName      ColumnID = 2
+	ProcessStateNamespace ColumnID = 3
+	ProcessStateStatus    ColumnID = 4
+	ProcessStateAge       ColumnID = 5
+	ProcessStateHealth    ColumnID = 6
+	ProcessStateRestarts  ColumnID = 7
+	ProcessStateExit      ColumnID = 8
 )
 
 var columnNames = map[ColumnID]string{
