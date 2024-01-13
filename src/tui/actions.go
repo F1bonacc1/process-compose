@@ -28,6 +28,7 @@ const (
 	ActionLogFindNext    = ActionName("find_next")
 	ActionLogFindPrev    = ActionName("find_prev")
 	ActionLogFindExit    = ActionName("find_exit")
+	ActionNsFilter       = ActionName("ns_filter")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -46,6 +47,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionLogFindNext:    tcell.KeyCtrlN,
 	ActionLogFindPrev:    tcell.KeyCtrlP,
 	ActionLogFindExit:    tcell.KeyEsc,
+	ActionNsFilter:       tcell.KeyCtrlG,
 }
 
 type ShortCuts struct {
@@ -215,6 +217,9 @@ func getDefaultActions() ShortCuts {
 			},
 			ActionLogFindExit: {
 				Description: "Exit Search",
+			},
+			ActionNsFilter: {
+				Description: "Select Namespace",
 			},
 		},
 	}

@@ -27,29 +27,44 @@ func (pv *pcView) fillTableData() {
 		log.Err(err).Msg("failed to sort states")
 		return
 	}
-	for r, state := range states.States {
+	row := 1
+	for _, state := range states.States {
+		if !pv.isNsSelected(state.Namespace) {
+			pv.procTable.RemoveRow(row)
+			continue
+		}
 		icon, color := getIconForState(state)
-		pv.procTable.SetCell(r+1, int(ProcessStateIcon), tview.NewTableCell(icon).SetAlign(tview.AlignCenter).SetExpansion(0).SetTextColor(color))
-		pv.procTable.SetCell(r+1, int(ProcessStatePid), tview.NewTableCell(strconv.Itoa(state.Pid)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, int(ProcessStateName), tview.NewTableCell(state.Name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, int(ProcessStateNamespace), tview.NewTableCell(state.Namespace).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, int(ProcessStateStatus), tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, int(ProcessStateAge), tview.NewTableCell(state.SystemTime).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, int(ProcessStateHealth), tview.NewTableCell(state.Health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, int(ProcessStateRestarts), tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(r+1, int(ProcessStateExit), tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(row, int(ProcessStateIcon), tview.NewTableCell(icon).SetAlign(tview.AlignCenter).SetExpansion(0).SetTextColor(color))
+		pv.procTable.SetCell(row, int(ProcessStatePid), tview.NewTableCell(strconv.Itoa(state.Pid)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(row, int(ProcessStateName), tview.NewTableCell(state.Name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(row, int(ProcessStateNamespace), tview.NewTableCell(state.Namespace).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(row, int(ProcessStateStatus), tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(row, int(ProcessStateAge), tview.NewTableCell(state.SystemTime).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(row, int(ProcessStateHealth), tview.NewTableCell(state.Health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(row, int(ProcessStateRestarts), tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		pv.procTable.SetCell(row, int(ProcessStateExit), tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 		if state.IsRunning {
 			runningProcCount += 1
 		}
+		row += 1
 	}
+
 	// remove unnecessary rows, don't forget the title row (-1)
-	if pv.procTable.GetRowCount()-1 > len(states.States) {
+	if pv.procTable.GetRowCount()-1 > row {
 		for i := len(states.States); i < pv.procTable.GetRowCount()-1; i++ {
 			pv.procTable.RemoveRow(i)
 		}
 	}
+	if pv.selectedNsChanged.Swap(false) {
+		pv.procTable.Select(1, 1)
+	}
+
 	if pv.procCountCell != nil {
-		pv.procCountCell.SetText(fmt.Sprintf("%d/%d", runningProcCount, len(pv.procNames)))
+		nsLbl := ""
+		if !pv.isNsSelected(AllNS) {
+			nsLbl = " (" + pv.getSelectedNs() + ")"
+		}
+		pv.procCountCell.SetText(fmt.Sprintf("%d/%d%s", runningProcCount, len(pv.procNames), nsLbl))
 	}
 }
 

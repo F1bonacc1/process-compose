@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -30,6 +31,7 @@ const (
 const (
 	PageMain   = "main"
 	PageDialog = "dialog"
+	AllNS      = "PC_ALL_NS_FILTER"
 )
 
 const shutDownAfterSec = 10
@@ -37,30 +39,33 @@ const shutDownAfterSec = 10
 var pcv *pcView = nil
 
 type pcView struct {
-	procTable     *tview.Table
-	statTable     *tview.Table
-	appView       *tview.Application
-	logsText      *LogView
-	statusText    *tview.TextView
-	helpText      *tview.TextView
-	pages         *tview.Pages
-	procNames     []string
-	logFollow     bool
-	logSelect     bool
-	fullScrState  FullScrState
-	loggedProc    string
-	shortcuts     ShortCuts
-	procCountCell *tview.TableCell
-	mainGrid      *tview.Grid
-	logsTextArea  *tview.TextArea
-	project       app.IProject
-	sortMtx       sync.Mutex
-	stateSorter   StateSorter
-	procColumns   map[ColumnID]string
-	refreshRate   time.Duration
-	cancelFn      context.CancelFunc
-	cancelLogFn   context.CancelFunc
-	cancelSigFn   context.CancelFunc
+	procTable         *tview.Table
+	statTable         *tview.Table
+	appView           *tview.Application
+	logsText          *LogView
+	statusText        *tview.TextView
+	helpText          *tview.TextView
+	pages             *tview.Pages
+	procNames         []string
+	logFollow         bool
+	logSelect         bool
+	fullScrState      FullScrState
+	loggedProc        string
+	shortcuts         ShortCuts
+	procCountCell     *tview.TableCell
+	mainGrid          *tview.Grid
+	logsTextArea      *tview.TextArea
+	project           app.IProject
+	sortMtx           sync.Mutex
+	stateSorter       StateSorter
+	procColumns       map[ColumnID]string
+	refreshRate       time.Duration
+	cancelFn          context.CancelFunc
+	cancelLogFn       context.CancelFunc
+	cancelSigFn       context.CancelFunc
+	selectedNsMtx     sync.Mutex
+	selectedNs        string
+	selectedNsChanged atomic.Bool
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -85,6 +90,7 @@ func newPcView(project app.IProject) *pcView {
 			isAsc:        true,
 		},
 		procColumns: map[ColumnID]string{},
+		selectedNs:  AllNS,
 	}
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
@@ -174,7 +180,8 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
 	case pv.shortcuts.ShortCutKeys[ActionLogFindExit].key:
 		pv.exitSearch()
-
+	case pv.shortcuts.ShortCutKeys[ActionNsFilter].key:
+		pv.showNsFilter()
 	default:
 		return event
 	}
@@ -343,6 +350,7 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionProcessScreen].writeToggleButton(pv.helpText, procScrBool)
 	pv.shortcuts.ShortCutKeys[ActionProcessStop].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessRestart].writeButton(pv.helpText)
+	pv.shortcuts.ShortCutKeys[ActionNsFilter].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionQuit].writeButton(pv.helpText)
 }
 
