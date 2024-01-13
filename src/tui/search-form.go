@@ -6,6 +6,7 @@ import (
 )
 
 func (pv *pcView) showSearch() {
+	const fieldWidth = 50
 	f := tview.NewForm()
 	f.SetCancelFunc(func() {
 		pv.pages.RemovePage(PageDialog)
@@ -16,7 +17,7 @@ func (pv *pcView) showSearch() {
 	f.SetFieldTextColor(tcell.ColorBlack)
 	f.SetButtonsAlign(tview.AlignCenter)
 	f.SetTitle("Search Log")
-	f.AddInputField("Search For", pv.logsText.getSearchTerm(), 50, nil, nil)
+	f.AddInputField("Search For", pv.logsText.getSearchTerm(), fieldWidth, nil, nil)
 	f.AddCheckbox("Case Sensitive", false, nil)
 	f.AddCheckbox("Regex", false, nil)
 	searchFunc := func() {
@@ -49,6 +50,6 @@ func (pv *pcView) showSearch() {
 	})
 	f.SetFocus(0)
 	// Display and focus the dialog
-	pv.pages.AddPage(PageDialog, createDialogPage(f, 60, 11), true, true)
+	pv.pages.AddPage(PageDialog, createDialogPage(f, fieldWidth+20, 11), true, true)
 	pv.appView.SetFocus(f)
 }
