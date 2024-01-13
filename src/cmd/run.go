@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // runCmd represents the up command
@@ -40,7 +39,7 @@ Command line arguments, provided after --, are passed to the PROCESS.`,
 			args,
 		)
 
-		api.StartHttpServer(false, *pcFlags.PortNum, runner)
+		startHttpServerIfEnabled(false, runner)
 		runProject(runner)
 	},
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/rs/zerolog"
@@ -35,7 +36,7 @@ func run(cmd *cobra.Command, args []string) error {
 		_ = logFile.Close()
 	}()
 	runner := getProjectRunner([]string{}, false, "", []string{})
-	api.StartHttpServer(!*pcFlags.Headless, *pcFlags.PortNum, runner)
+	startHttpServerIfEnabled(!*pcFlags.Headless, runner)
 	runProject(runner)
 	return nil
 }
@@ -58,11 +59,12 @@ func init() {
 	nsAdmitter := &admitter.NamespaceAdmitter{}
 	opts.AddAdmitter(nsAdmitter)
 
-	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", *pcFlags.Headless, "enable TUI (-t=false) (env: "+config.TuiEnvVarName+")")
+	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", *pcFlags.Headless, "enable TUI (-t=false) (env: "+config.EnvVarNameTui+")")
+	rootCmd.PersistentFlags().BoolVar(pcFlags.NoServer, "no-server", *pcFlags.NoServer, "disable HTTP server (env: "+config.EnvVarNameNoServer+")")
 	rootCmd.Flags().BoolVarP(pcFlags.HideDisabled, "hide-disabled", "d", *pcFlags.HideDisabled, "hide disabled processes")
 	rootCmd.Flags().IntVarP(pcFlags.RefreshRate, "ref-rate", "r", *pcFlags.RefreshRate, "TUI refresh rate in seconds")
-	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.PortEnvVarName+")")
-	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.ConfigEnvVarName+")")
+	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.EnvVarNamePort+")")
+	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
 	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 	rootCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
@@ -92,4 +94,10 @@ func setupLogger() *os.File {
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	return file
+}
+
+func startHttpServerIfEnabled(useLogger bool, runner *app.ProjectRunner) {
+	if !*pcFlags.NoServer {
+		api.StartHttpServer(useLogger, *pcFlags.PortNum, runner)
+	}
 }

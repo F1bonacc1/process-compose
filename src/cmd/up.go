@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/f1bonacc1/process-compose/src/admitter"
-	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +14,7 @@ If one or more process names are passed as arguments,
 will start them and their dependencies only`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
-		api.StartHttpServer(!*pcFlags.Headless, *pcFlags.PortNum, runner)
+		startHttpServerIfEnabled(!*pcFlags.Headless, runner)
 		runProject(runner)
 	},
 }

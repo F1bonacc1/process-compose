@@ -25,9 +25,10 @@ const (
 )
 
 const (
-	PortEnvVarName   = "PC_PORT_NUM"
-	TuiEnvVarName    = "PC_DISABLE_TUI"
-	ConfigEnvVarName = "PC_CONFIG_FILES"
+	EnvVarNamePort     = "PC_PORT_NUM"
+	EnvVarNameTui      = "PC_DISABLE_TUI"
+	EnvVarNameConfig   = "PC_CONFIG_FILES"
+	EnvVarNameNoServer = "PC_NO_SERVER"
 )
 
 // Flags represents PC configuration flags.
@@ -47,13 +48,14 @@ type Flags struct {
 	HideDisabled   *bool
 	SortColumn     *string
 	IsReverseSort  *bool
+	NoServer       *bool
 }
 
 // NewFlags returns new configuration flags.
 func NewFlags() *Flags {
 	return &Flags{
 		RefreshRate:    intPtr(DefaultRefreshRate),
-		Headless:       boolPtr(GetTuiDefault()),
+		Headless:       boolPtr(getTuiDefault()),
 		PortNum:        intPtr(getPortDefault()),
 		Address:        strPtr(DefaultAddress),
 		LogLength:      intPtr(DefaultLogLength),
@@ -65,6 +67,7 @@ func NewFlags() *Flags {
 		HideDisabled:   boolPtr(false),
 		SortColumn:     strPtr(DefaultSortColumn),
 		IsReverseSort:  boolPtr(false),
+		NoServer:       boolPtr(getNoServerDefault()),
 	}
 }
 
