@@ -295,8 +295,7 @@ func (p *Process) shutDownNoRestart() error {
 func (p *Process) shutDown() error {
 	p.runCancelFn()
 	if !p.isRunning() {
-		state := p.getState()
-		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), state.Status)
+		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.getStatusName())
 		// prevent pending process from running
 		p.onProcessEnd(types.ProcessStateTerminating)
 		return nil
