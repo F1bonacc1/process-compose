@@ -4,7 +4,7 @@ let pkg = "github.com/f1bonacc1/process-compose/src/config";
 in
 buildGoModule rec {
   pname = "process-compose";
-  version = "0.77.8";
+  version = "0.80.0";
 
 
   src = lib.cleanSource ./.;
