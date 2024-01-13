@@ -142,6 +142,9 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.logsText.ToggleWrap()
 		pv.updateHelpTextView()
 	case pv.shortcuts.ShortCutKeys[ActionLogSelection].key:
+		if !config.IsLogSelectionOn() {
+			return event
+		}
 		pv.stopFollowLog()
 		pv.toggleLogSelection()
 		pv.appView.SetFocus(pv.logsTextArea)
@@ -319,7 +322,9 @@ func (pv *pcView) updateHelpTextView() {
 		pv.shortcuts.ShortCutKeys[ActionLogFind].writeButton(pv.helpText)
 		pv.shortcuts.ShortCutKeys[ActionLogFindNext].writeButton(pv.helpText)
 		pv.shortcuts.ShortCutKeys[ActionLogFindPrev].writeButton(pv.helpText)
-		pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
+		if config.IsLogSelectionOn() {
+			pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
+		}
 		pv.shortcuts.ShortCutKeys[ActionLogFindExit].writeButton(pv.helpText)
 		return
 	}
@@ -327,7 +332,9 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionLogScreen].writeToggleButton(pv.helpText, logScrBool)
 	pv.shortcuts.ShortCutKeys[ActionFollowLog].writeToggleButton(pv.helpText, !pv.logFollow)
 	pv.shortcuts.ShortCutKeys[ActionWrapLog].writeToggleButton(pv.helpText, !pv.logsText.IsWrapOn())
-	pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
+	if config.IsLogSelectionOn() {
+		pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
+	}
 	pv.shortcuts.ShortCutKeys[ActionLogFind].writeButton(pv.helpText)
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
 	pv.shortcuts.ShortCutKeys[ActionProcessScale].writeButton(pv.helpText)

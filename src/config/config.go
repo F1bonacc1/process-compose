@@ -131,3 +131,8 @@ func isClient() bool {
 	}
 	return false
 }
+
+func IsLogSelectionOn() bool {
+	_, found := os.LookupEnv("WAYLAND_DISPLAY")
+	return !found
+}
