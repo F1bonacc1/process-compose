@@ -140,10 +140,12 @@ func getSorter(sortBy ColumnID, states *types.ProcessesState) sortFn {
 		}
 	case ProcessStateExit:
 		return func(i, j int) bool {
-			if states.States[i].ExitCode == states.States[j].ExitCode {
+			eci := getStrForExitCode(states.States[i])
+			ecj := getStrForExitCode(states.States[j])
+			if eci == ecj {
 				return states.States[i].Name < states.States[j].Name
 			} else {
-				return states.States[i].ExitCode < states.States[j].ExitCode
+				return eci < ecj
 			}
 		}
 	case ProcessStateName:

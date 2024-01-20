@@ -352,6 +352,7 @@ func (p *Process) onProcessEnd(state string) {
 	}
 	p.stopProbes()
 	p.setState(state)
+	p.updateProcState()
 
 	p.Lock()
 	p.done = true
@@ -395,13 +396,17 @@ func (p *Process) getCommand() []string {
 }
 
 func (p *Process) updateProcState() {
-	if p.isRunning() {
+	isRunning := p.isRunning()
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
+	if isRunning {
 		dur := time.Since(p.getStartTime())
 		p.procState.SystemTime = durationToString(dur)
 		p.procState.Age = dur
-		p.procState.IsRunning = true
 		p.procState.Name = p.getName()
 	}
+	p.procState.IsRunning = isRunning
+
 }
 func (p *Process) setStartTime(startTime time.Time) {
 	p.timeMutex.Lock()

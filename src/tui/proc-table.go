@@ -11,6 +11,19 @@ import (
 	"time"
 )
 
+type tableRowValues struct {
+	icon      string
+	iconColor tcell.Color
+	pid       string
+	name      string
+	ns        string
+	status    string
+	age       string
+	health    string
+	restarts  string
+	exitCode  string
+}
+
 func (pv *pcView) fillTableData() {
 	if pv.project == nil {
 		return
@@ -33,16 +46,8 @@ func (pv *pcView) fillTableData() {
 			pv.procTable.RemoveRow(row)
 			continue
 		}
-		icon, color := getIconForState(state)
-		pv.procTable.SetCell(row, int(ProcessStateIcon), tview.NewTableCell(icon).SetAlign(tview.AlignCenter).SetExpansion(0).SetTextColor(color))
-		pv.procTable.SetCell(row, int(ProcessStatePid), tview.NewTableCell(strconv.Itoa(state.Pid)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(row, int(ProcessStateName), tview.NewTableCell(state.Name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(row, int(ProcessStateNamespace), tview.NewTableCell(state.Namespace).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(row, int(ProcessStateStatus), tview.NewTableCell(state.Status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(row, int(ProcessStateAge), tview.NewTableCell(state.SystemTime).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(row, int(ProcessStateHealth), tview.NewTableCell(state.Health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(row, int(ProcessStateRestarts), tview.NewTableCell(strconv.Itoa(state.Restarts)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-		pv.procTable.SetCell(row, int(ProcessStateExit), tview.NewTableCell(strconv.Itoa(state.ExitCode)).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+		rowVals := getTableRowValues(state)
+		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
 			runningProcCount += 1
 		}
@@ -66,6 +71,18 @@ func (pv *pcView) fillTableData() {
 		}
 		pv.procCountCell.SetText(fmt.Sprintf("%d/%d%s", runningProcCount, len(pv.procNames), nsLbl))
 	}
+}
+
+func setRowValues(procTable *tview.Table, row int, rowVals tableRowValues) {
+	procTable.SetCell(row, int(ProcessStateIcon), tview.NewTableCell(rowVals.icon).SetAlign(tview.AlignCenter).SetExpansion(0).SetTextColor(rowVals.iconColor))
+	procTable.SetCell(row, int(ProcessStatePid), tview.NewTableCell(rowVals.pid).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+	procTable.SetCell(row, int(ProcessStateName), tview.NewTableCell(rowVals.name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+	procTable.SetCell(row, int(ProcessStateNamespace), tview.NewTableCell(rowVals.ns).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+	procTable.SetCell(row, int(ProcessStateStatus), tview.NewTableCell(rowVals.status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+	procTable.SetCell(row, int(ProcessStateAge), tview.NewTableCell(rowVals.age).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+	procTable.SetCell(row, int(ProcessStateHealth), tview.NewTableCell(rowVals.health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
+	procTable.SetCell(row, int(ProcessStateRestarts), tview.NewTableCell(rowVals.restarts).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+	procTable.SetCell(row, int(ProcessStateExit), tview.NewTableCell(rowVals.exitCode).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
 }
 
 func (pv *pcView) onTableSelectionChange(_, _ int) {
@@ -224,5 +241,42 @@ func getIconForState(state types.ProcessState) (string, tcell.Color) {
 		return "●", tcell.ColorYellow
 	default:
 		return "●", tcell.ColorLightSkyBlue
+	}
+}
+
+func getStrForRestarts(restarts int) string {
+	if restarts == 0 {
+		return types.PlaceHolderValue
+	}
+	return strconv.Itoa(restarts)
+}
+
+func getStrForExitCode(state types.ProcessState) string {
+	// running no exit info yet
+	if state.IsRunning && state.ExitCode == 0 {
+		return types.PlaceHolderValue
+	}
+	// disabled foreground or pending state
+	if state.Status == types.ProcessStateDisabled ||
+		state.Status == types.ProcessStatePending ||
+		state.Status == types.ProcessStateForeground {
+		return types.PlaceHolderValue
+	}
+	return strconv.Itoa(state.ExitCode)
+}
+
+func getTableRowValues(state types.ProcessState) tableRowValues {
+	icon, color := getIconForState(state)
+	return tableRowValues{
+		icon:      icon,
+		iconColor: color,
+		pid:       strconv.Itoa(state.Pid),
+		name:      state.Name,
+		ns:        state.Namespace,
+		status:    state.Status,
+		age:       state.SystemTime,
+		health:    state.Health,
+		restarts:  getStrForRestarts(state.Restarts),
+		exitCode:  getStrForExitCode(state),
 	}
 }

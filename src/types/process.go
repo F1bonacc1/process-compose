@@ -8,6 +8,7 @@ import (
 )
 
 const DefaultNamespace = "default"
+const PlaceHolderValue = "-"
 
 type Processes map[string]ProcessConfig
 type Environment []string
@@ -67,7 +68,7 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 		Name:       proc.ReplicaName,
 		Namespace:  proc.Namespace,
 		Status:     ProcessStatePending,
-		SystemTime: "",
+		SystemTime: PlaceHolderValue,
 		Age:        time.Duration(0),
 		IsRunning:  false,
 		Health:     ProcessHealthUnknown,
@@ -130,7 +131,7 @@ const (
 const (
 	ProcessHealthReady    = "Ready"
 	ProcessHealthNotReady = "Not Ready"
-	ProcessHealthUnknown  = "N/A"
+	ProcessHealthUnknown  = PlaceHolderValue
 )
 
 type RestartPolicyConfig struct {
