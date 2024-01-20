@@ -49,36 +49,30 @@ type Flags struct {
 	SortColumn     *string
 	IsReverseSort  *bool
 	NoServer       *bool
+	KeepTuiOn      *bool
 }
 
 // NewFlags returns new configuration flags.
 func NewFlags() *Flags {
 	return &Flags{
-		RefreshRate:    intPtr(DefaultRefreshRate),
-		Headless:       boolPtr(getTuiDefault()),
-		PortNum:        intPtr(getPortDefault()),
-		Address:        strPtr(DefaultAddress),
-		LogLength:      intPtr(DefaultLogLength),
-		LogLevel:       strPtr(DefaultLogLevel),
-		LogFile:        strPtr(GetLogFilePath()),
-		LogFollow:      boolPtr(false),
-		LogTailLength:  intPtr(math.MaxInt),
-		NoDependencies: boolPtr(false),
-		HideDisabled:   boolPtr(false),
-		SortColumn:     strPtr(DefaultSortColumn),
-		IsReverseSort:  boolPtr(false),
-		NoServer:       boolPtr(getNoServerDefault()),
+		RefreshRate:    toPtr(DefaultRefreshRate),
+		Headless:       toPtr(getTuiDefault()),
+		PortNum:        toPtr(getPortDefault()),
+		Address:        toPtr(DefaultAddress),
+		LogLength:      toPtr(DefaultLogLength),
+		LogLevel:       toPtr(DefaultLogLevel),
+		LogFile:        toPtr(GetLogFilePath()),
+		LogFollow:      toPtr(false),
+		LogTailLength:  toPtr(math.MaxInt),
+		NoDependencies: toPtr(false),
+		HideDisabled:   toPtr(false),
+		SortColumn:     toPtr(DefaultSortColumn),
+		IsReverseSort:  toPtr(false),
+		NoServer:       toPtr(getNoServerDefault()),
+		KeepTuiOn:      toPtr(false),
 	}
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
-func intPtr(i int) *int {
-	return &i
-}
-
-func strPtr(s string) *string {
-	return &s
+func toPtr[T any](t T) *T {
+	return &t
 }

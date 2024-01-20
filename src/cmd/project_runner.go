@@ -78,7 +78,11 @@ func runTui(project *app.ProjectRunner) int {
 	//defer quiet()()
 	go startTui(project)
 	exitCode := project.Run()
-	tui.Stop()
+	if !*pcFlags.KeepTuiOn {
+		tui.Stop()
+	} else {
+		tui.Wait()
+	}
 	return exitCode
 }
 

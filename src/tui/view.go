@@ -63,6 +63,8 @@ type pcView struct {
 	cancelFn          context.CancelFunc
 	cancelLogFn       context.CancelFunc
 	cancelSigFn       context.CancelFunc
+	ctxApp            context.Context
+	cancelAppFn       context.CancelFunc
 	selectedNsMtx     sync.Mutex
 	selectedNs        string
 	selectedNsChanged atomic.Bool
@@ -92,6 +94,7 @@ func newPcView(project app.IProject) *pcView {
 		procColumns: map[ColumnID]string{},
 		selectedNs:  AllNS,
 	}
+	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
 	pv.startMonitoring()
@@ -278,6 +281,7 @@ func (pv *pcView) handleShutDown() {
 	time.Sleep(time.Second)
 	pv.stopFollowLog()
 	pv.appView.Stop()
+	pv.cancelAppFn()
 }
 func (pv *pcView) attentionMessage(message string) {
 	pv.statTable.SetCell(0, 2, tview.NewTableCell(message).
@@ -461,5 +465,11 @@ func setSignal(ctx context.Context) {
 func Stop() {
 	if pcv != nil {
 		pcv.handleShutDown()
+	}
+}
+
+func Wait() {
+	if pcv != nil {
+		<-pcv.ctxApp.Done()
 	}
 }
