@@ -435,16 +435,19 @@ func (p *Process) handleInput(pipe io.WriteCloser) {
 }
 
 func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string)) {
-	outscanner := bufio.NewScanner(pipe)
-	//outscanner.Buffer(make([]byte, 0, 1024), 1024*1024*10)
-	outscanner.Split(bufio.ScanLines)
-	for outscanner.Scan() {
-		handler(outscanner.Text())
-	}
-	if err := outscanner.Err(); err != nil {
-		log.Err(err).
-			Str("process", p.getName()).
-			Msg("error reading from stdout")
+	reader := bufio.NewReader(pipe)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Err(err).
+				Str("process", p.getName()).
+				Msg("error reading from stdout")
+			break
+		}
+		handler(strings.TrimSuffix(line, "\n"))
 	}
 }
 

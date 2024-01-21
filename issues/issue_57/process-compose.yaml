@@ -3,7 +3,7 @@ log_level: debug
 
 processes:
   bad_script:
-    command: "./too_chatty.py"
+    command: "./long_log.py"
 
   _pc_log:
     command: "tail -f -n100 process-compose-${USER}.log"
