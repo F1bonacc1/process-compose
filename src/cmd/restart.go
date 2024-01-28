@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/client"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +16,7 @@ var restartCmd = &cobra.Command{
 		name := args[0]
 		err := client.RestartProcess(*pcFlags.Address, *pcFlags.PortNum, name)
 		if err != nil {
-			logFatal(err, "failed to restart process %s", name)
+			log.Fatal().Err(err).Msgf("failed to restart process %s", name)
 		}
 		fmt.Printf("Process %s restarted\n", name)
 	},

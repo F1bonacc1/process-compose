@@ -79,8 +79,7 @@ func loadProjectFromFile(inputFile string) *types.Project {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Error().Msgf("File %s doesn't exist", inputFile)
 		}
-		fmt.Printf("Failed to read %s - %s\n", inputFile, err.Error())
-		log.Fatal().Msg(err.Error())
+		log.Fatal().Err(err).Msgf("Failed to read %s", inputFile)
 	}
 
 	// .env is optional we don't care if it errors
@@ -93,13 +92,11 @@ func loadProjectFromFile(inputFile string) *types.Project {
 	}
 	err = yaml.Unmarshal(yamlFile, project)
 	if err != nil {
-		fmt.Printf("Failed to parse %s - %s\n", inputFile, err.Error())
-		log.Fatal().Msgf("Failed to parse %s - %s", inputFile, err.Error())
+		log.Fatal().Err(err).Msgf("Failed to parse %s", inputFile)
 	}
 
 	if err != nil {
-		fmt.Printf("Failed to validate %s - %s\n", inputFile, err.Error())
-		log.Fatal().Msgf("Failed to validate %s - %s", inputFile, err.Error())
+		log.Fatal().Err(err).Msgf("Failed to validate %s", inputFile)
 	}
 	log.Info().Msgf("Loaded project from %s", inputFile)
 	return project

@@ -68,7 +68,7 @@ func getPortDefault() int {
 	if found {
 		port, err := strconv.Atoi(val)
 		if err != nil {
-			log.Fatal().Msgf("Invalid port number: %s", val)
+			log.Fatal().Err(err).Msgf("Invalid port number: %s", val)
 			return DefaultPortNum
 		}
 		return port

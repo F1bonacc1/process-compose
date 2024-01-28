@@ -8,7 +8,6 @@ import (
 	"runtime"
 )
 
-
 func BuildCommand(cmd string, args []string) *CmdWrapper {
 	return &CmdWrapper{
 		cmd: exec.Command(cmd, args...),
@@ -58,6 +57,6 @@ func DefaultShellConfig() *ShellConfig {
 func ValidateShellConfig(shell ShellConfig) {
 	_, err := exec.LookPath(shell.ShellCommand)
 	if err != nil {
-		log.Fatal().Msgf("Couldn't find %s", shell.ShellCommand)
+		log.Fatal().Err(err).Msgf("Couldn't find %s", shell.ShellCommand)
 	}
 }

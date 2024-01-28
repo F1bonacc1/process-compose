@@ -1,11 +1,9 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/client"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +16,8 @@ var startCmd = &cobra.Command{
 		name := args[0]
 		err := client.StartProcess(*pcFlags.Address, *pcFlags.PortNum, name)
 		if err != nil {
-			logFatal(err, "failed to start process %s", name)
+			log.Fatal().Err(err).Msgf("failed to start process %s", name)
+
 		}
 		fmt.Printf("Process %s started\n", name)
 	},

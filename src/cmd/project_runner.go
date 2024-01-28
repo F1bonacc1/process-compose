@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/loader"
@@ -19,8 +18,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 	}
 	project, err := loader.Load(opts)
 	if err != nil {
-		fmt.Println(err)
-		log.Fatal().Msg(err.Error())
+		log.Fatal().Err(err).Msg("Failed to load project")
 	}
 
 	prjOpts := app.ProjectOpts{}
@@ -34,8 +32,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 			WithNoDeps(noDeps),
 	)
 	if err != nil {
-		fmt.Println(err)
-		log.Fatal().Msg(err.Error())
+		log.Fatal().Err(err).Msg("Failed to initialize the project")
 	}
 	return runner
 }

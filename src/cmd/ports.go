@@ -17,7 +17,7 @@ var portsCmd = &cobra.Command{
 		name := args[0]
 		ports, err := client.GetProcessPorts(*pcFlags.Address, *pcFlags.PortNum, name)
 		if err != nil {
-			logFatal(err, "failed to get process %s ports", name)
+			log.Fatal().Err(err).Msgf("failed to get process %s ports", name)
 			return
 		}
 		log.Info().Msgf("Process %s TCP ports: %v", name, ports.TcpPorts)

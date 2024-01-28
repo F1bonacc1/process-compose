@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -8,6 +5,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/fatih/color"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"strconv"
 	"strings"
@@ -26,7 +24,7 @@ var stateCmd = &cobra.Command{
 		pcClient := client.NewClient(*pcFlags.Address, *pcFlags.PortNum, *pcFlags.LogLength)
 		state, err := pcClient.GetProjectState(withMemoryUsage)
 		if err != nil {
-			logFatal(err, "failed to get project state")
+			log.Fatal().Err(err).Msg("failed to get project state")
 		}
 		//pretty print state
 		printState(state)

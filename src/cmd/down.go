@@ -15,7 +15,7 @@ var downCmd = &cobra.Command{
 		pcClient := client.NewClient(*pcFlags.Address, *pcFlags.PortNum, *pcFlags.LogLength)
 		err := pcClient.ShutDownProject()
 		if err != nil {
-			logFatal(err, "failed to stop project")
+			log.Fatal().Err(err).Msg("failed to stop project")
 		}
 		log.Info().Msgf("Project stopped")
 	},

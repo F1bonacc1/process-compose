@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/client"
+	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,7 @@ var listCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		processNames, err := client.GetProcessesName(*pcFlags.Address, *pcFlags.PortNum)
 		if err != nil {
-			logFatal(err, "failed to list processes")
+			log.Fatal().Err(err).Msg("failed to list processes")
 		}
 		for _, proc := range processNames {
 			fmt.Println(proc)

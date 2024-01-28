@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"path"
 	"time"
@@ -88,10 +89,27 @@ func setupLogger() *os.File {
 	if err != nil {
 		logFatal(err, "Failed to open log file: %s", *pcFlags.LogFile)
 	}
-	log.Logger = log.Output(zerolog.ConsoleWriter{
-		Out:        file,
-		TimeFormat: "06-01-02 15:04:05.000",
-	})
+	writers := []io.Writer{
+		&zerolog.FilteredLevelWriter{
+
+			Level: zerolog.DebugLevel,
+			Writer: zerolog.LevelWriterAdapter{Writer: zerolog.ConsoleWriter{
+				Out:        file,
+				TimeFormat: "06-01-02 15:04:05.000",
+			}},
+		},
+		&zerolog.FilteredLevelWriter{
+
+			Level: zerolog.FatalLevel,
+			Writer: zerolog.LevelWriterAdapter{Writer: zerolog.ConsoleWriter{
+				Out:        os.Stderr,
+				TimeFormat: "06-01-02 15:04:05.000",
+			}},
+		},
+	}
+	writer := zerolog.MultiLevelWriter(writers...)
+
+	log.Logger = zerolog.New(writer).With().Timestamp().Logger()
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	return file
