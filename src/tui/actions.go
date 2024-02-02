@@ -29,6 +29,7 @@ const (
 	ActionLogFindPrev    = ActionName("find_prev")
 	ActionLogFindExit    = ActionName("find_exit")
 	ActionNsFilter       = ActionName("ns_filter")
+	ActionHideDisabled   = ActionName("hide_disabled")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -48,6 +49,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionLogFindPrev:    tcell.KeyCtrlP,
 	ActionLogFindExit:    tcell.KeyEsc,
 	ActionNsFilter:       tcell.KeyCtrlG,
+	ActionHideDisabled:   tcell.KeyCtrlD,
 }
 
 type ShortCuts struct {
@@ -220,6 +222,12 @@ func getDefaultActions() ShortCuts {
 			},
 			ActionNsFilter: {
 				Description: "Select Namespace",
+			},
+			ActionHideDisabled: {
+				ToggleDescription: map[bool]string{
+					true:  "Show Disabled",
+					false: "Hide Disabled",
+				},
 			},
 		},
 	}

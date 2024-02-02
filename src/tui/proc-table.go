@@ -46,6 +46,10 @@ func (pv *pcView) fillTableData() {
 			pv.procTable.RemoveRow(row)
 			continue
 		}
+		if state.Status == types.ProcessStateDisabled && pv.hideDisabled.Load() {
+			pv.procTable.RemoveRow(row)
+			continue
+		}
 		rowVals := getTableRowValues(state)
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {

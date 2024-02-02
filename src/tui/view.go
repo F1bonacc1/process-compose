@@ -68,6 +68,7 @@ type pcView struct {
 	selectedNsMtx     sync.Mutex
 	selectedNs        string
 	selectedNsChanged atomic.Bool
+	hideDisabled      atomic.Bool
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -194,6 +195,9 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.exitSearch()
 	case pv.shortcuts.ShortCutKeys[ActionNsFilter].key:
 		pv.showNsFilter()
+	case pv.shortcuts.ShortCutKeys[ActionHideDisabled].key:
+		pv.hideDisabled.Store(!pv.hideDisabled.Load())
+		pv.updateHelpTextView()
 	default:
 		return event
 	}
@@ -364,6 +368,7 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionProcessStop].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessRestart].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionNsFilter].writeButton(pv.helpText)
+	pv.shortcuts.ShortCutKeys[ActionHideDisabled].writeToggleButton(pv.helpText, pv.hideDisabled.Load())
 	pv.shortcuts.ShortCutKeys[ActionQuit].writeButton(pv.helpText)
 }
 
