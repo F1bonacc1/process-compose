@@ -59,7 +59,7 @@ func (pv *pcView) fillTableData() {
 	}
 
 	// remove unnecessary rows, don't forget the title row (-1)
-	if pv.procTable.GetRowCount()-1 > row {
+	if pv.procTable.GetRowCount()-1 > row-1 {
 		for i := len(states.States); i < pv.procTable.GetRowCount()-1; i++ {
 			pv.procTable.RemoveRow(i)
 		}
@@ -75,6 +75,27 @@ func (pv *pcView) fillTableData() {
 		}
 		pv.procCountCell.SetText(fmt.Sprintf("%d/%d%s", runningProcCount, len(pv.procNames), nsLbl))
 	}
+
+	pv.autoAdjustProcTableHeight()
+}
+
+func (pv *pcView) autoAdjustProcTableHeight() {
+	maxProcHeight := pv.getMaxProcHeight()
+	procTblHeight := pv.procTable.GetRowCount() + 1
+	if procTblHeight > maxProcHeight {
+		procTblHeight = maxProcHeight
+	}
+	//stat table, processes table, logs, help text
+	//0 means to take all the available height
+	pv.mainGrid.SetRows(pv.statTable.GetRowCount(), procTblHeight, 0, 1)
+}
+
+func (pv *pcView) getMaxProcHeight() int {
+	_, _, _, gridHeight := pv.mainGrid.GetRect()
+	const padding = 7
+	_, _, _, helpHeight := pv.helpText.GetRect()
+	gridHeight = gridHeight - pv.statTable.GetRowCount() - helpHeight - padding
+	return gridHeight / 2
 }
 
 func setRowValues(procTable *tview.Table, row int, rowVals tableRowValues) {

@@ -26,8 +26,9 @@ func (pv *pcView) createGrid() {
 		pv.mainGrid.AddItem(log, 2, 0, 1, 1, 0, 0, false)
 	}
 
+	pv.autoAdjustProcTableHeight()
+
 	pv.mainGrid.SetTitle("Process Compose")
-	//pv.mainGrid = grid
 }
 
 func (pv *pcView) redrawGrid() {
