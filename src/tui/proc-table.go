@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -207,6 +208,30 @@ func (pv *pcView) setTableSorter(sortBy ColumnID) {
 	if prevSortColumn != ProcessStateUndefined {
 		pv.procTable.GetCell(0, int(prevSortColumn)).SetText(pv.procColumns[prevSortColumn])
 	}
+}
+
+func (pv *pcView) resetProcessSearch() {
+	log.Error().Msg("Reset")
+}
+
+func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) error {
+	if search == "" {
+		return nil
+	}
+	searchRegexString := search
+	if !isRegex {
+		searchRegexString = regexp.QuoteMeta(searchRegexString)
+	}
+	if !caseSensitive {
+		searchRegexString = "(?i)" + searchRegexString
+	}
+	searchRegex, err := regexp.Compile(searchRegexString)
+	if err != nil {
+		return err
+	}
+
+	log.Error().Msg(searchRegex.String())
+	return nil
 }
 
 func (pv *pcView) getTableSorter() StateSorter {
