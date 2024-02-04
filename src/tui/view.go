@@ -199,7 +199,7 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.showNsFilter()
 	case tcell.KeyRune:
 		if event.Rune() == '/' {
-			pcv.showProcFilter()
+			pv.showProcFilter()
 		} else {
 			return event
 		}
