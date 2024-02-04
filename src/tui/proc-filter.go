@@ -27,7 +27,7 @@ func (pv *pcView) showProcFilter() {
 		caseSensitive := f.GetFormItem(1).(*tview.Checkbox).IsChecked()
 		isRegex := f.GetFormItem(2).(*tview.Checkbox).IsChecked()
 
-		pv.searchProcess(searchTerm, caseSensitive, isRegex)
+		pv.searchProcess(searchTerm, isRegex, caseSensitive)
 	}
 	f.GetFormItem(0).(*tview.InputField).SetChangedFunc(func(_ string) {
 		searchFunc()
