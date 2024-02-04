@@ -194,6 +194,10 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.exitSearch()
 	case pv.shortcuts.ShortCutKeys[ActionNsFilter].key:
 		pv.showNsFilter()
+	case tcell.KeyRune:
+		if event.Rune() == '/' {
+			pcv.showProcFilter()
+		}
 	default:
 		return event
 	}
