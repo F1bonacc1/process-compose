@@ -198,6 +198,8 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 	case pv.shortcuts.ShortCutKeys[ActionHideDisabled].key:
 		pv.hideDisabled.Store(!pv.hideDisabled.Load())
 		pv.updateHelpTextView()
+	case pv.shortcuts.ShortCutKeys[ActionHelp].key:
+		pv.showHelpDialog()
 	default:
 		return event
 	}
@@ -352,6 +354,7 @@ func (pv *pcView) updateHelpTextView() {
 		pv.shortcuts.ShortCutKeys[ActionLogFindExit].writeButton(pv.helpText)
 		return
 	}
+	pv.shortcuts.ShortCutKeys[ActionHelp].writeButton(pv.helpText)
 	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue:]LOGS:[-:-:-]")
 	pv.shortcuts.ShortCutKeys[ActionLogScreen].writeToggleButton(pv.helpText, logScrBool)
 	pv.shortcuts.ShortCutKeys[ActionFollowLog].writeToggleButton(pv.helpText, !pv.logFollow)
@@ -367,8 +370,8 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionProcessScreen].writeToggleButton(pv.helpText, procScrBool)
 	pv.shortcuts.ShortCutKeys[ActionProcessStop].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessRestart].writeButton(pv.helpText)
-	pv.shortcuts.ShortCutKeys[ActionNsFilter].writeButton(pv.helpText)
-	pv.shortcuts.ShortCutKeys[ActionHideDisabled].writeToggleButton(pv.helpText, pv.hideDisabled.Load())
+	//pv.shortcuts.ShortCutKeys[ActionNsFilter].writeButton(pv.helpText)
+	//pv.shortcuts.ShortCutKeys[ActionHideDisabled].writeToggleButton(pv.helpText, pv.hideDisabled.Load())
 	pv.shortcuts.ShortCutKeys[ActionQuit].writeButton(pv.helpText)
 }
 

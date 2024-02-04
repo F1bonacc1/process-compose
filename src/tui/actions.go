@@ -13,6 +13,7 @@ import (
 type ActionName string
 
 const (
+	ActionHelp           = ActionName("help")
 	ActionLogScreen      = ActionName("log_screen")
 	ActionFollowLog      = ActionName("log_follow")
 	ActionWrapLog        = ActionName("log_wrap")
@@ -33,6 +34,7 @@ const (
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
+	ActionHelp:           tcell.KeyF1,
 	ActionLogScreen:      tcell.KeyF4,
 	ActionFollowLog:      tcell.KeyF5,
 	ActionWrapLog:        tcell.KeyF6,
@@ -50,6 +52,26 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionLogFindExit:    tcell.KeyEsc,
 	ActionNsFilter:       tcell.KeyCtrlG,
 	ActionHideDisabled:   tcell.KeyCtrlD,
+}
+
+var logActionsOrder = []ActionName{
+	ActionLogScreen,
+	ActionFollowLog,
+	ActionWrapLog,
+	ActionLogSelection,
+	ActionLogFind,
+}
+
+var procActionsOrder = []ActionName{
+	ActionProcessScale,
+	ActionProcessInfo,
+	ActionProcessStart,
+	ActionProcessScreen,
+	ActionProcessStop,
+	ActionProcessRestart,
+	ActionNsFilter,
+	ActionHideDisabled,
+	ActionQuit,
 }
 
 type ShortCuts struct {
@@ -222,6 +244,9 @@ func getDefaultActions() ShortCuts {
 			},
 			ActionNsFilter: {
 				Description: "Select Namespace",
+			},
+			ActionHelp: {
+				Description: "Shortcuts",
 			},
 			ActionHideDisabled: {
 				ToggleDescription: map[bool]string{
