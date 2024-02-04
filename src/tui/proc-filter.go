@@ -33,6 +33,15 @@ func (pv *pcView) showProcFilter() {
 		searchFunc()
 	})
 
+	f.GetFormItem(0).(*tview.InputField).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEnter {
+			pv.pages.RemovePage(PageDialog)
+			return nil
+		}
+
+		return event
+	})
+
 	f.AddButton("Search", func() {
 		pv.pages.RemovePage(PageDialog)
 	})
@@ -43,8 +52,6 @@ func (pv *pcView) showProcFilter() {
 
 	f.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEnter:
-			pv.pages.RemovePage(PageDialog)
 		case tcell.KeyEsc:
 			pv.resetProcessSearch()
 			pv.pages.RemovePage(PageDialog)
@@ -54,6 +61,7 @@ func (pv *pcView) showProcFilter() {
 		return nil
 	})
 	f.SetFocus(0)
+	pv.resetProcessSearch()
 	// Display and focus the dialog
 	pv.pages.AddPage(PageDialog, createDialogPage(f, fieldWidth+20, 11), true, true)
 	pv.appView.SetFocus(f)
