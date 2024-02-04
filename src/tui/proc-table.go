@@ -47,6 +47,12 @@ func (pv *pcView) fillTableData() {
 			pv.procTable.RemoveRow(row)
 			continue
 		}
+
+		if pv.processRegex != nil && !pv.processRegex.MatchString(state.Name) {
+			pv.procTable.RemoveRow(row)
+			continue
+		}
+
 		rowVals := getTableRowValues(state)
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
@@ -211,11 +217,15 @@ func (pv *pcView) setTableSorter(sortBy ColumnID) {
 }
 
 func (pv *pcView) resetProcessSearch() {
-	log.Error().Msg("Reset")
+	pv.processRegex = nil
+	go pv.appView.QueueUpdateDraw(func() {
+		pv.fillTableData()
+	})
 }
 
 func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) error {
 	if search == "" {
+		pv.processRegex = nil
 		return nil
 	}
 	searchRegexString := search
@@ -230,7 +240,11 @@ func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) erro
 		return err
 	}
 
-	log.Error().Msg(searchRegex.String())
+	pv.processRegex = searchRegex
+	pv.procTable.Select(1, 1)
+	go pv.appView.QueueUpdateDraw(func() {
+		pv.fillTableData()
+	})
 	return nil
 }
 
