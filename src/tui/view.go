@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"sync"
 	"sync/atomic"
