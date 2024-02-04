@@ -106,7 +106,9 @@ func newPcView(project app.IProject) *pcView {
 	pv.pages = tview.NewPages().
 		AddPage(PageMain, pv.mainGrid, true, true)
 
+	pv.mainGrid.SetInputCapture(pv.onMainGridKey)
 	pv.appView.SetRoot(pv.pages, true).EnableMouse(true).SetInputCapture(pv.onAppKey)
+
 	if len(pv.procNames) > 0 {
 		name := pv.procNames[0]
 		pv.logsText.SetTitle(name)
@@ -134,6 +136,15 @@ func (pv *pcView) loadShortcuts() {
 }
 
 func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
+	if event.Key() == tcell.KeyCtrlC {
+		pv.terminateAppView()
+		return nil
+	} else {
+		return event
+	}
+}
+
+func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case pv.shortcuts.ShortCutKeys[ActionQuit].key:
 		pv.terminateAppView()
@@ -167,8 +178,6 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.redrawGrid()
 		pv.onProcRowSpanChange()
 		pv.updateHelpTextView()
-	case tcell.KeyCtrlC:
-		pv.terminateAppView()
 	case pv.shortcuts.ShortCutKeys[ActionProcessScale].key:
 		pv.showScale()
 	case pv.shortcuts.ShortCutKeys[ActionProcessInfo].key:
