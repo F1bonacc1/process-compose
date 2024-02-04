@@ -194,6 +194,7 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
 	case pv.shortcuts.ShortCutKeys[ActionLogFindExit].key:
 		pv.exitSearch()
+		pv.resetProcessSearch()
 	case pv.shortcuts.ShortCutKeys[ActionNsFilter].key:
 		pv.showNsFilter()
 	case tcell.KeyRune:
