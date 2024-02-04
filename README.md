@@ -1,6 +1,7 @@
 ## Process Compose
 
-[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/F1bonacc1/process-compose/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose) [![Releases](https://img.shields.io/github/downloads/F1bonacc1/process-compose/total.svg)]() ![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/ProcessCompose?style=flat-square&logo=twitter&logoColor=white)
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/F1bonacc1/process-compose/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose) [![Releases](https://img.shields.io/github/downloads/F1bonacc1/process-compose/total.svg)]() ![X (formerly Twitter) URL](https://img.shields.io/twitter/url?url=https%3A%2F%2Ftwitter.com%2FProcessCompose&style=flat&logo=x&label=Process%20Compose)
+
 
 
 Process Compose is a simple and flexible scheduler and orchestrator to manage non-containerized applications.
@@ -15,7 +16,12 @@ version: "0.5"
 
 processes:
   hello:
-    command: echo 'Hello World from Process Compose'
+    command: echo 'Hello World'
+  pc:
+    command: echo 'From Process Compose'
+    depends_on:
+      hello:
+        condition: process_completed
 ```
 
 And start it by running `process-compose` from your terminal.
