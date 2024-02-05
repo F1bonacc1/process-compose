@@ -60,6 +60,11 @@ func (pv *pcView) fillTableData() {
 		}
 		row += 1
 	}
+	if row == 1 {
+		pv.procTable.SetSelectable(false, false)
+	} else {
+		pv.procTable.SetSelectable(true, false)
+	}
 
 	// remove unnecessary rows, don't forget the title row (-1)
 	if pv.procTable.GetRowCount()-1 > row {
