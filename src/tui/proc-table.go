@@ -216,7 +216,17 @@ func (pv *pcView) setTableSorter(sortBy ColumnID) {
 	}
 }
 
+func (pv *pcView) getProcessSearchRegex() *regexp.Regexp {
+	pv.processRegexMtx.Lock()
+	defer pv.processRegexMtx.Unlock()
+
+	return pv.processRegex
+}
+
 func (pv *pcView) resetProcessSearch() {
+	pv.processRegexMtx.Lock()
+	defer pv.processRegexMtx.Unlock()
+
 	pv.processRegex = nil
 	go pv.appView.QueueUpdateDraw(func() {
 		pv.fillTableData()
@@ -224,6 +234,9 @@ func (pv *pcView) resetProcessSearch() {
 }
 
 func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) error {
+	pv.processRegexMtx.Lock()
+	defer pv.processRegexMtx.Unlock()
+
 	if search == "" {
 		pv.processRegex = nil
 		return nil

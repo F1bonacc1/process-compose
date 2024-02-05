@@ -60,6 +60,7 @@ type pcView struct {
 	sortMtx           sync.Mutex
 	stateSorter       StateSorter
 	processRegex      *regexp.Regexp
+	processRegexMtx   sync.Mutex
 	procColumns       map[ColumnID]string
 	refreshRate       time.Duration
 	cancelFn          context.CancelFunc
