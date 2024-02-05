@@ -48,7 +48,7 @@ func (pv *pcView) fillTableData() {
 			continue
 		}
 
-		if pv.processRegex != nil && !pv.processRegex.MatchString(state.Name) {
+		if !pv.matchProcRegex(state.Name) {
 			pv.procTable.RemoveRow(row)
 			continue
 		}
@@ -221,29 +221,32 @@ func (pv *pcView) setTableSorter(sortBy ColumnID) {
 	}
 }
 
-func (pv *pcView) getProcessSearchRegex() *regexp.Regexp {
-	pv.processRegexMtx.Lock()
-	defer pv.processRegexMtx.Unlock()
+func (pv *pcView) setProcRegex(reg *regexp.Regexp) {
+	pv.procRegexMtx.Lock()
+	defer pv.procRegexMtx.Unlock()
+	pv.procRegex = reg
+}
 
-	return pv.processRegex
+func (pv *pcView) matchProcRegex(procName string) bool {
+	pv.procRegexMtx.Lock()
+	defer pv.procRegexMtx.Unlock()
+	if pv.procRegex != nil {
+		return pv.procRegex.MatchString(procName)
+	}
+	// if no search string is present, match everything
+	return true
 }
 
 func (pv *pcView) resetProcessSearch() {
-	pv.processRegexMtx.Lock()
-	defer pv.processRegexMtx.Unlock()
-
-	pv.processRegex = nil
+	pv.setProcRegex(nil)
 	go pv.appView.QueueUpdateDraw(func() {
 		pv.fillTableData()
 	})
 }
 
 func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) error {
-	pv.processRegexMtx.Lock()
-	defer pv.processRegexMtx.Unlock()
-
 	if search == "" {
-		pv.processRegex = nil
+		pv.setProcRegex(nil)
 		return nil
 	}
 	searchRegexString := search
@@ -258,7 +261,7 @@ func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) erro
 		return err
 	}
 
-	pv.processRegex = searchRegex
+	pv.setProcRegex(searchRegex)
 	pv.procTable.Select(1, 1)
 	go pv.appView.QueueUpdateDraw(func() {
 		pv.fillTableData()
