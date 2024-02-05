@@ -18,19 +18,18 @@ func (pv *pcView) showProcFilter() {
 	f.SetButtonsAlign(tview.AlignCenter)
 	f.SetTitle("Search Process")
 
-	f.AddInputField("Search For", pv.logsText.getSearchTerm(), fieldWidth, nil, nil)
+	f.AddInputField("Search For", "", fieldWidth, nil, nil)
 	f.AddCheckbox("Case Sensitive", false, nil)
 	f.AddCheckbox("Regex", false, nil)
 
-	searchFunc := func() {
-		searchTerm := f.GetFormItem(0).(*tview.InputField).GetText()
+	searchFunc := func(searchTerm string) {
 		caseSensitive := f.GetFormItem(1).(*tview.Checkbox).IsChecked()
 		isRegex := f.GetFormItem(2).(*tview.Checkbox).IsChecked()
 
 		pv.searchProcess(searchTerm, isRegex, caseSensitive)
 	}
-	f.GetFormItem(0).(*tview.InputField).SetChangedFunc(func(_ string) {
-		searchFunc()
+	f.GetFormItem(0).(*tview.InputField).SetChangedFunc(func(text string) {
+		searchFunc(text)
 	})
 
 	f.GetFormItem(0).(*tview.InputField).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
