@@ -7,6 +7,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -50,12 +51,21 @@ func (pv *pcView) fillTableData() {
 			pv.procTable.RemoveRow(row)
 			continue
 		}
+		if !pv.matchProcRegex(state.Name) {
+			pv.procTable.RemoveRow(row)
+			continue
+		}
 		rowVals := getTableRowValues(state)
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
 			runningProcCount += 1
 		}
 		row += 1
+	}
+	if row == 1 {
+		pv.procTable.SetSelectable(false, false)
+	} else {
+		pv.procTable.SetSelectable(true, false)
 	}
 
 	// remove unnecessary rows, don't forget the title row (-1)
@@ -232,6 +242,54 @@ func (pv *pcView) setTableSorter(sortBy ColumnID) {
 	if prevSortColumn != ProcessStateUndefined {
 		pv.procTable.GetCell(0, int(prevSortColumn)).SetText(pv.procColumns[prevSortColumn])
 	}
+}
+
+func (pv *pcView) setProcRegex(reg *regexp.Regexp) {
+	pv.procRegexMtx.Lock()
+	defer pv.procRegexMtx.Unlock()
+	pv.procRegex = reg
+}
+
+func (pv *pcView) matchProcRegex(procName string) bool {
+	pv.procRegexMtx.Lock()
+	defer pv.procRegexMtx.Unlock()
+	if pv.procRegex != nil {
+		return pv.procRegex.MatchString(procName)
+	}
+	// if no search string is present, match everything
+	return true
+}
+
+func (pv *pcView) resetProcessSearch() {
+	pv.setProcRegex(nil)
+	go pv.appView.QueueUpdateDraw(func() {
+		pv.fillTableData()
+	})
+}
+
+func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) error {
+	if search == "" {
+		pv.setProcRegex(nil)
+		return nil
+	}
+	searchRegexString := search
+	if !isRegex {
+		searchRegexString = regexp.QuoteMeta(searchRegexString)
+	}
+	if !caseSensitive {
+		searchRegexString = "(?i)" + searchRegexString
+	}
+	searchRegex, err := regexp.Compile(searchRegexString)
+	if err != nil {
+		return err
+	}
+
+	pv.setProcRegex(searchRegex)
+	pv.procTable.Select(1, 1)
+	go pv.appView.QueueUpdateDraw(func() {
+		pv.fillTableData()
+	})
+	return nil
 }
 
 func (pv *pcView) getTableSorter() StateSorter {

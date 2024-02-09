@@ -31,6 +31,7 @@ const (
 	ActionLogFindExit    = ActionName("find_exit")
 	ActionNsFilter       = ActionName("ns_filter")
 	ActionHideDisabled   = ActionName("hide_disabled")
+	ActionProcFilter     = ActionName("proc_filter")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -52,6 +53,11 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionLogFindExit:    tcell.KeyEsc,
 	ActionNsFilter:       tcell.KeyCtrlG,
 	ActionHideDisabled:   tcell.KeyCtrlD,
+	ActionProcFilter:     tcell.KeyRune,
+}
+
+var defaultShortcutsRunes = map[ActionName]rune{
+	ActionProcFilter: '/',
 }
 
 var logActionsOrder = []ActionName{
@@ -63,6 +69,7 @@ var logActionsOrder = []ActionName{
 }
 
 var procActionsOrder = []ActionName{
+	ActionProcFilter,
 	ActionProcessScale,
 	ActionProcessInfo,
 	ActionProcessStart,
@@ -158,6 +165,7 @@ type Action struct {
 	ToggleDescription map[bool]string //`yaml:"toggle_description,omitempty"`
 	ShortCut          string          `yaml:"shortcut"`
 	key               tcell.Key
+	rune              rune
 }
 
 func (a Action) getButton() string {
@@ -254,6 +262,9 @@ func getDefaultActions() ShortCuts {
 					false: "Hide Disabled",
 				},
 			},
+			ActionProcFilter: {
+				Description: "Search Process",
+			},
 		},
 	}
 	for k, v := range sc.ShortCutKeys {
@@ -263,6 +274,12 @@ func getDefaultActions() ShortCuts {
 }
 
 func assignDefaultKeys(name ActionName, action *Action) {
-	action.ShortCut = tcell.KeyNames[defaultShortcuts[name]]
-	action.key = defaultShortcuts[name]
+	key := defaultShortcuts[name]
+	if key == tcell.KeyRune {
+		action.ShortCut = string(defaultShortcutsRunes[name])
+		action.rune = defaultShortcutsRunes[name]
+	} else {
+		action.ShortCut = tcell.KeyNames[key]
+		action.key = key
+	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -58,6 +59,8 @@ type pcView struct {
 	project           app.IProject
 	sortMtx           sync.Mutex
 	stateSorter       StateSorter
+	procRegex         *regexp.Regexp
+	procRegexMtx      sync.Mutex
 	procColumns       map[ColumnID]string
 	refreshRate       time.Duration
 	cancelFn          context.CancelFunc
@@ -193,6 +196,7 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
 	case pv.shortcuts.ShortCutKeys[ActionLogFindExit].key:
 		pv.exitSearch()
+		pv.resetProcessSearch()
 	case pv.shortcuts.ShortCutKeys[ActionNsFilter].key:
 		pv.showNsFilter()
 	case pv.shortcuts.ShortCutKeys[ActionHideDisabled].key:
@@ -200,6 +204,12 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.updateHelpTextView()
 	case pv.shortcuts.ShortCutKeys[ActionHelp].key:
 		pv.showHelpDialog()
+	case tcell.KeyRune:
+		if event.Rune() == pv.shortcuts.ShortCutKeys[ActionProcFilter].rune {
+			pv.showProcFilter()
+		} else {
+			return event
+		}
 	default:
 		return event
 	}
@@ -370,8 +380,6 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.ShortCutKeys[ActionProcessScreen].writeToggleButton(pv.helpText, procScrBool)
 	pv.shortcuts.ShortCutKeys[ActionProcessStop].writeButton(pv.helpText)
 	pv.shortcuts.ShortCutKeys[ActionProcessRestart].writeButton(pv.helpText)
-	//pv.shortcuts.ShortCutKeys[ActionNsFilter].writeButton(pv.helpText)
-	//pv.shortcuts.ShortCutKeys[ActionHideDisabled].writeToggleButton(pv.helpText, pv.hideDisabled.Load())
 	pv.shortcuts.ShortCutKeys[ActionQuit].writeButton(pv.helpText)
 }
 
