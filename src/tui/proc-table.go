@@ -89,17 +89,6 @@ func (pv *pcView) fillTableData() {
 	pv.autoAdjustProcTableHeight()
 }
 
-func (pv *pcView) autoAdjustProcTableHeight() {
-	maxProcHeight := pv.getMaxProcHeight()
-	procTblHeight := pv.procTable.GetRowCount() + 1
-	if procTblHeight > maxProcHeight {
-		procTblHeight = maxProcHeight
-	}
-	//stat table, processes table, logs, help text
-	//0 means to take all the available height
-	pv.mainGrid.SetRows(pv.statTable.GetRowCount(), procTblHeight, 0, 1)
-}
-
 func (pv *pcView) getMaxProcHeight() int {
 	_, _, _, gridHeight := pv.mainGrid.GetRect()
 	const padding = 7

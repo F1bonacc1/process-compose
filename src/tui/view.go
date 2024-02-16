@@ -72,6 +72,7 @@ type pcView struct {
 	selectedNs        string
 	selectedNsChanged atomic.Bool
 	hideDisabled      atomic.Bool
+	commandMode       bool
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -195,8 +196,14 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.logsText.SearchPrev()
 		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
 	case pv.shortcuts.ShortCutKeys[ActionLogFindExit].key:
-		pv.exitSearch()
-		pv.resetProcessSearch()
+		if pv.logsText.isSearchActive() {
+			pv.exitSearch()
+		} else if pv.procRegex != nil {
+			pv.resetProcessSearch()
+		} else {
+			return event
+		}
+		//pv.resetProcessSearch()
 	case pv.shortcuts.ShortCutKeys[ActionNsFilter].key:
 		pv.showNsFilter()
 	case pv.shortcuts.ShortCutKeys[ActionHideDisabled].key:
@@ -206,7 +213,9 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.showHelpDialog()
 	case tcell.KeyRune:
 		if event.Rune() == pv.shortcuts.ShortCutKeys[ActionProcFilter].rune {
-			pv.showProcFilter()
+			//pv.showProcFilter()
+			pv.commandMode = true
+			pv.redrawGrid()
 		} else {
 			return event
 		}
