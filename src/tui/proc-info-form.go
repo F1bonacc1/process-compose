@@ -33,6 +33,7 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.Pro
 	f.AddInputField("Replica:", fmt.Sprintf("%d/%d", info.ReplicaNum+1, info.Replicas), 0, nil, nil)
 	f.AddCheckbox("Is Disabled:", info.Disabled, nil)
 	f.AddCheckbox("Is Daemon:", info.IsDaemon, nil)
+	f.AddCheckbox("Is TTY:", info.IsTty, nil)
 	f.AddButton("Close", func() {
 		pv.pages.RemovePage(PageDialog)
 	})

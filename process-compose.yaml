@@ -99,6 +99,7 @@ processes:
 
   server:
     command: "python3 -m http.server 4040"
+    is_tty: true
 
   kcalc:
     command: "kcalc"

@@ -12,7 +12,12 @@ func BuildCommand(cmd string, args []string) *CmdWrapper {
 	return &CmdWrapper{
 		cmd: exec.Command(cmd, args...),
 	}
-	//return NewMockCommand()
+}
+
+func BuildPtyCommand(cmd string, args []string) *CmdWrapperPty {
+	return &CmdWrapperPty{
+		CmdWrapper: BuildCommand(cmd, args),
+	}
 }
 
 func BuildCommandContext(ctx context.Context, shellCmd string) *CmdWrapper {

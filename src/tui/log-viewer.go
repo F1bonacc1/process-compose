@@ -52,10 +52,8 @@ func NewLogView(maxLines int) *LogView {
 }
 
 func (l *LogView) WriteString(line string) (n int, err error) {
-	l.mx.Lock()
-	defer l.mx.Unlock()
 	if l.useAnsi {
-		return l.buffer.WriteString(tview.Escape(line) + "\n")
+		return l.buffer.WriteString(tview.Escape(line + "\n"))
 	}
 	if strings.Contains(strings.ToLower(line), "error") {
 		return fmt.Fprintf(l.buffer, "[deeppink]%s[-:-:-]\n", tview.Escape(line))
@@ -93,15 +91,11 @@ func (l *LogView) IsWrapOn() bool {
 }
 
 func (l *LogView) Flush() {
-	l.mx.Lock()
-	defer l.mx.Unlock()
 	if l.useAnsi {
-		l.ansiWriter.Write(l.buffer.Bytes())
+		l.buffer.WriteTo(l.ansiWriter)
 	} else {
-		l.Write(l.buffer.Bytes())
+		l.buffer.WriteTo(l)
 	}
-
-	l.buffer.Reset()
 }
 
 func (l *LogView) addRegions(regex *regexp.Regexp, text string) string {

@@ -90,9 +90,6 @@ func (pv *pcView) updateLogs(ctx context.Context) {
 			pv.appView.QueueUpdateDraw(func() {
 				pv.logsText.Flush()
 			})
-			//if !pv.logFollow {
-			//	return
-			//}
 		}
 	}
 }

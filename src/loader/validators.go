@@ -6,6 +6,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
@@ -60,6 +61,18 @@ func validateShellConfig(p *types.Project) error {
 		log.Err(err).Msgf("Shell command '%s' not found", p.ShellConfig.ShellCommand)
 	}
 	return err
+}
+
+func validatePlatformCompatibility(p *types.Project) error {
+	if runtime.GOOS != "windows" {
+		return nil
+	}
+	for name, proc := range p.Processes {
+		if proc.IsTty {
+			return fmt.Errorf("PTY for process %s is not yet supported on Windows", name)
+		}
+	}
+	return nil
 }
 
 func validateNoCircularDependencies(p *types.Project) error {

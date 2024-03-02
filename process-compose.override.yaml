@@ -1,6 +1,7 @@
 version: "0.5"
 log_level: debug
 log_length: 3000
+is_strict: true
 environment:
   - 'ABC=222'
 log_location: ./pc.log
@@ -16,9 +17,10 @@ vars:
 
 processes:
   process0:
-    command: "ls -lFa --color=always"
+    command: "ls -lFa --color=tty"
     working_dir: "/"
     namespace: "ns1"
+    is_tty: true
 
   process1:
     command: "./test_loop.bash ${PROC4}"
@@ -147,7 +149,7 @@ processes:
 
 
   bat_config:
-    command: "batcat -f process-compose.yaml"
+    command: "batcat -P -f process-compose.yaml"
 
   template:
     description: A process for testing templates

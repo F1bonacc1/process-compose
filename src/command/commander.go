@@ -1,0 +1,18 @@
+package command
+
+import "io"
+
+type Commander interface {
+	Stop(sig int, _parentOnly bool) error
+	SetCmdArgs()
+	Start() error
+	Run() error
+	Wait() error
+	ExitCode() int
+	Pid() int
+	StdoutPipe() (io.ReadCloser, error)
+	StderrPipe() (io.ReadCloser, error)
+	AttachIo()
+	SetEnv(env []string)
+	SetDir(dir string)
+}

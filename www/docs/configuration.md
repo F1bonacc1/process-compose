@@ -241,3 +241,16 @@ The above configuration will fail the Process Compose start and exit with error 
 ```shell
 unknown key commnad found in process process1
 ```
+
+#### Pseudo Terminals
+
+Certain processes check if they are running within a terminal, to simulate a TTY mode you can use a `is_tty` flag:
+
+```yaml hl_lines="4"
+processes:  
+  process0:
+    command: "ls -lFa --color=tty"
+    is_tty: true
+```
+
+> :bulb: `STDIN` and `Windows` are not supported at this time.

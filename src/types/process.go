@@ -34,6 +34,7 @@ type ProcessConfig struct {
 	Description       string                 `yaml:"description,omitempty"`
 	Vars              Vars                   `yaml:"vars"`
 	IsForeground      bool                   `yaml:"is_foreground"`
+	IsTty             bool                   `yaml:"is_tty"`
 	ReplicaNum        int
 	ReplicaName       string
 	Executable        string

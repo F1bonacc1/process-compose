@@ -53,6 +53,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		validateProcessConfig,
 		validateNoCircularDependencies,
 		validateShellConfig,
+		validatePlatformCompatibility,
 	)
 	admitProcesses(opts, mergedProject)
 	return mergedProject, err

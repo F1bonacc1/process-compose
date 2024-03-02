@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/cakturk/go-netstat/netstat"
 	"github.com/f1bonacc1/process-compose/src/types"
@@ -170,10 +171,7 @@ func (p *Process) run() int {
 
 func (p *Process) getProcessStarter() func() error {
 	return func() error {
-		p.command = command.BuildCommand(
-			p.procConf.Executable,
-			p.mergeExtraArgs(),
-		)
+		p.command = p.getCommander()
 		p.command.SetEnv(p.getProcessEnvironment())
 		p.command.SetDir(p.procConf.WorkingDir)
 
@@ -182,13 +180,30 @@ func (p *Process) getProcessStarter() func() error {
 		} else {
 			p.command.SetCmdArgs()
 			stdout, _ := p.command.StdoutPipe()
-			stderr, _ := p.command.StderrPipe()
 			go p.handleOutput(stdout, p.handleInfo)
-			go p.handleOutput(stderr, p.handleError)
+			if !p.procConf.IsTty {
+				stderr, _ := p.command.StderrPipe()
+				go p.handleOutput(stderr, p.handleError)
+			}
 		}
 
 		return p.command.Start()
 	}
+}
+
+func (p *Process) getCommander() command.Commander {
+	if p.procConf.IsTty && !p.isMain {
+		return command.BuildPtyCommand(
+			p.procConf.Executable,
+			p.mergeExtraArgs(),
+		)
+	} else {
+		return command.BuildCommand(
+			p.procConf.Executable,
+			p.mergeExtraArgs(),
+		)
+	}
+
 }
 
 func (p *Process) mergeExtraArgs() []string {
@@ -440,6 +455,11 @@ func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string))
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
+				break
+			}
+			var pathErr *os.PathError
+			ok := errors.As(err, &pathErr)
+			if ok && pathErr.Path == "/dev/ptmx" {
 				break
 			}
 			log.Err(err).
