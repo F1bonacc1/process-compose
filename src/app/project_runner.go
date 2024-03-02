@@ -386,7 +386,7 @@ func (p *ProjectRunner) ShutDownProject() error {
 				defer wg.Done()
 				waitForDepsWg := sync.WaitGroup{}
 				if revDeps, ok := reverseDependencies[proc.getName()]; ok {
-					for revDep, runningProc := range revDeps {
+					for _, runningProc := range revDeps {
 						waitForDepsWg.Add(1)
 						go func(pr *Process) {
 							pr.waitForCompletion()
