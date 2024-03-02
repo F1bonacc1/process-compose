@@ -1,10 +1,14 @@
 package app
 
 import (
+	"bufio"
 	"github.com/f1bonacc1/process-compose/src/loader"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 )
@@ -410,6 +414,7 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 	fixture1 := filepath.Join("..", "..", "fixtures-code", "process-compose-shutdown-inorder.yaml")
 	t.Run("Single Proc with deps", func(t *testing.T) {
+
 		project, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture1},
 		})
@@ -436,7 +441,16 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 				t.Errorf("process %s is disabled", name)
 			}
 		}
-
+		file, err := os.CreateTemp("/tmp", "pc_log.*.log")
+		defer os.Remove(file.Name())
+		project.LogLocation = file.Name()
+		project.LoggerConfig = &types.LoggerConfig{
+			FieldsOrder:     []string{"message"},
+			DisableJSON:     true,
+			TimestampFormat: "",
+			NoMetadata:      true,
+			FlushEachLine:   true,
+		}
 		go runner.Run()
 		time.Sleep(10 * time.Millisecond)
 		states, err := runner.GetProcessesState()
@@ -469,6 +483,20 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 		want = 0
 		if runningProcesses != want {
 			t.Errorf("len(runner.runningProcesses) = %d, want %d", len(runner.runningProcesses), want)
+		}
+		//read file and validate the shutdown order
+		scanner := bufio.NewScanner(file)
+		order := make([]string, 0)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "exit") {
+				order = append(order, line)
+			}
+		}
+		wantOrder := []string{"C: exit", "B: exit", "A: exit"}
+		if !slices.Equal(wantOrder, order) {
+			t.Errorf("content = %v, want %v", order, wantOrder)
+			return
 		}
 	})
 }

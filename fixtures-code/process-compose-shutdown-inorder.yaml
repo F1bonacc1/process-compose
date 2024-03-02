@@ -6,26 +6,24 @@ log_length: 1000
 processes:
   procA:
     command: |
+      trap 'echo "A: exit"' SIGTERM
       echo "A: starting"
+      sleep 3
 
   procB:
     command: |
+      trap 'echo "B: exit"' SIGTERM
       echo "B: starting"
-    is_daemon: true
-    shutdown:
-      command: |
-        echo "B: exiting"
+      sleep 3
     depends_on:
       procA:
         condition: process_started
 
   procC:
     command: |
+      trap 'echo "C: exit"' SIGTERM
       echo "C: starting"
-    isDaemon: true
-    shutdown:
-      command: |
-        echo "C: exiting"
+      sleep 3
     depends_on:
       procB:
         condition: process_started
