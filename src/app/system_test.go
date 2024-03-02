@@ -469,20 +469,16 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
+		statesUpdated, err := runner.GetProcessesState()
 		runningProcesses := 0
-		for _, proc := range runner.runningProcesses {
-			processState, err := runner.GetProcessState(proc.getName())
-			if err != nil {
-				t.Errorf(err.Error())
-				return
-			}
+		for _, processState := range statesUpdated.States {
 			if processState.IsRunning {
 				runningProcesses++
 			}
 		}
 		want = 0
 		if runningProcesses != want {
-			t.Errorf("len(runner.runningProcesses) = %d, want %d", len(runner.runningProcesses), want)
+			t.Errorf("runningProcesses = %d, want %d", runningProcesses, want)
 		}
 		//read file and validate the shutdown order
 		scanner := bufio.NewScanner(file)
