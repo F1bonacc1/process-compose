@@ -33,32 +33,34 @@ const (
 
 type Process struct {
 	sync.Mutex
-	globalEnv     []string
-	confMtx       sync.Mutex
-	procConf      *types.ProcessConfig
-	procState     *types.ProcessState
-	stateMtx      sync.Mutex
-	procCond      sync.Cond
-	procStateChan chan string
-	procReadyCtx  context.Context
-	readyCancelFn context.CancelFunc
-	procRunCtx    context.Context
-	runCancelFn   context.CancelFunc
-	procColor     func(a ...interface{}) string
-	noColor       func(a ...interface{}) string
-	redColor      func(a ...interface{}) string
-	logBuffer     *pclog.ProcessLogBuffer
-	logger        pclog.PcLogger
-	command       Commander
-	done          bool
-	timeMutex     sync.Mutex
-	startTime     time.Time
-	liveProber    *health.Prober
-	readyProber   *health.Prober
-	shellConfig   command.ShellConfig
-	printLogs     bool
-	isMain        bool
-	extraArgs     []string
+	globalEnv       []string
+	confMtx         sync.Mutex
+	procConf        *types.ProcessConfig
+	procState       *types.ProcessState
+	stateMtx        sync.Mutex
+	procCond        sync.Cond
+	procStartedCond sync.Cond
+	procStateChan   chan string
+	procReadyCtx    context.Context
+	readyCancelFn   context.CancelFunc
+	procRunCtx      context.Context
+	runCancelFn     context.CancelFunc
+	procColor       func(a ...interface{}) string
+	noColor         func(a ...interface{}) string
+	redColor        func(a ...interface{}) string
+	logBuffer       *pclog.ProcessLogBuffer
+	logger          pclog.PcLogger
+	command         Commander
+	started         bool
+	done            bool
+	timeMutex       sync.Mutex
+	startTime       time.Time
+	liveProber      *health.Prober
+	readyProber     *health.Prober
+	shellConfig     command.ShellConfig
+	printLogs       bool
+	isMain          bool
+	extraArgs       []string
 }
 
 func NewProcess(
@@ -82,6 +84,7 @@ func NewProcess(
 		redColor:      color.New(color.FgHiRed).SprintFunc(),
 		noColor:       color.New(color.Reset).SprintFunc(),
 		logger:        logger,
+		started:       false,
 		done:          false,
 		logBuffer:     procLog,
 		shellConfig:   shellConfig,
@@ -95,6 +98,7 @@ func NewProcess(
 	proc.procRunCtx, proc.runCancelFn = context.WithCancel(context.Background())
 	proc.setUpProbes()
 	proc.procCond = *sync.NewCond(proc)
+	proc.procStartedCond = *sync.NewCond(proc)
 	return proc
 }
 
@@ -272,6 +276,15 @@ func (p *Process) isRestartable() bool {
 	return false
 }
 
+func (p *Process) waitForStarted() {
+	p.Lock()
+	defer p.Unlock()
+
+	for !p.started {
+		p.procStartedCond.Wait()
+	}
+}
+
 func (p *Process) waitForCompletion() int {
 	p.Lock()
 	defer p.Unlock()
@@ -359,6 +372,11 @@ func (p *Process) onProcessStart() {
 	if isStringDefined(p.procConf.LogLocation) {
 		p.logger.Open(p.getLogPath(), p.procConf.LoggerConfig)
 	}
+
+	p.Lock()
+	p.started = true
+	p.Unlock()
+	p.procStartedCond.Broadcast()
 }
 
 func (p *Process) onProcessEnd(state string) {
