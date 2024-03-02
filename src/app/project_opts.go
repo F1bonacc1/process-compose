@@ -3,12 +3,13 @@ package app
 import "github.com/f1bonacc1/process-compose/src/types"
 
 type ProjectOpts struct {
-	project         *types.Project
-	processesToRun  []string
-	noDeps          bool
-	mainProcess     string
-	mainProcessArgs []string
-	isTuiOn         bool
+	project           *types.Project
+	processesToRun    []string
+	noDeps            bool
+	mainProcess       string
+	mainProcessArgs   []string
+	isTuiOn           bool
+	isOrderedShutDown bool
 }
 
 func (p *ProjectOpts) WithProject(project *types.Project) *ProjectOpts {
@@ -37,5 +38,10 @@ func (p *ProjectOpts) WithMainProcessArgs(mainProcessArgs []string) *ProjectOpts
 
 func (p *ProjectOpts) WithIsTuiOn(isTuiOn bool) *ProjectOpts {
 	p.isTuiOn = isTuiOn
+	return p
+}
+
+func (p *ProjectOpts) WithOrderedShutDown(isOrderedShutDown bool) *ProjectOpts {
+	p.isOrderedShutDown = isOrderedShutDown
 	return p
 }
