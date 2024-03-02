@@ -29,6 +29,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 			WithMainProcessArgs(mainProcessArgs).
 			WithProject(project).
 			WithProcessesToRun(process).
+			WithOrderedShutDown(*pcFlags.IsOrderedShutDown).
 			WithNoDeps(noDeps),
 	)
 	if err != nil {
