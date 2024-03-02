@@ -406,3 +406,69 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 		}
 	})
 }
+
+func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
+	fixture1 := filepath.Join("..", "..", "fixtures-code", "process-compose-shutdown-inorder.yaml")
+	t.Run("Single Proc with deps", func(t *testing.T) {
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture1},
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		numProc := len(project.Processes)
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:           project,
+			processesToRun:    []string{},
+			mainProcessArgs:   []string{},
+			isOrderedShutDown: true,
+		})
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		if len(runner.project.Processes) != numProc {
+			t.Errorf("should have %d processes", numProc)
+		}
+		for name, proc := range runner.project.Processes {
+			if proc.Disabled {
+				t.Errorf("process %s is disabled", name)
+			}
+		}
+
+		go runner.Run()
+		time.Sleep(10 * time.Millisecond)
+		states, err := runner.GetProcessesState()
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		want := 3
+		if len(states.States) != want {
+			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
+		}
+
+		time.Sleep(10 * time.Millisecond)
+		err = runner.ShutDownProject()
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		runningProcesses := 0
+		for _, proc := range runner.runningProcesses {
+			processState, err := runner.GetProcessState(proc.getName())
+			if err != nil {
+				t.Errorf(err.Error())
+				return
+			}
+			if processState.IsRunning {
+				runningProcesses++
+			}
+		}
+		want = 0
+		if runningProcesses != want {
+			t.Errorf("len(runner.runningProcesses) = %d, want %d", len(runner.runningProcesses), want)
+		}
+	})
+}

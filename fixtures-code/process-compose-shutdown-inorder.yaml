@@ -1,0 +1,31 @@
+version: "0.5"
+
+log_level: debug
+log_length: 1000
+
+processes:
+  procA:
+    command: |
+      echo "A: starting"
+
+  procB:
+    command: |
+      echo "B: starting"
+    is_daemon: true
+    shutdown:
+      command: |
+        echo "B: exiting"
+    depends_on:
+      procA:
+        condition: process_started
+
+  procC:
+    command: |
+      echo "C: starting"
+    isDaemon: true
+    shutdown:
+      command: |
+        echo "C: exiting"
+    depends_on:
+      procB:
+        condition: process_started
