@@ -76,7 +76,7 @@ processes:
       PRE: 2
       POST: 8
 
-    command: "slepp {{.PRE}} && echo {{.OK}} && sleep {{.POST}}"
+    command: "sleep {{.PRE}} && echo {{.OK}} && sleep {{.POST}}"
     log_location: {{.LOG_LOCATION}}
     readiness_probe:
       exec:
