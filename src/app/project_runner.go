@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"runtime"
+	"slices"
 	"sync"
 	"time"
 
@@ -15,21 +16,22 @@ import (
 )
 
 type ProjectRunner struct {
-	procConfMutex    sync.Mutex
-	project          *types.Project
-	logsMutex        sync.Mutex
-	processLogs      map[string]*pclog.ProcessLogBuffer
-	statesMutex      sync.Mutex
-	processStates    map[string]*types.ProcessState
-	runProcMutex     sync.Mutex
-	runningProcesses map[string]*Process
-	logger           pclog.PcLogger
-	waitGroup        sync.WaitGroup
-	exitCode         int
-	projectState     *types.ProjectState
-	mainProcess      string
-	mainProcessArgs  []string
-	isTuiOn          bool
+	procConfMutex     sync.Mutex
+	project           *types.Project
+	logsMutex         sync.Mutex
+	processLogs       map[string]*pclog.ProcessLogBuffer
+	statesMutex       sync.Mutex
+	processStates     map[string]*types.ProcessState
+	runProcMutex      sync.Mutex
+	runningProcesses  map[string]*Process
+	logger            pclog.PcLogger
+	waitGroup         sync.WaitGroup
+	exitCode          int
+	projectState      *types.ProjectState
+	mainProcess       string
+	mainProcessArgs   []string
+	isTuiOn           bool
+	isOrderedShutDown bool
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -322,27 +324,111 @@ func (p *ProjectRunner) GetProcessPorts(name string) (*types.ProcessPorts, error
 	return ports, nil
 }
 
+func (p *ProjectRunner) runningProcessesReverseDependencies() map[string]map[string]*Process {
+	reverseDependencies := make(map[string]map[string]*Process)
+
+	// `p.runProcMutex` lock is assumed to have been acquired when calling
+	// this function. It is currently called by `ShutDownProject()`.
+	for _, process := range p.runningProcesses {
+		for k := range process.procConf.DependsOn {
+			if runningProc, ok := p.runningProcesses[k]; ok {
+				if _, ok := reverseDependencies[runningProc.getName()]; !ok {
+					dep := make(map[string]*Process)
+					dep[process.getName()] = process
+					reverseDependencies[runningProc.getName()] = dep
+				}
+			} else {
+				continue
+			}
+		}
+	}
+
+	return reverseDependencies
+}
+
+func (p *ProjectRunner) shutDownInOrder(wg *sync.WaitGroup, shutdownOrder []*Process) {
+	reverseDependencies := p.runningProcessesReverseDependencies()
+	for _, process := range shutdownOrder {
+		wg.Add(1)
+		go func(proc *Process) {
+			defer wg.Done()
+			waitForDepsWg := sync.WaitGroup{}
+			if revDeps, ok := reverseDependencies[proc.getName()]; ok {
+				for _, runningProc := range revDeps {
+					waitForDepsWg.Add(1)
+					go func(pr *Process) {
+						pr.waitForCompletion()
+						waitForDepsWg.Done()
+					}(runningProc)
+				}
+			}
+			waitForDepsWg.Wait()
+			log.Debug().Msgf("[%s]: waited for all dependencies to shut down", proc.getName())
+
+			err := proc.shutDown()
+			if err != nil {
+				log.Err(err).Msgf("failed to shutdown %s", proc.getName())
+				return
+			}
+			proc.waitForCompletion()
+		}(process)
+	}
+}
+
+func (p *ProjectRunner) shutDownAndWait(shutdownOrder []*Process) {
+	wg := sync.WaitGroup{}
+	if p.isOrderedShutDown {
+		p.shutDownInOrder(&wg, shutdownOrder)
+	} else {
+		for _, proc := range shutdownOrder {
+			err := proc.shutDown()
+			if err != nil {
+				log.Err(err).Msgf("failed to shutdown %s", proc.getName())
+				continue
+			}
+			wg.Add(1)
+			go func(pr *Process) {
+				pr.waitForCompletion()
+				wg.Done()
+			}(proc)
+		}
+	}
+
+	wg.Wait()
+}
+
 func (p *ProjectRunner) ShutDownProject() error {
 	p.runProcMutex.Lock()
 	defer p.runProcMutex.Unlock()
-	runProc := p.runningProcesses
-	for _, proc := range runProc {
+
+	shutdownOrder := []*Process{}
+	if p.isOrderedShutDown {
+		err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
+			if runningProc, ok := p.runningProcesses[process.ReplicaName]; ok {
+				shutdownOrder = append(shutdownOrder, runningProc)
+			}
+			return nil
+		})
+		if err != nil {
+			log.Error().Msgf("Failed to build project run order: %s", err.Error())
+		}
+		slices.Reverse(shutdownOrder)
+	} else {
+		for _, proc := range p.runningProcesses {
+			shutdownOrder = append(shutdownOrder, proc)
+		}
+	}
+
+	var nameOrder []string
+	for _, v := range shutdownOrder {
+		nameOrder = append(nameOrder, v.getName())
+	}
+	log.Debug().Msgf("Shutting down %d processes. Order: %q", len(shutdownOrder), nameOrder)
+	for _, proc := range shutdownOrder {
 		proc.prepareForShutDown()
 	}
-	wg := sync.WaitGroup{}
-	for _, proc := range runProc {
-		err := proc.shutDown()
-		if err != nil {
-			log.Err(err).Msgf("failed to shutdown %s", proc.getName())
-			continue
-		}
-		wg.Add(1)
-		go func(pr *Process) {
-			pr.waitForCompletion()
-			wg.Done()
-		}(proc)
-	}
-	wg.Wait()
+
+	p.shutDownAndWait(shutdownOrder)
 	return nil
 }
 
@@ -644,10 +730,11 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		username = current.Username
 	}
 	runner := &ProjectRunner{
-		project:         opts.project,
-		mainProcess:     opts.mainProcess,
-		mainProcessArgs: opts.mainProcessArgs,
-		isTuiOn:         opts.isTuiOn,
+		project:           opts.project,
+		mainProcess:       opts.mainProcess,
+		mainProcessArgs:   opts.mainProcessArgs,
+		isTuiOn:           opts.isTuiOn,
+		isOrderedShutDown: opts.isOrderedShutDown,
 		projectState: &types.ProjectState{
 			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),
