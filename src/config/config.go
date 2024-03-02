@@ -12,12 +12,14 @@ import (
 )
 
 var (
-	Version         = "undefined"
-	Commit          = "undefined"
-	Date            = "undefined"
-	CheckForUpdates = "false"
-	License         = "Apache-2.0"
-	Discord         = "https://discord.gg/S4xgmRSHdC"
+	Version           = "undefined"
+	Commit            = "undefined"
+	Date              = "undefined"
+	CheckForUpdates   = "false"
+	License           = "Apache-2.0"
+	Discord           = "https://discord.gg/S4xgmRSHdC"
+	ProjectName       = "Process Compose 🔥"
+	RemoteProjectName = "Process Compose ⚡"
 
 	scFiles = []string{
 		"shortcuts.yaml",

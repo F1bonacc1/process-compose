@@ -7,10 +7,13 @@ DATE       ?= $(shell TZ=UTC0 git show --quiet --date='format-local:%Y-%m-%dT%H:
 NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
 PKG = github.com/f1bonacc1/${NAME}
 SHELL := /bin/bash
+PROJ_NAME := Process Compose
 LD_FLAGS := -ldflags="-X ${PKG}/src/config.Version=${VERSION} \
             -X ${PKG}/src/config.CheckForUpdates=true \
             -X ${PKG}/src/config.Commit=${GIT_REV} \
             -X ${PKG}/src/config.Date=${DATE} \
+            -X '${PKG}/src/config.ProjectName=${PROJ_NAME} 🔥' \
+            -X '${PKG}/src/config.RemoteProjectName=${PROJ_NAME} ⚡' \
             -s -w"
 ifeq ($(OS),Windows_NT)
 	EXT=.exe

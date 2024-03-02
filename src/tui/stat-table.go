@@ -33,9 +33,9 @@ func (pv *pcView) createStatTable() *tview.Table {
 
 func (pv *pcView) getPcTitle() string {
 	if pv.project.IsRemote() {
-		return "Process Compose ⚡"
+		return config.RemoteProjectName
 	} else {
-		return "Process Compose 🔥"
+		return config.ProjectName
 	}
 }
 
