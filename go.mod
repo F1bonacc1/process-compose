@@ -10,7 +10,7 @@ require (
 	github.com/creack/pty v1.1.21
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
 	github.com/fatih/color v1.16.0
-	github.com/gdamore/tcell/v2 v2.7.1
+	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/joho/godotenv v1.5.1
