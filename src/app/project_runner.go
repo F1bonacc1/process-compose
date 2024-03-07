@@ -259,7 +259,7 @@ func (p *ProjectRunner) StopProcess(name string) error {
 		log.Error().Msgf("Process %s is not running", name)
 		return fmt.Errorf("process %s is not running", name)
 	}
-	err := proc.shutDown()
+	err := proc.shutDownNoRestart()
 	if err != nil {
 		log.Err(err).Msgf("failed to stop process %s", name)
 	}

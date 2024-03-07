@@ -2,6 +2,7 @@ package app
 
 import (
 	"bufio"
+	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
@@ -500,4 +501,92 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			return
 		}
 	})
+}
+
+func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
+	restarting := "Restarting"
+	notRestarting := "NotRestarting"
+	shell := command.DefaultShellConfig()
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			restarting: {
+				Name:        restarting,
+				ReplicaName: restarting,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "sleep 2"},
+				RestartPolicy: types.RestartPolicyConfig{
+					Restart: types.RestartPolicyAlways,
+				},
+			},
+			notRestarting: {
+				Name:        notRestarting,
+				ReplicaName: notRestarting,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "sleep 2"},
+				RestartPolicy: types.RestartPolicyConfig{
+					Restart: types.RestartPolicyNo,
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project: project,
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	go runner.Run()
+	time.Sleep(100 * time.Millisecond)
+	state, err := runner.GetProcessState(restarting)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	if state.Status != types.ProcessStateRunning {
+		t.Errorf("process %s is not running", restarting)
+		return
+	}
+	err = runner.StopProcess(restarting)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	time.Sleep(100 * time.Millisecond)
+	state, err = runner.GetProcessState(restarting)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	if state.Status != types.ProcessStateCompleted {
+		t.Errorf("process %s want %s got %s", restarting, types.ProcessStateCompleted, state.Status)
+		return
+	}
+	state, err = runner.GetProcessState(notRestarting)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	if state.Status != types.ProcessStateRunning {
+		t.Errorf("process %s is not running", notRestarting)
+		return
+	}
+	err = runner.StopProcess(notRestarting)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	time.Sleep(100 * time.Millisecond)
+	state, err = runner.GetProcessState(notRestarting)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	if state.Status != types.ProcessStateCompleted {
+		t.Errorf("process %s is running", notRestarting)
+		return
+	}
 }

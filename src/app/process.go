@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -61,6 +62,7 @@ type Process struct {
 	printLogs       bool
 	isMain          bool
 	extraArgs       []string
+	isStopped       atomic.Bool
 }
 
 func NewProcess(
@@ -249,6 +251,9 @@ func (p *Process) isRestartable() bool {
 	p.Lock()
 	exitCode := p.getExitCode()
 	p.Unlock()
+	if p.isStopped.Swap(false) {
+		return false
+	}
 	if p.procConf.RestartPolicy.Restart == types.RestartPolicyNo ||
 		p.procConf.RestartPolicy.Restart == "" {
 		return false
@@ -365,7 +370,9 @@ func (p *Process) isRunning() bool {
 
 func (p *Process) prepareForShutDown() {
 	// prevent restart during global shutdown or scale down
-	p.procConf.RestartPolicy.Restart = types.RestartPolicyNo
+	//p.procConf.RestartPolicy.Restart = types.RestartPolicyNo
+	p.isStopped.Store(true)
+
 }
 
 func (p *Process) onProcessStart() {
