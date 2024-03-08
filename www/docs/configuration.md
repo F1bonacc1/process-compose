@@ -143,7 +143,7 @@ processes:
         command: '[ $(docker inspect -f {{ "{{.State.Running}}" }} nginx_test) = true ]'
 ```
 
-> :bulb: For backward compatibility, if neither global or local variables exist in `process-compose.yaml` the template engine won't run.
+> :bulb: For backward compatibility, if neither global nor local variables exist in `process-compose.yaml` the template engine won't run.
 
 ## Specify which configuration files to use
 
@@ -254,3 +254,54 @@ processes:
 ```
 
 > :bulb: `STDIN` and `Windows` are not supported at this time.
+
+#### Multiline Command Support
+Process Compose respects all the multiline `YAML` [specification](https://yaml-multiline.info/) variations. 
+
+Examples:
+
+```yaml
+processes:
+  block_folded:
+    command: >
+      echo 1
+      && echo 2
+
+      echo 3
+
+  block_literal:
+    command: |
+      echo 4
+      echo 5
+    depends_on:
+      block_folded:
+        condition: process_completed
+
+  flow_single:
+    command: 'echo 6
+      && echo 7
+
+      echo 8'
+    depends_on:
+      block_literal:
+        condition: process_completed
+
+  flow_double:
+    command: "echo 9
+      && echo 10
+      
+      echo 11"
+    depends_on:
+      flow_single:
+        condition: process_completed
+  
+  flow_plain:
+    command: echo 12
+      && echo 13
+      
+      echo 14
+    depends_on:
+      flow_double:
+        condition: process_completed
+```
+> :bulb: The extra blank lines (`\n`) in the command sting are to introduce a newline to the command.

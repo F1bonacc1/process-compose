@@ -1,0 +1,47 @@
+version: "0.5"
+log_level: info
+log_length: 300
+
+processes:
+  block_folded:
+    command: >
+      echo 1
+      && echo 2
+
+      echo 3
+
+  block_literal:
+    command: |
+      echo 4
+      echo 5
+    depends_on:
+      block_folded:
+        condition: process_completed
+
+  flow_single:
+    command: 'echo 6
+      && echo 7
+
+      echo 8'
+    depends_on:
+      block_literal:
+        condition: process_completed
+
+  flow_double:
+    command: "echo 8
+      && echo 9
+      
+      echo 10"
+    depends_on:
+      flow_single:
+        condition: process_completed
+  
+  flow_plain:
+    command: echo 11
+      && echo 12
+      
+      echo 13
+    depends_on:
+      flow_double:
+        condition: process_completed
+
