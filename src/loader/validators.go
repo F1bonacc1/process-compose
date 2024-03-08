@@ -46,10 +46,11 @@ func validateProcessConfig(p *types.Project) error {
 			if strings.HasPrefix(extKey, "x-") {
 				continue
 			}
+			errStr := fmt.Sprintf("unknown key '%s' found in process '%s'", extKey, key)
 			if p.IsStrict {
-				return fmt.Errorf("unknown key %s found in process %s", extKey, key)
+				return fmt.Errorf(errStr)
 			}
-			log.Error().Msgf("Unknown key %s found in process %s", extKey, key)
+			log.Error().Msgf(errStr)
 		}
 	}
 	return nil
@@ -69,7 +70,7 @@ func validatePlatformCompatibility(p *types.Project) error {
 	}
 	for name, proc := range p.Processes {
 		if proc.IsTty {
-			return fmt.Errorf("PTY for process %s is not yet supported on Windows", name)
+			return fmt.Errorf("PTY for process '%s' is not yet supported on Windows", name)
 		}
 	}
 	return nil
@@ -81,7 +82,7 @@ func validateNoCircularDependencies(p *types.Project) error {
 	for name := range p.Processes {
 		if !visited[name] {
 			if isCyclicHelper(p, name, visited, stack) {
-				return fmt.Errorf("circular dependency found in %s", name)
+				return fmt.Errorf("circular dependency found in '%s'", name)
 			}
 		}
 	}
@@ -111,4 +112,28 @@ func isCyclicHelper(p *types.Project, procName string, visited map[string]bool, 
 
 	stack[procName] = false
 	return false
+}
+
+func validateHealthDependencyHasHealthCheck(p *types.Project) error {
+	for procName, proc := range p.Processes {
+		for depName, dep := range proc.DependsOn {
+			depProc, ok := p.Processes[depName]
+			if !ok {
+				errStr := fmt.Sprintf("dependency process '%s' in process '%s' is not defined", depName, procName)
+				if p.IsStrict {
+					return fmt.Errorf(errStr)
+				}
+				log.Error().Msg(errStr)
+				continue
+			}
+			if dep.Condition == types.ProcessConditionHealthy && depProc.ReadinessProbe == nil && depProc.LivenessProbe == nil {
+				errStr := fmt.Sprintf("health dependency defined in '%s' but no health check exists in '%s'", procName, depName)
+				if p.IsStrict {
+					return fmt.Errorf(errStr)
+				}
+				log.Error().Msg(errStr)
+			}
+		}
+	}
+	return nil
 }
