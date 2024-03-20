@@ -59,6 +59,11 @@ func (pv *pcView) autoAdjustProcTableHeight() {
 
 func (pv *pcView) getSearchInput() tview.Primitive {
 	textInput := tview.NewInputField().SetLabel("Search:")
+	textInput.SetFieldBackgroundColor(pv.styles.Dialog().FieldBgColor.Color())
+	textInput.SetFieldTextColor(pv.styles.Dialog().FieldFgColor.Color())
+	textInput.SetLabelColor(pv.styles.Dialog().LabelFgColor.Color())
+	//textInput.SetBackgroundColor(pv.styles.HlColor())
+	textInput.SetLabelStyle(textInput.GetLabelStyle().Background(pv.styles.BgColor()))
 
 	textInput.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter || key == tcell.KeyEsc {

@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -26,6 +23,10 @@ func printInfo() {
 	path := config.GetShortCutsPath()
 	if len(path) > 0 {
 		fmt.Printf(format, "Shortcuts:", config.GetShortCutsPath())
+	}
+	themes := config.GetThemesPath()
+	if len(themes) > 0 {
+		fmt.Printf(format, "Theme:", config.GetThemesPath())
 	}
 
 }

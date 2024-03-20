@@ -41,6 +41,7 @@ processes:
 
 Default shortcuts can be changed by placing `shortcuts.yaml` in your `$XDG_CONFIG_HOME/process-compose/` directory.  
 The default `process-compose` configuration is defined as:
+
 ```yaml
 # $XDG_CONFIG_HOME/process-compose/shortcuts.yaml
 shortcuts:
@@ -88,3 +89,74 @@ shortcuts:
   quit:
     shortcut: F3
 ```
+
+## TUI Themes
+
+The default shortcut for theme selection is `CTRL-T`. Process Compose comes with 4 pre-loaded themes.  These can be extended in 2 ways:
+
+1. By contributing a new theme, by creating a PR with a new theme in the `src/config/themes` directory.
+2. Adding your own theme by placing `theme.yaml` in your `$XDG_CONFIG_HOME/process-compose/` directory.
+
+The default `process-compose` theme is defined as:
+
+```yaml
+style:
+  body:
+    fgColor: white
+    bgColor: black
+    secondaryTextColor: yellow
+    tertiaryTextColor: green
+    borderColor: white
+  stat_table:
+    keyFgColor: yellow
+    valueFgColor: white
+    logoColor: yellow
+  proc_table:
+    fgColor: lightskyblue
+    fgWarning: yellow
+    fgPending: grey
+    fgCompleted: lightgreen
+    fgError: red
+    headerFgColor: white
+  help:
+    fgColor: black
+    keyColor: white
+    hlColor: green
+    categoryFgColor: lightskyblue
+  dialog:
+    fgColor: cadetblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: lightskyblue
+    buttonFocusFgColor: black
+    buttonFocusBgColor: dodgerblue
+    labelFgColor: yellow
+    fieldFgColor: black
+    fieldBgColor: lightskyblue
+```
+
+`theme.yaml` can contain only the values you wish to change, default values will be used for the rest.  
+For example if you want to change the default background color to `green` instead of `black` and the logo color to `blue`, the configuration will be as follows:
+
+```yaml
+style:
+  body:
+    bgColor: green
+  stat_table:
+    logoColor: blue
+```
+
+> :bulb: To load the new values it's enough to select the `Custom Style` (`F` shortcut) theme from the theme selector menu.
+
+For Color names W3C approved color names should be used. Note that on various terminals colors may be approximated, or not supported at all.  If no suitable representation for a color is known, the no color will be set, deferring to whatever default attributes the terminal uses.
+
+By default `process-compose` will respect any theme used in your terminal which might result in less accurate color fidelity. To force the use of "True Colors", please use the `HEX` color notation:
+
+```yaml
+style:
+  body:
+    bgColor: '#00FF00' #green
+  stat_table:
+    logoColor: '#0000FF' #blue
+```
+

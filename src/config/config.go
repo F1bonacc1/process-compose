@@ -32,6 +32,7 @@ const (
 	LogPathEnvVarName = "PC_LOG_FILE"
 	LogFileFlags      = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
 	LogFileMode       = os.FileMode(0600)
+	themeFileName     = "theme.yaml"
 )
 
 var (
@@ -105,6 +106,11 @@ func GetShortCutsPath() string {
 		}
 	}
 	return ""
+}
+
+func GetThemesPath() string {
+	themePath := filepath.Join(procCompHome(), themeFileName)
+	return themePath
 }
 
 func getUser() string {

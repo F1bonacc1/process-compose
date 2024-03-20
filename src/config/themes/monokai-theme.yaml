@@ -1,0 +1,34 @@
+style:
+  name: Monokai
+  body:
+    fgColor: white
+    bgColor: '#1E1E1E'
+    secondaryTextColor: dodgerblue
+    tertiaryTextColor: green
+    borderColor: grey
+  stat_table:
+    keyFgColor: '#D0B344'
+    valueFgColor: '#C5C8C6'
+    logoColor: '#FF046D'
+  proc_table:
+    fgColor: '#C5C8C6'
+    fgWarning: yellow
+    fgPending: grey
+    fgCompleted: lightgreen
+    fgError: red
+    headerFgColor: '#D0B344'
+  help:
+    fgColor: black
+    keyColor: white
+    hlColor: '#D0B344'
+    categoryFgColor: '#9AA83A'
+  dialog:
+    fgColor: cadetblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: dodgerblue
+    buttonFocusFgColor: black
+    buttonFocusBgColor: dodgerblue
+    labelFgColor: yellow
+    fieldFgColor: black
+    fieldBgColor: '#D0B344'

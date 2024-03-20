@@ -13,8 +13,6 @@ func (pv *pcView) showSearch() {
 	})
 	f.SetItemPadding(1)
 	f.SetBorder(true)
-	f.SetFieldBackgroundColor(tcell.ColorLightSkyBlue)
-	f.SetFieldTextColor(tcell.ColorBlack)
 	f.SetButtonsAlign(tview.AlignCenter)
 	f.SetTitle("Search Log")
 	f.AddInputField("Search For", pv.logsText.getSearchTerm(), fieldWidth, nil, nil)
@@ -49,6 +47,7 @@ func (pv *pcView) showSearch() {
 		return nil
 	})
 	f.SetFocus(0)
+	pv.styleForm(f)
 	// Display and focus the dialog
 	pv.pages.AddPage(PageDialog, createDialogPage(f, fieldWidth+20, 11), true, true)
 	pv.appView.SetFocus(f)

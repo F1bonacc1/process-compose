@@ -15,6 +15,7 @@ import (
 type tableRowValues struct {
 	icon      string
 	iconColor tcell.Color
+	fgColor   tcell.Color
 	pid       string
 	name      string
 	ns        string
@@ -55,7 +56,7 @@ func (pv *pcView) fillTableData() {
 			pv.procTable.RemoveRow(row)
 			continue
 		}
-		rowVals := getTableRowValues(state)
+		rowVals := pv.getTableRowValues(state)
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
 			runningProcCount += 1
@@ -99,14 +100,14 @@ func (pv *pcView) getMaxProcHeight() int {
 
 func setRowValues(procTable *tview.Table, row int, rowVals tableRowValues) {
 	procTable.SetCell(row, int(ProcessStateIcon), tview.NewTableCell(rowVals.icon).SetAlign(tview.AlignCenter).SetExpansion(0).SetTextColor(rowVals.iconColor))
-	procTable.SetCell(row, int(ProcessStatePid), tview.NewTableCell(rowVals.pid).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-	procTable.SetCell(row, int(ProcessStateName), tview.NewTableCell(rowVals.name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-	procTable.SetCell(row, int(ProcessStateNamespace), tview.NewTableCell(rowVals.ns).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-	procTable.SetCell(row, int(ProcessStateStatus), tview.NewTableCell(rowVals.status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-	procTable.SetCell(row, int(ProcessStateAge), tview.NewTableCell(rowVals.age).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-	procTable.SetCell(row, int(ProcessStateHealth), tview.NewTableCell(rowVals.health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorLightSkyBlue))
-	procTable.SetCell(row, int(ProcessStateRestarts), tview.NewTableCell(rowVals.restarts).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
-	procTable.SetCell(row, int(ProcessStateExit), tview.NewTableCell(rowVals.exitCode).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(tcell.ColorLightSkyBlue))
+	procTable.SetCell(row, int(ProcessStatePid), tview.NewTableCell(rowVals.pid).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateName), tview.NewTableCell(rowVals.name).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateNamespace), tview.NewTableCell(rowVals.ns).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateStatus), tview.NewTableCell(rowVals.status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateAge), tview.NewTableCell(rowVals.age).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateHealth), tview.NewTableCell(rowVals.health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateRestarts), tview.NewTableCell(rowVals.restarts).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateExit), tview.NewTableCell(rowVals.exitCode).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(rowVals.fgColor))
 }
 
 func (pv *pcView) onTableSelectionChange(_, _ int) {
@@ -287,32 +288,32 @@ func (pv *pcView) getTableSorter() StateSorter {
 	return pv.stateSorter
 }
 
-func getIconForState(state types.ProcessState) (string, tcell.Color) {
+func (pv *pcView) getIconForState(state types.ProcessState) (string, tcell.Color) {
 	switch state.Status {
 	case types.ProcessStateRunning,
 		types.ProcessStateLaunching,
 		types.ProcessStateLaunched:
 		if state.Health == types.ProcessHealthNotReady {
-			return "●", tcell.ColorYellow
+			return "●", pv.styles.ProcTable().FgWarning.Color()
 		}
-		return "●", tcell.ColorLightSkyBlue
+		return "●", pv.styles.ProcTable().FgColor.Color()
 	case types.ProcessStatePending,
 		types.ProcessStateRestarting:
-		return "●", tcell.ColorGrey
+		return "●", pv.styles.ProcTable().FgPending.Color()
 	case types.ProcessStateCompleted:
 		if state.ExitCode == 0 {
-			return "●", tcell.ColorLightGreen
+			return "●", pv.styles.ProcTable().FgCompleted.Color()
 		}
-		return "●", tcell.ColorRed
+		return "●", pv.styles.ProcTable().FgError.Color()
 	case types.ProcessStateError:
-		return "●", tcell.ColorRed
+		return "●", pv.styles.ProcTable().FgError.Color()
 	case types.ProcessStateDisabled,
 		types.ProcessStateForeground:
-		return "◯", tcell.ColorGrey
+		return "◯", pv.styles.ProcTable().FgPending.Color()
 	case types.ProcessStateSkipped:
-		return "●", tcell.ColorYellow
+		return "●", pv.styles.ProcTable().FgWarning.Color()
 	default:
-		return "●", tcell.ColorLightSkyBlue
+		return "●", pv.styles.ProcTable().FgColor.Color()
 	}
 }
 
@@ -337,11 +338,12 @@ func getStrForExitCode(state types.ProcessState) string {
 	return strconv.Itoa(state.ExitCode)
 }
 
-func getTableRowValues(state types.ProcessState) tableRowValues {
-	icon, color := getIconForState(state)
+func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
+	icon, color := pv.getIconForState(state)
 	return tableRowValues{
 		icon:      icon,
 		iconColor: color,
+		fgColor:   pv.styles.ProcTable().FgColor.Color(),
 		pid:       strconv.Itoa(state.Pid),
 		name:      state.Name,
 		ns:        state.Namespace,

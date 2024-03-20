@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
@@ -32,6 +33,7 @@ const (
 	ActionNsFilter       = ActionName("ns_filter")
 	ActionHideDisabled   = ActionName("hide_disabled")
 	ActionProcFilter     = ActionName("proc_filter")
+	ActionThemeSelector  = ActionName("theme_selector")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -54,10 +56,16 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionNsFilter:       tcell.KeyCtrlG,
 	ActionHideDisabled:   tcell.KeyCtrlD,
 	ActionProcFilter:     tcell.KeyRune,
+	ActionThemeSelector:  tcell.KeyCtrlT,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
 	ActionProcFilter: '/',
+}
+
+var generalActionsOrder = []ActionName{
+	ActionHelp,
+	ActionThemeSelector,
 }
 
 var logActionsOrder = []ActionName{
@@ -83,6 +91,7 @@ var procActionsOrder = []ActionName{
 
 type ShortCuts struct {
 	ShortCutKeys map[ActionName]*Action `yaml:"shortcuts"`
+	style        config.Help
 }
 
 func (s *ShortCuts) saveToFile(filePath string) error {
@@ -138,6 +147,24 @@ func (s *ShortCuts) applyValid(newSc *ShortCuts) {
 	}
 }
 
+func (s *ShortCuts) writeButton(action ActionName, w io.Writer) {
+	s.ShortCutKeys[action].writeButton(w, s.style)
+}
+
+func (s *ShortCuts) writeToggleButton(action ActionName, w io.Writer, state bool) {
+	s.ShortCutKeys[action].writeToggleButton(w, state, s.style)
+}
+
+func (s *ShortCuts) writeCategory(category string, w io.Writer) {
+	_, _ = fmt.Fprintf(w, "[%s::b]%s[-:-:-] ",
+		string(s.style.FgCategoryColor),
+		category)
+}
+
+func (s *ShortCuts) StylesChanged(style *config.Styles) {
+	s.style = style.Help()
+}
+
 func parseShortCuts(sc *ShortCuts) {
 	for k, v := range sc.ShortCutKeys {
 		key, err := keyName2Key(v.ShortCut)
@@ -168,27 +195,24 @@ type Action struct {
 	rune              rune
 }
 
-func (a Action) getButton() string {
-	return fmt.Sprintf("%s[black:green]%s[-:-:-]", a.ShortCut, a.Description)
+func (a Action) writeButton(w io.Writer, style config.Help) {
+	_, _ = fmt.Fprintf(w, "%s[%s:%s:]%s[-:-:-] ",
+		a.ShortCut,
+		string(style.FgColor),
+		string(style.HlColor),
+		a.Description)
 }
 
-func (a Action) getToggleButton(state bool) string {
-	if len(a.ToggleDescription) != 2 {
-		return a.getButton()
-	}
-	return fmt.Sprintf("%s[black:green]%s[-:-:-]", a.ShortCut, a.ToggleDescription[state])
+func (a Action) writeToggleButton(w io.Writer, state bool, style config.Help) {
+	_, _ = fmt.Fprintf(w, "%s[%s:%s:]%s[-:-:-] ",
+		a.ShortCut,
+		string(style.FgColor),
+		string(style.HlColor),
+		a.ToggleDescription[state])
 }
 
-func (a Action) writeButton(w io.Writer) {
-	_, _ = fmt.Fprintf(w, "%s ", a.getButton())
-}
-
-func (a Action) writeToggleButton(w io.Writer, state bool) {
-	_, _ = fmt.Fprintf(w, "%s ", a.getToggleButton(state))
-}
-
-func getDefaultActions() ShortCuts {
-	sc := ShortCuts{
+func getDefaultActions() *ShortCuts {
+	sc := &ShortCuts{
 		ShortCutKeys: map[ActionName]*Action{
 			ActionLogScreen: {
 				ToggleDescription: map[bool]string{
@@ -264,6 +288,9 @@ func getDefaultActions() ShortCuts {
 			},
 			ActionProcFilter: {
 				Description: "Search Process",
+			},
+			ActionThemeSelector: {
+				Description: "Select Theme",
 			},
 		},
 	}

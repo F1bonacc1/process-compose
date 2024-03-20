@@ -1,0 +1,34 @@
+style:
+  name: 'One Dark'
+  body:
+    fgColor: white
+    bgColor: '#282C34'
+    secondaryTextColor: '#E06C75'
+    tertiaryTextColor: green
+    borderColor: grey
+  stat_table:
+    keyFgColor: '#61AFEF'
+    valueFgColor: "#ABB2BF"
+    logoColor: '#61AFEF'
+  proc_table:
+    fgColor: '#98C379'
+    fgWarning: yellow
+    fgPending: grey
+    fgCompleted: green
+    fgError: red
+    headerFgColor: '#61AFEF'
+  help:
+    fgColor: black
+    keyColor: white
+    hlColor: '#98C379'
+    categoryFgColor: '#C678DD'
+  dialog:
+    fgColor: cadetblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: '#61AFEF'
+    buttonFocusFgColor: black
+    buttonFocusBgColor: dodgerblue
+    labelFgColor: yellow
+    fieldFgColor: black
+    fieldBgColor: '#98C379'

@@ -3,7 +3,6 @@ package tui
 import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"strings"
 )
@@ -15,8 +14,6 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.Pro
 	})
 	f.SetItemPadding(1)
 	f.SetBorder(true)
-	f.SetFieldBackgroundColor(tcell.ColorLightSkyBlue)
-	f.SetFieldTextColor(tcell.ColorBlack)
 	f.SetButtonsAlign(tview.AlignCenter)
 	f.SetTitle("Process " + info.Name + " Info")
 	addStringIfNotEmpty("Description:", info.Description, f)
@@ -38,6 +35,7 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.Pro
 		pv.pages.RemovePage(PageDialog)
 	})
 	f.SetFocus(f.GetFormItemCount())
+	pv.styleForm(f)
 	return f
 }
 

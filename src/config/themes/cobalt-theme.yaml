@@ -1,0 +1,34 @@
+style:
+  name: Cobalt
+  body:
+    fgColor: white
+    bgColor: '#193549'
+    secondaryTextColor: '#FDBC4B'
+    tertiaryTextColor: green
+    borderColor: lightskyblue
+  stat_table:
+    keyFgColor: '#FDBC4B'
+    valueFgColor: white
+    logoColor: '#FDBC4B'
+  proc_table:
+    fgColor: lightskyblue
+    fgWarning: '#FDBC4B'
+    fgPending: grey
+    fgCompleted: lightgreen
+    fgError: red
+    headerFgColor: '#FDBC4B'
+  help:
+    fgColor: black
+    keyColor: white
+    hlColor: '#FDBC4B'
+    categoryFgColor: lightskyblue
+  dialog:
+    fgColor: cadetblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: lightskyblue
+    buttonFocusFgColor: black
+    buttonFocusBgColor: dodgerblue
+    labelFgColor: '#FDBC4B'
+    fieldFgColor: black
+    fieldBgColor: lightskyblue

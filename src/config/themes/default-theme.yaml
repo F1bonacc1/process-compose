@@ -1,0 +1,34 @@
+style:
+  name: "Default"
+  body:
+    fgColor: white
+    bgColor: black
+    secondaryTextColor: yellow
+    tertiaryTextColor: green
+    borderColor: white
+  stat_table:
+    keyFgColor: yellow
+    valueFgColor: white
+    logoColor: yellow
+  proc_table:
+    fgColor: lightskyblue
+    fgWarning: yellow
+    fgPending: grey
+    fgCompleted: lightgreen
+    fgError: red
+    headerFgColor: white
+  help:
+    fgColor: black
+    keyColor: white
+    hlColor: green
+    categoryFgColor: lightskyblue
+  dialog:
+    fgColor: cadetblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: lightskyblue
+    buttonFocusFgColor: black
+    buttonFocusBgColor: dodgerblue
+    labelFgColor: yellow
+    fieldFgColor: black
+    fieldBgColor: lightskyblue

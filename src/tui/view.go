@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -37,7 +36,7 @@ const (
 
 const shutDownAfterSec = 10
 
-var pcv *pcView = nil
+var pcv *pcView
 
 type pcView struct {
 	procTable         *tview.Table
@@ -52,7 +51,7 @@ type pcView struct {
 	logSelect         bool
 	fullScrState      FullScrState
 	loggedProc        string
-	shortcuts         ShortCuts
+	shortcuts         *ShortCuts
 	procCountCell     *tview.TableCell
 	mainGrid          *tview.Grid
 	logsTextArea      *tview.TextArea
@@ -73,10 +72,13 @@ type pcView struct {
 	selectedNsChanged atomic.Bool
 	hideDisabled      atomic.Bool
 	commandMode       bool
+	styles            *config.Styles
+	themes            *config.Themes
+	helpDialog        *helpDialog
 }
 
 func newPcView(project app.IProject) *pcView {
-	//_ = pv.shortcuts.loadFromFile("short-cuts-new.yaml")
+
 	pv := &pcView{
 		appView:       tview.NewApplication(),
 		logsText:      NewLogView(project.GetLogLength()),
@@ -98,6 +100,7 @@ func newPcView(project app.IProject) *pcView {
 		},
 		procColumns: map[ColumnID]string{},
 		selectedNs:  AllNS,
+		themes:      config.NewThemes(),
 	}
 	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
@@ -113,12 +116,17 @@ func newPcView(project app.IProject) *pcView {
 
 	pv.mainGrid.SetInputCapture(pv.onMainGridKey)
 	pv.appView.SetRoot(pv.pages, true).EnableMouse(true).SetInputCapture(pv.onAppKey)
+	pv.helpDialog = newHelpDialog(pv.shortcuts, func() {
+		pv.pages.RemovePage(PageDialog)
+	})
+	pv.loadThemes()
 
 	if len(pv.procNames) > 0 {
 		name := pv.procNames[0]
 		pv.logsText.SetTitle(name)
 		pv.followLog(name)
 	}
+	//pv.dumpStyles()
 	return pv
 }
 
@@ -138,6 +146,14 @@ func (pv *pcView) loadShortcuts() {
 	if len(path) > 0 {
 		pv.shortcuts.loadFromFile(path)
 	}
+}
+
+func (pv *pcView) loadThemes() {
+	pv.themes.AddListener(pv)
+	pv.themes.AddListener(pv.helpDialog)
+	pv.styles = pv.themes.GetActiveStyles()
+	pv.StylesChanged(pv.styles)
+	pv.helpDialog.StylesChanged(pv.styles)
 }
 
 func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
@@ -210,7 +226,9 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.hideDisabled.Store(!pv.hideDisabled.Load())
 		pv.updateHelpTextView()
 	case pv.shortcuts.ShortCutKeys[ActionHelp].key:
-		pv.showHelpDialog()
+		pv.showDialog(pv.helpDialog, 50, 30)
+	case pv.shortcuts.ShortCutKeys[ActionThemeSelector].key:
+		pv.showThemeSelector()
 	case tcell.KeyRune:
 		if event.Rune() == pv.shortcuts.ShortCutKeys[ActionProcFilter].rune {
 			//pv.showProcFilter()
@@ -261,38 +279,6 @@ func (pv *pcView) showError(errMessage string) {
 		})
 
 	pv.pages.AddPage(PageDialog, createDialogPage(m, 50, 50), true, true)
-}
-
-func (pv *pcView) showScale() {
-	f := tview.NewForm()
-	f.SetCancelFunc(func() {
-		pv.pages.RemovePage(PageDialog)
-	})
-	f.SetItemPadding(3)
-	f.SetBorder(true)
-	f.SetFieldBackgroundColor(tcell.ColorBlack)
-	f.SetFieldTextColor(tcell.ColorLightSkyBlue)
-	name := pv.getSelectedProcName()
-	f.SetTitle("Scale " + name + " Process")
-	f.AddInputField("Replicas:", "1", 0, nil, nil)
-	f.AddButton("Scale", func() {
-		scale, err := strconv.Atoi(f.GetFormItem(0).(*tview.InputField).GetText())
-		if err != nil {
-			pv.showError("Invalid Scale: " + err.Error())
-			return
-		}
-		log.Info().Msgf("Scaling %s to %d", name, scale)
-		err = pv.project.ScaleProcess(name, scale)
-		if err != nil {
-			pv.showError("Invalid Scale: " + err.Error())
-		}
-		pv.pages.RemovePage(PageDialog)
-	})
-	f.AddButton("Cancel", func() {
-		pv.pages.RemovePage(PageDialog)
-	})
-	f.SetButtonsAlign(tview.AlignCenter)
-	pv.showDialog(f, 60, 10)
 }
 
 func (pv *pcView) showInfo() {
@@ -364,32 +350,33 @@ func (pv *pcView) updateHelpTextView() {
 	procScrBool := pv.fullScrState != ProcFull
 	pv.helpText.Clear()
 	if pv.logsText.isSearchActive() {
-		pv.shortcuts.ShortCutKeys[ActionLogFind].writeButton(pv.helpText)
-		pv.shortcuts.ShortCutKeys[ActionLogFindNext].writeButton(pv.helpText)
-		pv.shortcuts.ShortCutKeys[ActionLogFindPrev].writeButton(pv.helpText)
+		pv.shortcuts.writeButton(ActionLogFind, pv.helpText)
+		pv.shortcuts.writeButton(ActionLogFindNext, pv.helpText)
+		pv.shortcuts.writeButton(ActionLogFindPrev, pv.helpText)
 		if config.IsLogSelectionOn() {
-			pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
+			pv.shortcuts.writeToggleButton(ActionLogSelection, pv.helpText, !pv.logSelect)
 		}
-		pv.shortcuts.ShortCutKeys[ActionLogFindExit].writeButton(pv.helpText)
+		pv.shortcuts.writeButton(ActionLogFindExit, pv.helpText)
 		return
 	}
-	pv.shortcuts.ShortCutKeys[ActionHelp].writeButton(pv.helpText)
-	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue:]LOGS:[-:-:-]")
-	pv.shortcuts.ShortCutKeys[ActionLogScreen].writeToggleButton(pv.helpText, logScrBool)
-	pv.shortcuts.ShortCutKeys[ActionFollowLog].writeToggleButton(pv.helpText, !pv.logFollow)
-	pv.shortcuts.ShortCutKeys[ActionWrapLog].writeToggleButton(pv.helpText, !pv.logsText.IsWrapOn())
+	pv.shortcuts.writeButton(ActionHelp, pv.helpText)
+	pv.shortcuts.writeCategory("LOGS:", pv.helpText)
+	pv.shortcuts.writeToggleButton(ActionLogScreen, pv.helpText, logScrBool)
+	pv.shortcuts.writeToggleButton(ActionFollowLog, pv.helpText, !pv.logFollow)
+	pv.shortcuts.writeToggleButton(ActionWrapLog, pv.helpText, !pv.logsText.IsWrapOn())
 	if config.IsLogSelectionOn() {
-		pv.shortcuts.ShortCutKeys[ActionLogSelection].writeToggleButton(pv.helpText, !pv.logSelect)
+		pv.shortcuts.writeToggleButton(ActionLogSelection, pv.helpText, !pv.logSelect)
 	}
-	pv.shortcuts.ShortCutKeys[ActionLogFind].writeButton(pv.helpText)
-	fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
-	pv.shortcuts.ShortCutKeys[ActionProcessScale].writeButton(pv.helpText)
-	pv.shortcuts.ShortCutKeys[ActionProcessInfo].writeButton(pv.helpText)
-	pv.shortcuts.ShortCutKeys[ActionProcessStart].writeButton(pv.helpText)
-	pv.shortcuts.ShortCutKeys[ActionProcessScreen].writeToggleButton(pv.helpText, procScrBool)
-	pv.shortcuts.ShortCutKeys[ActionProcessStop].writeButton(pv.helpText)
-	pv.shortcuts.ShortCutKeys[ActionProcessRestart].writeButton(pv.helpText)
-	pv.shortcuts.ShortCutKeys[ActionQuit].writeButton(pv.helpText)
+	pv.shortcuts.writeButton(ActionLogFind, pv.helpText)
+	//fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
+	pv.shortcuts.writeCategory("PROCESS:", pv.helpText)
+	pv.shortcuts.writeButton(ActionProcessScale, pv.helpText)
+	pv.shortcuts.writeButton(ActionProcessInfo, pv.helpText)
+	pv.shortcuts.writeButton(ActionProcessStart, pv.helpText)
+	pv.shortcuts.writeToggleButton(ActionProcessScreen, pv.helpText, procScrBool)
+	pv.shortcuts.writeButton(ActionProcessStop, pv.helpText)
+	pv.shortcuts.writeButton(ActionProcessRestart, pv.helpText)
+	pv.shortcuts.writeButton(ActionQuit, pv.helpText)
 }
 
 func (pv *pcView) runOnce() {

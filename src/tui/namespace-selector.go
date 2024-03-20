@@ -51,6 +51,7 @@ func (pv *pcView) createNsFilterPrimitive() tview.Primitive {
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(list, (len(nsList)+3)*2, 1, true), maxLblLen+10, 1, true).
 		AddItem(nil, 0, 1, false)
+	list.SetBackgroundColor(pv.styles.BgColor())
 	return flex
 }
 
