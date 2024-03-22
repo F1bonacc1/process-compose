@@ -6,10 +6,12 @@ import (
 )
 
 func (pv *pcView) createGrid() {
+	pv.mainGrid.SetBorders(true)
 	row := 0
-	pv.mainGrid.SetBorders(true).
-		AddItem(pv.statTable, row, 0, 1, 1, 0, 0, false)
-	row++
+	if !pv.isFullScreen {
+		pv.mainGrid.AddItem(pv.statTable, row, 0, 1, 1, 0, 0, false)
+		row++
+	}
 	if pv.commandMode {
 		textInput := pv.getSearchInput()
 		pv.mainGrid.AddItem(textInput, row, 0, 1, 1, 0, 0, true)
@@ -22,12 +24,12 @@ func (pv *pcView) createGrid() {
 	} else {
 		log = pv.logsTextArea
 	}
-	switch pv.fullScrState {
+	switch pv.scrSplitState {
 	case LogFull:
-		pv.mainGrid.AddItem(log, row, 0, 2, 1, 0, 0, true)
+		pv.mainGrid.AddItem(log, row, 0, 1, 1, 0, 0, true)
 		row++
 	case ProcFull:
-		pv.mainGrid.AddItem(pv.procTable, row, 0, 2, 1, 0, 0, !pv.commandMode)
+		pv.mainGrid.AddItem(pv.procTable, row, 0, 1, 1, 0, 0, !pv.commandMode)
 		row++
 	case LogProcHalf:
 		pv.mainGrid.AddItem(pv.procTable, row, 0, 1, 1, 0, 0, !pv.commandMode)
@@ -35,10 +37,10 @@ func (pv *pcView) createGrid() {
 		pv.mainGrid.AddItem(log, row, 0, 1, 1, 0, 0, false)
 		row++
 	}
-	pv.mainGrid.AddItem(pv.helpText, row, 0, 1, 1, 0, 0, false)
+	if !pv.isFullScreen {
+		pv.mainGrid.AddItem(pv.helpText, row, 0, 1, 1, 0, 0, false)
+	}
 	pv.autoAdjustProcTableHeight()
-
-	pv.mainGrid.SetTitle("Process Compose")
 }
 
 func (pv *pcView) autoAdjustProcTableHeight() {
@@ -47,11 +49,26 @@ func (pv *pcView) autoAdjustProcTableHeight() {
 	if procTblHeight > maxProcHeight {
 		procTblHeight = maxProcHeight
 	}
-	rows := []int{pv.statTable.GetRowCount()}
+	rows := []int{}
+	if !pv.isFullScreen {
+		//stat table
+		rows = append(rows, pv.statTable.GetRowCount())
+	}
 	if pv.commandMode {
+		//search row
 		rows = append(rows, 1)
 	}
-	rows = append(rows, procTblHeight, 0, 1)
+	if pv.scrSplitState == LogProcHalf {
+		rows = append(rows, procTblHeight, 0)
+	} else {
+		// full proc or full log
+		rows = append(rows, 0)
+	}
+
+	if !pv.isFullScreen {
+		//help row
+		rows = append(rows, 1)
+	}
 	//stat table, (command), processes table, logs, help text
 	//0 means to take all the available height
 	pv.mainGrid.SetRows(rows...)
@@ -62,7 +79,6 @@ func (pv *pcView) getSearchInput() tview.Primitive {
 	textInput.SetFieldBackgroundColor(pv.styles.Dialog().FieldBgColor.Color())
 	textInput.SetFieldTextColor(pv.styles.Dialog().FieldFgColor.Color())
 	textInput.SetLabelColor(pv.styles.Dialog().LabelFgColor.Color())
-	//textInput.SetBackgroundColor(pv.styles.HlColor())
 	textInput.SetLabelStyle(textInput.GetLabelStyle().Background(pv.styles.BgColor()))
 
 	textInput.SetDoneFunc(func(key tcell.Key) {

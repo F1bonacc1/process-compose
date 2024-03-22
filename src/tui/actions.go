@@ -35,6 +35,7 @@ const (
 	ActionProcFilter       = ActionName("proc_filter")
 	ActionThemeSelector    = ActionName("theme_selector")
 	ActionSendToBackground = ActionName("send_to_background")
+	ActionFullScreen       = ActionName("full_screen")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -59,6 +60,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionProcFilter:       tcell.KeyRune,
 	ActionThemeSelector:    tcell.KeyCtrlT,
 	ActionSendToBackground: tcell.KeyCtrlB,
+	ActionFullScreen:       tcell.KeyCtrlRightSq,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -69,6 +71,7 @@ var generalActionsOrder = []ActionName{
 	ActionHelp,
 	ActionThemeSelector,
 	ActionSendToBackground,
+	ActionFullScreen,
 }
 
 var logActionsOrder = []ActionName{
@@ -297,6 +300,9 @@ func getDefaultActions() *ShortCuts {
 			},
 			ActionSendToBackground: {
 				Description: "Send Process Compose to Background",
+			},
+			ActionFullScreen: {
+				Description: "Toggle Full Screen",
 			},
 		},
 	}

@@ -20,12 +20,12 @@ import (
 	"github.com/rivo/tview"
 )
 
-type FullScrState int
+type ScrSplitState int
 
 const (
-	LogFull     FullScrState = 0
-	ProcFull                 = 1
-	LogProcHalf              = 2
+	LogFull     ScrSplitState = 0
+	ProcFull                  = 1
+	LogProcHalf               = 2
 )
 
 const (
@@ -49,7 +49,7 @@ type pcView struct {
 	procNames         []string
 	logFollow         bool
 	logSelect         bool
-	fullScrState      FullScrState
+	scrSplitState     ScrSplitState
 	loggedProc        string
 	shortcuts         *ShortCuts
 	procCountCell     *tview.TableCell
@@ -76,6 +76,7 @@ type pcView struct {
 	themes            *config.Themes
 	helpDialog        *helpDialog
 	settings          *config.Settings
+	isFullScreen      bool
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -85,7 +86,7 @@ func newPcView(project app.IProject) *pcView {
 		logsText:      NewLogView(project.GetLogLength()),
 		statusText:    tview.NewTextView().SetDynamicColors(true),
 		logFollow:     true,
-		fullScrState:  LogProcHalf,
+		scrSplitState: LogProcHalf,
 		helpText:      tview.NewTextView().SetDynamicColors(true),
 		loggedProc:    "",
 		shortcuts:     getDefaultActions(),
@@ -169,10 +170,10 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 	case pv.shortcuts.ShortCutKeys[ActionQuit].key:
 		pv.terminateAppView()
 	case pv.shortcuts.ShortCutKeys[ActionLogScreen].key:
-		if pv.fullScrState == LogFull {
-			pv.fullScrState = LogProcHalf
+		if pv.scrSplitState == LogFull {
+			pv.scrSplitState = LogProcHalf
 		} else {
-			pv.fullScrState = LogFull
+			pv.scrSplitState = LogFull
 		}
 		pv.redrawGrid()
 		pv.updateHelpTextView()
@@ -190,10 +191,10 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.appView.SetFocus(pv.logsTextArea)
 		pv.updateHelpTextView()
 	case pv.shortcuts.ShortCutKeys[ActionProcessScreen].key:
-		if pv.fullScrState == ProcFull {
-			pv.fullScrState = LogProcHalf
+		if pv.scrSplitState == ProcFull {
+			pv.scrSplitState = LogProcHalf
 		} else {
-			pv.fullScrState = ProcFull
+			pv.scrSplitState = ProcFull
 		}
 		pv.redrawGrid()
 		pv.onProcRowSpanChange()
@@ -230,9 +231,12 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.showThemeSelector()
 	case pv.shortcuts.ShortCutKeys[ActionSendToBackground].key:
 		pv.runShellProcess()
+	case pv.shortcuts.ShortCutKeys[ActionFullScreen].key:
+		pv.isFullScreen = !pv.isFullScreen
+		pv.logsText.SetBorder(!pv.isFullScreen)
+		pv.redrawGrid()
 	case tcell.KeyRune:
 		if event.Rune() == pv.shortcuts.ShortCutKeys[ActionProcFilter].rune {
-			//pv.showProcFilter()
 			pv.commandMode = true
 			pv.redrawGrid()
 		} else {
@@ -341,14 +345,14 @@ func (pv *pcView) getSelectedProcName() string {
 }
 
 func (pv *pcView) onProcRowSpanChange() {
-	if pv.fullScrState == ProcFull && pv.logFollow {
+	if pv.scrSplitState == ProcFull && pv.logFollow {
 		pv.stopFollowLog()
 	}
 }
 
 func (pv *pcView) updateHelpTextView() {
-	logScrBool := pv.fullScrState != LogFull
-	procScrBool := pv.fullScrState != ProcFull
+	logScrBool := pv.scrSplitState != LogFull
+	procScrBool := pv.scrSplitState != ProcFull
 	pv.helpText.Clear()
 	if pv.logsText.isSearchActive() {
 		pv.shortcuts.writeButton(ActionLogFind, pv.helpText)

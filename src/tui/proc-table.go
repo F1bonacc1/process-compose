@@ -112,7 +112,7 @@ func (pv *pcView) onTableSelectionChange(_, _ int) {
 	}
 	pv.logsText.resetSearch()
 	pv.updateHelpTextView()
-	pv.logsText.SetBorder(true).SetTitle(name)
+	pv.logsText.SetTitle(name)
 	pv.unFollowLog()
 	pv.followLog(name)
 	if !pv.logFollow {
