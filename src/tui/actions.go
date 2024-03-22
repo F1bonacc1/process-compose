@@ -14,49 +14,51 @@ import (
 type ActionName string
 
 const (
-	ActionHelp           = ActionName("help")
-	ActionLogScreen      = ActionName("log_screen")
-	ActionFollowLog      = ActionName("log_follow")
-	ActionWrapLog        = ActionName("log_wrap")
-	ActionLogSelection   = ActionName("log_select")
-	ActionProcessStart   = ActionName("process_start")
-	ActionProcessScale   = ActionName("process_scale")
-	ActionProcessInfo    = ActionName("process_info")
-	ActionProcessStop    = ActionName("process_stop")
-	ActionProcessRestart = ActionName("process_restart")
-	ActionProcessScreen  = ActionName("process_screen")
-	ActionQuit           = ActionName("quit")
-	ActionLogFind        = ActionName("find")
-	ActionLogFindNext    = ActionName("find_next")
-	ActionLogFindPrev    = ActionName("find_prev")
-	ActionLogFindExit    = ActionName("find_exit")
-	ActionNsFilter       = ActionName("ns_filter")
-	ActionHideDisabled   = ActionName("hide_disabled")
-	ActionProcFilter     = ActionName("proc_filter")
-	ActionThemeSelector  = ActionName("theme_selector")
+	ActionHelp             = ActionName("help")
+	ActionLogScreen        = ActionName("log_screen")
+	ActionFollowLog        = ActionName("log_follow")
+	ActionWrapLog          = ActionName("log_wrap")
+	ActionLogSelection     = ActionName("log_select")
+	ActionProcessStart     = ActionName("process_start")
+	ActionProcessScale     = ActionName("process_scale")
+	ActionProcessInfo      = ActionName("process_info")
+	ActionProcessStop      = ActionName("process_stop")
+	ActionProcessRestart   = ActionName("process_restart")
+	ActionProcessScreen    = ActionName("process_screen")
+	ActionQuit             = ActionName("quit")
+	ActionLogFind          = ActionName("find")
+	ActionLogFindNext      = ActionName("find_next")
+	ActionLogFindPrev      = ActionName("find_prev")
+	ActionLogFindExit      = ActionName("find_exit")
+	ActionNsFilter         = ActionName("ns_filter")
+	ActionHideDisabled     = ActionName("hide_disabled")
+	ActionProcFilter       = ActionName("proc_filter")
+	ActionThemeSelector    = ActionName("theme_selector")
+	ActionSendToBackground = ActionName("send_to_background")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
-	ActionHelp:           tcell.KeyF1,
-	ActionLogScreen:      tcell.KeyF4,
-	ActionFollowLog:      tcell.KeyF5,
-	ActionWrapLog:        tcell.KeyF6,
-	ActionLogSelection:   tcell.KeyCtrlS,
-	ActionProcessScale:   tcell.KeyF2,
-	ActionProcessInfo:    tcell.KeyF3,
-	ActionProcessStart:   tcell.KeyF7,
-	ActionProcessStop:    tcell.KeyF9,
-	ActionProcessRestart: tcell.KeyCtrlR,
-	ActionProcessScreen:  tcell.KeyF8,
-	ActionQuit:           tcell.KeyF10,
-	ActionLogFind:        tcell.KeyCtrlF,
-	ActionLogFindNext:    tcell.KeyCtrlN,
-	ActionLogFindPrev:    tcell.KeyCtrlP,
-	ActionLogFindExit:    tcell.KeyEsc,
-	ActionNsFilter:       tcell.KeyCtrlG,
-	ActionHideDisabled:   tcell.KeyCtrlD,
-	ActionProcFilter:     tcell.KeyRune,
-	ActionThemeSelector:  tcell.KeyCtrlT,
+	ActionHelp:             tcell.KeyF1,
+	ActionLogScreen:        tcell.KeyF4,
+	ActionFollowLog:        tcell.KeyF5,
+	ActionWrapLog:          tcell.KeyF6,
+	ActionLogSelection:     tcell.KeyCtrlS,
+	ActionProcessScale:     tcell.KeyF2,
+	ActionProcessInfo:      tcell.KeyF3,
+	ActionProcessStart:     tcell.KeyF7,
+	ActionProcessStop:      tcell.KeyF9,
+	ActionProcessRestart:   tcell.KeyCtrlR,
+	ActionProcessScreen:    tcell.KeyF8,
+	ActionQuit:             tcell.KeyF10,
+	ActionLogFind:          tcell.KeyCtrlF,
+	ActionLogFindNext:      tcell.KeyCtrlN,
+	ActionLogFindPrev:      tcell.KeyCtrlP,
+	ActionLogFindExit:      tcell.KeyEsc,
+	ActionNsFilter:         tcell.KeyCtrlG,
+	ActionHideDisabled:     tcell.KeyCtrlD,
+	ActionProcFilter:       tcell.KeyRune,
+	ActionThemeSelector:    tcell.KeyCtrlT,
+	ActionSendToBackground: tcell.KeyCtrlB,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -66,6 +68,7 @@ var defaultShortcutsRunes = map[ActionName]rune{
 var generalActionsOrder = []ActionName{
 	ActionHelp,
 	ActionThemeSelector,
+	ActionSendToBackground,
 }
 
 var logActionsOrder = []ActionName{
@@ -291,6 +294,9 @@ func getDefaultActions() *ShortCuts {
 			},
 			ActionThemeSelector: {
 				Description: "Select Theme",
+			},
+			ActionSendToBackground: {
+				Description: "Send Process Compose to Background",
 			},
 		},
 	}

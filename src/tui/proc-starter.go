@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -28,6 +29,17 @@ func (pv *pcView) startProcess() {
 	}
 }
 
+func (pv *pcView) runShellProcess() {
+	shell := command.DefaultShellConfig()
+	shellCmd := &types.ProcessConfig{
+		Executable: shell.ShellCommand,
+		RestartPolicy: types.RestartPolicyConfig{
+			Restart: types.RestartPolicyNo,
+		},
+	}
+	pv.runForeground(shellCmd)
+}
+
 func (pv *pcView) runForeground(info *types.ProcessConfig) bool {
 	pv.halt()
 	defer pv.resume()
@@ -43,7 +55,7 @@ func (pv *pcView) execute(info *types.ProcessConfig) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {
 		cancel()
-		clearScreen()
+		//clearScreen()
 	}()
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)

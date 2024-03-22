@@ -228,6 +228,8 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.showDialog(pv.helpDialog, 50, 30)
 	case pv.shortcuts.ShortCutKeys[ActionThemeSelector].key:
 		pv.showThemeSelector()
+	case pv.shortcuts.ShortCutKeys[ActionSendToBackground].key:
+		pv.runShellProcess()
 	case tcell.KeyRune:
 		if event.Rune() == pv.shortcuts.ShortCutKeys[ActionProcFilter].rune {
 			//pv.showProcFilter()
