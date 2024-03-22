@@ -22,5 +22,6 @@ func init() {
 	attachCmd.Flags().IntVarP(pcFlags.LogLength, "log-length", "l", *pcFlags.LogLength, "log length to display in TUI")
 	attachCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
 	attachCmd.Flags().AddFlag(commonFlags.Lookup("sort"))
+	attachCmd.Flags().AddFlag(commonFlags.Lookup("theme"))
 
 }

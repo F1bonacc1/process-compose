@@ -75,6 +75,7 @@ type pcView struct {
 	styles            *config.Styles
 	themes            *config.Themes
 	helpDialog        *helpDialog
+	settings          *config.Settings
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -101,6 +102,7 @@ func newPcView(project app.IProject) *pcView {
 		procColumns: map[ColumnID]string{},
 		selectedNs:  AllNS,
 		themes:      config.NewThemes(),
+		settings:    config.NewSettings(),
 	}
 	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
@@ -151,9 +153,6 @@ func (pv *pcView) loadShortcuts() {
 func (pv *pcView) loadThemes() {
 	pv.themes.AddListener(pv)
 	pv.themes.AddListener(pv.helpDialog)
-	pv.styles = pv.themes.GetActiveStyles()
-	pv.StylesChanged(pv.styles)
-	pv.helpDialog.StylesChanged(pv.styles)
 }
 
 func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
@@ -377,6 +376,16 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.writeButton(ActionProcessStop, pv.helpText)
 	pv.shortcuts.writeButton(ActionProcessRestart, pv.helpText)
 	pv.shortcuts.writeButton(ActionQuit, pv.helpText)
+}
+
+func (pv *pcView) saveTuiState() {
+	pv.settings.Sort.By = columnNames[pv.stateSorter.sortByColumn]
+	pv.settings.Sort.IsReversed = !pv.stateSorter.isAsc
+	pv.settings.Theme = pv.styles.GetStyleName()
+	err := pv.settings.Save()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to save settings")
+	}
 }
 
 func (pv *pcView) runOnce() {

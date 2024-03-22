@@ -33,5 +33,6 @@ func init() {
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("hide-disabled"))
 	upCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
 	upCmd.Flags().AddFlag(commonFlags.Lookup("sort"))
+	upCmd.Flags().AddFlag(commonFlags.Lookup("theme"))
 
 }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/tui"
 	"github.com/rs/zerolog/log"
@@ -87,12 +88,13 @@ func runTui(project *app.ProjectRunner) int {
 func startTui(runner app.IProject) {
 	col, err := tui.StringToColumnID(*pcFlags.SortColumn)
 	if err != nil {
-		log.Err(err).Msgf("Invalid column name %s provided. Using %s", *pcFlags.SortColumn, tui.ProcessStateName)
+		log.Err(err).Msgf("Invalid column name %s provided. Using %s", *pcFlags.SortColumn, config.DefaultSortColumn)
 		col = tui.ProcessStateName
 	}
 	tui.SetupTui(runner,
 		tui.WithRefreshRate(time.Duration(*pcFlags.RefreshRate)*time.Second),
 		tui.WithStateSorter(col, !*pcFlags.IsReverseSort),
+		tui.WithTheme(*pcFlags.PcTheme),
 	)
 }
 

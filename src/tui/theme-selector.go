@@ -35,7 +35,8 @@ func (pv *pcView) createThemeSelector() tview.Primitive {
 		}
 		scIdx++
 		list.AddItem(theme, selectThemeLbl, r, func() {
-			pv.themes.SelectStyles(theme)
+			pv.setTheme(theme)
+			pv.saveTuiState()
 			pv.pages.RemovePage(PageDialog)
 		})
 		if theme == currentStyle {
@@ -48,15 +49,13 @@ func (pv *pcView) createThemeSelector() tview.Primitive {
 	list.SetChangedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
 		if mainText == cancelLbl {
 			return
-		} else if mainText == config.CustomStyleName {
-			pv.themes.SelectStylesFromFile()
 		} else {
-			pv.themes.SelectStyles(mainText)
+			pv.setTheme(mainText)
 		}
 	})
 	if customFound {
 		list.AddItem(config.CustomStyleName, "Load From File", 'F', func() {
-			pv.themes.SelectStylesFromFile()
+			pv.setTheme(config.CustomStyleName)
 			pv.pages.RemovePage(PageDialog)
 		})
 		if config.CustomStyleName == currentStyle {
@@ -65,7 +64,7 @@ func (pv *pcView) createThemeSelector() tview.Primitive {
 	}
 	list.AddItem(cancelLbl, "Select to close", 'x', func() {
 		log.Debug().Msgf("reverting to the original theme %s", currentStyle)
-		pv.themes.SelectStyles(currentStyle)
+		pv.setTheme(currentStyle)
 		pv.pages.RemovePage(PageDialog)
 	})
 	list.SetBorder(true).SetTitle("Themes")
@@ -77,4 +76,8 @@ func (pv *pcView) createThemeSelector() tview.Primitive {
 		AddItem(nil, 0, 1, false)
 	list.SetBackgroundColor(pv.styles.BgColor())
 	return flex
+}
+
+func (pv *pcView) setTheme(name string) {
+	pv.themes.SelectStyles(name)
 }

@@ -33,6 +33,7 @@ const (
 	LogFileFlags      = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
 	LogFileMode       = os.FileMode(0600)
 	themeFileName     = "theme.yaml"
+	settingsFileName  = "settings.yaml"
 )
 
 var (
@@ -111,6 +112,11 @@ func GetShortCutsPath() string {
 func GetThemesPath() string {
 	themePath := filepath.Join(procCompHome(), themeFileName)
 	return themePath
+}
+
+func GetSettingsPath() string {
+	settingsPath := filepath.Join(procCompHome(), settingsFileName)
+	return settingsPath
 }
 
 func getUser() string {

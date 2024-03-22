@@ -72,6 +72,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 	rootCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup("sort"))
+	rootCmd.Flags().AddFlag(commonFlags.Lookup("theme"))
 }
 
 func logFatal(err error, format string, args ...interface{}) {

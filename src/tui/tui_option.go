@@ -17,3 +17,10 @@ func WithStateSorter(column ColumnID, isAscending bool) Option {
 		return nil
 	}
 }
+
+func WithTheme(theme string) Option {
+	return func(view *pcView) error {
+		view.themes.SelectStyles(theme)
+		return nil
+	}
+}

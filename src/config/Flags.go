@@ -51,10 +51,12 @@ type Flags struct {
 	NoServer          *bool
 	KeepTuiOn         *bool
 	IsOrderedShutDown *bool
+	PcTheme           *string
 }
 
 // NewFlags returns new configuration flags.
 func NewFlags() *Flags {
+	set := NewSettings().Load()
 	return &Flags{
 		RefreshRate:       toPtr(DefaultRefreshRate),
 		Headless:          toPtr(getTuiDefault()),
@@ -67,11 +69,12 @@ func NewFlags() *Flags {
 		LogTailLength:     toPtr(math.MaxInt),
 		NoDependencies:    toPtr(false),
 		HideDisabled:      toPtr(false),
-		SortColumn:        toPtr(DefaultSortColumn),
-		IsReverseSort:     toPtr(false),
+		SortColumn:        toPtr(set.Sort.By),
+		IsReverseSort:     toPtr(set.Sort.IsReversed),
 		NoServer:          toPtr(getNoServerDefault()),
 		KeepTuiOn:         toPtr(false),
 		IsOrderedShutDown: toPtr(false),
+		PcTheme:           toPtr(set.Theme),
 	}
 }
 

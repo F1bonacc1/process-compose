@@ -63,11 +63,6 @@ func (pv *pcView) fillTableData() {
 		}
 		row += 1
 	}
-	//if row == 1 {
-	//	pv.procTable.SetSelectable(false, false)
-	//} else {
-	//	pv.procTable.SetSelectable(true, false)
-	//}
 
 	// remove unnecessary rows, don't forget the title row (-1)
 	if pv.procTable.GetRowCount()-1 > row-1 {
@@ -224,6 +219,7 @@ func (pv *pcView) setTableSorter(sortBy ColumnID) {
 		pv.stateSorter.sortByColumn = sortBy
 		pv.stateSorter.isAsc = true
 	}
+	pv.saveTuiState()
 	order := "[pink]↓[-:-:-]"
 	if !pv.stateSorter.isAsc {
 		order = "[pink]↑[-:-:-]"

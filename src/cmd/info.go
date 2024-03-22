@@ -24,10 +24,8 @@ func printInfo() {
 	if len(path) > 0 {
 		fmt.Printf(format, "Shortcuts:", config.GetShortCutsPath())
 	}
-	themes := config.GetThemesPath()
-	if len(themes) > 0 {
-		fmt.Printf(format, "Theme:", config.GetThemesPath())
-	}
+	fmt.Printf(format, "Custom Theme:", config.GetThemesPath())
+	fmt.Printf(format, "Settings:", config.GetSettingsPath())
 
 }
 

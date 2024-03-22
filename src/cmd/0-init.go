@@ -22,5 +22,5 @@ func init() {
 		*pcFlags.SortColumn,
 		fmt.Sprintf("sort column name. legal values (case insensitive): [%s]", strings.Join(tui.ColumnNames(), ", ")),
 	)
-
+	commonFlags.StringVar(pcFlags.PcTheme, "theme", *pcFlags.PcTheme, "select process compose theme")
 }

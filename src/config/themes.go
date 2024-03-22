@@ -72,6 +72,10 @@ func (t *Themes) loadFromFile() (*Styles, error) {
 }
 
 func (t *Themes) SelectStyles(name string) {
+	if name == CustomStyleName {
+		t.SelectStylesFromFile()
+		return
+	}
 	changed := false
 	for _, styles := range t.styles {
 		if styles.Style.Name == name {
