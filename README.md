@@ -48,6 +48,7 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 - Namespaces
 - Run Multiple Replicas of a Process
 - Run a Foreground Process 
+- Themes Support
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -81,7 +82,7 @@ https://github.com/sponsors/F1bonacc1
 
 ##### Bitcoin
 
-<img src="./imgs/btc.wallet.qr.png" style="zoom:80%;"  alt="3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX"/>
+<img src="./imgs/btc.wallet.qr.png" style="zoom:50%;"  alt="3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX"/>
 
 3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX
 

@@ -43,3 +43,4 @@ Check the [Documentation](launcher.md) for more advanced use cases.
 - Namespaces
 - Run Multiple Replicas of a Process
 - Run a Foreground Process 
+- Themes Support
