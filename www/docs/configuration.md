@@ -304,4 +304,4 @@ processes:
       flow_double:
         condition: process_completed
 ```
-> :bulb: The extra blank lines (`\n`) in the command sting are to introduce a newline to the command.
+> :bulb: The extra blank lines (`\n`) in the command string are to introduce a newline to the command.
