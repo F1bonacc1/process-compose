@@ -335,17 +335,6 @@ func (pv *pcView) handleConnectivityError() {
 	}
 }
 
-func (pv *pcView) getSelectedProcName() string {
-	if pv.procTable == nil {
-		return ""
-	}
-	row, _ := pv.procTable.GetSelection()
-	if row > 0 {
-		return pv.procTable.GetCell(row, int(ProcessStateName)).Text
-	}
-	return ""
-}
-
 func (pv *pcView) onProcRowSpanChange() {
 	if pv.scrSplitState == ProcFull && pv.logFollow {
 		pv.stopFollowLog()

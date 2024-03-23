@@ -249,7 +249,9 @@ func (pv *pcView) matchProcRegex(procName string) bool {
 func (pv *pcView) resetProcessSearch() {
 	pv.setProcRegex(nil)
 	go pv.appView.QueueUpdateDraw(func() {
+		name := pv.getSelectedProcName()
 		pv.fillTableData()
+		pv.selectTableProcess(name)
 	})
 }
 
@@ -348,5 +350,25 @@ func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
 		health:    state.Health,
 		restarts:  getStrForRestarts(state.Restarts),
 		exitCode:  getStrForExitCode(state),
+	}
+}
+
+func (pv *pcView) getSelectedProcName() string {
+	if pv.procTable == nil {
+		return ""
+	}
+	row, _ := pv.procTable.GetSelection()
+	if row > 0 {
+		return pv.procTable.GetCell(row, int(ProcessStateName)).Text
+	}
+	return ""
+}
+
+func (pv *pcView) selectTableProcess(name string) {
+	for i := 1; i < pv.procTable.GetRowCount(); i++ {
+		if pv.procTable.GetCell(i, int(ProcessStateName)).Text == name {
+			pv.procTable.Select(i, 1)
+			return
+		}
 	}
 }
