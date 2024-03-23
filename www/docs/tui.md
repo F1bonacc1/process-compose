@@ -94,7 +94,7 @@ shortcuts:
 
 The default shortcut for theme selection is `CTRL-T`. Process Compose comes with 4 pre-loaded themes.  These can be extended in 2 ways:
 
-1. By contributing a new theme, by creating a PR with a new theme in the `src/config/themes` directory.
+1. By contributing a new theme, by creating a PR with a new theme in the `src/config/themes` [directory](https://github.com/F1bonacc1/process-compose/tree/main/src/config/themes).
 2. Adding your own theme by placing `theme.yaml` in your `$XDG_CONFIG_HOME/process-compose/` directory.
 
 The default `process-compose` theme is defined as:
@@ -146,7 +146,7 @@ style:
     logoColor: blue
 ```
 
-> :bulb: To load the new values it's enough to select the `Custom Style` (`F` shortcut) theme from the theme selector menu.
+> :bulb: To apply the new values it's enough to select the `Custom Style` (`F` shortcut) theme from the theme selector menu (`CTRL-T`).
 
 For Color names W3C approved color names should be used. Note that on various terminals colors may be approximated, or not supported at all.  If no suitable representation for a color is known, the no color will be set, deferring to whatever default attributes the terminal uses.
 
