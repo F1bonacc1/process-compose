@@ -34,8 +34,9 @@ func (pv *pcView) createThemeSelector() tview.Primitive {
 			r = rune(scList[scIdx])
 		}
 		scIdx++
-		list.AddItem(theme, selectThemeLbl, r, func() {
-			pv.setTheme(theme)
+		thm := theme
+		list.AddItem(thm, selectThemeLbl, r, func() {
+			pv.setTheme(thm)
 			pv.saveTuiState()
 			pv.pages.RemovePage(PageDialog)
 		})
