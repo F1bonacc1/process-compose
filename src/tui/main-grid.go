@@ -40,6 +40,7 @@ func (pv *pcView) createGrid() {
 	if !pv.isFullScreen {
 		pv.mainGrid.AddItem(pv.helpText, row, 0, 1, 1, 0, 0, false)
 	}
+	pv.appView.SetFocus(pv.mainGrid)
 	pv.autoAdjustProcTableHeight()
 }
 

@@ -235,6 +235,8 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		pv.isFullScreen = !pv.isFullScreen
 		pv.logsText.SetBorder(!pv.isFullScreen)
 		pv.redrawGrid()
+	case pv.shortcuts.ShortCutKeys[ActionFocusChange].key:
+		pv.changeFocus()
 	case tcell.KeyRune:
 		if event.Rune() == pv.shortcuts.ShortCutKeys[ActionProcFilter].rune {
 			pv.commandMode = true
@@ -463,6 +465,14 @@ func (pv *pcView) resume() {
 	go pv.updateTable(ctxTbl)
 	go pv.updateLogs(ctxLog)
 	go setSignal(ctxSig)
+}
+
+func (pv *pcView) changeFocus() {
+	if pv.procTable.HasFocus() {
+		pv.appView.SetFocus(pv.logsText)
+	} else if pv.logsText.HasFocus() {
+		pv.appView.SetFocus(pv.procTable)
+	}
 }
 
 func SetupTui(project app.IProject, options ...Option) {

@@ -36,6 +36,7 @@ const (
 	ActionThemeSelector    = ActionName("theme_selector")
 	ActionSendToBackground = ActionName("send_to_background")
 	ActionFullScreen       = ActionName("full_screen")
+	ActionFocusChange      = ActionName("focus_change")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -61,6 +62,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionThemeSelector:    tcell.KeyCtrlT,
 	ActionSendToBackground: tcell.KeyCtrlB,
 	ActionFullScreen:       tcell.KeyCtrlRightSq,
+	ActionFocusChange:      tcell.KeyTab,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -303,6 +305,9 @@ func getDefaultActions() *ShortCuts {
 			},
 			ActionFullScreen: {
 				Description: "Toggle Full Screen",
+			},
+			ActionFocusChange: {
+				Description: "Toggle Log/Process Focus",
 			},
 		},
 	}
