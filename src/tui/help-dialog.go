@@ -39,8 +39,8 @@ func (hd *helpDialog) StylesChanged(s *config.Styles) {
 
 	hd.closeButton.SetLabelColorActivated(s.Dialog().ButtonFgColor.Color())
 	hd.closeButton.SetBackgroundColorActivated(s.Dialog().ButtonBgColor.Color())
-	for r := range hd.table.GetRowCount() {
-		for c := range hd.table.GetColumnCount() {
+	for r := 0; r < hd.table.GetRowCount(); r++ {
+		for c := 0; c < hd.table.GetColumnCount(); c++ {
 			if c == 1 {
 				hd.table.GetCell(r, c).SetTextColor(s.FgColor())
 			} else if c == 0 {

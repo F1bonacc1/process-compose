@@ -23,7 +23,7 @@ func (pv *pcView) StylesChanged(s *config.Styles) {
 
 func (pv *pcView) setStatTableStyles(s *config.Styles) {
 	pv.statTable.SetBackgroundColor(s.BgColor())
-	for r := range pv.statTable.GetRowCount() {
+	for r := 0; r < pv.statTable.GetRowCount(); r++ {
 		pv.statTable.GetCell(r, 0).SetTextColor(s.Style.StatTable.KeyFgColor.Color())
 		pv.statTable.GetCell(r, 1).SetTextColor(s.Style.StatTable.ValueFgColor.Color())
 	}
@@ -32,8 +32,8 @@ func (pv *pcView) setStatTableStyles(s *config.Styles) {
 
 func (pv *pcView) setProcTableStyles(s *config.Styles) {
 	pv.procTable.SetBackgroundColor(s.BgColor())
-	for r := range pv.procTable.GetRowCount() {
-		for c := range pv.procTable.GetColumnCount() {
+	for r := 0; r < pv.procTable.GetRowCount(); r++ {
+		for c := 0; c < pv.procTable.GetColumnCount(); c++ {
 			if r == 0 {
 				pv.procTable.GetCell(r, c).SetTextColor(s.Style.ProcTable.HeaderFgColor.Color())
 				continue

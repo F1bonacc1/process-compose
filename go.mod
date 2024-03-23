@@ -1,6 +1,6 @@
 module github.com/f1bonacc1/process-compose
 
-go 1.22
+go 1.21
 
 require (
 	dario.cat/mergo v1.0.0
