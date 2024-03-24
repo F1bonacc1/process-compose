@@ -1,0 +1,36 @@
+style:
+  name: "Light Modern"
+  body:
+    fgColor: "#3B3B3B"
+    bgColor: white
+    secondaryTextColor: blue
+    tertiaryTextColor: green
+    borderColor: grey
+  stat_table:
+    keyFgColor: "#0800FF"
+    valueFgColor: "#800000"
+    bgColor: "#3B3B3B"
+    logoColor: "#0800FF"
+  proc_table:
+    fgColor: "#0800FF"
+    fgWarning: yellow
+    fgPending: grey
+    fgCompleted: green
+    fgError: red
+    bgColor: "#3B3B3B"
+    headerFgColor: "#3B3B3B"
+  help:
+    fgColor: "#3B3B3B"
+    keyColor: blue
+    hlColor: lightgreen
+    categoryFgColor: blue
+  dialog:
+    fgColor: cadetblue
+    bgColor: "#3B3B3B"
+    buttonFgColor: "#3B3B3B"
+    buttonBgColor: lightskyblue
+    buttonFocusFgColor: "#3B3B3B"
+    buttonFocusBgColor: dodgerblue
+    labelFgColor: blue
+    fieldFgColor: "#3B3B3B"
+    fieldBgColor: lightskyblue
