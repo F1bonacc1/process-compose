@@ -57,6 +57,7 @@ func (pv *pcView) createThemeSelector() tview.Primitive {
 	if customFound {
 		list.AddItem(config.CustomStyleName, "Load From File", 'F', func() {
 			pv.setTheme(config.CustomStyleName)
+			pv.saveTuiState()
 			pv.pages.RemovePage(PageDialog)
 		})
 		if config.CustomStyleName == currentStyle {
