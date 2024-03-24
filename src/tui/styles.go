@@ -50,6 +50,7 @@ func (pv *pcView) setLogViewStyle(s *config.Styles) {
 	pv.logsText.SetBorderColor(s.BorderColor())
 	pv.logsText.SetTitleColor(s.Body().SecondaryTextColor.Color())
 	pv.logsText.SetBackgroundColor(s.BgColor())
+	pv.logsText.SetTextColor(s.FgColor())
 }
 
 func (pv *pcView) setHelpTextStyles(s *config.Styles) {
