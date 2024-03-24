@@ -33,7 +33,7 @@ func getBaseProcess() *types.ProcessConfig {
 		},
 		LivenessProbe: nil,
 		ReadinessProbe: &health.Probe{
-			HttpGet: &health.HttpProbe{
+			Http: &health.HttpProbe{
 				Host:   "127.0.0.1",
 				Path:   "/is",
 				Scheme: "http",
@@ -83,7 +83,7 @@ func getOverrideProcess() *types.ProcessConfig {
 			},
 		},
 		LivenessProbe: &health.Probe{
-			HttpGet: &health.HttpProbe{
+			Http: &health.HttpProbe{
 				Host:   "google.com",
 				Path:   "/isAlive",
 				Scheme: "https",
@@ -96,7 +96,7 @@ func getOverrideProcess() *types.ProcessConfig {
 			FailureThreshold: 5,
 		},
 		ReadinessProbe: &health.Probe{
-			HttpGet: &health.HttpProbe{
+			Http: &health.HttpProbe{
 				Host:   "google.com",
 				Path:   "/isAlive",
 				Scheme: "https",
@@ -150,7 +150,7 @@ func getMergedProcess() *types.ProcessConfig {
 			},
 		},
 		LivenessProbe: &health.Probe{
-			HttpGet: &health.HttpProbe{
+			Http: &health.HttpProbe{
 				Host:   "google.com",
 				Path:   "/isAlive",
 				Scheme: "https",
@@ -163,7 +163,7 @@ func getMergedProcess() *types.ProcessConfig {
 			FailureThreshold: 5,
 		},
 		ReadinessProbe: &health.Probe{
-			HttpGet: &health.HttpProbe{
+			Http: &health.HttpProbe{
 				Host:   "google.com",
 				Path:   "/isAlive",
 				Scheme: "https",

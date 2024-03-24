@@ -2,6 +2,7 @@ package health
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 )
@@ -9,6 +10,7 @@ import (
 type Probe struct {
 	Exec             *ExecProbe `yaml:"exec,omitempty"`
 	HttpGet          *HttpProbe `yaml:"http_get,omitempty"`
+	Http             *HttpProbe `yaml:"http,omitempty"`
 	InitialDelay     int        `yaml:"initial_delay_seconds,omitempty"`
 	PeriodSeconds    int        `yaml:"period_seconds,omitempty"`
 	TimeoutSeconds   int        `yaml:"timeout_seconds,omitempty"`
@@ -22,10 +24,12 @@ type ExecProbe struct {
 }
 
 type HttpProbe struct {
-	Host   string `yaml:"host,omitempty"`
-	Path   string `yaml:"path,omitempty"`
-	Scheme string `yaml:"scheme,omitempty"`
-	Port   int    `yaml:"port,omitempty"`
+	Host       string `yaml:"host,omitempty"`
+	Path       string `yaml:"path,omitempty"`
+	Scheme     string `yaml:"scheme,omitempty"`
+	Port       int    `yaml:"port,omitempty"`
+	Method     string `yaml:"method,omitempty"`
+	StatusCode int    `yaml:"status_code,omitempty"`
 }
 
 func (h HttpProbe) getUrl() (*url.URL, error) {
@@ -60,20 +64,26 @@ func (p *Probe) validateAndSetDefaults() {
 }
 
 func (p *Probe) validateAndSetHttpDefaults() {
-	if p.HttpGet == nil {
+	if p.Http == nil {
 		return
 	}
-	if len(strings.TrimSpace(p.HttpGet.Host)) == 0 {
-		p.HttpGet.Host = "127.0.0.1"
+	if len(strings.TrimSpace(p.Http.Host)) == 0 {
+		p.Http.Host = "127.0.0.1"
 	}
-	if len(strings.TrimSpace(p.HttpGet.Scheme)) == 0 {
-		p.HttpGet.Scheme = "http"
+	if len(strings.TrimSpace(p.Http.Scheme)) == 0 {
+		p.Http.Scheme = "http"
 	}
-	if len(strings.TrimSpace(p.HttpGet.Path)) == 0 {
-		p.HttpGet.Path = "/"
+	if len(strings.TrimSpace(p.Http.Path)) == 0 {
+		p.Http.Path = "/"
 	}
-	if p.HttpGet.Port < 1 || p.HttpGet.Port > 65535 {
+	if p.Http.Port < 1 || p.Http.Port > 65535 {
 		// if undefined or wrong value - will be treated as undefined
-		p.HttpGet.Port = 0
+		p.Http.Port = 0
+	}
+	if len(strings.TrimSpace(p.Http.Method)) == 0 {
+		p.Http.Method = http.MethodGet
+	}
+	if p.Http.StatusCode == 0 {
+		p.Http.StatusCode = http.StatusOK
 	}
 }
