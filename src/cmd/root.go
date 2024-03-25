@@ -111,7 +111,12 @@ func setupLogger() *os.File {
 	}
 	writer := zerolog.MultiLevelWriter(writers...)
 
-	log.Logger = zerolog.New(writer).With().Timestamp().Logger()
+	// add caller only in debug mode
+	if os.Getenv("PC_DEBUG") != "" {
+		log.Logger = zerolog.New(writer).With().Timestamp().Caller().Logger()
+	} else {
+		log.Logger = zerolog.New(writer).With().Timestamp().Logger()
+	}
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	return file
