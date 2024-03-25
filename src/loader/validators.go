@@ -137,3 +137,27 @@ func validateHealthDependencyHasHealthCheck(p *types.Project) error {
 	}
 	return nil
 }
+
+func validateDependencyIsEnabled(p *types.Project) error {
+	for procName, proc := range p.Processes {
+		for depName := range proc.DependsOn {
+			depProc, ok := p.Processes[depName]
+			if !ok {
+				errStr := fmt.Sprintf("dependency process '%s' in process '%s' is not defined", depName, procName)
+				if p.IsStrict {
+					return fmt.Errorf(errStr)
+				}
+				log.Error().Msg(errStr)
+				continue
+			}
+			if depProc.Disabled {
+				errStr := fmt.Sprintf("dependency process '%s' in process '%s' is disabled", depName, procName)
+				if p.IsStrict {
+					return fmt.Errorf(errStr)
+				}
+				log.Error().Msg(errStr)
+			}
+		}
+	}
+	return nil
+}

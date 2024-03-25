@@ -1,0 +1,21 @@
+is_strict: true
+
+processes:
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+  test:
+    command: |
+      echo "TOTO"
+      sleep 40
+    depends_on:
+      runtrial:
+        # condition: toto # this is accepted and doesn't trigger any error even though
+        condition: process_completed_successfully
+
+  # one shot task, hence why we disable it now
+  runtrial:
+    namespace: task
+    disabled: true
+    command:
+      echo "TRIAL DONE"
