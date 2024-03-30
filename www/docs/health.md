@@ -65,7 +65,7 @@ Probes have a number of fields that you can use to control the behavior of liven
 - `period_seconds`: How often (in seconds) to perform the probe. Defaults to 10 seconds. The minimum value is 1.
 - `timeout_seconds`: Number of seconds after which the probe times out. Defaults to 1 second. The minimum value is 1.
 - `success_threshold`: Minimum consecutive successes for the probe to be considered successful after failing. Defaults to 1. Must be 1 for liveness and startup Probes. The minimum value is 1. **Note**: this value is not respected and was added as a placeholder for future implementation.
-- `failure_threshold`: When a probe fails, Process Compose will try `failure_threshold` times before giving up. Giving up in case of liveness probe means restarting the process. In case of readiness probe, the Pod will be marked Unready. Defaults to 3. The minimum value is 1.
+- `failure_threshold`: When a probe fails, Process Compose will try `failure_threshold` times before giving up. Giving up in case of readiness probe means restarting the process. In case of liveness probe and `is_daemon` set to `true` the daemon will be considered stopped. Process Compose will follow the availability configuration to decide if restart is needed.  Defaults to 3. The minimum value is 1.
 
 ## Auto Restart if not Healthy
 
