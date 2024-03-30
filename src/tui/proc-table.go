@@ -273,9 +273,9 @@ func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) erro
 	}
 
 	pv.setProcRegex(searchRegex)
-	pv.procTable.Select(1, 1)
 	go pv.appView.QueueUpdateDraw(func() {
 		pv.fillTableData()
+		pv.procTable.Select(1, 1)
 	})
 	return nil
 }
