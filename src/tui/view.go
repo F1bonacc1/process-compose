@@ -110,6 +110,7 @@ func newPcView(project app.IProject) *pcView {
 	go pv.loadProcNames()
 	pv.startMonitoring()
 	pv.loadShortcuts()
+	pv.setShortCutsActions()
 	pv.procTable = pv.createProcTable()
 	pv.updateHelpTextView()
 	pv.createGrid()
@@ -151,6 +152,78 @@ func (pv *pcView) loadShortcuts() {
 	}
 }
 
+func (pv *pcView) setShortCutsActions() {
+	pv.shortcuts.setAction(ActionQuit, pv.terminateAppView)
+	pv.shortcuts.setAction(ActionLogScreen, func() {
+		if pv.scrSplitState == LogFull {
+			pv.scrSplitState = LogProcHalf
+		} else {
+			pv.scrSplitState = LogFull
+		}
+		pv.redrawGrid()
+		pv.updateHelpTextView()
+	})
+	pv.shortcuts.setAction(ActionFollowLog, pv.toggleLogFollow)
+	pv.shortcuts.setAction(ActionWrapLog, func() {
+		pv.logsText.ToggleWrap()
+		pv.updateHelpTextView()
+	})
+	pv.shortcuts.setAction(ActionLogSelection, func() {
+		pv.stopFollowLog()
+		pv.toggleLogSelection()
+		pv.appView.SetFocus(pv.logsTextArea)
+		pv.updateHelpTextView()
+	})
+	pv.shortcuts.setAction(ActionProcessScreen, func() {
+		if pv.scrSplitState == ProcFull {
+			pv.scrSplitState = LogProcHalf
+		} else {
+			pv.scrSplitState = ProcFull
+		}
+		pv.redrawGrid()
+		pv.onProcRowSpanChange()
+		pv.updateHelpTextView()
+	})
+	pv.shortcuts.setAction(ActionProcessScale, pv.showScale)
+	pv.shortcuts.setAction(ActionProcessInfo, pv.showInfo)
+	pv.shortcuts.setAction(ActionLogFind, pv.showSearch)
+	pv.shortcuts.setAction(ActionLogFindNext, func() {
+		pv.logsText.SearchNext()
+		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
+	})
+	pv.shortcuts.setAction(ActionLogFindPrev, func() {
+		pv.logsText.SearchPrev()
+		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
+	})
+	pv.shortcuts.setAction(ActionLogFindExit, func() {
+		if pv.logsText.isSearchActive() {
+			pv.exitSearch()
+		} else if pv.procRegex != nil {
+			pv.resetProcessSearch()
+		}
+	})
+	pv.shortcuts.setAction(ActionNsFilter, pv.showNsFilter)
+	pv.shortcuts.setAction(ActionHideDisabled, func() {
+		pv.hideDisabled.Store(!pv.hideDisabled.Load())
+		pv.updateHelpTextView()
+	})
+	pv.shortcuts.setAction(ActionHelp, func() {
+		pv.showDialog(pv.helpDialog, 50, 30)
+	})
+	pv.shortcuts.setAction(ActionThemeSelector, pv.showThemeSelector)
+	pv.shortcuts.setAction(ActionSendToBackground, pv.runShellProcess)
+	pv.shortcuts.setAction(ActionFullScreen, func() {
+		pv.isFullScreen = !pv.isFullScreen
+		pv.logsText.SetBorder(!pv.isFullScreen)
+		pv.redrawGrid()
+	})
+	pv.shortcuts.setAction(ActionFocusChange, pv.changeFocus)
+	pv.shortcuts.setAction(ActionProcFilter, func() {
+		pv.commandMode = true
+		pv.redrawGrid()
+	})
+}
+
 func (pv *pcView) loadThemes() {
 	pv.themes.AddListener(pv)
 	pv.themes.AddListener(pv.helpDialog)
@@ -167,85 +240,34 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 
 func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
-	case pv.shortcuts.ShortCutKeys[ActionQuit].key:
-		pv.terminateAppView()
-	case pv.shortcuts.ShortCutKeys[ActionLogScreen].key:
-		if pv.scrSplitState == LogFull {
-			pv.scrSplitState = LogProcHalf
-		} else {
-			pv.scrSplitState = LogFull
-		}
-		pv.redrawGrid()
-		pv.updateHelpTextView()
-	case pv.shortcuts.ShortCutKeys[ActionFollowLog].key:
-		pv.toggleLogFollow()
-	case pv.shortcuts.ShortCutKeys[ActionWrapLog].key:
-		pv.logsText.ToggleWrap()
-		pv.updateHelpTextView()
 	case pv.shortcuts.ShortCutKeys[ActionLogSelection].key:
 		if !config.IsLogSelectionOn() {
 			return event
 		}
-		pv.stopFollowLog()
-		pv.toggleLogSelection()
-		pv.appView.SetFocus(pv.logsTextArea)
-		pv.updateHelpTextView()
-	case pv.shortcuts.ShortCutKeys[ActionProcessScreen].key:
-		if pv.scrSplitState == ProcFull {
-			pv.scrSplitState = LogProcHalf
-		} else {
-			pv.scrSplitState = ProcFull
-		}
-		pv.redrawGrid()
-		pv.onProcRowSpanChange()
-		pv.updateHelpTextView()
-	case pv.shortcuts.ShortCutKeys[ActionProcessScale].key:
-		pv.showScale()
-	case pv.shortcuts.ShortCutKeys[ActionProcessInfo].key:
-		pv.showInfo()
-	case pv.shortcuts.ShortCutKeys[ActionLogFind].key:
-		pv.showSearch()
-	case pv.shortcuts.ShortCutKeys[ActionLogFindNext].key:
-		pv.logsText.SearchNext()
-		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
-	case pv.shortcuts.ShortCutKeys[ActionLogFindPrev].key:
-		pv.logsText.SearchPrev()
-		pv.logsText.SetTitle(pv.getLogTitle(pv.getSelectedProcName()))
+		pv.shortcuts.ShortCutKeys[ActionLogSelection].actionFn()
 	case pv.shortcuts.ShortCutKeys[ActionLogFindExit].key:
-		if pv.logsText.isSearchActive() {
-			pv.exitSearch()
-		} else if pv.procRegex != nil {
-			pv.resetProcessSearch()
-		} else {
+		if !(pv.logsText.isSearchActive() || pv.procRegex != nil) {
 			return event
 		}
-		//pv.resetProcessSearch()
-	case pv.shortcuts.ShortCutKeys[ActionNsFilter].key:
-		pv.showNsFilter()
-	case pv.shortcuts.ShortCutKeys[ActionHideDisabled].key:
-		pv.hideDisabled.Store(!pv.hideDisabled.Load())
-		pv.updateHelpTextView()
-	case pv.shortcuts.ShortCutKeys[ActionHelp].key:
-		pv.showDialog(pv.helpDialog, 50, 30)
-	case pv.shortcuts.ShortCutKeys[ActionThemeSelector].key:
-		pv.showThemeSelector()
-	case pv.shortcuts.ShortCutKeys[ActionSendToBackground].key:
-		pv.runShellProcess()
-	case pv.shortcuts.ShortCutKeys[ActionFullScreen].key:
-		pv.isFullScreen = !pv.isFullScreen
-		pv.logsText.SetBorder(!pv.isFullScreen)
-		pv.redrawGrid()
-	case pv.shortcuts.ShortCutKeys[ActionFocusChange].key:
-		pv.changeFocus()
+		pv.shortcuts.ShortCutKeys[ActionLogFindExit].actionFn()
+
 	case tcell.KeyRune:
-		if event.Rune() == pv.shortcuts.ShortCutKeys[ActionProcFilter].rune {
-			pv.commandMode = true
-			pv.redrawGrid()
-		} else {
-			return event
+		switch event.Rune() {
+		case pv.shortcuts.ShortCutKeys[ActionLogSelection].rune:
+			if !config.IsLogSelectionOn() {
+				return event
+			}
+			pv.shortcuts.ShortCutKeys[ActionLogSelection].actionFn()
+		case pv.shortcuts.ShortCutKeys[ActionLogFindExit].rune:
+			if !(pv.logsText.isSearchActive() || pv.procRegex != nil) {
+				return event
+			}
+			pv.shortcuts.ShortCutKeys[ActionLogFindExit].actionFn()
+		default:
+			return pv.shortcuts.runRuneAction(event.Rune(), event) //event
 		}
 	default:
-		return event
+		return pv.shortcuts.runKeyAction(event.Key(), event) //event
 	}
 	return nil
 }

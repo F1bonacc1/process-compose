@@ -98,8 +98,10 @@ var procActionsOrder = []ActionName{
 }
 
 type ShortCuts struct {
-	ShortCutKeys map[ActionName]*Action `yaml:"shortcuts"`
-	style        config.Help
+	ShortCutKeys  map[ActionName]*Action `yaml:"shortcuts"`
+	keyActionMap  map[tcell.Key]*Action
+	runeActionMap map[rune]*Action
+	style         config.Help
 }
 
 func (s *ShortCuts) saveToFile(filePath string) error {
@@ -127,7 +129,7 @@ func (s *ShortCuts) loadFromFile(filePath string) error {
 	var sc ShortCuts
 	err = yaml.Unmarshal(file, &sc)
 	if err != nil {
-		log.Error().Msgf("Failed to unmarshal file %s - %s", filePath, err.Error())
+		log.Err(err).Msgf("Failed to unmarshal file %s", filePath)
 		return err
 	}
 
@@ -142,6 +144,7 @@ func (s *ShortCuts) applyValid(newSc *ShortCuts) {
 		if oldAction, found := s.ShortCutKeys[actionName]; found {
 			oldAction.ShortCut = action.ShortCut
 			oldAction.key = action.key
+			oldAction.rune = action.rune
 			if len(strings.TrimSpace(action.Description)) > 0 {
 				oldAction.Description = action.Description
 			}
@@ -173,15 +176,48 @@ func (s *ShortCuts) StylesChanged(style *config.Styles) {
 	s.style = style.Help()
 }
 
+func (s *ShortCuts) setAction(actName ActionName, actionFn func()) {
+	if act, found := s.ShortCutKeys[actName]; found {
+		act.actionFn = actionFn
+		if act.rune != 0 {
+			s.runeActionMap[act.rune] = act
+		} else {
+			s.keyActionMap[act.key] = act
+		}
+	} else {
+		log.Error().Msgf("Invalid action '%s' shortcut", actName)
+	}
+}
+
+func (s *ShortCuts) runRuneAction(r rune, event *tcell.EventKey) *tcell.EventKey {
+	if act, found := s.runeActionMap[r]; found {
+		act.actionFn()
+		return nil
+	}
+	return event
+}
+
+func (s *ShortCuts) runKeyAction(key tcell.Key, event *tcell.EventKey) *tcell.EventKey {
+	if act, found := s.keyActionMap[key]; found {
+		act.actionFn()
+		return nil
+	}
+	return event
+}
+
 func parseShortCuts(sc *ShortCuts) {
-	for k, v := range sc.ShortCutKeys {
-		key, err := keyName2Key(v.ShortCut)
-		if err != nil {
-			assignDefaultKeys(k, v)
-			log.Error().Msgf("Failed in parsing '%s' shortcut - %s. Using default: %s", k, err.Error(), v.ShortCut)
+	for actionName, action := range sc.ShortCutKeys {
+		if len(action.ShortCut) == 1 {
+			action.rune = []rune(action.ShortCut)[0]
 			continue
 		}
-		v.key = key
+		key, err := keyName2Key(action.ShortCut)
+		if err != nil {
+			assignDefaultKeys(actionName, action)
+			log.Err(err).Msgf("Failed in parsing '%s' shortcut. Using default: %s", actionName, action.ShortCut)
+			continue
+		}
+		action.key = key
 	}
 }
 
@@ -196,11 +232,12 @@ func keyName2Key(key string) (tcell.Key, error) {
 }
 
 type Action struct {
+	ShortCut          string          `yaml:"shortcut"`
+	rune              rune            `yaml:"char,omitempty"`
 	Description       string          //`yaml:"description,omitempty"`
 	ToggleDescription map[bool]string //`yaml:"toggle_description,omitempty"`
-	ShortCut          string          `yaml:"shortcut"`
 	key               tcell.Key
-	rune              rune
+	actionFn          func()
 }
 
 func (a Action) writeButton(w io.Writer, style config.Help) {
@@ -314,6 +351,8 @@ func getDefaultActions() *ShortCuts {
 	for k, v := range sc.ShortCutKeys {
 		assignDefaultKeys(k, v)
 	}
+	sc.keyActionMap = make(map[tcell.Key]*Action)
+	sc.runeActionMap = make(map[rune]*Action)
 	return sc
 }
 
