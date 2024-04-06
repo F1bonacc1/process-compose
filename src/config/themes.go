@@ -4,7 +4,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 	"os"
-	"path/filepath"
+	"path"
 	"slices"
 )
 
@@ -29,7 +29,7 @@ func NewThemes() *Themes {
 	files, err := themesFolder.ReadDir("themes")
 	if err == nil {
 		for _, file := range files {
-			fileName := filepath.Join("themes", file.Name())
+			fileName := path.Join("themes", file.Name())
 			b, err := themesFolder.ReadFile(fileName)
 			if err != nil {
 				log.Err(err).Msgf("Error reading files %s", fileName)
