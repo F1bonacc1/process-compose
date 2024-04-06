@@ -8,14 +8,13 @@ import (
 	"net/http"
 )
 
-func StopProcess(address string, port int, name string) error {
-	url := fmt.Sprintf("http://%s:%d/process/stop/%s", address, port, name)
-	client := &http.Client{}
+func (p *PcClient) stopProcess(name string) error {
+	url := fmt.Sprintf("http://%s/process/stop/%s", p.address, name)
 	req, err := http.NewRequest(http.MethodPatch, url, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := client.Do(req)
+	resp, err := p.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -32,12 +31,9 @@ func StopProcess(address string, port int, name string) error {
 	return fmt.Errorf(respErr.Error)
 }
 
-func StopProcesses(address string, port int, names []string) ([]string, error) {
-	url := fmt.Sprintf("http://%s:%d/processes/stop", address, port)
-	client := &http.Client{}
-
+func (p *PcClient) stopProcesses(names []string) ([]string, error) {
+	url := fmt.Sprintf("http://%s/processes/stop", p.address)
 	jsonPayload, err := json.Marshal(names)
-
 	if err != nil {
 		log.Err(err).Msgf("failed to marshal names: %v", names)
 		return nil, err
@@ -46,7 +42,7 @@ func StopProcesses(address string, port int, names []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.Do(req)
+	resp, err := p.client.Do(req)
 	if err != nil {
 		return nil, err
 	}

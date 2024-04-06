@@ -46,7 +46,7 @@ func runProject(runner *app.ProjectRunner) {
 	} else {
 		exitCode = runHeadless(runner)
 	}
-
+	os.Remove(*pcFlags.UnixSocketPath)
 	log.Info().Msg("Thank you for using process-compose")
 	os.Exit(exitCode)
 }
@@ -58,7 +58,6 @@ func setSignal(signalHandler func()) {
 		sig := <-cancelChan
 		log.Info().Msgf("Caught %v - Shutting down the running processes...", sig)
 		signalHandler()
-		os.Exit(1)
 	}()
 }
 
@@ -71,10 +70,6 @@ func runHeadless(project *app.ProjectRunner) int {
 }
 
 func runTui(project *app.ProjectRunner) int {
-	/*setSignal(func() {
-		tui.Stop()
-	})*/
-	//defer quiet()()
 	go startTui(project)
 	exitCode := project.Run()
 	if !*pcFlags.KeepTuiOn {

@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func RestartProcess(address string, port int, name string) error {
-	url := fmt.Sprintf("http://%s:%d/process/restart/%s", address, port, name)
-	resp, err := http.Post(url, "application/json", nil)
+func (p *PcClient) restartProcess(name string) error {
+	url := fmt.Sprintf("http://%s/process/restart/%s", p.address, name)
+	resp, err := p.client.Post(url, "application/json", nil)
 	if err != nil {
 		return err
 	}

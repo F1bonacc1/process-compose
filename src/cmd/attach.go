@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/spf13/cobra"
 )
 
@@ -10,8 +9,7 @@ var attachCmd = &cobra.Command{
 	Use:   "attach",
 	Short: "Attach the Process Compose TUI Remotely to a Running Process Compose Server",
 	Run: func(cmd *cobra.Command, args []string) {
-		pcClient := client.NewClient(*pcFlags.Address, *pcFlags.PortNum, *pcFlags.LogLength)
-		startTui(pcClient)
+		startTui(getClient())
 	},
 }
 

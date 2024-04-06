@@ -5,42 +5,40 @@ import (
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-
-	"net/http"
 	"os"
-	"time"
 )
 
 const EnvDebugMode = "PC_DEBUG_MODE"
 
-func StartHttpServer(useLogger bool, port int, project app.IProject) {
-
-	if os.Getenv(EnvDebugMode) == "" {
-		gin.SetMode(gin.ReleaseMode)
-		useLogger = false
-	}
-
-	handler := NewPcApi(project)
-	routersInit := InitRoutes(useLogger, handler)
-	readTimeout := time.Duration(60) * time.Second
-	writeTimeout := time.Duration(60) * time.Second
-	endPoint := fmt.Sprintf(":%d", port)
-	maxHeaderBytes := 1 << 20
-
-	server := &http.Server{
-		Addr:           endPoint,
-		Handler:        routersInit,
-		ReadTimeout:    readTimeout,
-		WriteTimeout:   writeTimeout,
-		MaxHeaderBytes: maxHeaderBytes,
-	}
-
-	log.Info().Msgf("start http server listening %s", endPoint)
-
+func StartHttpServerWithUnixSocket(useLogger bool, unixSocket string, project app.IProject) {
+	router := getRouter(useLogger, project)
+	log.Info().Msgf("start UDS http server listening %s", unixSocket)
 	go func() {
-		err := server.ListenAndServe()
+		os.Remove(unixSocket)
+		err := router.RunUnix(unixSocket)
+		if err != nil {
+			log.Fatal().Err(err).Msgf("start UDS http server on %s failed", unixSocket)
+		}
+	}()
+}
+
+func StartHttpServerWithTCP(useLogger bool, port int, project app.IProject) {
+	router := getRouter(useLogger, project)
+	endPoint := fmt.Sprintf(":%d", port)
+	log.Info().Msgf("start http server listening %s", endPoint)
+	go func() {
+		err := router.Run(endPoint)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("start http server on %s failed", endPoint)
 		}
 	}()
+
+}
+
+func getRouter(useLogger bool, project app.IProject) *gin.Engine {
+	if os.Getenv(EnvDebugMode) == "" {
+		gin.SetMode(gin.ReleaseMode)
+		useLogger = false
+	}
+	return InitRoutes(useLogger, NewPcApi(project))
 }

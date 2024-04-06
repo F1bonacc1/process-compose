@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
-	"net/http"
 	"sort"
 )
 
-func GetProcessesName(address string, port int) ([]string, error) {
-	states, err := GetProcessesState(address, port)
+func (p *PcClient) GetProcessesName() ([]string, error) {
+	states, err := p.getProcessesState()
 	if err != nil {
 		return nil, err
 	}
@@ -22,9 +21,9 @@ func GetProcessesName(address string, port int) ([]string, error) {
 	return procs, nil
 }
 
-func GetProcessesState(address string, port int) (*types.ProcessesState, error) {
-	url := fmt.Sprintf("http://%s:%d/processes", address, port)
-	resp, err := http.Get(url)
+func (p *PcClient) getProcessesState() (*types.ProcessesState, error) {
+	url := fmt.Sprintf("http://%s/processes", p.address)
+	resp, err := p.client.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +39,9 @@ func GetProcessesState(address string, port int) (*types.ProcessesState, error) 
 	return &sResp, nil
 }
 
-func GetProcessState(address string, port int, name string) (*types.ProcessState, error) {
-	url := fmt.Sprintf("http://%s:%d/process/%s", address, port, name)
-	resp, err := http.Get(url)
+func (p *PcClient) getProcessState(name string) (*types.ProcessState, error) {
+	url := fmt.Sprintf("http://%s/process/%s", p.address, name)
+	resp, err := p.client.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -58,9 +57,9 @@ func GetProcessState(address string, port int, name string) (*types.ProcessState
 	return &sResp, nil
 }
 
-func GetProcessInfo(address string, port int, name string) (*types.ProcessConfig, error) {
-	url := fmt.Sprintf("http://%s:%d/process/info/%s", address, port, name)
-	resp, err := http.Get(url)
+func (p *PcClient) getProcessInfo(name string) (*types.ProcessConfig, error) {
+	url := fmt.Sprintf("http://%s/process/info/%s", p.address, name)
+	resp, err := p.client.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -76,9 +75,9 @@ func GetProcessInfo(address string, port int, name string) (*types.ProcessConfig
 	return &sResp, nil
 }
 
-func GetProcessPorts(address string, port int, name string) (*types.ProcessPorts, error) {
-	url := fmt.Sprintf("http://%s:%d/process/ports/%s", address, port, name)
-	resp, err := http.Get(url)
+func (p *PcClient) getProcessPorts(name string) (*types.ProcessPorts, error) {
+	url := fmt.Sprintf("http://%s/process/ports/%s", p.address, name)
+	resp, err := p.client.Get(url)
 	if err != nil {
 		return nil, err
 	}

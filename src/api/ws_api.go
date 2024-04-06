@@ -84,6 +84,9 @@ func handleIncoming(ws *websocket.Conn, done chan struct{}) {
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
 				return
 			}
+			if msgType == -1 {
+				return
+			}
 			log.Err(err).Msgf("Failed to read from socket %d", msgType)
 			return
 		}

@@ -16,6 +16,16 @@ Alternatively use `PC_PORT_NUM` environment variable:
 PC_PORT_NUM=8080 process-compose
 ```
 
+## Unix Domain Sockets (UDS)
+
+Instead of TCP communication mode, on *nix based systems, you can use Unix Domain Sockets (on the same host only).
+
+There are 3 configuration options:
+
+1. Auto socket path based on `PID`: `process-compose -U` will start Process Compose in UDS mode and create a socket file under `<TempDir>/process-compose-<pid>.sock`
+2. Manual socket path with CLI flag: `process-compose --unix-socket /path/to/socket/file` will start Process Compose in UDS mode and create the specified socket file. The directory should exist.
+3. Manual socket path with environment variable: `PC_SOCKET_PATH="/path/to/socket/file" process-compose` will start Process Compose in UDS mode and create the specified socket file. The directory should exist.
+
 ## Client Mode
 
 Process compose can also connect to itself as a client. Available commands:
@@ -46,7 +56,7 @@ process-compose process restart [PROCESS] #restarts one of the available process
 
 Restart will wait `process.availability.backoff_seconds` seconds between `stop` and `start` of the process. If not configured the default value is 1s.
 
-> :bulb: New remote commands are added constatntly. For full list run:
+> :bulb: New remote commands are added constantly. For full list run:
 ```shell
 process-compose --help
 ```

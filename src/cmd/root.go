@@ -5,6 +5,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/rs/zerolog"
@@ -13,6 +14,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"runtime"
 	"time"
 )
 
@@ -27,6 +29,9 @@ var (
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logFile = setupLogger()
 			log.Info().Msgf("Process Compose %s", config.Version)
+			if isUnixSocketMode(cmd) {
+				*pcFlags.IsUnixSocket = true
+			}
 		},
 		RunE: run,
 	}
@@ -73,6 +78,12 @@ func init() {
 	rootCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup("sort"))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup("theme"))
+
+	if runtime.GOOS != "windows" {
+		//rootCmd.Flags().BoolVarP(pcFlags.IsDetached, "detached", "D", *pcFlags.IsDetached, "run process-compose in detached mode")
+		rootCmd.PersistentFlags().StringVarP(pcFlags.UnixSocketPath, "unix-socket", "u", config.GetUnixSocketPath(), "path to unix socket (env: "+config.EnvVarUnixSocketPath+")")
+		rootCmd.PersistentFlags().BoolVarP(pcFlags.IsUnixSocket, "use-uds", "U", *pcFlags.IsUnixSocket, "use unix domain sockets instead of tcp")
+	}
 }
 
 func logFatal(err error, format string, args ...interface{}) {
@@ -124,6 +135,24 @@ func setupLogger() *os.File {
 
 func startHttpServerIfEnabled(useLogger bool, runner *app.ProjectRunner) {
 	if !*pcFlags.NoServer {
-		api.StartHttpServer(useLogger, *pcFlags.PortNum, runner)
+		if *pcFlags.IsUnixSocket {
+			api.StartHttpServerWithUnixSocket(useLogger, *pcFlags.UnixSocketPath, runner)
+			return
+		}
+		api.StartHttpServerWithTCP(useLogger, *pcFlags.PortNum, runner)
 	}
+}
+
+func getClient() *client.PcClient {
+	if *pcFlags.IsUnixSocket {
+		return client.NewUdsClient(*pcFlags.UnixSocketPath, *pcFlags.LogLength)
+	}
+	return client.NewTcpClient(*pcFlags.Address, *pcFlags.PortNum, *pcFlags.LogLength)
+}
+
+func isUnixSocketMode(cmd *cobra.Command) bool {
+	cobra.OnFinalize()
+	return *pcFlags.IsUnixSocket ||
+		os.Getenv(config.EnvVarUnixSocketPath) != "" ||
+		cmd.Flags().Changed("unix-socket")
 }

@@ -1,8 +1,11 @@
 package client
 
 import (
+	"context"
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -14,7 +17,6 @@ var (
 
 type PcClient struct {
 	address    string
-	port       int
 	logLength  int
 	logger     *LogClient
 	errMtx     sync.Mutex
@@ -23,17 +25,36 @@ type PcClient struct {
 	client     *http.Client
 }
 
-func NewClient(address string, port, logLength int) *PcClient {
+func NewUdsClient(sockPath string, logLength int) *PcClient {
+
+	udsClient := &http.Client{
+		Transport: &http.Transport{
+			DisableKeepAlives: true,
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				return (&net.Dialer{}).DialContext(ctx, "unix", sockPath)
+			},
+		},
+	}
+	c := newClient("unix", udsClient, logLength)
+	c.logger = NewLogClient("unix", sockPath)
+	return c
+}
+
+func NewTcpClient(host string, port, logLength int) *PcClient {
+	address := fmt.Sprintf("%s:%d", host, port)
+	c := newClient(address, &http.Client{}, logLength)
+	c.logger = NewLogClient(address, "")
+	return c
+}
+
+func newClient(address string, client *http.Client, logLength int) *PcClient {
 	return &PcClient{
 		address:    address,
-		port:       port,
 		logLength:  logLength,
-		logger:     NewLogClient(),
 		firstError: zeroTime,
 		isErrored:  false,
-		client:     &http.Client{},
+		client:     client,
 	}
-
 }
 
 func (p *PcClient) ShutDownProject() error {
@@ -45,7 +66,7 @@ func (p *PcClient) IsRemote() bool {
 }
 
 func (p *PcClient) GetHostName() (string, error) {
-	return getHostName(p.address, p.port)
+	return p.getHostName()
 }
 
 func (p *PcClient) GetLogLength() int {
@@ -53,7 +74,7 @@ func (p *PcClient) GetLogLength() int {
 }
 
 func (p *PcClient) GetLogsAndSubscribe(name string, observer pclog.LogObserver) error {
-	return p.logger.ReadProcessLogs(p.address, p.port, name, p.logLength, true, observer)
+	return p.logger.ReadProcessLogs(name, p.logLength, true, observer)
 }
 
 func (p *PcClient) UnSubscribeLogger(name string, observer pclog.LogObserver) error {
@@ -66,49 +87,49 @@ func (p *PcClient) GetProcessLog(name string, offsetFromEnd, limit int) ([]strin
 }
 
 func (p *PcClient) GetLexicographicProcessNames() ([]string, error) {
-	names, err := GetProcessesName(p.address, p.port)
+	names, err := p.GetProcessesName()
 	return names, err
 }
 
 func (p *PcClient) GetProcessInfo(name string) (*types.ProcessConfig, error) {
-	return GetProcessInfo(p.address, p.port, name)
+	return p.getProcessInfo(name)
 }
 
 func (p *PcClient) GetProcessPorts(name string) (*types.ProcessPorts, error) {
-	return GetProcessPorts(p.address, p.port, name)
+	return p.getProcessPorts(name)
 }
 
 func (p *PcClient) GetProcessState(name string) (*types.ProcessState, error) {
-	state, err := GetProcessState(p.address, p.port, name)
+	state, err := p.getProcessState(name)
 	return state, err
 }
 
 func (p *PcClient) GetProcessesState() (*types.ProcessesState, error) {
-	return GetProcessesState(p.address, p.port)
+	return p.getProcessesState()
 }
 
 func (p *PcClient) StopProcess(name string) error {
-	return StopProcess(p.address, p.port, name)
+	return p.stopProcess(name)
 }
 
 func (p *PcClient) StopProcesses(names []string) ([]string, error) {
-	return StopProcesses(p.address, p.port, names)
+	return p.stopProcesses(names)
 }
 
 func (p *PcClient) StartProcess(name string) error {
-	return StartProcess(p.address, p.port, name)
+	return p.startProcess(name)
 }
 
 func (p *PcClient) RestartProcess(name string) error {
-	return RestartProcess(p.address, p.port, name)
+	return p.restartProcess(name)
 }
 
 func (p *PcClient) ScaleProcess(name string, scale int) error {
-	return ScaleProcess(p.address, p.port, name, scale)
+	return p.scaleProcess(name, scale)
 }
 
 func (p *PcClient) IsAlive() error {
-	return p.logError(isAlive(p.address, p.port))
+	return p.logError(p.isAlive())
 }
 
 func (p *PcClient) ErrorForSecs() int {

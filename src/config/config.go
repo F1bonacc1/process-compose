@@ -150,3 +150,11 @@ func IsLogSelectionOn() bool {
 	_, found := os.LookupEnv("WAYLAND_DISPLAY")
 	return !found
 }
+
+func GetUnixSocketPath() string {
+	val, found := os.LookupEnv(EnvVarUnixSocketPath)
+	if found {
+		return val
+	}
+	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose-%d.sock", os.Getpid()))
+}

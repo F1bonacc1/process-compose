@@ -9,7 +9,7 @@ import (
 )
 
 func (p *PcClient) shutDownProject() error {
-	url := fmt.Sprintf("http://%s:%d/project/stop/", p.address, p.port)
+	url := fmt.Sprintf("http://%s/project/stop/", p.address)
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
 		return err
@@ -27,12 +27,16 @@ func (p *PcClient) shutDownProject() error {
 }
 
 func (p *PcClient) getProjectState(withMemory bool) (*types.ProjectState, error) {
-	url := fmt.Sprintf("http://%s:%d/project/state/?withMemory=%v", p.address, p.port, withMemory)
-	resp, err := http.Get(url)
+	url := fmt.Sprintf("http://%s/project/state/?withMemory=%v", p.address, withMemory)
+	resp, err := p.client.Get(url)
+
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Error().Msgf("failed to get project state - unexpected status code: %s", resp.Status)
+	}
 	var sResp types.ProjectState
 
 	//Decode the data

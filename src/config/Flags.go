@@ -25,10 +25,11 @@ const (
 )
 
 const (
-	EnvVarNamePort     = "PC_PORT_NUM"
-	EnvVarNameTui      = "PC_DISABLE_TUI"
-	EnvVarNameConfig   = "PC_CONFIG_FILES"
-	EnvVarNameNoServer = "PC_NO_SERVER"
+	EnvVarNamePort       = "PC_PORT_NUM"
+	EnvVarNameTui        = "PC_DISABLE_TUI"
+	EnvVarNameConfig     = "PC_CONFIG_FILES"
+	EnvVarNameNoServer   = "PC_NO_SERVER"
+	EnvVarUnixSocketPath = "PC_SOCKET_PATH"
 )
 
 // Flags represents PC configuration flags.
@@ -52,6 +53,8 @@ type Flags struct {
 	KeepTuiOn         *bool
 	IsOrderedShutDown *bool
 	PcTheme           *string
+	UnixSocketPath    *string
+	IsUnixSocket      *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -75,6 +78,8 @@ func NewFlags() *Flags {
 		KeepTuiOn:         toPtr(false),
 		IsOrderedShutDown: toPtr(false),
 		PcTheme:           toPtr(set.Theme),
+		UnixSocketPath:    toPtr(""),
+		IsUnixSocket:      toPtr(false),
 	}
 }
 

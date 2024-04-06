@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
@@ -21,8 +20,7 @@ var stateCmd = &cobra.Command{
 	Use:   "state",
 	Short: "Get Process Compose project state",
 	Run: func(cmd *cobra.Command, args []string) {
-		pcClient := client.NewClient(*pcFlags.Address, *pcFlags.PortNum, *pcFlags.LogLength)
-		state, err := pcClient.GetProjectState(withMemoryUsage)
+		state, err := getClient().GetProjectState(withMemoryUsage)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to get project state")
 		}

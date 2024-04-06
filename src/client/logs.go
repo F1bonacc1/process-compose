@@ -1,31 +1,45 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 	"io"
+	"net"
 	"sync/atomic"
 )
 
 type LogClient struct {
-	ws       *websocket.Conn
-	Format   string
-	isClosed atomic.Bool
+	ws         *websocket.Conn
+	Format     string
+	isClosed   atomic.Bool
+	socketPath string
+	address    string
 }
 
-func NewLogClient() *LogClient {
+func NewLogClient(address, socketPath string) *LogClient {
 	return &LogClient{
-		Format: "%s",
+		Format:     "%s",
+		address:    address,
+		socketPath: socketPath,
 	}
 }
 
-func (l *LogClient) ReadProcessLogs(address string, port int, name string, offset int, follow bool, out io.StringWriter) (err error) {
+func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, out io.StringWriter) (err error) {
 
-	url := fmt.Sprintf("ws://%s:%d/process/logs/ws?name=%s&offset=%d&follow=%v", address, port, name, offset, follow)
+	url := fmt.Sprintf("ws://%s/process/logs/ws?name=%s&offset=%d&follow=%v", l.address, name, offset, follow)
 	log.Info().Msgf("Connecting to %s", url)
-	l.ws, _, err = websocket.DefaultDialer.Dial(url, nil)
+
+	dialer := websocket.DefaultDialer
+	if l.address == "unix" {
+		dialer.NetDialContext = func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, l.address, l.socketPath)
+		}
+	}
+	l.ws, _, err = dialer.Dial(url, nil)
+
 	if err != nil {
 		log.Error().Msgf("failed to dial to %s error: %v", url, err)
 		return err

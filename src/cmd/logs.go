@@ -17,10 +17,9 @@ var logsCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		logger := client.LogClient{
-			Format: "%s\n",
-		}
-		err := logger.ReadProcessLogs(*pcFlags.Address, *pcFlags.PortNum, name, *pcFlags.LogTailLength, *pcFlags.LogFollow, os.Stdout)
+
+		logger := getLogClient()
+		err := logger.ReadProcessLogs(name, *pcFlags.LogTailLength, *pcFlags.LogFollow, os.Stdout)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Failed to fetch logs for process %s", name)
 		}
@@ -41,4 +40,16 @@ func init() {
 
 	logsCmd.Flags().BoolVarP(pcFlags.LogFollow, "follow", "f", *pcFlags.LogFollow, "Follow log output")
 	logsCmd.Flags().IntVarP(pcFlags.LogTailLength, "tail", "n", *pcFlags.LogTailLength, "Number of lines to show from the end of the logs")
+}
+
+func getLogClient() *client.LogClient {
+	var lc *client.LogClient
+	if *pcFlags.IsUnixSocket {
+		lc = client.NewLogClient("unix", *pcFlags.UnixSocketPath)
+	} else {
+		address := fmt.Sprintf("%s:%d", *pcFlags.Address, *pcFlags.PortNum)
+		lc = client.NewLogClient(address, "")
+	}
+	lc.Format = "%s\n"
+	return lc
 }

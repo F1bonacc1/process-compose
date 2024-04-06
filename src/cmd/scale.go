@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/rs/zerolog/log"
 	"strconv"
 
@@ -19,7 +18,7 @@ var scaleCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal().Err(err).Msg("second argument must be an integer")
 		}
-		err = client.ScaleProcess(*pcFlags.Address, *pcFlags.PortNum, name, count)
+		err = getClient().ScaleProcess(name, count)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("failed to scale process %s", name)
 		}

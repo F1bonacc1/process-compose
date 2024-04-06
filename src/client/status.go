@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func isAlive(address string, port int) error {
-	url := fmt.Sprintf("http://%s:%d/live", address, port)
-	resp, err := http.Get(url)
+func (p *PcClient) isAlive() error {
+	url := fmt.Sprintf("http://%s/live", p.address)
+	resp, err := p.client.Get(url)
 	if err != nil {
 		return err
 	}
@@ -20,9 +20,9 @@ func isAlive(address string, port int) error {
 	return nil
 }
 
-func getHostName(address string, port int) (string, error) {
-	url := fmt.Sprintf("http://%s:%d/hostname", address, port)
-	resp, err := http.Get(url)
+func (p *PcClient) getHostName() (string, error) {
+	url := fmt.Sprintf("http://%s/hostname", p.address)
+	resp, err := p.client.Get(url)
 	if err != nil {
 		return "", err
 	}

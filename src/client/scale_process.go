@@ -7,14 +7,13 @@ import (
 	"net/http"
 )
 
-func ScaleProcess(address string, port int, name string, scale int) error {
-	url := fmt.Sprintf("http://%s:%d/process/scale/%s/%d", address, port, name, scale)
-	client := &http.Client{}
+func (p *PcClient) scaleProcess(name string, scale int) error {
+	url := fmt.Sprintf("http://%s/process/scale/%s/%d", p.address, name, scale)
 	req, err := http.NewRequest(http.MethodPatch, url, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := client.Do(req)
+	resp, err := p.client.Do(req)
 	if err != nil {
 		return err
 	}
