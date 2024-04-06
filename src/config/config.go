@@ -125,7 +125,12 @@ func getUser() string {
 		log.Warn().Err(err).Msg("Failed to retrieve user info.")
 		return ""
 	}
-	return usr.Username
+	username := usr.Username
+	if strings.Contains(username, "\\") {
+		parts := strings.Split(username, "\\")
+		username = parts[len(parts)-1]
+	}
+	return username
 }
 
 func mode() string {
