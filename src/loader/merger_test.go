@@ -402,6 +402,30 @@ func Test_mergeProcesses(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Disabled Process",
+			args: args{
+				base: types.Processes{
+					"test": types.ProcessConfig{
+						Disabled: true,
+						Command:  "echo foo",
+					},
+				},
+				override: types.Processes{
+					"test": types.ProcessConfig{
+						Disabled: false,
+						Command:  "echo bar",
+					},
+				},
+			},
+			want: types.Processes{
+				"test": types.ProcessConfig{
+					Disabled: true,
+					Command:  "echo bar",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -411,7 +435,7 @@ func Test_mergeProcesses(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("mergeProcesses() got = %v, want %v", got, tt.want)
+				t.Errorf("mergeProcesses() got = %+v, want %+v", got, tt.want)
 			}
 		})
 	}

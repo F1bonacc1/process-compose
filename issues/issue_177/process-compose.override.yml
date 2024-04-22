@@ -1,0 +1,7 @@
+processes:
+  test:
+    disabled: false
+    command: echo bar
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
