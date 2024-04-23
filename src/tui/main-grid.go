@@ -90,7 +90,7 @@ func (pv *pcView) getSearchInput() tview.Primitive {
 		}
 	})
 	textInput.SetChangedFunc(func(text string) {
-		_ = pv.searchProcess(text, false, false)
+		_ = pv.searchProcess(text)
 	})
 	return textInput
 }

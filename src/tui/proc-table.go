@@ -255,18 +255,14 @@ func (pv *pcView) resetProcessSearch() {
 	})
 }
 
-func (pv *pcView) searchProcess(search string, isRegex, caseSensitive bool) error {
+func (pv *pcView) searchProcess(search string) error {
 	if search == "" {
 		pv.setProcRegex(nil)
 		return nil
 	}
 	searchRegexString := search
-	if !isRegex {
-		searchRegexString = regexp.QuoteMeta(searchRegexString)
-	}
-	if !caseSensitive {
-		searchRegexString = "(?i)" + searchRegexString
-	}
+	searchRegexString = regexp.QuoteMeta(searchRegexString)
+	searchRegexString = "(?i)" + searchRegexString
 	searchRegex, err := regexp.Compile(searchRegexString)
 	if err != nil {
 		return err

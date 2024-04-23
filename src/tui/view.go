@@ -200,6 +200,8 @@ func (pv *pcView) setShortCutsActions() {
 			pv.exitSearch()
 		} else if pv.procRegex != nil {
 			pv.resetProcessSearch()
+			pv.commandMode = false
+			pv.redrawGrid()
 		}
 	})
 	pv.shortcuts.setAction(ActionNsFilter, pv.showNsFilter)
@@ -502,7 +504,7 @@ func SetupTui(project app.IProject, options ...Option) {
 
 	pcv = pv
 	if err := pv.appView.Run(); err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msgf("Failed to start TUI")
 	}
 }
 
