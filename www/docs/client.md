@@ -22,9 +22,9 @@ Instead of TCP communication mode, on *nix based systems, you can use Unix Domai
 
 There are 3 configuration options:
 
-1. Auto socket path based on `PID`: `process-compose -U` will start Process Compose in UDS mode and create a socket file under `<TempDir>/process-compose-<pid>.sock`
-2. Manual socket path with CLI flag: `process-compose --unix-socket /path/to/socket/file` will start Process Compose in UDS mode and create the specified socket file. The directory should exist.
-3. Manual socket path with environment variable: `PC_SOCKET_PATH="/path/to/socket/file" process-compose` will start Process Compose in UDS mode and create the specified socket file. The directory should exist.
+1. **Auto socket path based on** `PID`: `process-compose -U` will start Process Compose in UDS mode and create a socket file under `<TempDir>/process-compose-<pid>.sock`
+2. **Manual socket path with CLI flag**: `process-compose --unix-socket /path/to/socket/file` will start Process Compose in UDS mode and create the specified socket file. The directory should exist.
+3. **Manual socket path with environment variable**: `PC_SOCKET_PATH="/path/to/socket/file" process-compose` will start Process Compose in UDS mode and create the specified socket file. The directory should exist.
 
 ## Client Mode
 
