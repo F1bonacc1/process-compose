@@ -81,16 +81,36 @@ func runTui(project *app.ProjectRunner) int {
 }
 
 func startTui(runner app.IProject) {
-	col, err := tui.StringToColumnID(*pcFlags.SortColumn)
+	tuiOptions := []tui.Option{
+		tui.WithRefreshRate(time.Duration(*pcFlags.RefreshRate) * time.Second),
+	}
+	settings := config.NewSettings().Load()
+
+	tuiOptions = append(tuiOptions,
+		ternary(pcFlags.PcThemeChanged, tui.WithTheme(*pcFlags.PcTheme), tui.WithTheme(settings.Theme)))
+
+	tuiOptions = append(tuiOptions,
+		ternary(pcFlags.SortColumnChanged,
+			tui.WithStateSorter(getColumnId(*pcFlags.SortColumn), !*pcFlags.IsReverseSort),
+			tui.WithStateSorter(getColumnId(settings.Sort.By), !settings.Sort.IsReversed)))
+
+	tui.SetupTui(runner, tuiOptions...)
+}
+
+func getColumnId(columnName string) tui.ColumnID {
+	col, err := tui.StringToColumnID(columnName)
 	if err != nil {
 		log.Err(err).Msgf("Invalid column name %s provided. Using %s", *pcFlags.SortColumn, config.DefaultSortColumn)
 		col = tui.ProcessStateName
 	}
-	tui.SetupTui(runner,
-		tui.WithRefreshRate(time.Duration(*pcFlags.RefreshRate)*time.Second),
-		tui.WithStateSorter(col, !*pcFlags.IsReverseSort),
-		tui.WithTheme(*pcFlags.PcTheme),
-	)
+	return col
+}
+
+func ternary[T any](cond bool, a, b T) T {
+	if cond {
+		return a
+	}
+	return b
 }
 
 func quiet() func() {

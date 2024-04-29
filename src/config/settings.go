@@ -19,7 +19,7 @@ type (
 
 func NewSettings() *Settings {
 	return &Settings{
-		Theme: "Default",
+		Theme: DefaultThemeName,
 		Sort: Sort{
 			By:         DefaultSortColumn,
 			IsReversed: false,
@@ -29,14 +29,20 @@ func NewSettings() *Settings {
 
 func (s *Settings) Load() *Settings {
 	filePath := GetSettingsPath()
+	if !fileExists(filePath) {
+		return s
+	}
 	b, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Error reading settings file %s", filePath)
+		return s
 	}
 	err = yaml.Unmarshal(b, s)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Error parsing settings file %s", filePath)
+		return s
 	}
+	log.Debug().Msgf("Loaded settings from %s", filePath)
 	return s
 }
 
@@ -49,4 +55,12 @@ func (s *Settings) Save() error {
 	}
 	err = os.WriteFile(filePath, b, 0644)
 	return err
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }

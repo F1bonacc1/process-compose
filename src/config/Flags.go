@@ -22,6 +22,9 @@ const (
 
 	// DefaultSortColumn represents the default sort column.
 	DefaultSortColumn = "NAME"
+
+	// DefaultThemeName represents the default theme
+	DefaultThemeName = "Default"
 )
 
 const (
@@ -48,18 +51,19 @@ type Flags struct {
 	NoDependencies    *bool
 	HideDisabled      *bool
 	SortColumn        *string
+	SortColumnChanged bool
 	IsReverseSort     *bool
 	NoServer          *bool
 	KeepTuiOn         *bool
 	IsOrderedShutDown *bool
 	PcTheme           *string
+	PcThemeChanged    bool
 	UnixSocketPath    *string
 	IsUnixSocket      *bool
 }
 
 // NewFlags returns new configuration flags.
 func NewFlags() *Flags {
-	set := NewSettings().Load()
 	return &Flags{
 		RefreshRate:       toPtr(DefaultRefreshRate),
 		Headless:          toPtr(getTuiDefault()),
@@ -72,12 +76,12 @@ func NewFlags() *Flags {
 		LogTailLength:     toPtr(math.MaxInt),
 		NoDependencies:    toPtr(false),
 		HideDisabled:      toPtr(false),
-		SortColumn:        toPtr(set.Sort.By),
-		IsReverseSort:     toPtr(set.Sort.IsReversed),
+		SortColumn:        toPtr(DefaultSortColumn),
+		IsReverseSort:     toPtr(false),
 		NoServer:          toPtr(getNoServerDefault()),
 		KeepTuiOn:         toPtr(false),
 		IsOrderedShutDown: toPtr(false),
-		PcTheme:           toPtr(set.Theme),
+		PcTheme:           toPtr(DefaultThemeName),
 		UnixSocketPath:    toPtr(""),
 		IsUnixSocket:      toPtr(false),
 	}

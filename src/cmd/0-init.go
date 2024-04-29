@@ -11,16 +11,22 @@ import (
 var pcFlags *config.Flags
 var commonFlags *pflag.FlagSet
 
+const (
+	flagTheme   = "theme"
+	flagReverse = "reverse"
+	flagSort    = "sort"
+)
+
 func init() {
 	pcFlags = config.NewFlags()
 	commonFlags = pflag.NewFlagSet("", pflag.ContinueOnError)
-	commonFlags.BoolVarP(pcFlags.IsReverseSort, "reverse", "R", *pcFlags.IsReverseSort, "sort in reverse order")
+	commonFlags.BoolVarP(pcFlags.IsReverseSort, flagReverse, "R", *pcFlags.IsReverseSort, "sort in reverse order")
 	commonFlags.StringVarP(
 		pcFlags.SortColumn,
-		"sort",
+		flagSort,
 		"S",
 		*pcFlags.SortColumn,
 		fmt.Sprintf("sort column name. legal values (case insensitive): [%s]", strings.Join(tui.ColumnNames(), ", ")),
 	)
-	commonFlags.StringVar(pcFlags.PcTheme, "theme", *pcFlags.PcTheme, "select process compose theme")
+	commonFlags.StringVar(pcFlags.PcTheme, flagTheme, *pcFlags.PcTheme, "select process compose theme")
 }

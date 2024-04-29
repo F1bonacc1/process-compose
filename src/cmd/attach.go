@@ -18,8 +18,8 @@ func init() {
 	attachCmd.Flags().IntVarP(pcFlags.RefreshRate, "ref-rate", "r", *pcFlags.RefreshRate, "TUI refresh rate in seconds")
 	attachCmd.Flags().StringVarP(pcFlags.Address, "address", "a", *pcFlags.Address, "address of the target process compose server")
 	attachCmd.Flags().IntVarP(pcFlags.LogLength, "log-length", "l", *pcFlags.LogLength, "log length to display in TUI")
-	attachCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
-	attachCmd.Flags().AddFlag(commonFlags.Lookup("sort"))
-	attachCmd.Flags().AddFlag(commonFlags.Lookup("theme"))
+	attachCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
+	attachCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
+	attachCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))
 
 }

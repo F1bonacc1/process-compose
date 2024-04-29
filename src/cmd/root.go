@@ -32,6 +32,8 @@ var (
 			if isUnixSocketMode(cmd) {
 				*pcFlags.IsUnixSocket = true
 			}
+			pcFlags.PcThemeChanged = cmd.Flags().Changed(flagTheme)
+			pcFlags.SortColumnChanged = cmd.Flags().Changed(flagSort)
 		},
 		RunE: run,
 	}
@@ -75,9 +77,9 @@ func init() {
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
 	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
-	rootCmd.Flags().AddFlag(commonFlags.Lookup("reverse"))
-	rootCmd.Flags().AddFlag(commonFlags.Lookup("sort"))
-	rootCmd.Flags().AddFlag(commonFlags.Lookup("theme"))
+	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
+	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
+	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))
 
 	if runtime.GOOS != "windows" {
 		//rootCmd.Flags().BoolVarP(pcFlags.IsDetached, "detached", "D", *pcFlags.IsDetached, "run process-compose in detached mode")
