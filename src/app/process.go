@@ -34,35 +34,37 @@ const (
 
 type Process struct {
 	sync.Mutex
-	globalEnv       []string
-	confMtx         sync.Mutex
-	procConf        *types.ProcessConfig
-	procState       *types.ProcessState
-	stateMtx        sync.Mutex
-	procCond        sync.Cond
-	procStartedCond sync.Cond
-	procStateChan   chan string
-	procReadyCtx    context.Context
-	readyCancelFn   context.CancelFunc
-	procRunCtx      context.Context
-	runCancelFn     context.CancelFunc
-	procColor       func(a ...interface{}) string
-	noColor         func(a ...interface{}) string
-	redColor        func(a ...interface{}) string
-	logBuffer       *pclog.ProcessLogBuffer
-	logger          pclog.PcLogger
-	command         Commander
-	started         bool
-	done            bool
-	timeMutex       sync.Mutex
-	startTime       time.Time
-	liveProber      *health.Prober
-	readyProber     *health.Prober
-	shellConfig     command.ShellConfig
-	printLogs       bool
-	isMain          bool
-	extraArgs       []string
-	isStopped       atomic.Bool
+	globalEnv        []string
+	confMtx          sync.Mutex
+	procConf         *types.ProcessConfig
+	procState        *types.ProcessState
+	stateMtx         sync.Mutex
+	procCond         sync.Cond
+	procStartedCond  sync.Cond
+	procStateChan    chan string
+	procReadyCtx     context.Context
+	readyCancelFn    context.CancelFunc
+	procLogReadyCtx  context.Context
+	readyLogCancelFn context.CancelCauseFunc
+	procRunCtx       context.Context
+	runCancelFn      context.CancelFunc
+	procColor        func(a ...interface{}) string
+	noColor          func(a ...interface{}) string
+	redColor         func(a ...interface{}) string
+	logBuffer        *pclog.ProcessLogBuffer
+	logger           pclog.PcLogger
+	command          Commander
+	started          bool
+	done             bool
+	timeMutex        sync.Mutex
+	startTime        time.Time
+	liveProber       *health.Prober
+	readyProber      *health.Prober
+	shellConfig      command.ShellConfig
+	printLogs        bool
+	isMain           bool
+	extraArgs        []string
+	isStopped        atomic.Bool
 }
 
 func NewProcess(
@@ -97,6 +99,7 @@ func NewProcess(
 	}
 
 	proc.procReadyCtx, proc.readyCancelFn = context.WithCancel(context.Background())
+	proc.procLogReadyCtx, proc.readyLogCancelFn = context.WithCancelCause(context.Background())
 	proc.procRunCtx, proc.runCancelFn = context.WithCancel(context.Background())
 	proc.setUpProbes()
 	proc.procCond = *sync.NewCond(proc)
@@ -310,6 +313,13 @@ func (p *Process) waitUntilReady() bool {
 			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
 			p.setExitCode(1)
 			return false
+		case <-p.procLogReadyCtx.Done():
+			err := context.Cause(p.procLogReadyCtx)
+			if errors.Is(err, context.Canceled) {
+				return true
+			}
+			log.Error().Err(err).Msgf("Process %s was aborted and won't become ready", p.getName())
+			return false
 		}
 	}
 }
@@ -335,6 +345,7 @@ func (p *Process) shutDown() error {
 	}
 	p.setState(types.ProcessStateTerminating)
 	p.stopProbes()
+	p.readyLogCancelFn(fmt.Errorf("process %s was shut down", p.getName()))
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
 	}
@@ -491,6 +502,10 @@ func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string))
 				Str("process", p.getName()).
 				Msg("error reading from stdout")
 			break
+		}
+		if p.procConf.ReadyLogLine != "" && p.procState.Health == types.ProcessHealthUnknown && strings.Contains(line, p.procConf.ReadyLogLine) {
+			p.procState.Health = types.ProcessHealthReady
+			p.readyLogCancelFn(nil)
 		}
 		handler(strings.TrimSuffix(line, "\n"))
 	}

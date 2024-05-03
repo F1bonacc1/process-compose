@@ -25,6 +25,7 @@ type ProcessConfig struct {
 	DependsOn         DependsOnConfig        `yaml:"depends_on,omitempty"`
 	LivenessProbe     *health.Probe          `yaml:"liveness_probe,omitempty"`
 	ReadinessProbe    *health.Probe          `yaml:"readiness_probe,omitempty"`
+	ReadyLogLine      string                 `yaml:"ready_log_line,omitempty"`
 	ShutDownParams    ShutDownParams         `yaml:"shutdown,omitempty"`
 	DisableAnsiColors bool                   `yaml:"disable_ansi_colors,omitempty"`
 	WorkingDir        string                 `yaml:"working_dir"`
@@ -161,6 +162,9 @@ const (
 
 	// ProcessConditionStarted is the type for waiting until a process has started (default).
 	ProcessConditionStarted = "process_started"
+
+	// ProcessConditionLogReady is the type for waiting until a process has printed a predefined log line
+	ProcessConditionLogReady = "process_log_ready"
 )
 
 type DependsOnConfig map[string]ProcessDependency

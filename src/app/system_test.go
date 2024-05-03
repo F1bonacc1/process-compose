@@ -590,3 +590,52 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 		return
 	}
 }
+func TestSystem_TestReadyLine(t *testing.T) {
+	proc1 := "proc1"
+	proc2 := "proc2"
+	shell := command.DefaultShellConfig()
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			proc1: {
+				Name:         proc1,
+				ReplicaName:  proc1,
+				Executable:   shell.ShellCommand,
+				Args:         []string{shell.ShellArgument, "sleep 0.3 && echo ready"},
+				ReadyLogLine: "ready",
+			},
+			proc2: {
+				Name:        proc2,
+				ReplicaName: proc2,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "sleep 2"},
+				DependsOn: map[string]types.ProcessDependency{
+					proc1: {
+						Condition: types.ProcessConditionLogReady,
+					},
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project: project,
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	go runner.Run()
+	time.Sleep(100 * time.Millisecond)
+	state := runner.getRunningProcess(proc2).getStatusName()
+
+	if state != types.ProcessStatePending {
+		t.Errorf("process %s is %s want %s", proc2, state, types.ProcessStatePending)
+		return
+	}
+	time.Sleep(400 * time.Millisecond)
+	state = runner.getRunningProcess(proc2).getStatusName()
+	if state != types.ProcessStateRunning {
+		t.Errorf("process %s is %s want %s", proc2, state, types.ProcessStateRunning)
+		return
+	}
+}

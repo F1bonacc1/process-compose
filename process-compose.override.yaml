@@ -41,6 +41,19 @@ processes:
       signal: 15
       timeout_seconds: 4
 
+  log-line-ready:
+    command: "./test_loop.bash ready-log"
+    ready_log_line: "test loop 1"
+
+  dep-on-log-line-ready:
+    command: "echo log is ready"
+    availability:
+      restart: "on_failure"
+      backoff_seconds: 2
+    depends_on:
+      log-line-ready:
+        condition: process_log_ready
+
   _process2:
     command: "./test_loop.bash process2"
     log_location: ./pc.proc2.{PC_REPLICA_NUM}.log

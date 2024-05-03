@@ -133,6 +133,22 @@ func validateHealthDependencyHasHealthCheck(p *types.Project) error {
 				}
 				log.Error().Msg(errStr)
 			}
+			if dep.Condition == types.ProcessConditionLogReady && depProc.ReadyLogLine == "" {
+				errStr := fmt.Sprintf("log ready dependency defined in '%s' but no ready log line exists in '%s'", procName, depName)
+				log.Error().Msg(errStr)
+				return fmt.Errorf(errStr)
+			}
+		}
+	}
+	return nil
+}
+
+func validateNoIncompatibleHealthChecks(p *types.Project) error {
+	for procName, proc := range p.Processes {
+		if proc.ReadinessProbe != nil && proc.ReadyLogLine != "" {
+			errStr := fmt.Sprintf("'ready_log_line' and readiness probe defined in '%s' are incompatible", procName)
+			log.Error().Msg(errStr)
+			return fmt.Errorf(errStr)
 		}
 	}
 	return nil

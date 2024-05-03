@@ -145,6 +145,12 @@ func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
 				if !ready {
 					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.ReplicaName, k)
 				}
+			case types.ProcessConditionLogReady:
+				log.Info().Msgf("%s is waiting for %s log line %s", process.ReplicaName, k, runningProc.procConf.ReadyLogLine)
+				ready := runningProc.waitUntilReady()
+				if !ready {
+					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.ReplicaName, k)
+				}
 			case types.ProcessConditionStarted:
 				log.Info().Msgf("%s is waiting for %s to start", process.ReplicaName, k)
 				runningProc.waitForStarted()

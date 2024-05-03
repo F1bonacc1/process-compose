@@ -75,12 +75,34 @@ processes:
         condition: process_completed_successfully
 ```
 
-There are 4 condition types that can be used in process dependencies:
+There are 5 condition types that can be used in process dependencies:
 
 * `process_completed` - is the type for waiting until a process has been completed (any exit code)
 * `process_completed_successfully` - is the type for waiting until a process has been completed successfully (exit code 0)
 * `process_healthy` - is the type for waiting until a process is healthy
 * `process_started` - is the type for waiting until a process has started (default)
+* `process_log_ready` - is the type for waiting until a process has printed a predefined log line. This requires the definition of `ready_log_line` in the dependent process.
+
+##### Process Log Ready Example
+
+In some situations a process's log output is a simple way to determine if it is ready or not. For example, we can wait for a 'ready' message in the process's logs as follows:
+
+```yaml hl_lines="6 12"
+processes:
+  world:
+  	command: "echo Connected"
+    depends_on:
+      hello:
+        condition: process_log_ready
+  hello:
+  	command: |
+  	  echo 'Preparing...'
+      sleep 1
+      echo 'I am ready to accept connections now'
+    ready_log_line: "ready to accept connections" # equal to *.ready to accept connections.*\n regex    
+```
+
+> :bulb: `ready_log_line` and readiness probe are incompatible and can't be used at the same time.
 
 ## Run only specific processes
 
