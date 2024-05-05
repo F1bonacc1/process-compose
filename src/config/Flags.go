@@ -46,7 +46,7 @@ type Flags struct {
 	LogLength         *int
 	LogFollow         *bool
 	LogTailLength     *int
-	Headless          *bool
+	IsTuiEnabled      *bool
 	Command           *string
 	Write             *bool
 	NoDependencies    *bool
@@ -68,7 +68,7 @@ type Flags struct {
 func NewFlags() *Flags {
 	return &Flags{
 		RefreshRate:       toPtr(DefaultRefreshRate),
-		Headless:          toPtr(getTuiDefault()),
+		IsTuiEnabled:      toPtr(getDisableTuiDefault()),
 		PortNum:           toPtr(getPortDefault()),
 		Address:           toPtr(DefaultAddress),
 		LogLength:         toPtr(DefaultLogLength),

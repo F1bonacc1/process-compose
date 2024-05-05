@@ -14,7 +14,7 @@ If one or more process names are passed as arguments,
 will start them and their dependencies only`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
-		startHttpServerIfEnabled(!*pcFlags.Headless, runner)
+		startHttpServerIfEnabled(!*pcFlags.IsTuiEnabled, runner)
 		runProject(runner)
 	},
 }

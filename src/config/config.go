@@ -58,9 +58,9 @@ func GetLogFilePath() string {
 	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose%s%s.log", userName, mode()))
 }
 
-func getTuiDefault() bool {
-	_, found := os.LookupEnv(EnvVarNameTui)
-	return !found
+func getDisableTuiDefault() bool {
+	val, found := os.LookupEnv(EnvVarNameTui)
+	return !found || val == "" || strings.ToLower(val) == "false"
 }
 
 func getNoServerDefault() bool {

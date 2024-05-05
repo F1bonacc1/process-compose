@@ -15,7 +15,7 @@ Command line arguments, provided after --, are passed to the PROCESS.`,
 	Args: cobra.MinimumNArgs(1),
 	// Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		*pcFlags.Headless = false
+		*pcFlags.IsTuiEnabled = false
 
 		processName := args[0]
 

@@ -25,7 +25,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 	prjOpts := app.ProjectOpts{}
 
 	runner, err := app.NewProjectRunner(
-		prjOpts.WithIsTuiOn(*pcFlags.Headless).
+		prjOpts.WithIsTuiOn(*pcFlags.IsTuiEnabled).
 			WithMainProcess(mainProcess).
 			WithMainProcessArgs(mainProcessArgs).
 			WithProject(project).
@@ -41,7 +41,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 
 func runProject(runner *app.ProjectRunner) {
 	exitCode := 0
-	if *pcFlags.Headless {
+	if *pcFlags.IsTuiEnabled {
 		exitCode = runTui(runner)
 	} else {
 		exitCode = runHeadless(runner)

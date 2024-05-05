@@ -44,7 +44,7 @@ func run(cmd *cobra.Command, args []string) error {
 		_ = logFile.Close()
 	}()
 	runner := getProjectRunner([]string{}, false, "", []string{})
-	startHttpServerIfEnabled(!*pcFlags.Headless, runner)
+	startHttpServerIfEnabled(!*pcFlags.IsTuiEnabled, runner)
 	runProject(runner)
 	return nil
 }
@@ -67,7 +67,7 @@ func init() {
 	nsAdmitter := &admitter.NamespaceAdmitter{}
 	opts.AddAdmitter(nsAdmitter)
 
-	rootCmd.Flags().BoolVarP(pcFlags.Headless, "tui", "t", *pcFlags.Headless, "enable TUI (disable with -t=false) (env: "+config.EnvVarNameTui+")")
+	rootCmd.Flags().BoolVarP(pcFlags.IsTuiEnabled, "tui", "t", *pcFlags.IsTuiEnabled, "enable TUI (disable with -t=false) (env: "+config.EnvVarNameTui+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.KeepTuiOn, "keep-tui", *pcFlags.KeepTuiOn, "keep TUI running even after all processes exit")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.NoServer, "no-server", *pcFlags.NoServer, "disable HTTP server (env: "+config.EnvVarNameNoServer+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.IsOrderedShutDown, "ordered-shutdown", *pcFlags.IsOrderedShutDown, "shut down processes in reverse dependency order")
