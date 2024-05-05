@@ -337,8 +337,8 @@ func (pv *pcView) attentionMessage(message string) {
 		SetSelectable(false).
 		SetAlign(tview.AlignCenter).
 		SetExpansion(0).
-		SetTextColor(tcell.ColorWhite).
-		SetBackgroundColor(tcell.ColorRed))
+		SetTextColor(tview.Styles.ContrastSecondaryTextColor).
+		SetBackgroundColor(tview.Styles.MoreContrastBackgroundColor))
 }
 
 func (pv *pcView) hideAttentionMessage() {

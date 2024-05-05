@@ -27,6 +27,8 @@ style:
   dialog:
     fgColor: cadetblue
     bgColor: "#3B3B3B"
+    contrastBgColor: blue
+    attentionBgColor: red
     buttonFgColor: "#3B3B3B"
     buttonBgColor: lightskyblue
     buttonFocusFgColor: "#3B3B3B"

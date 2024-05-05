@@ -72,6 +72,8 @@ type (
 	Dialog struct {
 		FgColor            Color `yaml:"fgColor"`
 		BgColor            Color `yaml:"bgColor"`
+		ContrastBgColor    Color `yaml:"contrastBgColor"`
+		AttentionBgColor   Color `yaml:"attentionBgColor"`
 		ButtonFgColor      Color `yaml:"buttonFgColor"`
 		ButtonBgColor      Color `yaml:"buttonBgColor"`
 		ButtonFocusFgColor Color `yaml:"buttonFocusFgColor"`
@@ -182,6 +184,16 @@ func (s *Styles) BgColor() tcell.Color {
 	return s.Body().BgColor.Color()
 }
 
+// ContrastBgColor returns the Contrast background color.
+func (s *Styles) ContrastBgColor() tcell.Color {
+	return s.Dialog().ContrastBgColor.Color()
+}
+
+// AttentionBgColor returns the Contrast background color.
+func (s *Styles) AttentionBgColor() tcell.Color {
+	return s.Dialog().AttentionBgColor.Color()
+}
+
 // BorderColor returns the border color.
 func (s *Styles) BorderColor() tcell.Color {
 	return s.Body().BorderColor.Color()
@@ -215,8 +227,8 @@ func (s *Styles) Dialog() Dialog {
 // Update apply terminal colors based on styles.
 func (s *Styles) Update() {
 	tview.Styles.PrimitiveBackgroundColor = s.BgColor()
-	//tview.Styles.ContrastBackgroundColor = s.BgColor()
-	tview.Styles.MoreContrastBackgroundColor = s.BgColor()
+	tview.Styles.ContrastBackgroundColor = s.ContrastBgColor()
+	tview.Styles.MoreContrastBackgroundColor = s.AttentionBgColor()
 	tview.Styles.PrimaryTextColor = s.FgColor()
 	tview.Styles.BorderColor = s.BorderColor()
 	tview.Styles.TitleColor = s.FgColor()

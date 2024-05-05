@@ -38,7 +38,7 @@ func (c *CmdWrapper) StderrPipe() (io.ReadCloser, error) {
 	return c.cmd.StderrPipe()
 }
 
-func (c *CmdWrapper) AttachIo() () {
+func (c *CmdWrapper) AttachIo() {
 	c.cmd.Stdin = os.Stdin
 	c.cmd.Stdout = os.Stdout
 	c.cmd.Stderr = os.Stderr
