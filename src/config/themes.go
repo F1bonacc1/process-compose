@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -10,6 +11,10 @@ import (
 
 const (
 	CustomStyleName = "Custom Style"
+)
+
+var (
+	errThemeNotFound = errors.New("custom theme not found")
 )
 
 // Themes represents a list of styles.
@@ -56,6 +61,9 @@ func NewThemes() *Themes {
 
 func (t *Themes) loadFromFile() (*Styles, error) {
 	filePath := GetThemesPath()
+	if filePath == "" || !fileExists(filePath) {
+		return nil, errThemeNotFound
+	}
 	b, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Error reading themes file %s", filePath)

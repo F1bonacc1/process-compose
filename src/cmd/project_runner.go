@@ -84,6 +84,9 @@ func startTui(runner app.IProject) {
 	tuiOptions := []tui.Option{
 		tui.WithRefreshRate(time.Duration(*pcFlags.RefreshRate) * time.Second),
 	}
+	if !*pcFlags.IsReadOnlyMode {
+		config.CreateProcCompHome()
+	}
 	settings := config.NewSettings().Load()
 
 	tuiOptions = append(tuiOptions,
@@ -92,7 +95,8 @@ func startTui(runner app.IProject) {
 	tuiOptions = append(tuiOptions,
 		ternary(pcFlags.SortColumnChanged,
 			tui.WithStateSorter(getColumnId(*pcFlags.SortColumn), !*pcFlags.IsReverseSort),
-			tui.WithStateSorter(getColumnId(settings.Sort.By), !settings.Sort.IsReversed)))
+			tui.WithStateSorter(getColumnId(settings.Sort.By), !settings.Sort.IsReversed)),
+		tui.WithReadOnlyMode(*pcFlags.IsReadOnlyMode))
 
 	tui.SetupTui(runner, tuiOptions...)
 }

@@ -256,7 +256,7 @@ func (a Action) writeToggleButton(w io.Writer, state bool, style config.Help) {
 		a.ToggleDescription[state])
 }
 
-func getDefaultActions() *ShortCuts {
+func newShortCuts() *ShortCuts {
 	sc := &ShortCuts{
 		ShortCutKeys: map[ActionName]*Action{
 			ActionLogScreen: {

@@ -77,6 +77,7 @@ type pcView struct {
 	helpDialog        *helpDialog
 	settings          *config.Settings
 	isFullScreen      bool
+	isReadOnlyMode    bool
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -89,7 +90,6 @@ func newPcView(project app.IProject) *pcView {
 		scrSplitState: LogProcHalf,
 		helpText:      tview.NewTextView().SetDynamicColors(true),
 		loggedProc:    "",
-		shortcuts:     getDefaultActions(),
 		procCountCell: tview.NewTableCell(""),
 		mainGrid:      tview.NewGrid(),
 		logsTextArea:  tview.NewTextArea(),
@@ -102,8 +102,11 @@ func newPcView(project app.IProject) *pcView {
 		},
 		procColumns: map[ColumnID]string{},
 		selectedNs:  AllNS,
-		themes:      config.NewThemes(),
-		settings:    config.NewSettings(),
+
+		// configuration
+		shortcuts: newShortCuts(),
+		themes:    config.NewThemes(),
+		settings:  config.NewSettings(),
 	}
 	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
@@ -400,12 +403,18 @@ func (pv *pcView) updateHelpTextView() {
 }
 
 func (pv *pcView) saveTuiState() {
+	if pv.isReadOnlyMode {
+		log.Debug().Msg("Not saving TUI state in read-only mode")
+		return
+	}
 	pv.settings.Sort.By = columnNames[pv.stateSorter.sortByColumn]
 	pv.settings.Sort.IsReversed = !pv.stateSorter.isAsc
 	pv.settings.Theme = pv.styles.GetStyleName()
 	err := pv.settings.Save()
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to save settings")
+	} else {
+		log.Debug().Msg("Saved TUI state")
 	}
 }
 

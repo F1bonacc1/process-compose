@@ -34,6 +34,7 @@ const (
 	LogFileMode       = os.FileMode(0600)
 	themeFileName     = "theme.yaml"
 	settingsFileName  = "settings.yaml"
+	configHome        = "process-compose"
 )
 
 var (
@@ -88,20 +89,41 @@ func GetConfigDefault() []string {
 	return []string{}
 }
 
-func procCompHome() string {
+func CreateProcCompHome() string {
 	if env := os.Getenv(pcConfigEnv); env != "" {
 		return env
 	}
-	xdgPcHome, err := xdg.ConfigFile("process-compose")
+	xdgPcHome, err := xdg.ConfigFile(configHome)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Unable to create configuration directory")
+	}
+
+	err = os.MkdirAll(xdgPcHome, 0700)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Unable to create configuration directory for process compose")
+	}
+
+	return xdgPcHome
+}
+
+func getProcConfigDir() string {
+	if env := os.Getenv(pcConfigEnv); env != "" {
+		return env
+	}
+	xdgPcHome, err := xdg.SearchConfigFile(configHome)
+	if err != nil {
+		log.Warn().Err(err).Msg("Path not found for process compose config home")
 	}
 	return xdgPcHome
 }
 
 func GetShortCutsPath() string {
+	pcHome := getProcConfigDir()
+	if pcHome == "" {
+		return ""
+	}
 	for _, path := range scFiles {
-		scPath := filepath.Join(procCompHome(), path)
+		scPath := filepath.Join(pcHome, path)
 		if _, err := os.Stat(scPath); err == nil {
 			return scPath
 		}
@@ -110,12 +132,20 @@ func GetShortCutsPath() string {
 }
 
 func GetThemesPath() string {
-	themePath := filepath.Join(procCompHome(), themeFileName)
+	pcHome := getProcConfigDir()
+	if pcHome == "" {
+		return ""
+	}
+	themePath := filepath.Join(pcHome, themeFileName)
 	return themePath
 }
 
 func GetSettingsPath() string {
-	settingsPath := filepath.Join(procCompHome(), settingsFileName)
+	pcHome := getProcConfigDir()
+	if pcHome == "" {
+		return ""
+	}
+	settingsPath := filepath.Join(pcHome, settingsFileName)
 	return settingsPath
 }
 
@@ -162,4 +192,9 @@ func GetUnixSocketPath() string {
 		return val
 	}
 	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose-%d.sock", os.Getpid()))
+}
+
+func getReadOnlyDefault() bool {
+	_, found := os.LookupEnv(EnvVarReadOnlyMode)
+	return found
 }

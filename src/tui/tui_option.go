@@ -24,3 +24,10 @@ func WithTheme(theme string) Option {
 		return nil
 	}
 }
+
+func WithReadOnlyMode(isReadOnly bool) Option {
+	return func(view *pcView) error {
+		view.isReadOnlyMode = isReadOnly
+		return nil
+	}
+}

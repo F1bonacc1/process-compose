@@ -33,6 +33,7 @@ const (
 	EnvVarNameConfig     = "PC_CONFIG_FILES"
 	EnvVarNameNoServer   = "PC_NO_SERVER"
 	EnvVarUnixSocketPath = "PC_SOCKET_PATH"
+	EnvVarReadOnlyMode   = "PC_READ_ONLY"
 )
 
 // Flags represents PC configuration flags.
@@ -60,6 +61,7 @@ type Flags struct {
 	PcThemeChanged    bool
 	UnixSocketPath    *string
 	IsUnixSocket      *bool
+	IsReadOnlyMode    *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -84,6 +86,7 @@ func NewFlags() *Flags {
 		PcTheme:           toPtr(DefaultThemeName),
 		UnixSocketPath:    toPtr(""),
 		IsUnixSocket:      toPtr(false),
+		IsReadOnlyMode:    toPtr(getReadOnlyDefault()),
 	}
 }
 
