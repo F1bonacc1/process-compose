@@ -105,7 +105,7 @@ func (p *PcClient) GetProcessState(name string) (*types.ProcessState, error) {
 }
 
 func (p *PcClient) GetProcessesState() (*types.ProcessesState, error) {
-	return p.getProcessesState()
+	return p.GetRemoteProcessesState()
 }
 
 func (p *PcClient) StopProcess(name string) error {

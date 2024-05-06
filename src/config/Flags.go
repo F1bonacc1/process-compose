@@ -62,6 +62,7 @@ type Flags struct {
 	UnixSocketPath    *string
 	IsUnixSocket      *bool
 	IsReadOnlyMode    *bool
+	OutputFormat      *string
 }
 
 // NewFlags returns new configuration flags.
@@ -87,6 +88,7 @@ func NewFlags() *Flags {
 		UnixSocketPath:    toPtr(""),
 		IsUnixSocket:      toPtr(false),
 		IsReadOnlyMode:    toPtr(getReadOnlyDefault()),
+		OutputFormat:      toPtr(""),
 	}
 }
 

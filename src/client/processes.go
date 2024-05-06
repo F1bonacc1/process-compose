@@ -9,7 +9,7 @@ import (
 )
 
 func (p *PcClient) GetProcessesName() ([]string, error) {
-	states, err := p.getProcessesState()
+	states, err := p.GetRemoteProcessesState()
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +21,7 @@ func (p *PcClient) GetProcessesName() ([]string, error) {
 	return procs, nil
 }
 
-func (p *PcClient) getProcessesState() (*types.ProcessesState, error) {
+func (p *PcClient) GetRemoteProcessesState() (*types.ProcessesState, error) {
 	url := fmt.Sprintf("http://%s/processes", p.address)
 	resp, err := p.client.Get(url)
 	if err != nil {
