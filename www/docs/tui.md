@@ -160,3 +160,25 @@ style:
     logoColor: '#0000FF' #blue
 ```
 
+## TUI State Settings
+
+TUI will automatically save its state when the after changing the following:
+
+1. TUI Theme
+2. Processes sort column
+3. Processes sort order (ascending / descending)
+
+`settings.yaml` file location `$XDG_CONFIG_HOME/process-compose/`
+
+#### Settings Structure
+
+```yaml
+#XDG_CONFIG_HOME/process-compose/settings.yaml
+
+theme: Cobalt
+sort:
+    by: NAME
+    isReversed: false
+```
+
+> :bulb: The auto save feature can be disabled by using the `--read-only` flag.
