@@ -15,7 +15,7 @@ var attachCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(attachCmd)
-	attachCmd.Flags().IntVarP(pcFlags.RefreshRate, "ref-rate", "r", *pcFlags.RefreshRate, "TUI refresh rate in seconds")
+	attachCmd.Flags().VarP(refreshRateFlag{pcFlags.RefreshRate}, "ref-rate", "r", "TUI refresh rate in seconds or as a Go duration string (e.g. 1s)")
 	attachCmd.Flags().StringVarP(pcFlags.Address, "address", "a", *pcFlags.Address, "address of the target process compose server")
 	attachCmd.Flags().IntVarP(pcFlags.LogLength, "log-length", "l", *pcFlags.LogLength, "log length to display in TUI")
 	attachCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))

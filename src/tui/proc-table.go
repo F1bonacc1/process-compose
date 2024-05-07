@@ -195,12 +195,14 @@ func (pv *pcView) updateTable(ctx context.Context) {
 	pv.appView.QueueUpdateDraw(func() {
 		pv.fillTableData()
 	})
+	ticker := time.NewTicker(pv.refreshRate)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			log.Debug().Msg("Table monitoring canceled")
 			return
-		case <-time.After(pv.refreshRate):
+		case <-ticker.C:
 			pv.appView.QueueUpdateDraw(func() {
 				pv.fillTableData()
 			})

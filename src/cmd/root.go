@@ -15,6 +15,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -72,7 +73,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(pcFlags.NoServer, "no-server", *pcFlags.NoServer, "disable HTTP server (env: "+config.EnvVarNameNoServer+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.IsOrderedShutDown, "ordered-shutdown", *pcFlags.IsOrderedShutDown, "shut down processes in reverse dependency order")
 	rootCmd.Flags().BoolVarP(pcFlags.HideDisabled, "hide-disabled", "d", *pcFlags.HideDisabled, "hide disabled processes")
-	rootCmd.Flags().IntVarP(pcFlags.RefreshRate, "ref-rate", "r", *pcFlags.RefreshRate, "TUI refresh rate in seconds")
+	rootCmd.Flags().VarP(refreshRateFlag{pcFlags.RefreshRate}, "ref-rate", "r", "TUI refresh rate in seconds or as a Go duration string (e.g. 1s)")
 	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.EnvVarNamePort+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
 	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
@@ -158,4 +159,38 @@ func isUnixSocketMode(cmd *cobra.Command) bool {
 	return *pcFlags.IsUnixSocket ||
 		os.Getenv(config.EnvVarUnixSocketPath) != "" ||
 		cmd.Flags().Changed("unix-socket")
+}
+
+// refreshRateFlag is a custom flag type for the TUI's refresh rate.
+// It accepts both an integer in seconds and a duration string.
+type refreshRateFlag struct {
+	dst *time.Duration
+}
+
+func (f refreshRateFlag) String() string {
+	d := *f.dst
+	if d%time.Second == 0 {
+		return strconv.Itoa(int(d / time.Second))
+	}
+	return d.String()
+}
+
+func (f refreshRateFlag) Set(str string) error {
+	i, err := strconv.Atoi(str)
+	if err == nil {
+		*f.dst = time.Duration(i) * time.Second
+		return nil
+	}
+	d, err := time.ParseDuration(str)
+	if err == nil {
+		*f.dst = d
+		return nil
+	}
+	return fmt.Errorf(
+		"invalid refresh rate %q, must be a duration or an integer in seconds",
+		str)
+}
+
+func (f refreshRateFlag) Type() string {
+	return "duration"
 }
