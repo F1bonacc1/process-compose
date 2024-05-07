@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func getProjectRunner(process []string, noDeps bool, mainProcess string, mainProcessArgs []string) *app.ProjectRunner {
@@ -82,7 +81,7 @@ func runTui(project *app.ProjectRunner) int {
 
 func startTui(runner app.IProject) {
 	tuiOptions := []tui.Option{
-		tui.WithRefreshRate(time.Duration(*pcFlags.RefreshRate) * time.Second),
+		tui.WithRefreshRate(*pcFlags.RefreshRate),
 	}
 	if !*pcFlags.IsReadOnlyMode {
 		config.CreateProcCompHome()

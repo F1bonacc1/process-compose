@@ -2,11 +2,12 @@ package config
 
 import (
 	"math"
+	"time"
 )
 
 const (
 	// DefaultRefreshRate represents the refresh interval.
-	DefaultRefreshRate = 1 // secs
+	DefaultRefreshRate = 1 * time.Second
 
 	// DefaultLogLevel represents the default log level.
 	DefaultLogLevel = "info"
@@ -38,7 +39,7 @@ const (
 
 // Flags represents PC configuration flags.
 type Flags struct {
-	RefreshRate       *int
+	RefreshRate       *time.Duration
 	PortNum           *int
 	Address           *string
 	LogLevel          *string
