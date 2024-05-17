@@ -9,18 +9,19 @@ import (
 type Vars map[string]any
 
 type Project struct {
-	Version      string               `yaml:"version"`
-	LogLocation  string               `yaml:"log_location,omitempty"`
-	LogLevel     string               `yaml:"log_level,omitempty"`
-	LogLength    int                  `yaml:"log_length,omitempty"`
-	LoggerConfig *LoggerConfig        `yaml:"log_configuration,omitempty"`
-	LogFormat    string               `yaml:"log_format,omitempty"`
-	Processes    Processes            `yaml:"processes"`
-	Environment  Environment          `yaml:"environment,omitempty"`
-	ShellConfig  *command.ShellConfig `yaml:"shell,omitempty"`
-	IsStrict     bool                 `yaml:"is_strict"`
-	Vars         Vars                 `yaml:"vars"`
-	FileNames    []string
+	Version             string               `yaml:"version"`
+	LogLocation         string               `yaml:"log_location,omitempty"`
+	LogLevel            string               `yaml:"log_level,omitempty"`
+	LogLength           int                  `yaml:"log_length,omitempty"`
+	LoggerConfig        *LoggerConfig        `yaml:"log_configuration,omitempty"`
+	LogFormat           string               `yaml:"log_format,omitempty"`
+	Processes           Processes            `yaml:"processes"`
+	Environment         Environment          `yaml:"environment,omitempty"`
+	ShellConfig         *command.ShellConfig `yaml:"shell,omitempty"`
+	IsStrict            bool                 `yaml:"is_strict"`
+	Vars                Vars                 `yaml:"vars"`
+	DisableEnvExpansion bool                 `yaml:"disable_env_expansion"`
+	FileNames           []string
 }
 
 type ProcessFunc func(process ProcessConfig) error

@@ -31,6 +31,7 @@ Default environment variables:
 `PC_REPLICA_NUM` - Defines the process replica number. Useful for port collision avoidance for processes with multiple replicas.
 
 ## .env file
+
 ```.env
 VERSION='1.2.3'
 DB_USER='USERNAME'
@@ -48,6 +49,45 @@ processes:
     environment:
       - 'OUTPUT_DIR=/path/to/B/data'
 ```
+
+## Disable Automatic Expansion
+
+Process Compose provides 2 ways to disable the automatic environment variables expansion:
+
+1. Escape the environment variables with `$$`. Example:
+   ```yaml
+   processes:
+   	foo:
+     	command: echo I am $$ENV_TEST
+       environment:
+       	- 'ENV_TEST=ready'
+   ```
+
+   **Output**: `I am ready`
+
+2. Globally disable the automatic expansion with `disable_env_expansion: true`. Example:
+   ```yaml
+   disable_env_expansion: true
+   processes:
+   	foo:
+     	command: echo I am $ENV_TEST
+       environment:
+       	- 'ENV_TEST=ready'
+   ```
+
+   **Output**: `I am ready`
+
+>  :bulb: Note: The default behavior for the following `process-compose.yaml`:
+>
+>  ```yaml
+>  processes:
+>  	foo:
+>    	command: echo I am $ENV_TEST
+>      environment:
+>      	- 'ENV_TEST=ready'
+>  ```
+>
+>  **Output**: `I am `
 
 ## Variables
 

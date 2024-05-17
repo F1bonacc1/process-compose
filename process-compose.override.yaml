@@ -5,6 +5,7 @@ is_strict: true
 environment:
   - 'ABC=222'
 log_location: ./pc.log
+disable_env_expansion: false
 shell:
   shell_command: "zsh"
   shell_argument: "-c"
@@ -46,7 +47,9 @@ processes:
     ready_log_line: "test loop 1"
 
   dep-on-log-line-ready:
-    command: "echo log is ready"
+    command: "echo log is $ENV_TEST"
+    environment:
+      - 'ENV_TEST=ready'
     availability:
       restart: "on_failure"
       backoff_seconds: 2
@@ -182,7 +185,7 @@ processes:
       - /tmp
       - /
 
-  vim:
+  nvim:
     description: "run a foreground process"
-    command: "vim process-compose.override.yaml"
+    command: "nvim process-compose.override.yaml"
     is_foreground: true

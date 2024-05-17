@@ -89,14 +89,24 @@ func loadProjectFromFile(inputFile string) *types.Project {
 	// .env is optional we don't care if it errors
 	_ = godotenv.Load()
 
-	yamlFile = []byte(os.ExpandEnv(string(yamlFile)))
+	const envEscaped = "##PC_ENV_ESCAPED##"
+	// replace escaped $$ env vars in yaml
+	temp := strings.ReplaceAll(string(yamlFile), "$$", envEscaped)
+	temp = os.ExpandEnv(temp)
+	temp = strings.ReplaceAll(temp, envEscaped, "$")
 
 	project := &types.Project{
 		LogLength: defaultLogLength,
 	}
-	err = yaml.Unmarshal(yamlFile, project)
+	err = yaml.Unmarshal([]byte(temp), project)
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to parse %s", inputFile)
+	}
+	if project.DisableEnvExpansion {
+		err = yaml.Unmarshal(yamlFile, project)
+		if err != nil {
+			log.Fatal().Err(err).Msgf("Failed to parse %s", inputFile)
+		}
 	}
 
 	if err != nil {
