@@ -77,3 +77,7 @@ release:
 	goreleaser release --clean --skip-validate
 snapshot:
 	goreleaser release --snapshot --clean
+
+github-workflows:
+	act -W ./.github/workflows/go.yml -j build
+	act -W ./.github/workflows/nix.yml -j build
