@@ -1,6 +1,7 @@
 package health
 
 import (
+	"net/http"
 	"net/url"
 	"reflect"
 	"testing"
@@ -9,7 +10,7 @@ import (
 func TestProbe_validateAndSetDefaults(t *testing.T) {
 	type fields struct {
 		Exec             *ExecProbe
-		HttpGet          *HttpProbe
+		Http             *HttpProbe
 		InitialDelay     int
 		PeriodSeconds    int
 		TimeoutSeconds   int
@@ -71,7 +72,7 @@ func TestProbe_validateAndSetDefaults(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Probe{
 				Exec:             tt.fields.Exec,
-				HttpGet:          tt.fields.HttpGet,
+				Http:             tt.fields.Http,
 				InitialDelay:     tt.fields.InitialDelay,
 				PeriodSeconds:    tt.fields.PeriodSeconds,
 				TimeoutSeconds:   tt.fields.TimeoutSeconds,
@@ -93,6 +94,54 @@ func TestProbe_validateAndSetDefaults(t *testing.T) {
 			}
 			if p.FailureThreshold != tt.want.FailureThreshold {
 				t.Errorf("Probe.FailureThreshold = %v, want %v", p.FailureThreshold, tt.want.FailureThreshold)
+			}
+		})
+	}
+}
+
+func TestHttpProbe_fields(t *testing.T) {
+	type fields struct {
+		Host       string
+		Path       string
+		Scheme     string
+		Port       int
+		Method     string
+		StatusCode int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   fields
+	}{
+		{
+			name: "Method and expected status code not set",
+			fields: fields{
+				Host:   "google.com",
+				Path:   "/isAlive",
+				Scheme: "https",
+				Port:   0,
+			},
+			want: fields{
+				Host:       "google.com",
+				Path:       "/isAlive",
+				Scheme:     "https",
+				Port:       0,
+				Method:     http.MethodGet,
+				StatusCode: http.StatusOK,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hp := HttpProbe(tt.fields)
+			p := Probe{Http: &hp}
+			p.validateAndSetHttpDefaults()
+			if p.Http.Method != http.MethodGet {
+				t.Error("HTTP method was not GET when not set in config file")
+			}
+			if p.Http.StatusCode != http.StatusOK {
+				t.Errorf("HTTP expected status code was not OK (200)")
 			}
 		})
 	}

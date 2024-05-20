@@ -39,7 +39,7 @@ func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober
 		}
 		return p, err
 	}
-	if probe.HttpGet != nil {
+	if probe.Http != nil {
 		err := p.addProber(p.getHttpChecker)
 		if err != nil {
 			return nil, err
@@ -102,13 +102,15 @@ func (p *Prober) addProber(factory func() (health.ICheckable, error)) error {
 }
 
 func (p *Prober) getHttpChecker() (health.ICheckable, error) {
-	url, err := p.probe.HttpGet.getUrl()
+	url, err := p.probe.Http.getUrl()
 	if err != nil {
 		return nil, err
 	}
 	checker, err := checkers.NewHTTP(&checkers.HTTPConfig{
-		URL:     url,
-		Timeout: time.Duration(p.probe.TimeoutSeconds) * time.Second,
+		URL:        url,
+		Timeout:    time.Duration(p.probe.TimeoutSeconds) * time.Second,
+		Method:     p.probe.Http.Method,
+		StatusCode: p.probe.Http.StatusCode,
 	})
 	if err != nil {
 		return nil, err
