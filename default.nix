@@ -18,8 +18,8 @@ buildGoModule rec {
 
   nativeBuildInputs = [ installShellFiles ];
 
-  vendorHash = "sha256-c53Af0X/TUFsxpV4YE525uh+yLG/t2tSmQkr9ElziBM=";
-  #vendorHash = lib.fakeHash;
+  vendorHash = "sha256-BLZ8WB4pVj9yon0eUbc3LBKb08kN7KWok6wE2esbyGw=";
+  # vendorHash = lib.fakeHash;
 
   postInstall = ''
     mv $out/bin/{src,process-compose}

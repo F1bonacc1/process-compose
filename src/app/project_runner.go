@@ -2,15 +2,16 @@ package app
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/config"
-	"github.com/f1bonacc1/process-compose/src/pclog"
-	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"os/user"
 	"runtime"
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/config"
+	"github.com/f1bonacc1/process-compose/src/pclog"
+	"github.com/f1bonacc1/process-compose/src/types"
 
 	"github.com/rs/zerolog/log"
 )
@@ -32,6 +33,7 @@ type ProjectRunner struct {
 	mainProcessArgs   []string
 	isTuiOn           bool
 	isOrderedShutDown bool
+	watchman          Watchman
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -67,7 +69,7 @@ func (p *ProjectRunner) Run() int {
 		p.logger.Open(p.project.LogLocation, p.project.LoggerConfig)
 		defer p.logger.Close()
 	}
-	//zerolog.SetGlobalLevel(zerolog.PanicLevel)
+	// zerolog.SetGlobalLevel(zerolog.PanicLevel)
 	log.Debug().Msgf("Spinning up %d processes. Order: %q", len(runOrder), nameOrder)
 	for _, proc := range runOrder {
 		newConf := proc
@@ -108,6 +110,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		printLogs,
 		isMain,
 		extraArgs,
+		&p.watchman,
 	)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
@@ -128,7 +131,6 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
 	for k := range process.DependsOn {
 		if runningProc := p.getRunningProcess(k); runningProc != nil {
-
 			switch process.DependsOn[k].Condition {
 			case types.ProcessConditionCompleted:
 				runningProc.waitForCompletion()
@@ -158,7 +160,6 @@ func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
 		} else {
 			log.Error().Msgf("Error: process %s depends on %s, but it isn't running", process.ReplicaName, k)
 		}
-
 	}
 	return nil
 }
@@ -596,6 +597,7 @@ func (p *ProjectRunner) renameProcess(name string, newName string) {
 		p.project.Processes[newName] = config
 	}
 }
+
 func (p *ProjectRunner) removeProcessLogs(name string) *pclog.ProcessLogBuffer {
 	p.logsMutex.Lock()
 	defer p.logsMutex.Unlock()
@@ -724,7 +726,6 @@ func bToMb(b uint64) uint64 {
 }
 
 func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
-
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Err(err).Msg("Failed get hostname")
