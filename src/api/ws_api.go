@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -27,22 +28,33 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 
 	done := make(chan struct{})
 	logChan := make(chan LogMessage, 256)
-	connector := pclog.NewConnector(func(messages []string) {
-		for _, message := range messages {
-			msg := LogMessage{
-				Message:     message,
-				ProcessName: procName,
+	chanCloseMtx := &sync.Mutex{}
+	isChannelClosed := false
+	connector := pclog.NewConnector(
+		func(messages []string) {
+			for _, message := range messages {
+				msg := LogMessage{
+					Message:     message,
+					ProcessName: procName,
+				}
+				logChan <- msg
 			}
-			logChan <- msg
-		}
-		if !follow {
-			close(logChan)
-		}
-	},
+			if !follow {
+				chanCloseMtx.Lock()
+				defer chanCloseMtx.Unlock()
+				close(logChan)
+				isChannelClosed = true
+			}
+		},
 		func(message string) (n int, err error) {
 			msg := LogMessage{
 				Message:     message,
 				ProcessName: procName,
+			}
+			chanCloseMtx.Lock()
+			defer chanCloseMtx.Unlock()
+			if isChannelClosed {
+				return 0, nil
 			}
 			logChan <- msg
 			return len(message), nil

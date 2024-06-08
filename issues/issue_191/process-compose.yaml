@@ -1,0 +1,4 @@
+version: "0.5"
+processes:
+  noisy:
+    command: while true; do date; done

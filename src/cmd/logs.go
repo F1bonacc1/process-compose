@@ -19,7 +19,7 @@ var logsCmd = &cobra.Command{
 		name := args[0]
 
 		logger := getLogClient()
-		err := logger.ReadProcessLogs(name, *pcFlags.LogTailLength, *pcFlags.LogFollow, os.Stdout)
+		done, err := logger.ReadProcessLogs(name, *pcFlags.LogTailLength, *pcFlags.LogFollow, os.Stdout)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Failed to fetch logs for process %s", name)
 		}
@@ -27,7 +27,9 @@ var logsCmd = &cobra.Command{
 		signal.Notify(interrupt, os.Interrupt)
 		select {
 		case <-interrupt:
-			fmt.Println("interrupt")
+			_ = logger.CloseChannel()
+			time.Sleep(time.Second)
+		case <-done:
 			_ = logger.CloseChannel()
 			time.Sleep(time.Second)
 		}

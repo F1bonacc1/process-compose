@@ -27,7 +27,7 @@ func NewLogClient(address, socketPath string) *LogClient {
 	}
 }
 
-func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, out io.StringWriter) (err error) {
+func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, out io.StringWriter) (done chan struct{}, err error) {
 
 	url := fmt.Sprintf("ws://%s/process/logs/ws?name=%s&offset=%d&follow=%v", l.address, name, offset, follow)
 	log.Info().Msgf("Connecting to %s", url)
@@ -42,28 +42,14 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, out io
 
 	if err != nil {
 		log.Error().Msgf("failed to dial to %s error: %v", url, err)
-		return err
+		return done, err
 	}
 	//defer l.ws.Close()
-	done := make(chan struct{})
+	done = make(chan struct{})
 
 	go l.readLogs(done, l.ws, follow, out)
 
-	/*for {
-		select {
-		case <-done:
-			return nil
-		case <-interrupt:
-			fmt.Println("interrupt")
-
-			select {
-			case <-done:
-			case <-time.After(time.Second):
-			}
-			return nil
-		}
-	}*/
-	return nil
+	return done, nil
 }
 
 // CloseChannel Cleanly close the connection by sending a close message and then

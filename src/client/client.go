@@ -74,7 +74,8 @@ func (p *PcClient) GetLogLength() int {
 }
 
 func (p *PcClient) GetLogsAndSubscribe(name string, observer pclog.LogObserver) error {
-	return p.logger.ReadProcessLogs(name, p.logLength, true, observer)
+	_, err := p.logger.ReadProcessLogs(name, p.logLength, true, observer)
+	return err
 }
 
 func (p *PcClient) UnSubscribeLogger(name string, observer pclog.LogObserver) error {
