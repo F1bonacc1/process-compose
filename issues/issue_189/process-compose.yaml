@@ -1,0 +1,22 @@
+version: "0.5"
+processes:
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+  date:
+    command: while true; do date && sleep 1; done
+    availability:
+      restart: "always"
+    readiness_probe:
+      exec:
+        command: "ps -ef | grep -v grep | grep kcalc"
+      initial_delay_seconds: 5
+      period_seconds: 2
+      timeout_seconds: 1
+      success_threshold: 1
+      failure_threshold: 3
+  waiter:
+    command: echo "date is ready now"
+    depends_on:
+      date:
+        condition: process_healthy

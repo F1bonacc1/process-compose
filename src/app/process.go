@@ -320,7 +320,7 @@ func (p *Process) waitUntilReady() bool {
 			if errors.Is(err, context.Canceled) {
 				return true
 			}
-			log.Error().Err(err).Msgf("Process %s was aborted and won't become ready", p.getName())
+			log.Error().Err(err).Msgf("Process %s was aborted and won't become log ready", p.getName())
 			return false
 		}
 	}
@@ -338,6 +338,15 @@ func (p *Process) shutDownNoRestart() error {
 
 // perform graceful process shutdown if defined in configuration
 func (p *Process) shutDown() error {
+	return p.stopProcess(true)
+}
+
+// internal stop for graceful shutdown in case of readiness probe failure
+func (p *Process) internalStop() error {
+	return p.stopProcess(false)
+}
+
+func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 	p.runCancelFn()
 	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.getStatusName())
@@ -347,7 +356,12 @@ func (p *Process) shutDown() error {
 	}
 	p.setState(types.ProcessStateTerminating)
 	p.stopProbes()
-	p.readyLogCancelFn(fmt.Errorf("process %s was shut down", p.getName()))
+	if cancelReadinessFuncs {
+		if p.readyProber != nil {
+			p.readyCancelFn()
+		}
+		p.readyLogCancelFn(fmt.Errorf("process %s was shut down", p.getName()))
+	}
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
 	}
@@ -404,6 +418,9 @@ func (p *Process) onProcessEnd(state string) {
 		p.logger.Close()
 	}
 	p.stopProbes()
+	if p.readyProber != nil {
+		p.readyCancelFn()
+	}
 	p.setState(state)
 	p.updateProcState()
 
@@ -660,7 +677,6 @@ func (p *Process) stopProbes() {
 
 	if p.readyProber != nil {
 		p.readyProber.Stop()
-		p.readyCancelFn()
 	}
 }
 
@@ -677,7 +693,7 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 		p.procState.Health = types.ProcessHealthNotReady
 		log.Info().Msgf("%s is not ready anymore - %s", p.getName(), err)
 		p.logBuffer.Write("Error: readiness check fail - " + err)
-		_ = p.shutDown()
+		_ = p.internalStop()
 	} else if isOk {
 		p.procState.Health = types.ProcessHealthReady
 		p.readyCancelFn()
