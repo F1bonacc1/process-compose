@@ -23,7 +23,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	}
 
 	for _, file := range opts.FileNames {
-		p := loadProjectFromFile(file)
+		p := loadProjectFromFile(file, opts.disableDotenv)
 		opts.projects = append(opts.projects, p)
 	}
 	mergedProject, err := merge(opts)
@@ -77,7 +77,7 @@ func admitProcesses(opts *LoaderOptions, p *types.Project) *types.Project {
 	return p
 }
 
-func loadProjectFromFile(inputFile string) *types.Project {
+func loadProjectFromFile(inputFile string, disableDotEnv bool) *types.Project {
 	yamlFile, err := os.ReadFile(inputFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -86,8 +86,10 @@ func loadProjectFromFile(inputFile string) *types.Project {
 		log.Fatal().Err(err).Msgf("Failed to read %s", inputFile)
 	}
 
-	// .env is optional we don't care if it errors
-	_ = godotenv.Load()
+	if !disableDotEnv {
+		// .env is optional we don't care if it errors
+		_ = godotenv.Load()
+	}
 
 	const envEscaped = "##PC_ENV_ESCAPED##"
 	// replace escaped $$ env vars in yaml

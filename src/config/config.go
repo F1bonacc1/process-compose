@@ -198,3 +198,8 @@ func getReadOnlyDefault() bool {
 	_, found := os.LookupEnv(EnvVarReadOnlyMode)
 	return found
 }
+
+func getDisableDotEnvDefault() bool {
+	_, found := os.LookupEnv(EnvVarDisableDotEnv)
+	return found
+}

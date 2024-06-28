@@ -8,10 +8,11 @@ import (
 )
 
 type LoaderOptions struct {
-	workingDir string
-	FileNames  []string
-	projects   []*types.Project
-	admitters  []admitter.Admitter
+	workingDir    string
+	FileNames     []string
+	projects      []*types.Project
+	admitters     []admitter.Admitter
+	disableDotenv bool
 }
 
 func (o *LoaderOptions) AddAdmitter(adm ...admitter.Admitter) {
@@ -32,4 +33,8 @@ func (o *LoaderOptions) getWorkingDir() (string, error) {
 		}
 	}
 	return os.Getwd()
+}
+
+func (o *LoaderOptions) DisableDotenv() {
+	o.disableDotenv = true
 }

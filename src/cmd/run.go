@@ -49,5 +49,6 @@ func init() {
 
 	runCmd.Flags().BoolVarP(pcFlags.NoDependencies, "no-deps", "", *pcFlags.NoDependencies, "don't start dependent processes")
 	runCmd.Flags().AddFlag(rootCmd.Flags().Lookup("config"))
+	runCmd.Flags().AddFlag(rootCmd.Flags().Lookup("disable-dotenv"))
 
 }

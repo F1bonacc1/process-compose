@@ -35,6 +35,7 @@ const (
 	EnvVarNameNoServer   = "PC_NO_SERVER"
 	EnvVarUnixSocketPath = "PC_SOCKET_PATH"
 	EnvVarReadOnlyMode   = "PC_READ_ONLY"
+	EnvVarDisableDotEnv  = "PC_DISABLE_DOTENV"
 )
 
 // Flags represents PC configuration flags.
@@ -64,6 +65,7 @@ type Flags struct {
 	IsUnixSocket      *bool
 	IsReadOnlyMode    *bool
 	OutputFormat      *string
+	DisableDotEnv     *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -90,6 +92,7 @@ func NewFlags() *Flags {
 		IsUnixSocket:      toPtr(false),
 		IsReadOnlyMode:    toPtr(getReadOnlyDefault()),
 		OutputFormat:      toPtr(""),
+		DisableDotEnv:     toPtr(getDisableDotEnvDefault()),
 	}
 }
 

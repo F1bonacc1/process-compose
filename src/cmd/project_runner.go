@@ -16,6 +16,9 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 	if *pcFlags.HideDisabled {
 		opts.AddAdmitter(&admitter.DisabledProcAdmitter{})
 	}
+	if *pcFlags.DisableDotEnv {
+		opts.DisableDotenv()
+	}
 	project, err := loader.Load(opts)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load project")
