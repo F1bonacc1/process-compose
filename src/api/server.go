@@ -5,34 +5,56 @@ import (
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"net"
+	"net/http"
 	"os"
 )
 
 const EnvDebugMode = "PC_DEBUG_MODE"
 
-func StartHttpServerWithUnixSocket(useLogger bool, unixSocket string, project app.IProject) {
+func StartHttpServerWithUnixSocket(useLogger bool, unixSocket string, project app.IProject) (*http.Server, error) {
 	router := getRouter(useLogger, project)
 	log.Info().Msgf("start UDS http server listening %s", unixSocket)
+
+	os.Remove(unixSocket)
+	server := &http.Server{
+		Handler: router.Handler(),
+	}
+
+	listener, err := net.Listen("unix", unixSocket)
+	if err != nil {
+		return server, err
+	}
+
 	go func() {
-		os.Remove(unixSocket)
-		err := router.RunUnix(unixSocket)
-		if err != nil {
+		defer listener.Close()
+		defer os.Remove(unixSocket)
+
+		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
 			log.Fatal().Err(err).Msgf("start UDS http server on %s failed", unixSocket)
 		}
 	}()
+
+	return server, nil
 }
 
-func StartHttpServerWithTCP(useLogger bool, port int, project app.IProject) {
+func StartHttpServerWithTCP(useLogger bool, port int, project app.IProject) (*http.Server, error) {
 	router := getRouter(useLogger, project)
 	endPoint := fmt.Sprintf(":%d", port)
 	log.Info().Msgf("start http server listening %s", endPoint)
+
+	server := &http.Server{
+		Addr:    endPoint,
+		Handler: router.Handler(),
+	}
+
 	go func() {
-		err := router.Run(endPoint)
-		if err != nil {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal().Err(err).Msgf("start http server on %s failed", endPoint)
 		}
 	}()
 
+	return server, nil
 }
 
 func getRouter(useLogger bool, project app.IProject) *gin.Engine {

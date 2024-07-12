@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/api"
@@ -12,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"runtime"
@@ -45,8 +47,7 @@ func run(cmd *cobra.Command, args []string) {
 		_ = logFile.Close()
 	}()
 	runner := getProjectRunner([]string{}, false, "", []string{})
-	startHttpServerIfEnabled(!*pcFlags.IsTuiEnabled, runner)
-	err := runProject(runner)
+	err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner)
 	handleErrorAndExit(err)
 }
 
@@ -148,14 +149,36 @@ func handleErrorAndExit(err error) {
 	}
 }
 
-func startHttpServerIfEnabled(useLogger bool, runner *app.ProjectRunner) {
+func startHttpServerIfEnabled(useLogger bool, runner *app.ProjectRunner) (*http.Server, error) {
 	if !*pcFlags.NoServer {
 		if *pcFlags.IsUnixSocket {
-			api.StartHttpServerWithUnixSocket(useLogger, *pcFlags.UnixSocketPath, runner)
-			return
+			return api.StartHttpServerWithUnixSocket(useLogger, *pcFlags.UnixSocketPath, runner)
 		}
-		api.StartHttpServerWithTCP(useLogger, *pcFlags.PortNum, runner)
+		return api.StartHttpServerWithTCP(useLogger, *pcFlags.PortNum, runner)
 	}
+
+	return nil, nil
+}
+
+func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner) error {
+	server, err := startHttpServerIfEnabled(useLogger, runner)
+	if err != nil {
+		return err
+	}
+	// Blocks until shutdown.
+	if err = runProject(runner); err != nil {
+		return err
+	}
+	if server != nil {
+		shutdownTimeout := 5 * time.Second
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func getClient() *client.PcClient {
