@@ -40,7 +40,8 @@ Command line arguments, provided after --, are passed to the PROCESS.`,
 		)
 
 		startHttpServerIfEnabled(false, runner)
-		runProject(runner)
+		err := runProject(runner)
+		handleErrorAndExit(err)
 	},
 }
 

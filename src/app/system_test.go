@@ -146,10 +146,10 @@ func TestSystem_TestComposeChainExit(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
-		exitCode := runner.Run()
-		want := 42
-		if want != exitCode {
-			t.Errorf("Project.Run() = %v, want %v", exitCode, want)
+		err = runner.Run()
+		want := "project non-zero exit code: 42"
+		if want != err.Error() {
+			t.Errorf("Project.Run() = %v, want %v", err, want)
 		}
 	})
 }
