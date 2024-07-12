@@ -36,18 +36,18 @@ var (
 			pcFlags.PcThemeChanged = cmd.Flags().Changed(flagTheme)
 			pcFlags.SortColumnChanged = cmd.Flags().Changed(flagSort)
 		},
-		RunE: run,
+		Run: run,
 	}
 )
 
-func run(cmd *cobra.Command, args []string) error {
+func run(cmd *cobra.Command, args []string) {
 	defer func() {
 		_ = logFile.Close()
 	}()
 	runner := getProjectRunner([]string{}, false, "", []string{})
 	startHttpServerIfEnabled(!*pcFlags.IsTuiEnabled, runner)
-	runProject(runner)
-	return nil
+	err := runProject(runner)
+	handleErrorAndExit(err)
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -135,6 +135,17 @@ func setupLogger() *os.File {
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	return file
+}
+
+// Logs and exits with a non-zero code if there are any errors.
+func handleErrorAndExit(err error) {
+	if err != nil {
+		log.Error().Err(err)
+		if exitErr, ok := err.(*app.ExitError); ok {
+			os.Exit(exitErr.Code)
+		}
+		os.Exit(1)
+	}
 }
 
 func startHttpServerIfEnabled(useLogger bool, runner *app.ProjectRunner) {

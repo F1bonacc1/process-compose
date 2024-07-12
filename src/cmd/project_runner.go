@@ -38,16 +38,16 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 	return runner
 }
 
-func runProject(runner *app.ProjectRunner) {
-	exitCode := 0
+func runProject(runner *app.ProjectRunner) error {
+	var err error
 	if *pcFlags.IsTuiEnabled {
-		exitCode = runTui(runner)
+		err = runTui(runner)
 	} else {
-		exitCode = runHeadless(runner)
+		err = runHeadless(runner)
 	}
 	os.Remove(*pcFlags.UnixSocketPath)
 	log.Info().Msg("Thank you for using process-compose")
-	os.Exit(exitCode)
+	return err
 }
 
 func setSignal(signalHandler func()) {
@@ -60,23 +60,22 @@ func setSignal(signalHandler func()) {
 	}()
 }
 
-func runHeadless(project *app.ProjectRunner) int {
+func runHeadless(project *app.ProjectRunner) error {
 	setSignal(func() {
 		_ = project.ShutDownProject()
 	})
-	exitCode := project.Run()
-	return exitCode
+	return project.Run()
 }
 
-func runTui(project *app.ProjectRunner) int {
+func runTui(project *app.ProjectRunner) error {
 	go startTui(project)
-	exitCode := project.Run()
+	err := project.Run()
 	if !*pcFlags.KeepTuiOn {
 		tui.Stop()
 	} else {
 		tui.Wait()
 	}
-	return exitCode
+	return err
 }
 
 func startTui(runner app.IProject) {

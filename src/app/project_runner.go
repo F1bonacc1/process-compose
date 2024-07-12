@@ -15,6 +15,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type ExitError struct {
+	Code int
+}
+
+func (e *ExitError) Error() string {
+	return fmt.Sprintf("project non-zero exit code: %d", e.Code)
+}
+
 type ProjectRunner struct {
 	procConfMutex     sync.Mutex
 	project           *types.Project
@@ -47,7 +55,7 @@ func (p *ProjectRunner) init() {
 	p.initProcessLogs()
 }
 
-func (p *ProjectRunner) Run() int {
+func (p *ProjectRunner) Run() error {
 	p.runningProcesses = make(map[string]*Process)
 	runOrder := []types.ProcessConfig{}
 	err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
@@ -55,7 +63,7 @@ func (p *ProjectRunner) Run() int {
 		return nil
 	})
 	if err != nil {
-		log.Error().Msgf("Failed to build project run order: %s", err.Error())
+		return fmt.Errorf("failed to build project run order: %e", err)
 	}
 	var nameOrder []string
 	for _, v := range runOrder {
@@ -75,7 +83,10 @@ func (p *ProjectRunner) Run() int {
 	}
 	p.waitGroup.Wait()
 	log.Info().Msg("Project completed")
-	return p.exitCode
+	if p.exitCode != 0 {
+		err = &ExitError{p.exitCode}
+	}
+	return err
 }
 
 func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
