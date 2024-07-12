@@ -39,8 +39,7 @@ Command line arguments, provided after --, are passed to the PROCESS.`,
 			args,
 		)
 
-		startHttpServerIfEnabled(false, runner)
-		err := runProject(runner)
+		err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner)
 		handleErrorAndExit(err)
 	},
 }
