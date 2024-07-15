@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/cakturk/go-netstat/netstat"
-	"github.com/f1bonacc1/process-compose/src/types"
 	"io"
 	"math/rand"
 	"os"
@@ -16,6 +14,9 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/cakturk/go-netstat/netstat"
+	"github.com/f1bonacc1/process-compose/src/types"
 
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/health"
@@ -65,6 +66,13 @@ type Process struct {
 	isMain           bool
 	extraArgs        []string
 	isStopped        atomic.Bool
+	isDevRestart     atomic.Bool
+	devWatchers      []devWatch
+}
+
+type devWatch struct {
+	sub    *WatchmanSub
+	config *types.Watch
 }
 
 func NewProcess(
@@ -77,6 +85,7 @@ func NewProcess(
 	printLogs bool,
 	isMain bool,
 	extraArgs []string,
+	watchman *Watchman,
 ) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 
@@ -104,6 +113,7 @@ func NewProcess(
 	proc.setUpProbes()
 	proc.procCond = *sync.NewCond(proc)
 	proc.procStartedCond = *sync.NewCond(proc)
+	proc.setUpWatchman(watchman)
 	return proc
 }
 
@@ -139,9 +149,9 @@ func (p *Process) run() int {
 
 		p.startProbes()
 
-		//Wait should wait for I/O consumption, but if the execution is too fast
-		//e.g. echo 'hello world' the output will not reach the pipe
-		//TODO Fix this
+		// Wait should wait for I/O consumption, but if the execution is too fast
+		// e.g. echo 'hello world' the output will not reach the pipe
+		// TODO Fix this
 		time.Sleep(50 * time.Millisecond)
 		_ = p.command.Wait()
 		p.Lock()
@@ -212,7 +222,6 @@ func (p *Process) getCommander() command.Commander {
 			p.mergeExtraArgs(),
 		)
 	}
-
 }
 
 func (p *Process) mergeExtraArgs() []string {
@@ -254,6 +263,11 @@ func (p *Process) isRestartable() bool {
 	p.Lock()
 	exitCode := p.getExitCode()
 	p.Unlock()
+
+	if p.isDevRestart.Swap(false) {
+		return true
+	}
+
 	if p.isStopped.Swap(false) {
 		return false
 	}
@@ -381,14 +395,33 @@ func (p *Process) isRunning() bool {
 
 func (p *Process) prepareForShutDown() {
 	// prevent restart during global shutdown or scale down
-	//p.procConf.RestartPolicy.Restart = types.RestartPolicyNo
+	// p.procConf.RestartPolicy.Restart = types.RestartPolicyNo
 	p.isStopped.Store(true)
-
 }
 
 func (p *Process) onProcessStart() {
 	if isStringDefined(p.procConf.LogLocation) {
 		p.logger.Open(p.getLogPath(), p.procConf.LoggerConfig)
+	}
+
+	for _, watch := range p.devWatchers {
+		go func() {
+			for {
+				files, ok := watch.sub.Recv()
+				if !ok {
+					log.
+						Debug().
+						Msg("watchman sub closed, exiting")
+					return
+				}
+
+				if len(files) == 0 {
+					continue
+				}
+
+				p.isDevRestart.Store(true)
+			}
+		}()
 	}
 
 	p.Lock()
@@ -457,8 +490,8 @@ func (p *Process) updateProcState() {
 		p.procState.Name = p.getName()
 	}
 	p.procState.IsRunning = isRunning
-
 }
+
 func (p *Process) setStartTime(startTime time.Time) {
 	p.timeMutex.Lock()
 	defer p.timeMutex.Unlock()
@@ -660,6 +693,13 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 		p.readyCancelFn()
 	} else {
 		p.procState.Health = types.ProcessHealthNotReady
+	}
+}
+
+func (p *Process) setUpWatchman(watchman *Watchman) {
+	for _, config := range p.procConf.Watch {
+		recv := watchman.Subscribe(config)
+		p.devWatchers = append(p.devWatchers, devWatch{recv, config})
 	}
 }
 

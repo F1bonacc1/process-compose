@@ -2,16 +2,26 @@ package types
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/health"
 	"math"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/health"
 )
 
-const DefaultNamespace = "default"
-const PlaceHolderValue = "-"
+const (
+	DefaultNamespace = "default"
+	PlaceHolderValue = "-"
+)
 
 type Processes map[string]ProcessConfig
+
 type Environment []string
+
+type Watch struct {
+	Glob   string   `yaml:"path"`
+	Ignore []string `yaml:"ignore"`
+}
+
 type ProcessConfig struct {
 	Name              string
 	Disabled          bool                   `yaml:"disabled,omitempty"`
@@ -36,6 +46,7 @@ type ProcessConfig struct {
 	Vars              Vars                   `yaml:"vars"`
 	IsForeground      bool                   `yaml:"is_foreground"`
 	IsTty             bool                   `yaml:"is_tty"`
+	Watch             []*Watch               `yaml:"watch"`
 	ReplicaNum        int
 	ReplicaName       string
 	Executable        string
