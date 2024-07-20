@@ -21,6 +21,7 @@ type tableRowValues struct {
 	ns        string
 	status    string
 	age       string
+	mem       string
 	health    string
 	restarts  string
 	exitCode  string
@@ -101,6 +102,7 @@ func setRowValues(procTable *tview.Table, row int, rowVals tableRowValues) {
 	procTable.SetCell(row, int(ProcessStateStatus), tview.NewTableCell(rowVals.status).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
 	procTable.SetCell(row, int(ProcessStateAge), tview.NewTableCell(rowVals.age).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
 	procTable.SetCell(row, int(ProcessStateHealth), tview.NewTableCell(rowVals.health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateMem), tview.NewTableCell(rowVals.mem).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
 	procTable.SetCell(row, int(ProcessStateRestarts), tview.NewTableCell(rowVals.restarts).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(rowVals.fgColor))
 	procTable.SetCell(row, int(ProcessStateExit), tview.NewTableCell(rowVals.exitCode).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(rowVals.fgColor))
 }
@@ -132,6 +134,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 		ProcessStateStatus:    "STATUS(S)",
 		ProcessStateAge:       "AGE(A)",
 		ProcessStateHealth:    "HEALTH(H)",
+		ProcessStateMem:       "MEM(M)",
 		ProcessStateRestarts:  "RESTARTS(R)",
 		ProcessStateExit:      "EXIT CODE(E)",
 	}
@@ -157,6 +160,8 @@ func (pv *pcView) createProcTable() *tview.Table {
 				pv.setTableSorter(ProcessStateAge)
 			} else if event.Rune() == 'H' {
 				pv.setTableSorter(ProcessStateHealth)
+			} else if event.Rune() == 'M' {
+				pv.setTableSorter(ProcessStateMem)
 			} else if event.Rune() == 'R' {
 				pv.setTableSorter(ProcessStateRestarts)
 			} else if event.Rune() == 'E' {
@@ -313,6 +318,32 @@ func (pv *pcView) getIconForState(state types.ProcessState) (string, tcell.Color
 	}
 }
 
+func byteCountIEC(b int64) string {
+	const mib = 1024 * 1024
+	if b < mib {
+		return fmt.Sprintf("%.1f MiB", float64(b)/float64(mib))
+
+	}
+	const unit = 1024
+	div, exp := int64(1024), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %ciB",
+		float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+func getStrForMem(mem int64) string {
+	if mem < 0 {
+		return "unknown"
+	}
+	if mem == 0 {
+		return "-"
+	}
+	return byteCountIEC(mem)
+}
+
 func getStrForRestarts(restarts int) string {
 	if restarts == 0 {
 		return types.PlaceHolderValue
@@ -346,6 +377,7 @@ func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
 		status:    state.Status,
 		age:       state.SystemTime,
 		health:    state.Health,
+		mem:       getStrForMem(state.Mem),
 		restarts:  getStrForRestarts(state.Restarts),
 		exitCode:  getStrForExitCode(state),
 	}

@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/cakturk/go-netstat/netstat"
-	"github.com/f1bonacc1/process-compose/src/types"
 	"io"
 	"math/rand"
 	"os"
@@ -17,12 +15,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cakturk/go-netstat/netstat"
+	"github.com/f1bonacc1/process-compose/src/types"
+
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
+	puproc "github.com/shirou/gopsutil/v4/process"
 )
 
 const (
@@ -455,10 +457,11 @@ func (p *Process) updateProcState() {
 		p.procState.SystemTime = durationToString(dur)
 		p.procState.Age = dur
 		p.procState.Name = p.getName()
+		p.procState.Mem = p.getMemUsage()
 	}
 	p.procState.IsRunning = isRunning
-
 }
+
 func (p *Process) setStartTime(startTime time.Time) {
 	p.timeMutex.Lock()
 	defer p.timeMutex.Unlock()
@@ -469,6 +472,26 @@ func (p *Process) getStartTime() time.Time {
 	p.timeMutex.Lock()
 	defer p.timeMutex.Unlock()
 	return p.startTime
+}
+
+func (p *Process) getMemUsage() int64 {
+	if p.procConf.IsDaemon {
+		return 0
+	}
+	proc, err := puproc.NewProcess(int32(p.procState.Pid))
+	if err != nil {
+		log.Err(err).Msgf("Could not find process")
+		return -1
+	}
+	meminfo, err := proc.MemoryInfo()
+	if err != nil {
+		log.Err(err).
+			Str("process", p.getName()).
+			Int("pid", p.procState.Pid).
+			Msg("Error retrieving memory stats")
+		return -1
+	}
+	return int64(meminfo.RSS)
 }
 
 func (p *Process) handleInput(pipe io.WriteCloser) {
