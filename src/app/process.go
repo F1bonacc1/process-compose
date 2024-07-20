@@ -475,6 +475,9 @@ func (p *Process) getStartTime() time.Time {
 }
 
 func (p *Process) getMemUsage() int64 {
+	if p.procConf.IsDaemon {
+		return -1
+	}
 	proc, err := process.NewProcess(int32(p.procState.Pid))
 	if err != nil {
 		log.Err(err).Msgf("Error:")
