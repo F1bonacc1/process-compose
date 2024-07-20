@@ -76,6 +76,7 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 		Health:     ProcessHealthUnknown,
 		Restarts:   0,
 		ExitCode:   0,
+		Mem:        0,
 		Pid:        0,
 	}
 	if proc.Disabled {
@@ -96,6 +97,7 @@ type ProcessState struct {
 	Restarts   int           `json:"restarts"`
 	ExitCode   int           `json:"exit_code"`
 	Pid        int           `json:"pid"`
+	Mem        int64         `json:"mem"`
 	IsRunning  bool
 }
 
