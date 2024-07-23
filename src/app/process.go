@@ -24,7 +24,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
-	psproc "github.com/shirou/gopsutil/v4/process"
+	puproc "github.com/shirou/gopsutil/v4/process"
 )
 
 const (
@@ -478,7 +478,7 @@ func (p *Process) getMemUsage() int64 {
 	if p.procConf.IsDaemon {
 		return 0
 	}
-	proc, err := psproc.NewProcess(int32(p.procState.Pid))
+	proc, err := puproc.NewProcess(int32(p.procState.Pid))
 	if err != nil {
 		log.Err(err).Msgf("Could not find process")
 		return -1
