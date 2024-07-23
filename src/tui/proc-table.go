@@ -336,7 +336,7 @@ func byteCountIEC(b int64) string {
 
 func getStrForMem(mem int64) string {
 	if mem < 0 {
-		return "Unknown"
+		return "unknown"
 	}
 	if mem == 0 {
 		return "-"

@@ -18,7 +18,7 @@ func TestMemToString(t *testing.T) {
 			args: args{
 				mem: -1,
 			},
-			want: "Unknown",
+			want: "unknown",
 		},
 		{
 			name: "zero",

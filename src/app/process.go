@@ -476,16 +476,16 @@ func (p *Process) getStartTime() time.Time {
 
 func (p *Process) getMemUsage() int64 {
 	if p.procConf.IsDaemon {
-		return -1
+		return 0
 	}
 	proc, err := process.NewProcess(int32(p.procState.Pid))
 	if err != nil {
-		log.Err(err).Msgf("Error:")
+		log.Err(err).Msgf("Could not find process")
 		return -1
 	}
 	meminfo, err := proc.MemoryInfo()
 	if err != nil {
-		log.Err(err).Msgf("Error:")
+		log.Err(err).Msgf("Error retrieving memory stats for process: %d", p.procState.Pid)
 		return -1
 	}
 	return int64(meminfo.RSS)
