@@ -24,7 +24,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
-	"github.com/shirou/gopsutil/v4/process"
+	psproc "github.com/shirou/gopsutil/v4/process"
 )
 
 const (
@@ -478,14 +478,17 @@ func (p *Process) getMemUsage() int64 {
 	if p.procConf.IsDaemon {
 		return 0
 	}
-	proc, err := process.NewProcess(int32(p.procState.Pid))
+	proc, err := psproc.NewProcess(int32(p.procState.Pid))
 	if err != nil {
 		log.Err(err).Msgf("Could not find process")
 		return -1
 	}
 	meminfo, err := proc.MemoryInfo()
 	if err != nil {
-		log.Err(err).Msgf("Error retrieving memory stats for process: %d", p.procState.Pid)
+		log.Err(err).
+			Str("process", p.getName()).
+			Int("pid", p.procState.Pid).
+			Msg("Error retrieving memory stats")
 		return -1
 	}
 	return int64(meminfo.RSS)
