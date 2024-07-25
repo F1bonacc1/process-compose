@@ -31,6 +31,10 @@ func apply(p *types.Project, m ...mutatorFunc) {
 func setDefaultShell(p *types.Project) {
 	if p.ShellConfig == nil {
 		p.ShellConfig = command.DefaultShellConfig()
+	} else if p.ShellConfig.ElevatedShellCmd == "" || p.ShellConfig.ElevatedShellArg == "" {
+		shell := command.DefaultShellConfig()
+		p.ShellConfig.ElevatedShellCmd = shell.ElevatedShellCmd
+		p.ShellConfig.ElevatedShellArg = shell.ElevatedShellArg
 	}
 	log.Info().Msgf("Global shell command: %s %s", p.ShellConfig.ShellCommand, p.ShellConfig.ShellArgument)
 }
@@ -93,6 +97,10 @@ func cloneReplicas(p *types.Project) {
 
 func assignExecutableAndArgs(p *types.Project) {
 	for name, proc := range p.Processes {
+		elevatedShellArg := p.ShellConfig.ElevatedShellArg
+		if p.IsTuiDisabled {
+			elevatedShellArg = ""
+		}
 		if proc.Command != "" || len(proc.Entrypoint) == 0 {
 			if len(proc.Entrypoint) > 0 {
 				message := fmt.Sprintf("'command' and 'entrypoint' are set! Using command (process: %s)", name)
@@ -101,10 +109,19 @@ func assignExecutableAndArgs(p *types.Project) {
 			}
 
 			proc.Executable = p.ShellConfig.ShellCommand
-			proc.Args = []string{p.ShellConfig.ShellArgument, proc.Command}
+
+			if proc.IsElevated {
+				proc.Args = []string{p.ShellConfig.ShellArgument, fmt.Sprintf("%s %s %s", p.ShellConfig.ElevatedShellCmd, elevatedShellArg, proc.Command)}
+			} else {
+				proc.Args = []string{p.ShellConfig.ShellArgument, proc.Command}
+			}
 		} else {
+			if proc.IsElevated {
+				proc.Entrypoint = append([]string{p.ShellConfig.ElevatedShellCmd, elevatedShellArg}, proc.Entrypoint...)
+			}
 			proc.Executable = proc.Entrypoint[0]
 			proc.Args = proc.Entrypoint[1:]
+
 		}
 
 		p.Processes[name] = proc

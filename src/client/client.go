@@ -159,3 +159,7 @@ func (p *PcClient) logError(err error) error {
 func (p *PcClient) GetProjectState(withMemory bool) (*types.ProjectState, error) {
 	return p.getProjectState(withMemory)
 }
+
+func (p *PcClient) SetProcessPassword(_, _ string) error {
+	return fmt.Errorf("set process password not allowed for PC client")
+}

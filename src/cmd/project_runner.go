@@ -19,6 +19,10 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 	if *pcFlags.DisableDotEnv {
 		opts.DisableDotenv()
 	}
+	if !*pcFlags.IsTuiEnabled {
+		opts.WithTuiDisabled()
+	}
+
 	project, err := loader.Load(opts)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load project")

@@ -13,6 +13,7 @@ type LoaderOptions struct {
 	projects      []*types.Project
 	admitters     []admitter.Admitter
 	disableDotenv bool
+	isTuiDisabled bool
 }
 
 func (o *LoaderOptions) AddAdmitter(adm ...admitter.Admitter) {
@@ -37,4 +38,8 @@ func (o *LoaderOptions) getWorkingDir() (string, error) {
 
 func (o *LoaderOptions) DisableDotenv() {
 	o.disableDotenv = true
+}
+
+func (o *LoaderOptions) WithTuiDisabled() {
+	o.isTuiDisabled = true
 }

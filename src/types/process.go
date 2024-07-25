@@ -36,6 +36,7 @@ type ProcessConfig struct {
 	Vars              Vars                   `yaml:"vars"`
 	IsForeground      bool                   `yaml:"is_foreground"`
 	IsTty             bool                   `yaml:"is_tty"`
+	IsElevated        bool                   `yaml:"is_elevated"`
 	ReplicaNum        int
 	ReplicaName       string
 	Executable        string
@@ -88,17 +89,20 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 }
 
 type ProcessState struct {
-	Name       string        `json:"name"`
-	Namespace  string        `json:"namespace"`
-	Status     string        `json:"status"`
-	SystemTime string        `json:"system_time"`
-	Age        time.Duration `json:"age"`
-	Health     string        `json:"is_ready"`
-	Restarts   int           `json:"restarts"`
-	ExitCode   int           `json:"exit_code"`
-	Pid        int           `json:"pid"`
-	Mem        int64         `json:"mem"`
-	IsRunning  bool
+	Name             string        `json:"name"`
+	Namespace        string        `json:"namespace"`
+	Status           string        `json:"status"`
+	SystemTime       string        `json:"system_time"`
+	Age              time.Duration `json:"age"`
+	Health           string        `json:"is_ready"`
+	Restarts         int           `json:"restarts"`
+	ExitCode         int           `json:"exit_code"`
+	Pid              int           `json:"pid"`
+	IsElevated       bool          `json:"is_elevated"`
+	PasswordProvided bool          `json:"password_provided"`
+    Mem              int64         `json:"mem"`
+    IsRunning        bool
+
 }
 
 type ProcessPorts struct {

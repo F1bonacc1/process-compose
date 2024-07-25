@@ -110,15 +110,16 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		config.RestartPolicy.ExitOnEnd = true
 	}
 	process := NewProcess(
-		p.project.Environment,
-		procLogger,
-		config,
-		procState,
-		procLog,
-		*p.project.ShellConfig,
-		printLogs,
-		isMain,
-		extraArgs,
+		withTuiOn(p.isTuiOn),
+		withGlobalEnv(p.project.Environment),
+		withLogger(procLogger),
+		withProcConf(config),
+		withProcState(procState),
+		withProcLog(procLog),
+		withShellConfig(*p.project.ShellConfig),
+		withPrintLogs(printLogs),
+		withIsMain(isMain),
+		withExtraArgs(extraArgs),
 	)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
@@ -341,6 +342,36 @@ func (p *ProjectRunner) GetProcessPorts(name string) (*types.ProcessPorts, error
 		return nil, err
 	}
 	return ports, nil
+}
+
+func (p *ProjectRunner) SetProcessPassword(name, pass string) error {
+	p.runProcMutex.Lock()
+
+	var wg sync.WaitGroup
+	for _, process := range p.runningProcesses {
+		if process.procConf.IsElevated && !process.passProvided {
+			wg.Add(1)
+			go func(process *Process) {
+				defer wg.Done()
+				err := process.setPassword(pass)
+				if err != nil {
+					log.Err(err).Msgf("failed to set password for elevated process %s", process.getName())
+				}
+			}(process)
+		}
+	}
+	p.runProcMutex.Unlock()
+	wg.Wait()
+	p.runProcMutex.Lock()
+	defer p.runProcMutex.Unlock()
+	for _, process := range p.runningProcesses {
+		if process.procConf.IsElevated && process.passProvided {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("password not accepted")
+
 }
 
 func (p *ProjectRunner) runningProcessesReverseDependencies() map[string]map[string]*Process {

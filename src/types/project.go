@@ -21,6 +21,7 @@ type Project struct {
 	IsStrict            bool                 `yaml:"is_strict"`
 	Vars                Vars                 `yaml:"vars"`
 	DisableEnvExpansion bool                 `yaml:"disable_env_expansion"`
+	IsTuiDisabled       bool                 `yaml:"is_tui_disabled"`
 	FileNames           []string
 }
 

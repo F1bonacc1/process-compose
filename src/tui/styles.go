@@ -28,6 +28,7 @@ func (pv *pcView) setStatTableStyles(s *config.Styles) {
 		pv.statTable.GetCell(r, 1).SetTextColor(s.Style.StatTable.ValueFgColor.Color())
 	}
 	pv.statTable.GetCell(0, 3).SetTextColor(s.StatTable().LogoColor.Color())
+	pv.statTable.GetCell(1, 2).SetTextColor(s.Style.StatTable.KeyFgColor.Color())
 }
 
 func (pv *pcView) setProcTableStyles(s *config.Styles) {

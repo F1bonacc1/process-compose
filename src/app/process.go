@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -36,68 +37,58 @@ const (
 
 type Process struct {
 	sync.Mutex
-	globalEnv        []string
-	confMtx          sync.Mutex
-	procConf         *types.ProcessConfig
-	procState        *types.ProcessState
-	stateMtx         sync.Mutex
-	procCond         sync.Cond
-	procStartedCond  sync.Cond
-	procStateChan    chan string
-	procReadyCtx     context.Context
-	readyCancelFn    context.CancelFunc
-	procLogReadyCtx  context.Context
-	readyLogCancelFn context.CancelCauseFunc
-	procRunCtx       context.Context
-	runCancelFn      context.CancelFunc
-	procColor        func(a ...interface{}) string
-	noColor          func(a ...interface{}) string
-	redColor         func(a ...interface{}) string
-	logBuffer        *pclog.ProcessLogBuffer
-	logger           pclog.PcLogger
-	command          Commander
-	started          bool
-	done             bool
-	timeMutex        sync.Mutex
-	startTime        time.Time
-	liveProber       *health.Prober
-	readyProber      *health.Prober
-	shellConfig      command.ShellConfig
-	printLogs        bool
-	isMain           bool
-	extraArgs        []string
-	isStopped        atomic.Bool
+	globalEnv           []string
+	confMtx             sync.Mutex
+	procConf            *types.ProcessConfig
+	procState           *types.ProcessState
+	stateMtx            sync.Mutex
+	procCond            sync.Cond
+	procStartedCond     sync.Cond
+	procStateChan       chan string
+	procReadyCtx        context.Context
+	readyCancelFn       context.CancelFunc
+	procLogReadyCtx     context.Context
+	readyLogCancelFn    context.CancelCauseFunc
+	procRunCtx          context.Context
+	runCancelFn         context.CancelFunc
+	waitForPassCtx      context.Context
+	waitForPassCancelFn context.CancelFunc
+	procColor           func(a ...interface{}) string
+	noColor             func(a ...interface{}) string
+	redColor            func(a ...interface{}) string
+	logBuffer           *pclog.ProcessLogBuffer
+	logger              pclog.PcLogger
+	command             command.Commander
+	started             bool
+	done                bool
+	timeMutex           sync.Mutex
+	startTime           time.Time
+	liveProber          *health.Prober
+	readyProber         *health.Prober
+	shellConfig         command.ShellConfig
+	printLogs           bool
+	isMain              bool
+	extraArgs           []string
+	isStopped           atomic.Bool
+	stdin               io.WriteCloser
+	passProvided        bool
+	isTuiEnabled        bool
 }
 
-func NewProcess(
-	globalEnv []string,
-	logger pclog.PcLogger,
-	procConf *types.ProcessConfig,
-	processState *types.ProcessState,
-	procLog *pclog.ProcessLogBuffer,
-	shellConfig command.ShellConfig,
-	printLogs bool,
-	isMain bool,
-	extraArgs []string,
-) *Process {
+func NewProcess(opts ...ProcOpts) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 
 	proc := &Process{
-		globalEnv:     globalEnv,
-		procConf:      procConf,
-		procState:     processState,
 		procColor:     color.New(color.Attribute(colNumeric), color.Bold).SprintFunc(),
 		redColor:      color.New(color.FgHiRed).SprintFunc(),
 		noColor:       color.New(color.Reset).SprintFunc(),
-		logger:        logger,
 		started:       false,
 		done:          false,
-		logBuffer:     procLog,
-		shellConfig:   shellConfig,
 		procStateChan: make(chan string, 1),
-		printLogs:     printLogs,
-		isMain:        isMain,
-		extraArgs:     extraArgs,
+	}
+
+	for _, opt := range opts {
+		opt(proc)
 	}
 
 	proc.procReadyCtx, proc.readyCancelFn = context.WithCancel(context.Background())
@@ -186,7 +177,7 @@ func (p *Process) getProcessStarter() func() error {
 		p.command.SetEnv(p.getProcessEnvironment())
 		p.command.SetDir(p.procConf.WorkingDir)
 
-		if p.isMain {
+		if p.isMain || (p.procConf.IsElevated && !p.isTuiEnabled) {
 			p.command.AttachIo()
 		} else {
 			p.command.SetCmdArgs()
@@ -196,6 +187,14 @@ func (p *Process) getProcessStarter() func() error {
 				stderr, _ := p.command.StderrPipe()
 				go p.handleOutput(stderr, p.handleError)
 			}
+		}
+
+		if p.procConf.IsElevated && p.isTuiEnabled {
+			stdin, err := p.command.StdinPipe()
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get stdin pipe")
+			}
+			p.stdin = stdin
 		}
 
 		return p.command.Start()
@@ -477,6 +476,9 @@ func (p *Process) updateProcState() {
 		p.procState.Mem = p.getMemUsage()
 	}
 	p.procState.IsRunning = isRunning
+	p.procState.IsElevated = p.procConf.IsElevated
+	p.procState.PasswordProvided = p.passProvided
+
 }
 
 func (p *Process) setStartTime(startTime time.Time) {
@@ -546,6 +548,22 @@ func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string))
 		if p.procConf.ReadyLogLine != "" && p.procState.Health == types.ProcessHealthUnknown && strings.Contains(line, p.procConf.ReadyLogLine) {
 			p.procState.Health = types.ProcessHealthReady
 			p.readyLogCancelFn(nil)
+		}
+		if p.procConf.IsElevated &&
+			!p.passProvided &&
+			p.waitForPassCancelFn != nil {
+			if isWrongPasswordEntered(line) {
+				log.Warn().
+					Str("process", p.getName()).
+					Msgf("Password rejected %s", line)
+			} else {
+				log.Info().
+					Str("process", p.getName()).
+					Msg("Password accepted")
+				p.passProvided = true
+			}
+			p.waitForPassCancelFn()
+			p.waitForPassCancelFn = nil
 		}
 		handler(strings.TrimSuffix(line, "\n"))
 	}
@@ -742,4 +760,41 @@ func (p *Process) setExitCode(code int) {
 	defer p.confMtx.Unlock()
 	p.confMtx.Lock()
 	p.procState.ExitCode = code
+}
+
+// set elevated process password
+func (p *Process) setPassword(password string) error {
+	if p.procConf.IsElevated && !p.passProvided && p.stdin != nil {
+		log.Debug().Msgf(`Set password for elevated process %s`, p.getName())
+		p.waitForPassCtx, p.waitForPassCancelFn = context.WithTimeout(context.Background(), 4*time.Second)
+		_, err := p.stdin.Write([]byte(password + "\n"))
+		if err != nil {
+			log.Error().Err(err).Msgf(`Failed to write to stdin pipe for process %s`, p.getName())
+			return err
+		}
+		// wait for password confirmation
+		err = p.waitForPass()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *Process) waitForPass() error {
+	select {
+	case <-p.waitForPassCtx.Done():
+		if !p.passProvided {
+			return fmt.Errorf("wrong password for elevated process %s, %s", p.getName(), p.waitForPassCtx.Err())
+		}
+		return nil
+	}
+}
+
+func isWrongPasswordEntered(output string) bool {
+	if runtime.GOOS != "windows" {
+		return strings.Contains(output, "Sorry, try again")
+	} else {
+		return strings.Contains(output, "The user name or password is incorrect")
+	}
 }

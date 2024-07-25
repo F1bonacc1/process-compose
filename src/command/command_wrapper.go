@@ -38,6 +38,10 @@ func (c *CmdWrapper) StderrPipe() (io.ReadCloser, error) {
 	return c.cmd.StderrPipe()
 }
 
+func (c *CmdWrapper) StdinPipe() (io.WriteCloser, error) {
+	return c.cmd.StdinPipe()
+}
+
 func (c *CmdWrapper) AttachIo() {
 	c.cmd.Stdin = os.Stdin
 	c.cmd.Stdout = os.Stdout

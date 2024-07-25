@@ -12,6 +12,7 @@ type Commander interface {
 	Pid() int
 	StdoutPipe() (io.ReadCloser, error)
 	StderrPipe() (io.ReadCloser, error)
+	StdinPipe() (io.WriteCloser, error)
 	AttachIo()
 	SetEnv(env []string)
 	SetDir(dir string)

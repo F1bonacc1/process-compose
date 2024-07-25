@@ -295,6 +295,29 @@ processes:
 
 > :bulb: `STDIN` and `Windows` are not supported at this time.
 
+#### Elevated Processes
+
+Process Compose uses `sudo` (on Linux and macOS) and `runas` (on Windows) to enable execution of elevated processes in both TUI and headless modes.
+
+```yaml hl_lines="5"
+processes:
+  elevated_ls:
+    description: "run an elevated process"
+    command: "ls -l /root"
+    is_elevated: true
+    shutdown:
+      signal: 9
+```
+* In TUI mode, elevated processes awaiting password input are marked with a yellow ▲.
+* To enter a password in TUI mode:
+  1. Select the elevated process.
+  2. Type the password.
+  3. Press the `Enter` key.
+* To exit the password prompt, press the `ESC` key at any time.
+* To re-enter password mode, select the process again.
+* The entered password will be applied to all elevated processes in pending status.
+
+
 #### Multiline Command Support
 Process Compose respects all the multiline `YAML` [specification](https://yaml-multiline.info/) variations. 
 

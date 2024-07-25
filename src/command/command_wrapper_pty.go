@@ -41,6 +41,12 @@ func (c *CmdWrapperPty) StdoutPipe() (io.ReadCloser, error) {
 func (c *CmdWrapperPty) StderrPipe() (io.ReadCloser, error) {
 	return nil, fmt.Errorf("not supported in PTY")
 }
+func (c *CmdWrapperPty) StdinPipe() (io.WriteCloser, error) {
+	if c.ptmx == nil {
+		c.Start()
+	}
+	return c.ptmx, nil
+}
 
 func (c *CmdWrapperPty) SetCmdArgs() {
 	//c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

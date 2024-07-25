@@ -43,6 +43,7 @@ func (pv *pcView) fillTableData() {
 		log.Err(err).Msg("failed to sort states")
 		return
 	}
+	showPass := false
 	row := 1
 	for _, state := range states.States {
 		if !pv.isNsSelected(state.Namespace) {
@@ -61,6 +62,10 @@ func (pv *pcView) fillTableData() {
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
 			runningProcCount += 1
+		}
+		selectedRow, _ := pv.procTable.GetSelection()
+		if selectedRow == row && pv.isPassModeNeeded(&state) {
+			showPass = true
 		}
 		row += 1
 	}
@@ -84,6 +89,10 @@ func (pv *pcView) fillTableData() {
 	}
 
 	pv.autoAdjustProcTableHeight()
+	if showPass {
+		pv.commandModeType = commandModePassword
+		pv.redrawGrid()
+	}
 }
 
 func (pv *pcView) getMaxProcHeight() int {
@@ -112,6 +121,9 @@ func (pv *pcView) onTableSelectionChange(_, _ int) {
 	if len(name) == 0 {
 		return
 	}
+	if pv.commandModeType == commandModeDisabled {
+		pv.commandModeType = commandModeOff
+	}
 	pv.logsText.resetSearch()
 	pv.updateHelpTextView()
 	pv.logsText.SetTitle(name)
@@ -122,6 +134,34 @@ func (pv *pcView) onTableSelectionChange(_, _ int) {
 		// in case the following is disabled
 		pv.unFollowLog()
 	}
+	pv.showPassIfNeeded()
+}
+
+func (pv *pcView) showPassIfNeeded() {
+	state, err := pv.getSelectedProcState()
+	if err != nil {
+		return
+	}
+	if pv.isPassModeNeeded(state) {
+		pv.commandModeType = commandModePassword
+		pv.redrawGrid()
+	}
+}
+
+func (pv *pcView) isPassModeNeeded(state *types.ProcessState) bool {
+	return state.IsRunning &&
+		state.IsElevated &&
+		!state.PasswordProvided &&
+		pv.commandModeType == commandModeOff &&
+		!pv.project.IsRemote()
+}
+
+func (pv *pcView) getSelectedProcState() (*types.ProcessState, error) {
+	name := pv.getSelectedProcName()
+	if len(name) == 0 {
+		return nil, fmt.Errorf("no process selected")
+	}
+	return pv.project.GetProcessState(name)
 }
 
 func (pv *pcView) createProcTable() *tview.Table {
@@ -146,9 +186,11 @@ func (pv *pcView) createProcTable() *tview.Table {
 			pv.project.StopProcess(name)
 		case pv.shortcuts.ShortCutKeys[ActionProcessStart].key:
 			pv.startProcess()
+			pv.showPassIfNeeded()
 		case pv.shortcuts.ShortCutKeys[ActionProcessRestart].key:
 			name := pv.getSelectedProcName()
 			pv.project.RestartProcess(name)
+			pv.showPassIfNeeded()
 		case tcell.KeyRune:
 			if event.Rune() == 'S' {
 				pv.setTableSorter(ProcessStateStatus)
@@ -296,6 +338,9 @@ func (pv *pcView) getIconForState(state types.ProcessState) (string, tcell.Color
 		types.ProcessStateLaunched:
 		if state.Health == types.ProcessHealthNotReady {
 			return "●", pv.styles.ProcTable().FgWarning.Color()
+		}
+		if state.IsElevated {
+			return "▲", pv.styles.ProcTable().FgWarning.Color()
 		}
 		return "●", pv.styles.ProcTable().FgColor.Color()
 	case types.ProcessStatePending,

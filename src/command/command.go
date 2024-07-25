@@ -52,10 +52,28 @@ func getRunnerArg() string {
 	return arg
 }
 
+func getElevatedRunnerCmd() string {
+	shell := "sudo"
+	if runtime.GOOS == "windows" {
+		shell = "runas"
+	}
+	return shell
+}
+
+func getElevatedRunnerArg() string {
+	arg := "-S"
+	if runtime.GOOS == "windows" {
+		arg = "/user:Administrator"
+	}
+	return arg
+}
+
 func DefaultShellConfig() *ShellConfig {
 	return &ShellConfig{
-		ShellCommand:  getRunnerShell(),
-		ShellArgument: getRunnerArg(),
+		ShellCommand:     getRunnerShell(),
+		ShellArgument:    getRunnerArg(),
+		ElevatedShellCmd: getElevatedRunnerCmd(),
+		ElevatedShellArg: getElevatedRunnerArg(),
 	}
 }
 

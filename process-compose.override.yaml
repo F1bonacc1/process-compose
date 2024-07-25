@@ -2,6 +2,7 @@ version: "0.5"
 log_level: debug
 log_length: 3000
 is_strict: true
+is_tui_disabled: true
 environment:
   - 'ABC=222'
 log_location: ./pc.log
@@ -189,3 +190,15 @@ processes:
     description: "run a foreground process"
     command: "nvim process-compose.override.yaml"
     is_foreground: true
+
+  elevated_ls:
+    description: "run an elevated process"
+    command: "ls -l /root"
+    is_elevated: true
+    shutdown:
+      signal: 9
+
+  unelevate:
+    description: "disable elevation cache"
+    command: "sudo -k"
+

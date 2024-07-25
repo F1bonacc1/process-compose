@@ -28,4 +28,5 @@ type IProject interface {
 	RestartProcess(name string) error
 	ScaleProcess(name string, scale int) error
 	GetProcessPorts(name string) (*types.ProcessPorts, error)
+	SetProcessPassword(name string, password string) error
 }

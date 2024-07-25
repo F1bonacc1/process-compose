@@ -21,11 +21,19 @@ import (
 )
 
 type ScrSplitState int
+type commandType int
 
 const (
 	LogFull     ScrSplitState = 0
 	ProcFull                  = 1
 	LogProcHalf               = 2
+)
+
+const (
+	commandModeOff commandType = iota
+	commandModeDisabled
+	commandModeSearch
+	commandModePassword
 )
 
 const (
@@ -71,7 +79,7 @@ type pcView struct {
 	selectedNs        string
 	selectedNsChanged atomic.Bool
 	hideDisabled      atomic.Bool
-	commandMode       bool
+	commandModeType   commandType
 	styles            *config.Styles
 	themes            *config.Themes
 	helpDialog        *helpDialog
@@ -203,7 +211,7 @@ func (pv *pcView) setShortCutsActions() {
 			pv.exitSearch()
 		} else if pv.procRegex != nil {
 			pv.resetProcessSearch()
-			pv.commandMode = false
+			pv.commandModeType = commandModeOff
 			pv.redrawGrid()
 		}
 	})
@@ -224,7 +232,7 @@ func (pv *pcView) setShortCutsActions() {
 	})
 	pv.shortcuts.setAction(ActionFocusChange, pv.changeFocus)
 	pv.shortcuts.setAction(ActionProcFilter, func() {
-		pv.commandMode = true
+		pv.commandModeType = commandModeSearch
 		pv.redrawGrid()
 	})
 }
@@ -328,7 +336,7 @@ func (pv *pcView) showInfo() {
 }
 
 func (pv *pcView) handleShutDown() {
-	pv.attentionMessage("Shutting Down...")
+	pv.attentionMessage("Shutting Down...", 0)
 	if !pv.project.IsRemote() {
 		_ = pv.project.ShutDownProject()
 	}
@@ -337,24 +345,12 @@ func (pv *pcView) handleShutDown() {
 	pv.appView.Stop()
 	pv.cancelAppFn()
 }
-func (pv *pcView) attentionMessage(message string) {
-	pv.statTable.SetCell(0, 2, tview.NewTableCell(message).
-		SetSelectable(false).
-		SetAlign(tview.AlignCenter).
-		SetExpansion(0).
-		SetTextColor(tview.Styles.ContrastSecondaryTextColor).
-		SetBackgroundColor(tview.Styles.MoreContrastBackgroundColor))
-}
-
-func (pv *pcView) hideAttentionMessage() {
-	pv.statTable.SetCell(0, 2, tview.NewTableCell(""))
-}
 
 func (pv *pcView) handleConnectivityError() {
 	if pv.project.IsRemote() {
 		errSecs := pv.project.ErrorForSecs()
 		if errSecs > 0 {
-			pv.attentionMessage(fmt.Sprintf("Reconnecting... Terminating in %d sec", shutDownAfterSec-errSecs))
+			pv.attentionMessage(fmt.Sprintf("Reconnecting... Terminating in %d sec", shutDownAfterSec-errSecs), 0)
 		}
 		if errSecs >= shutDownAfterSec {
 			pv.handleShutDown()

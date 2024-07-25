@@ -1,8 +1,10 @@
 package tui
 
 import (
+	"context"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"time"
 )
 
 func (pv *pcView) createGrid() {
@@ -12,8 +14,8 @@ func (pv *pcView) createGrid() {
 		pv.mainGrid.AddItem(pv.statTable, row, 0, 1, 1, 0, 0, false)
 		row++
 	}
-	if pv.commandMode {
-		textInput := pv.getSearchInput()
+	if !pv.isCommandModeDisabled() {
+		textInput := pv.getCommandInput()
 		pv.mainGrid.AddItem(textInput, row, 0, 1, 1, 0, 0, true)
 		pv.appView.SetFocus(textInput)
 		row++
@@ -29,10 +31,10 @@ func (pv *pcView) createGrid() {
 		pv.mainGrid.AddItem(log, row, 0, 1, 1, 0, 0, true)
 		row++
 	case ProcFull:
-		pv.mainGrid.AddItem(pv.procTable, row, 0, 1, 1, 0, 0, !pv.commandMode)
+		pv.mainGrid.AddItem(pv.procTable, row, 0, 1, 1, 0, 0, pv.isCommandModeDisabled())
 		row++
 	case LogProcHalf:
-		pv.mainGrid.AddItem(pv.procTable, row, 0, 1, 1, 0, 0, !pv.commandMode)
+		pv.mainGrid.AddItem(pv.procTable, row, 0, 1, 1, 0, 0, pv.isCommandModeDisabled())
 		row++
 		pv.mainGrid.AddItem(log, row, 0, 1, 1, 0, 0, false)
 		row++
@@ -42,6 +44,10 @@ func (pv *pcView) createGrid() {
 	}
 	pv.appView.SetFocus(pv.mainGrid)
 	pv.autoAdjustProcTableHeight()
+}
+
+func (pv *pcView) isCommandModeDisabled() bool {
+	return pv.commandModeType == commandModeOff || pv.commandModeType == commandModeDisabled
 }
 
 func (pv *pcView) autoAdjustProcTableHeight() {
@@ -55,7 +61,7 @@ func (pv *pcView) autoAdjustProcTableHeight() {
 		//stat table
 		rows = append(rows, pv.statTable.GetRowCount())
 	}
-	if pv.commandMode {
+	if !pv.isCommandModeDisabled() {
 		//search row
 		rows = append(rows, 1)
 	}
@@ -75,6 +81,17 @@ func (pv *pcView) autoAdjustProcTableHeight() {
 	pv.mainGrid.SetRows(rows...)
 }
 
+func (pv *pcView) getCommandInput() tview.Primitive {
+	switch pv.commandModeType {
+	case commandModeSearch:
+		return pv.getSearchInput()
+	case commandModePassword:
+		return pv.getPassInput()
+	default:
+		return nil
+	}
+}
+
 func (pv *pcView) getSearchInput() tview.Primitive {
 	textInput := tview.NewInputField().SetLabel("Search:")
 	textInput.SetFieldBackgroundColor(pv.styles.Dialog().FieldBgColor.Color())
@@ -84,7 +101,7 @@ func (pv *pcView) getSearchInput() tview.Primitive {
 
 	textInput.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter || key == tcell.KeyEsc {
-			pv.commandMode = false
+			pv.commandModeType = commandModeOff
 			pv.appView.SetFocus(pv.procTable)
 			pv.redrawGrid()
 		}
@@ -93,6 +110,44 @@ func (pv *pcView) getSearchInput() tview.Primitive {
 		_ = pv.searchProcess(text)
 	})
 	return textInput
+}
+
+func (pv *pcView) getPassInput() tview.Primitive {
+	textInput := tview.NewInputField().SetLabel("Enter Password:")
+	textInput.SetFieldBackgroundColor(pv.styles.Dialog().FieldBgColor.Color())
+	textInput.SetFieldTextColor(pv.styles.Dialog().FieldFgColor.Color())
+	textInput.SetLabelColor(pv.styles.Dialog().LabelFgColor.Color())
+	textInput.SetLabelStyle(textInput.GetLabelStyle().Background(pv.styles.BgColor()))
+	textInput.SetMaskCharacter('●')
+	textInput.SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEnter {
+
+			go pv.handlePassEntered(textInput)
+		}
+		if key == tcell.KeyEsc {
+			pv.commandModeType = commandModeDisabled
+			pv.appView.SetFocus(pv.procTable)
+			pv.redrawGrid()
+		}
+	})
+
+	return textInput
+}
+
+func (pv *pcView) handlePassEntered(textInput *tview.InputField) {
+	pass := textInput.GetText()
+	name := pv.getSelectedProcName()
+	ctx, cancel := context.WithCancel(context.Background())
+	pv.showAutoProgress(ctx, time.Second*1)
+	err := pv.project.SetProcessPassword(name, pass)
+	cancel()
+	if err != nil {
+		pv.attentionMessage(err.Error(), 3*time.Second)
+		return
+	}
+	pv.commandModeType = commandModeOff
+	pv.appView.SetFocus(pv.procTable)
+	pv.redrawGrid()
 }
 
 func (pv *pcView) redrawGrid() {
