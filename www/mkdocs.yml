@@ -36,14 +36,14 @@ theme:
   palette:
     - scheme: default
       toggle:
-        icon: material/toggle-switch-off-outline 
+        icon: material/toggle-switch-off-outline
         name: Switch to dark mode
       primary: blue-grey
-      accent: purple 
-    - scheme: slate 
+      accent: purple
+    - scheme: slate
       toggle:
         icon: material/toggle-switch
-        name: Switch to light mode    
+        name: Switch to light mode
       primary: black
       accent: lime
 
@@ -57,6 +57,9 @@ extra:
       link: https://github.com/f1bonacc1
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/ProcessCompose
+  analytics:
+    provider: google
+    property: G-MLY6JDXHNY
 
 markdown_extensions:
   - toc:
