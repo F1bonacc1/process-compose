@@ -8,7 +8,7 @@ environment:
 log_location: ./pc.log
 disable_env_expansion: false
 shell:
-  shell_command: "zsh"
+  shell_command: "bash"
   shell_argument: "-c"
 vars:
   HI: Cool Dude
