@@ -36,6 +36,7 @@ const (
 	EnvVarUnixSocketPath = "PC_SOCKET_PATH"
 	EnvVarReadOnlyMode   = "PC_READ_ONLY"
 	EnvVarDisableDotEnv  = "PC_DISABLE_DOTENV"
+	EnvVarTuiFullScreen  = "PC_TUI_FULL_SCREEN"
 )
 
 // Flags represents PC configuration flags.
@@ -66,6 +67,7 @@ type Flags struct {
 	IsReadOnlyMode    *bool
 	OutputFormat      *string
 	DisableDotEnv     *bool
+	IsTuiFullScreen   *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -93,6 +95,7 @@ func NewFlags() *Flags {
 		IsReadOnlyMode:    toPtr(getReadOnlyDefault()),
 		OutputFormat:      toPtr(""),
 		DisableDotEnv:     toPtr(getDisableDotEnvDefault()),
+		IsTuiFullScreen:   toPtr(getTuiFullScreenDefault()),
 	}
 }
 

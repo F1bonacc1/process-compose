@@ -31,3 +31,10 @@ func WithReadOnlyMode(isReadOnly bool) Option {
 		return nil
 	}
 }
+
+func WithFullScreen(isFullScreen bool) Option {
+	return func(view *pcView) error {
+		view.setFullScreen(isFullScreen)
+		return nil
+	}
+}

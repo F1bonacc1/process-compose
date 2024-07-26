@@ -88,6 +88,8 @@ func runTui(project *app.ProjectRunner) error {
 func startTui(runner app.IProject) {
 	tuiOptions := []tui.Option{
 		tui.WithRefreshRate(*pcFlags.RefreshRate),
+		tui.WithReadOnlyMode(*pcFlags.IsReadOnlyMode),
+		tui.WithFullScreen(*pcFlags.IsTuiFullScreen),
 	}
 	if !*pcFlags.IsReadOnlyMode {
 		config.CreateProcCompHome()
@@ -101,7 +103,7 @@ func startTui(runner app.IProject) {
 		ternary(pcFlags.SortColumnChanged,
 			tui.WithStateSorter(getColumnId(*pcFlags.SortColumn), !*pcFlags.IsReverseSort),
 			tui.WithStateSorter(getColumnId(settings.Sort.By), !settings.Sort.IsReversed)),
-		tui.WithReadOnlyMode(*pcFlags.IsReadOnlyMode))
+	)
 
 	tui.SetupTui(runner, tuiOptions...)
 }

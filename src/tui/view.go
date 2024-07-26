@@ -226,15 +226,19 @@ func (pv *pcView) setShortCutsActions() {
 	pv.shortcuts.setAction(ActionThemeSelector, pv.showThemeSelector)
 	pv.shortcuts.setAction(ActionSendToBackground, pv.runShellProcess)
 	pv.shortcuts.setAction(ActionFullScreen, func() {
-		pv.isFullScreen = !pv.isFullScreen
-		pv.logsText.SetBorder(!pv.isFullScreen)
-		pv.redrawGrid()
+		pv.setFullScreen(!pv.isFullScreen)
 	})
 	pv.shortcuts.setAction(ActionFocusChange, pv.changeFocus)
 	pv.shortcuts.setAction(ActionProcFilter, func() {
 		pv.commandModeType = commandModeSearch
 		pv.redrawGrid()
 	})
+}
+
+func (pv *pcView) setFullScreen(isFullScreen bool) {
+	pv.isFullScreen = isFullScreen
+	pv.logsText.SetBorder(!pv.isFullScreen)
+	pv.redrawGrid()
 }
 
 func (pv *pcView) loadThemes() {

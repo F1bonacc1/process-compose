@@ -203,3 +203,8 @@ func getDisableDotEnvDefault() bool {
 	_, found := os.LookupEnv(EnvVarDisableDotEnv)
 	return found
 }
+
+func getTuiFullScreenDefault() bool {
+	_, found := os.LookupEnv(EnvVarTuiFullScreen)
+	return found
+}
