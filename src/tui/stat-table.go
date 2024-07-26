@@ -71,10 +71,10 @@ func (pv *pcView) getHostNameTitle() string {
 	}
 }
 
+// AttentionMessage shows an attention message in the status table
+// It will disappear after the specified duration
+// duration == 0 will not hide the message
 func (pv *pcView) attentionMessage(message string, duration time.Duration) {
-	if duration == 0 {
-		return
-	}
 	go func() {
 		pv.appView.QueueUpdateDraw(func() {
 			pv.statTable.SetCell(0, 2, tview.NewTableCell(message).
@@ -84,6 +84,9 @@ func (pv *pcView) attentionMessage(message string, duration time.Duration) {
 				SetTextColor(tview.Styles.ContrastSecondaryTextColor).
 				SetBackgroundColor(tview.Styles.MoreContrastBackgroundColor))
 		})
+		if duration == 0 {
+			return
+		}
 		time.Sleep(duration)
 		pv.hideAttentionMessage()
 	}()
