@@ -50,6 +50,16 @@ processes:
       - 'OUTPUT_DIR=/path/to/B/data'
 ```
 
+## .pc_env file
+
+`.pc_env` file allows you to control Process Compose local, user environment specific settings.  
+Ideally it should contain Process Compose specific environment variables:
+```.env
+PC_DISABLE_TUI=1
+PC_PORT_NUM=8080
+PC_NO_SERVER=1
+```
+
 ## Disable Automatic Expansion
 
 Process Compose provides 2 ways to disable the automatic environment variables expansion:

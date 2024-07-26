@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/tui"
+	"github.com/joho/godotenv"
 	"github.com/spf13/pflag"
 	"strings"
 )
@@ -18,6 +19,7 @@ const (
 )
 
 func init() {
+	_ = godotenv.Load(".pc_env")
 	pcFlags = config.NewFlags()
 	commonFlags = pflag.NewFlagSet("", pflag.ContinueOnError)
 	commonFlags.BoolVarP(pcFlags.IsReverseSort, flagReverse, "R", *pcFlags.IsReverseSort, "sort in reverse order")
