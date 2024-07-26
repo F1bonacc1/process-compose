@@ -160,5 +160,6 @@ func renderProbe(probe *health.Probe, tpl *templater.Templater, vars types.Vars)
 		probe.HttpGet.Path = tpl.RenderWithExtraVars(probe.HttpGet.Path, vars)
 		probe.HttpGet.Host = tpl.RenderWithExtraVars(probe.HttpGet.Host, vars)
 		probe.HttpGet.Scheme = tpl.RenderWithExtraVars(probe.HttpGet.Scheme, vars)
+		probe.HttpGet.Port = tpl.RenderWithExtraVars(probe.HttpGet.Port, vars)
 	}
 }

@@ -103,7 +103,7 @@ func TestHttpProbe_getUrl(t *testing.T) {
 		Host   string
 		Path   string
 		Scheme string
-		Port   int
+		Port   string
 	}
 	tUrl, _ := url.Parse("http://google.com/isAlive")
 	tsUrl, _ := url.Parse("https://google.com:443/isAlive")
@@ -119,7 +119,7 @@ func TestHttpProbe_getUrl(t *testing.T) {
 				Host:   "google.com",
 				Path:   "/isAlive",
 				Scheme: "http",
-				Port:   0,
+				Port:   "0",
 			},
 			want:    tUrl,
 			wantErr: false,
@@ -130,7 +130,7 @@ func TestHttpProbe_getUrl(t *testing.T) {
 				Host:   "google.com",
 				Path:   "/isAlive",
 				Scheme: "https",
-				Port:   443,
+				Port:   "443",
 			},
 			want:    tsUrl,
 			wantErr: false,
@@ -144,6 +144,7 @@ func TestHttpProbe_getUrl(t *testing.T) {
 				Scheme: tt.fields.Scheme,
 				Port:   tt.fields.Port,
 			}
+			h.validateAndSetHttpDefaults()
 			got, err := h.getUrl()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HttpProbe.getUrl() error = %v, wantErr %v", err, tt.wantErr)

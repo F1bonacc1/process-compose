@@ -16,6 +16,7 @@ vars:
   VERSION: v0.75.0
   PWD: /tmp
   DISABLED: true
+  PORT: 80
 
 processes:
   process0:
@@ -144,7 +145,7 @@ processes:
       http_get:
         host: 127.0.0.1
         path: "/"
-        port: 80
+        port: "{{.PORT}}"
       initial_delay_seconds: 5
       period_seconds: 10
       timeout_seconds: 5

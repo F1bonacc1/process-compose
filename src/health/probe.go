@@ -3,6 +3,7 @@ package health
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -22,18 +23,19 @@ type ExecProbe struct {
 }
 
 type HttpProbe struct {
-	Host   string `yaml:"host,omitempty"`
-	Path   string `yaml:"path,omitempty"`
-	Scheme string `yaml:"scheme,omitempty"`
-	Port   int    `yaml:"port,omitempty"`
+	Host    string `yaml:"host,omitempty"`
+	Path    string `yaml:"path,omitempty"`
+	Scheme  string `yaml:"scheme,omitempty"`
+	Port    string `yaml:"port,omitempty"`
+	numPort int
 }
 
-func (h HttpProbe) getUrl() (*url.URL, error) {
+func (h *HttpProbe) getUrl() (*url.URL, error) {
 	urlStr := ""
-	if h.Port != 0 {
-		urlStr = fmt.Sprintf("%s://%s:%d%s", h.Scheme, h.Host, h.Port, h.Path)
+	if h.numPort != 0 {
+		urlStr = fmt.Sprintf("%s://%s:%d%s", h.Scheme, h.Host, h.numPort, h.Path)
 	}
-	if h.Port == 0 {
+	if h.numPort == 0 {
 		urlStr = fmt.Sprintf("%s://%s%s", h.Scheme, h.Host, h.Path)
 	}
 	return url.Parse(urlStr)
@@ -56,24 +58,28 @@ func (p *Probe) validateAndSetDefaults() {
 		p.FailureThreshold = 3
 	}
 
-	p.validateAndSetHttpDefaults()
+	if p.HttpGet != nil {
+		p.HttpGet.validateAndSetHttpDefaults()
+	}
 }
 
-func (p *Probe) validateAndSetHttpDefaults() {
-	if p.HttpGet == nil {
-		return
+func (p *HttpProbe) validateAndSetHttpDefaults() {
+	if len(strings.TrimSpace(p.Host)) == 0 {
+		p.Host = "127.0.0.1"
 	}
-	if len(strings.TrimSpace(p.HttpGet.Host)) == 0 {
-		p.HttpGet.Host = "127.0.0.1"
+	if len(strings.TrimSpace(p.Scheme)) == 0 {
+		p.Scheme = "http"
 	}
-	if len(strings.TrimSpace(p.HttpGet.Scheme)) == 0 {
-		p.HttpGet.Scheme = "http"
+	if len(strings.TrimSpace(p.Path)) == 0 {
+		p.Path = "/"
 	}
-	if len(strings.TrimSpace(p.HttpGet.Path)) == 0 {
-		p.HttpGet.Path = "/"
+	if p.Port == "" {
+		p.numPort = 0
+	} else {
+		p.numPort, _ = strconv.Atoi(p.Port)
 	}
-	if p.HttpGet.Port < 1 || p.HttpGet.Port > 65535 {
+	if p.numPort < 1 || p.numPort > 65535 {
 		// if undefined or wrong value - will be treated as undefined
-		p.HttpGet.Port = 0
+		p.numPort = 0
 	}
 }

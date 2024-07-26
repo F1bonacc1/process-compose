@@ -104,6 +104,7 @@ Variables in Process Compose rely on [Go template engine](https://pkg.go.dev/tex
   * `processes.process.<probe>.http_get.host`
   * `processes.process.<probe>.http_get.path`
   * `processes.process.<probe>.http_get.scheme`
+  * `processes.process.<probe>.http_get.port`
 
 ### Local (Per Process)
 
