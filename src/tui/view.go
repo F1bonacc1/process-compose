@@ -311,6 +311,20 @@ func (pv *pcView) terminateAppView() {
 			pv.pages.SwitchToPage(PageMain)
 			pv.pages.RemovePage(PageDialog)
 		})
+	m.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+		switch e.Rune() {
+		case 'h':
+			return tcell.NewEventKey(tcell.KeyLeft, e.Rune(), e.Modifiers())
+		case 'l':
+			return tcell.NewEventKey(tcell.KeyRight, e.Rune(), e.Modifiers())
+		case 'j':
+			return tcell.NewEventKey(tcell.KeyDown, e.Rune(), e.Modifiers())
+		case 'k':
+			return tcell.NewEventKey(tcell.KeyUp, e.Rune(), e.Modifiers())
+		}
+
+		return e
+	})
 	// Display and focus the dialog
 	pv.pages.AddPage(PageDialog, createDialogPage(m, 50, 50), true, true)
 }
