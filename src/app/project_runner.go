@@ -277,6 +277,10 @@ func (p *ProjectRunner) StopProcess(name string) error {
 	log.Info().Msgf("Stopping %s", name)
 	proc := p.getRunningProcess(name)
 	if proc == nil {
+		if _, ok := p.project.Processes[name]; !ok {
+			log.Error().Msgf("Process %s does not exist", name)
+			return fmt.Errorf("process %s does not exist", name)
+		}
 		log.Error().Msgf("Process %s is not running", name)
 		return fmt.Errorf("process %s is not running", name)
 	}
