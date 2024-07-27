@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/pclog"
@@ -40,6 +41,8 @@ type ProjectRunner struct {
 	mainProcessArgs   []string
 	isTuiOn           bool
 	isOrderedShutDown bool
+	ctxApp            context.Context
+	cancelAppFn       context.CancelFunc
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -479,7 +482,17 @@ func (p *ProjectRunner) ShutDownProject() error {
 	}
 
 	p.shutDownAndWait(shutdownOrder)
+	p.cancelAppFn()
 	return nil
+}
+
+func (p *ProjectRunner) WaitForProjectShutdown() {
+	if p.ctxApp != nil {
+		if !p.isTuiOn {
+			fmt.Println("Project Completed. Press Ctrl+C to quit")
+		}
+		<-p.ctxApp.Done()
+	}
 }
 
 func (p *ProjectRunner) IsRemote() bool {
@@ -804,6 +817,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 	}
 	runner.projectState.ProcessNum = len(runner.project.Processes)
 	runner.init()
+	runner.ctxApp, runner.cancelAppFn = context.WithCancel(context.Background())
 	return runner, nil
 }
 

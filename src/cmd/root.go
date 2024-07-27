@@ -70,7 +70,8 @@ func init() {
 	opts.AddAdmitter(nsAdmitter)
 
 	rootCmd.Flags().BoolVarP(pcFlags.IsTuiEnabled, "tui", "t", *pcFlags.IsTuiEnabled, "enable TUI (disable with -t=false) (env: "+config.EnvVarNameTui+")")
-	rootCmd.PersistentFlags().BoolVar(pcFlags.KeepTuiOn, "keep-tui", *pcFlags.KeepTuiOn, "keep TUI running even after all processes exit")
+	rootCmd.Flags().BoolVar(pcFlags.KeepTuiOn, "keep-tui", *pcFlags.KeepTuiOn, "keep TUI running even after all processes exit")
+	rootCmd.Flags().BoolVar(pcFlags.KeepProjectOn, "keep-project", *pcFlags.KeepProjectOn, "keep the project running even after all processes exit")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.NoServer, "no-server", *pcFlags.NoServer, "disable HTTP server (env: "+config.EnvVarNameNoServer+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.IsOrderedShutDown, "ordered-shutdown", *pcFlags.IsOrderedShutDown, "shut down processes in reverse dependency order")
 	rootCmd.Flags().BoolVarP(pcFlags.HideDisabled, "hide-disabled", "d", *pcFlags.HideDisabled, "hide disabled processes")
@@ -85,6 +86,8 @@ func init() {
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))
+
+	_ = rootCmd.Flags().MarkDeprecated("keep-tui", "use --keep-project instead")
 
 	if runtime.GOOS != "windows" {
 		//rootCmd.Flags().BoolVarP(pcFlags.IsDetached, "detached", "D", *pcFlags.IsDetached, "run process-compose in detached mode")

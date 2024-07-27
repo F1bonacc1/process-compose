@@ -52,6 +52,9 @@ func runProject(runner *app.ProjectRunner) error {
 	} else {
 		err = runHeadless(runner)
 	}
+	if *pcFlags.KeepProjectOn {
+		runner.WaitForProjectShutdown()
+	}
 	os.Remove(*pcFlags.UnixSocketPath)
 	log.Info().Msg("Thank you for using process-compose")
 	return err
@@ -77,7 +80,7 @@ func runHeadless(project *app.ProjectRunner) error {
 func runTui(project *app.ProjectRunner) error {
 	go startTui(project)
 	err := project.Run()
-	if !*pcFlags.KeepTuiOn {
+	if !*pcFlags.KeepProjectOn && !*pcFlags.KeepTuiOn {
 		tui.Stop()
 	} else {
 		tui.Wait()

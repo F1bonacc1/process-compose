@@ -1,0 +1,10 @@
+version: "0.5"
+log_level: info
+log_length: 300
+
+processes:
+  sleep1:
+    command: "sleep 1 && echo SUCCESS && sleep 3"
+
+  echo1:
+    command: "echo 'Im healthy'"

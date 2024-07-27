@@ -59,6 +59,7 @@ type Flags struct {
 	IsReverseSort     *bool
 	NoServer          *bool
 	KeepTuiOn         *bool
+	KeepProjectOn     *bool
 	IsOrderedShutDown *bool
 	PcTheme           *string
 	PcThemeChanged    bool
@@ -88,6 +89,7 @@ func NewFlags() *Flags {
 		IsReverseSort:     toPtr(false),
 		NoServer:          toPtr(getNoServerDefault()),
 		KeepTuiOn:         toPtr(false),
+		KeepProjectOn:     toPtr(false),
 		IsOrderedShutDown: toPtr(false),
 		PcTheme:           toPtr(DefaultThemeName),
 		UnixSocketPath:    toPtr(""),
