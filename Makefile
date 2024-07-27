@@ -8,6 +8,7 @@ NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
 PKG = github.com/f1bonacc1/${NAME}
 SHELL := /bin/bash
 PROJ_NAME := Process Compose
+DOCS_DIR  := www/docs/cli
 LD_FLAGS := -ldflags="-X ${PKG}/src/config.Version=${VERSION} \
             -X ${PKG}/src/config.CheckForUpdates=true \
             -X ${PKG}/src/config.Commit=${GIT_REV} \
@@ -20,7 +21,7 @@ ifeq ($(OS),Windows_NT)
 	RM = cmd /C del /Q /F
 endif
 
-.PHONY: test run testrace
+.PHONY: test run testrace docs
 
 buildrun: build run
 
@@ -81,3 +82,9 @@ snapshot:
 github-workflows:
 	act -W ./.github/workflows/go.yml -j build
 	act -W ./.github/workflows/nix.yml -j build
+
+docs:
+	./bin/process-compose docs ${DOCS_DIR}
+	for f in ${DOCS_DIR}/*.md ; do sed -i 's/${USER}/<user>/g' $$f ; done
+	for f in ${DOCS_DIR}/*.md ; do sed -i 's/process-compose-[0-9]\+.sock/process-compose-<pid>.sock/g' $$f ; done
+

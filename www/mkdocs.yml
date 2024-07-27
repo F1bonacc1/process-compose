@@ -15,6 +15,20 @@ nav:
     - 'Merging Configuration': merge.md
     - 'Remote Client': client.md
     - TUI: tui.md
+  - CLI:
+    - 'process-compose': cli/process-compose.md
+    - 'attach': cli/process-compose_attach.md
+    - 'completion': cli/process-compose_completion.md
+    - 'down': cli/process-compose_down.md
+    - 'info': cli/process-compose_info.md
+    - 'process': cli/process-compose_process.md
+    - 'project': cli/process-compose_project.md
+    - 'run': cli/process-compose_run.md
+    - 'up': cli/process-compose_up.md
+    - 'version': cli/process-compose_version.md
+  - Contributing:
+    - Contributing: contributing.md
+    - Sponsors: sponsors.md
 
 theme:
   name: material
