@@ -156,9 +156,10 @@ func renderProbe(probe *health.Probe, tpl *templater.Templater, vars types.Vars)
 
 	if probe.Exec != nil {
 		probe.Exec.Command = tpl.RenderWithExtraVars(probe.Exec.Command, vars)
-	} else if probe.HttpGet != nil {
-		probe.HttpGet.Path = tpl.RenderWithExtraVars(probe.HttpGet.Path, vars)
-		probe.HttpGet.Host = tpl.RenderWithExtraVars(probe.HttpGet.Host, vars)
-		probe.HttpGet.Scheme = tpl.RenderWithExtraVars(probe.HttpGet.Scheme, vars)
+	} else if probe.Http != nil {
+		probe.Http.Path = tpl.RenderWithExtraVars(probe.Http.Path, vars)
+		probe.Http.Host = tpl.RenderWithExtraVars(probe.Http.Host, vars)
+		probe.Http.Scheme = tpl.RenderWithExtraVars(probe.Http.Scheme, vars)
+		probe.Http.Method = tpl.RenderWithExtraVars(probe.Http.Method, vars)
 	}
 }

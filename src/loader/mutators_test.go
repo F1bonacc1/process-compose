@@ -404,14 +404,14 @@ func Test_renderTemplates(t *testing.T) {
 							Name:    procNoWorkingDir,
 							Command: "echo {{ .TEST }}",
 							LivenessProbe: &health.Probe{
-								HttpGet: &health.HttpProbe{
+								Http: &health.HttpProbe{
 									Path:   "/{{.PROJ_PATH}}/{{.PROC_PATH}}",
 									Scheme: "{{.SCHEME}}",
 									Host:   "{{.HOST}}",
 								},
 							},
 							ReadinessProbe: &health.Probe{
-								HttpGet: &health.HttpProbe{
+								Http: &health.HttpProbe{
 									Path:   "/{{.PROJ_PATH}}/{{.PROC_PATH}}",
 									Scheme: "{{.SCHEME}}",
 									Host:   "{{.HOST}}",
@@ -466,12 +466,12 @@ func Test_renderTemplates(t *testing.T) {
 					compareStrings(t, "echo proc test", p.LivenessProbe.Exec.Command, "liveness probe command")
 					compareStrings(t, "echo <no value>", p.Command, "process command")
 				case "with http":
-					compareStrings(t, "/prj_path/proc_path", p.ReadinessProbe.HttpGet.Path, "readiness probe path")
-					compareStrings(t, "host", p.ReadinessProbe.HttpGet.Host, "readiness probe host")
-					compareStrings(t, "https", p.ReadinessProbe.HttpGet.Scheme, "readiness probe scheme")
-					compareStrings(t, "https", p.LivenessProbe.HttpGet.Scheme, "liveness probe scheme")
-					compareStrings(t, "host", p.LivenessProbe.HttpGet.Host, "liveness probe host")
-					compareStrings(t, "/prj_path/proc_path", p.LivenessProbe.HttpGet.Path, "liveness probe path")
+					compareStrings(t, "/prj_path/proc_path", p.ReadinessProbe.Http.Path, "readiness probe path")
+					compareStrings(t, "host", p.ReadinessProbe.Http.Host, "readiness probe host")
+					compareStrings(t, "https", p.ReadinessProbe.Http.Scheme, "readiness probe scheme")
+					compareStrings(t, "https", p.LivenessProbe.Http.Scheme, "liveness probe scheme")
+					compareStrings(t, "host", p.LivenessProbe.Http.Host, "liveness probe host")
+					compareStrings(t, "/prj_path/proc_path", p.LivenessProbe.Http.Path, "liveness probe path")
 					compareStrings(t, "echo test", p.Command, "process command")
 				}
 			}
