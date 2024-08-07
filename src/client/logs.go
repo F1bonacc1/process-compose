@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"net"
+    "os"
 	"sync/atomic"
 )
 
@@ -57,7 +58,7 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, out io
 func (l *LogClient) CloseChannel() error {
 	err := l.ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	if err != nil {
-		fmt.Println("write close:", err)
+		fmt.Fprintln(os.Stderr, "write close:", err)
 		return err
 	}
 	l.isClosed.Store(true)
