@@ -47,7 +47,7 @@ func (p *PcClient) stopProcesses(names []string) ([]string, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusMultiStatus {
 		stopped := []string{}
 		if err = json.NewDecoder(resp.Body).Decode(&stopped); err != nil {
 			log.Err(err).Msgf("failed to decode stop processes %v", names)

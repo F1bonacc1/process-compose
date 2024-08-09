@@ -288,7 +288,7 @@ func (p *ProjectRunner) StopProcess(name string) error {
 	if err != nil {
 		log.Err(err).Msgf("failed to stop process %s", name)
 	}
-	return nil
+	return err
 }
 
 func (p *ProjectRunner) StopProcesses(names []string) ([]string, error) {
@@ -296,9 +296,14 @@ func (p *ProjectRunner) StopProcesses(names []string) ([]string, error) {
 	for _, name := range names {
 		if err := p.StopProcess(name); err == nil {
 			stopped = append(stopped, name)
-		} else {
-			return nil, err
 		}
+	}
+
+	if len(stopped) != len(names) {
+		if len(stopped) == 0 {
+			return stopped, fmt.Errorf("no such processes or not running: %v", names)
+		}
+		return stopped, fmt.Errorf("failed to stop some processes")
 	}
 	return stopped, nil
 }

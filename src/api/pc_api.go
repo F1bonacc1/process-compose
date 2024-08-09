@@ -141,7 +141,11 @@ func (api *PcApi) StopProcesses(c *gin.Context) {
 	}
 	stopped, err := api.project.StopProcesses(names)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if len(stopped) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusMultiStatus, stopped)
+		}
 		return
 	}
 
