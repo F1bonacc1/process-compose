@@ -74,7 +74,7 @@ func init() {
 	rootCmd.Flags().BoolVar(pcFlags.KeepProjectOn, "keep-project", *pcFlags.KeepProjectOn, "keep the project running even after all processes exit")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.NoServer, "no-server", *pcFlags.NoServer, "disable HTTP server (env: "+config.EnvVarNameNoServer+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.IsOrderedShutDown, "ordered-shutdown", *pcFlags.IsOrderedShutDown, "shut down processes in reverse dependency order")
-	rootCmd.Flags().BoolVarP(pcFlags.HideDisabled, "hide-disabled", "d", *pcFlags.HideDisabled, "hide disabled processes")
+	rootCmd.Flags().BoolVarP(pcFlags.HideDisabled, "hide-disabled", "d", *pcFlags.HideDisabled, "hide disabled processes (env: "+config.EnvVarHideDisabled+")")
 	rootCmd.Flags().VarP(refreshRateFlag{pcFlags.RefreshRate}, "ref-rate", "r", "TUI refresh rate in seconds or as a Go duration string (e.g. 1s)")
 	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.EnvVarNamePort+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")

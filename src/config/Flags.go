@@ -37,6 +37,7 @@ const (
 	EnvVarReadOnlyMode   = "PC_READ_ONLY"
 	EnvVarDisableDotEnv  = "PC_DISABLE_DOTENV"
 	EnvVarTuiFullScreen  = "PC_TUI_FULL_SCREEN"
+	EnvVarHideDisabled   = "PC_HIDE_DISABLED_PROC"
 )
 
 // Flags represents PC configuration flags.
@@ -84,7 +85,7 @@ func NewFlags() *Flags {
 		LogFollow:         toPtr(false),
 		LogTailLength:     toPtr(math.MaxInt),
 		NoDependencies:    toPtr(false),
-		HideDisabled:      toPtr(false),
+		HideDisabled:      toPtr(getHideDisabledDefault()),
 		SortColumn:        toPtr(DefaultSortColumn),
 		IsReverseSort:     toPtr(false),
 		NoServer:          toPtr(getNoServerDefault()),

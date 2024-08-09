@@ -38,3 +38,10 @@ func WithFullScreen(isFullScreen bool) Option {
 		return nil
 	}
 }
+
+func WithDisabledHidden(isHidden bool) Option {
+	return func(view *pcView) error {
+		view.hideDisabled.Store(isHidden)
+		return nil
+	}
+}

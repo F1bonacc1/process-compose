@@ -208,3 +208,8 @@ func getTuiFullScreenDefault() bool {
 	_, found := os.LookupEnv(EnvVarTuiFullScreen)
 	return found
 }
+
+func getHideDisabledDefault() bool {
+	_, found := os.LookupEnv(EnvVarHideDisabled)
+	return found
+}

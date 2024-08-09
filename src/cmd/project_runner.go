@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
@@ -13,9 +12,6 @@ import (
 )
 
 func getProjectRunner(process []string, noDeps bool, mainProcess string, mainProcessArgs []string) *app.ProjectRunner {
-	if *pcFlags.HideDisabled {
-		opts.AddAdmitter(&admitter.DisabledProcAdmitter{})
-	}
 	if *pcFlags.DisableDotEnv {
 		opts.DisableDotenv()
 	}
@@ -93,6 +89,7 @@ func startTui(runner app.IProject) {
 		tui.WithRefreshRate(*pcFlags.RefreshRate),
 		tui.WithReadOnlyMode(*pcFlags.IsReadOnlyMode),
 		tui.WithFullScreen(*pcFlags.IsTuiFullScreen),
+		tui.WithDisabledHidden(*pcFlags.HideDisabled),
 	}
 	if !*pcFlags.IsReadOnlyMode {
 		config.CreateProcCompHome()
