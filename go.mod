@@ -5,21 +5,21 @@ go 1.22
 require (
 	dario.cat/mergo v1.0.0
 	github.com/InVisionApp/go-health/v2 v2.1.4
-	github.com/adrg/xdg v0.4.0
+	github.com/adrg/xdg v0.5.0
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/creack/pty v1.1.21
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/gin-gonic/gin v1.10.0
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
-	github.com/rivo/tview v0.0.0-20240505185119-ed116790de0f
-	github.com/shirou/gopsutil/v4 v4.24.6
-	github.com/spf13/cobra v1.8.0
+	github.com/rivo/tview v0.0.0-20240807205129-e4c497cc59ed
+	github.com/shirou/gopsutil/v4 v4.24.7
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/swaggo/swag v1.16.3
-	golang.org/x/term v0.20.0
+	golang.org/x/term v0.23.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -36,7 +36,7 @@ require (
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
@@ -82,8 +82,8 @@ require (
 require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/rs/zerolog v1.32.0
+	github.com/rs/zerolog v1.33.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.23.0 // indirect
 )
