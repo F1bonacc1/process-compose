@@ -31,7 +31,7 @@ func (p *PcClient) stopProcess(name string) error {
 	return fmt.Errorf(respErr.Error)
 }
 
-func (p *PcClient) stopProcesses(names []string) ([]string, error) {
+func (p *PcClient) stopProcesses(names []string) (map[string]string, error) {
 	url := fmt.Sprintf("http://%s/processes/stop", p.address)
 	jsonPayload, err := json.Marshal(names)
 	if err != nil {
@@ -48,7 +48,7 @@ func (p *PcClient) stopProcesses(names []string) ([]string, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusMultiStatus {
-		stopped := []string{}
+		stopped := map[string]string{}
 		if err = json.NewDecoder(resp.Body).Decode(&stopped); err != nil {
 			log.Err(err).Msgf("failed to decode stop processes %v", names)
 			return stopped, err

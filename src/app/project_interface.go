@@ -23,7 +23,7 @@ type IProject interface {
 	GetProcessState(name string) (*types.ProcessState, error)
 	GetProcessesState() (*types.ProcessesState, error)
 	StopProcess(name string) error
-	StopProcesses(names []string) ([]string, error)
+	StopProcesses(names []string) (map[string]string, error)
 	StartProcess(name string) error
 	RestartProcess(name string) error
 	ScaleProcess(name string, scale int) error

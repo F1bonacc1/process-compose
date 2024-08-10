@@ -113,7 +113,7 @@ func (p *PcClient) StopProcess(name string) error {
 	return p.stopProcess(name)
 }
 
-func (p *PcClient) StopProcesses(names []string) ([]string, error) {
+func (p *PcClient) StopProcesses(names []string) (map[string]string, error) {
 	return p.stopProcesses(names)
 }
 

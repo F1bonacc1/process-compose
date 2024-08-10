@@ -291,16 +291,20 @@ func (p *ProjectRunner) StopProcess(name string) error {
 	return err
 }
 
-func (p *ProjectRunner) StopProcesses(names []string) ([]string, error) {
-	stopped := make([]string, 0)
+func (p *ProjectRunner) StopProcesses(names []string) (map[string]string, error) {
+	stopped := make(map[string]string)
+	successes := 0
 	for _, name := range names {
 		if err := p.StopProcess(name); err == nil {
-			stopped = append(stopped, name)
+			stopped[name] = "ok"
+			successes++
+		} else {
+			stopped[name] = err.Error()
 		}
 	}
 
-	if len(stopped) != len(names) {
-		if len(stopped) == 0 {
+	if successes != len(names) {
+		if successes == 0 {
 			return stopped, fmt.Errorf("no such processes or not running: %v", names)
 		}
 		return stopped, fmt.Errorf("failed to stop some processes")
