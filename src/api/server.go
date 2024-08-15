@@ -16,7 +16,14 @@ func StartHttpServerWithUnixSocket(useLogger bool, unixSocket string, project ap
 	router := getRouter(useLogger, project)
 	log.Info().Msgf("start UDS http server listening %s", unixSocket)
 
+	// Check if the unix socket is already in use
+	// If it exists but we can't connect, remove it
+	_, err := net.Dial("unix", unixSocket)
+	if err == nil {
+		log.Fatal().Msgf("unix socket %s is already in use", unixSocket)
+	}
 	os.Remove(unixSocket)
+
 	server := &http.Server{
 		Handler: router.Handler(),
 	}
