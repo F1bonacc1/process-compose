@@ -38,15 +38,20 @@ var (
 			pcFlags.PcThemeChanged = cmd.Flags().Changed(flagTheme)
 			pcFlags.SortColumnChanged = cmd.Flags().Changed(flagSort)
 		},
-		Run: run,
+		Run: func(cmd *cobra.Command, args []string) {
+			runProjectCmd([]string{})
+		},
 	}
 )
 
-func run(cmd *cobra.Command, args []string) {
+func runProjectCmd(args []string) {
 	defer func() {
 		_ = logFile.Close()
 	}()
-	runner := getProjectRunner([]string{}, false, "", []string{})
+	if *pcFlags.IsDetached {
+		runInDetachedMode()
+	}
+	runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
 	err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner)
 	handleErrorAndExit(err)
 }
@@ -90,7 +95,7 @@ func init() {
 	_ = rootCmd.Flags().MarkDeprecated("keep-tui", "use --keep-project instead")
 
 	if runtime.GOOS != "windows" {
-		//rootCmd.Flags().BoolVarP(pcFlags.IsDetached, "detached", "D", *pcFlags.IsDetached, "run process-compose in detached mode")
+		rootCmd.Flags().BoolVarP(pcFlags.IsDetached, "detached", "D", *pcFlags.IsDetached, "run process-compose in detached mode")
 		rootCmd.PersistentFlags().StringVarP(pcFlags.UnixSocketPath, "unix-socket", "u", config.GetUnixSocketPath(), "path to unix socket (env: "+config.EnvVarUnixSocketPath+")")
 		rootCmd.PersistentFlags().BoolVarP(pcFlags.IsUnixSocket, "use-uds", "U", *pcFlags.IsUnixSocket, "use unix domain sockets instead of tcp")
 	}

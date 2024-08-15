@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/spf13/cobra"
+	"runtime"
 )
 
 // upCmd represents the up command
@@ -13,9 +14,7 @@ var upCmd = &cobra.Command{
 If one or more process names are passed as arguments,
 will start them and their dependencies only`,
 	Run: func(cmd *cobra.Command, args []string) {
-		runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
-		err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner)
-		handleErrorAndExit(err)
+		runProjectCmd(args)
 	},
 }
 
@@ -38,6 +37,9 @@ func init() {
 	upCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
 	upCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))
 
+	if runtime.GOOS != "windows" {
+		upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("detached"))
+	}
 	_ = upCmd.Flags().MarkDeprecated("keep-tui", "use --keep-project instead")
 
 }

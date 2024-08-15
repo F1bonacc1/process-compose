@@ -70,6 +70,7 @@ type Flags struct {
 	OutputFormat      *string
 	DisableDotEnv     *bool
 	IsTuiFullScreen   *bool
+	IsDetached        *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -99,6 +100,7 @@ func NewFlags() *Flags {
 		OutputFormat:      toPtr(""),
 		DisableDotEnv:     toPtr(getDisableDotEnvDefault()),
 		IsTuiFullScreen:   toPtr(getTuiFullScreenDefault()),
+		IsDetached:        toPtr(false),
 	}
 }
 
