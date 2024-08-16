@@ -133,6 +133,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 			log.Error().Msgf("Error: %s", err.Error())
 			log.Error().Msgf("Error: process %s won't run", proc.getName())
 			proc.wontRun()
+			p.onProcessSkipped(proc.procConf)
 		} else {
 			exitCode := proc.run()
 			p.onProcessEnd(exitCode, proc.procConf)
@@ -183,6 +184,13 @@ func (p *ProjectRunner) onProcessEnd(exitCode int, procConf *types.ProcessConfig
 		procConf.RestartPolicy.ExitOnEnd {
 		p.ShutDownProject()
 		p.exitCode = exitCode
+	}
+}
+
+func (p *ProjectRunner) onProcessSkipped(procConf *types.ProcessConfig) {
+	if procConf.RestartPolicy.ExitOnSkipped {
+		p.ShutDownProject()
+		p.exitCode = 1
 	}
 }
 

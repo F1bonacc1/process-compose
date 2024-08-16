@@ -289,3 +289,28 @@ processes:
 
 > :bulb:
 > `exit_on_end` can be set on more than one process, for example when running multiple tasks in parallel and wishing to terminate as soon as any one finished.
+
+## Terminate Process Compose once given process is skipped
+
+This can be achieved by setting `availability.exit_on_skipped` to `true`. If defined, `process-compose` will gracefully shut down all the other running processes and exit with exit-code `1`.
+
+Here's an example, where `process1` depends on `process2` and `process2` fails:
+
+```yaml hl_lines="10"
+processes:
+  process1:
+    command: "echo 'Hi from Process1'"
+    depends_on:
+      process2:
+        condition: process_completed_successfully
+    availability:
+      # NOTE: `restart: exit_on_failure` is not needed since
+      # exit_on_skipped implies it.
+      exit_on_skipped: true
+  process2:
+    command: "echo 'Hi from Process2'; exit 1"
+  process3:
+    command: "while true; do echo 'Running...'; sleep 1; done"
+```
+
+Why can't the same be achieved with `exit_on_end` on `process2`? Yes, it can be, but in a case where `process1` depends on multiple processes, and failure of any of them should cause termination, `exit_on_skipped` can be used to avoid setting `exit_on_end` on all of them.
