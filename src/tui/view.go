@@ -233,6 +233,12 @@ func (pv *pcView) setShortCutsActions() {
 		pv.commandModeType = commandModeSearch
 		pv.redrawGrid()
 	})
+	pv.shortcuts.setAction(ActionClearLog, func() {
+		pv.logsText.Clear()
+	})
+	pv.shortcuts.setAction(ActionMarkLog, func() {
+		pv.logsText.AddMark()
+	})
 }
 
 func (pv *pcView) setFullScreen(isFullScreen bool) {
@@ -280,6 +286,8 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 				return event
 			}
 			pv.shortcuts.ShortCutKeys[ActionLogFindExit].actionFn()
+		case pv.shortcuts.ShortCutKeys[ActionMarkLog].rune:
+			pv.shortcuts.ShortCutKeys[ActionMarkLog].actionFn()
 		default:
 			return pv.shortcuts.runRuneAction(event.Rune(), event) //event
 		}

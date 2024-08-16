@@ -37,6 +37,8 @@ const (
 	ActionSendToBackground = ActionName("send_to_background")
 	ActionFullScreen       = ActionName("full_screen")
 	ActionFocusChange      = ActionName("focus_change")
+	ActionClearLog         = ActionName("clear_log")
+	ActionMarkLog          = ActionName("mark_log")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -63,10 +65,13 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionSendToBackground: tcell.KeyCtrlB,
 	ActionFullScreen:       tcell.KeyCtrlRightSq,
 	ActionFocusChange:      tcell.KeyTab,
+	ActionClearLog:         tcell.KeyCtrlK,
+	ActionMarkLog:          tcell.KeyRune,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
 	ActionProcFilter: '/',
+	ActionMarkLog:    'm',
 }
 
 var generalActionsOrder = []ActionName{
@@ -82,6 +87,8 @@ var logActionsOrder = []ActionName{
 	ActionWrapLog,
 	ActionLogSelection,
 	ActionLogFind,
+	ActionClearLog,
+	ActionMarkLog,
 }
 
 var procActionsOrder = []ActionName{
@@ -345,6 +352,12 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionFocusChange: {
 				Description: "Toggle Log/Process Focus",
+			},
+			ActionClearLog: {
+				Description: "Clear Process Log",
+			},
+			ActionMarkLog: {
+				Description: "Add Mark to Log",
 			},
 		},
 	}

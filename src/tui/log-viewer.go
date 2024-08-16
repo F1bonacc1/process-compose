@@ -181,3 +181,9 @@ func (l *LogView) getCurrentSearchIndex() int {
 func (l *LogView) getTotalSearchCount() int {
 	return l.totalSearchCount
 }
+
+func (l *LogView) AddMark() {
+	_, _, w, _ := l.GetInnerRect()
+	mark := strings.Repeat("-", w)
+	fmt.Fprintf(l.buffer, "%s\n", mark)
+}
