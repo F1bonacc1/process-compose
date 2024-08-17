@@ -48,10 +48,11 @@ func runProjectCmd(args []string) {
 	defer func() {
 		_ = logFile.Close()
 	}()
+	runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
 	if *pcFlags.IsDetached {
+		//placing it here ensures that if the compose.yaml is invalid, the program will exit immediately
 		runInDetachedMode()
 	}
-	runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
 	err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner)
 	handleErrorAndExit(err)
 }
