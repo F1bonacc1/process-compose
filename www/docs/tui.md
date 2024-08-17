@@ -14,6 +14,13 @@ TUI is the default run mode, but it's possible to disable it:
 ./process-compose -t=false
 ```
 
+Alternatively it can be disabled with `PC_DISABLE_TUI=1` environment variable or in `process-compose.yaml`:
+
+```yaml  hl_lines="2"
+version: "0.5"
+is_tui_disabled: true
+```
+
 Control the UI log buffer size:
 
 ```yaml

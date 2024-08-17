@@ -2,7 +2,7 @@ version: "0.5"
 log_level: debug
 log_length: 3000
 is_strict: true
-is_tui_disabled: true
+#is_tui_disabled: true
 environment:
   - 'ABC=222'
 log_location: ./pc.log

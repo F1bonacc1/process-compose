@@ -25,6 +25,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load project")
 	}
+	*pcFlags.IsTuiEnabled = !project.IsTuiDisabled
 
 	prjOpts := app.ProjectOpts{}
 
