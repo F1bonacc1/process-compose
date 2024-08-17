@@ -69,7 +69,7 @@ coverhtml:
 	go tool cover -html=coverage.out
 
 run:
-	PC_DEBUG_MODE=1 ./bin/${NAME}${EXT}
+	PC_DEBUG_MODE=1 ./bin/${NAME}${EXT} -e .env -e .env.local
 
 clean:
 	$(RM) bin/${NAME}*

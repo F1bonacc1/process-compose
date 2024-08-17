@@ -23,7 +23,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	}
 
 	for _, file := range opts.FileNames {
-		p := loadProjectFromFile(file, opts.disableDotenv)
+		p := loadProjectFromFile(file, opts.disableDotenv, opts.EnvFileNames)
 		opts.projects = append(opts.projects, p)
 	}
 	mergedProject, err := merge(opts)
@@ -78,7 +78,7 @@ func admitProcesses(opts *LoaderOptions, p *types.Project) *types.Project {
 	return p
 }
 
-func loadProjectFromFile(inputFile string, disableDotEnv bool) *types.Project {
+func loadProjectFromFile(inputFile string, disableDotEnv bool, envFileNames []string) *types.Project {
 	yamlFile, err := os.ReadFile(inputFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -89,7 +89,7 @@ func loadProjectFromFile(inputFile string, disableDotEnv bool) *types.Project {
 
 	if !disableDotEnv {
 		// .env is optional we don't care if it errors
-		_ = godotenv.Load()
+		_ = godotenv.Load(envFileNames...)
 	}
 
 	const envEscaped = "##PC_ENV_ESCAPED##"

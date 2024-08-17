@@ -83,6 +83,7 @@ func init() {
 	rootCmd.Flags().VarP(refreshRateFlag{pcFlags.RefreshRate}, "ref-rate", "r", "TUI refresh rate in seconds or as a Go duration string (e.g. 1s)")
 	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.EnvVarNamePort+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
+	rootCmd.Flags().StringArrayVarP(&opts.EnvFileNames, "env", "e", []string{".env"}, "path to env files to load")
 	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.IsReadOnlyMode, "read-only", *pcFlags.IsReadOnlyMode, "enable read-only mode (env: "+config.EnvVarReadOnlyMode+")")

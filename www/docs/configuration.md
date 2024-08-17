@@ -50,6 +50,14 @@ processes:
       - 'OUTPUT_DIR=/path/to/B/data'
 ```
 
+By default the `.env` file in the current directory is used if exists. It is possible to specify other file(s) to be used instead:
+
+```shell
+process-compose -e .env -e .env.local -e .env.dev
+```
+
+For situations where the you would like to disable the automatic `.env` file loading you might want to use the `--disable-dotenv` flag.
+
 ## .pc_env file
 
 `.pc_env` file allows you to control Process Compose local, user environment specific settings.  

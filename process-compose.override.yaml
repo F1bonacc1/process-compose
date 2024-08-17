@@ -26,7 +26,7 @@ processes:
     is_tty: true
 
   process1:
-    command: "./test_loop.bash ${PROC4}"
+    command: "./test_loop.bash ${PROC4} ${LOCAL_ENV_VAR1}"
     availability:
       restart: "on_failure"
       backoff_seconds: 2
@@ -164,7 +164,6 @@ processes:
     depends_on:
       process0:
         condition: process_completed
-
 
   bat_config:
     command: "batcat -P -f process-compose.yaml"

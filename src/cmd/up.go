@@ -27,6 +27,7 @@ func init() {
 	upCmd.Flags().BoolVarP(pcFlags.NoDependencies, "no-deps", "", *pcFlags.NoDependencies, "don't start dependent processes")
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("namespace"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("config"))
+	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("env"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("ref-rate"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("tui"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("hide-disabled"))

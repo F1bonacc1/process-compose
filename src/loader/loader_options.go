@@ -10,6 +10,7 @@ import (
 type LoaderOptions struct {
 	workingDir    string
 	FileNames     []string
+	EnvFileNames  []string
 	projects      []*types.Project
 	admitters     []admitter.Admitter
 	disableDotenv bool
