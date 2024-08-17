@@ -101,7 +101,7 @@ announce:
     # Default: 'https://goreleaser.com/static/avatar.png'
     icon_url: "https://avatars.githubusercontent.com/u/806740?v=4"
   twitter:
-    enabled: true
+    enabled: false
 
     # Message template to use while publishing.
     #
