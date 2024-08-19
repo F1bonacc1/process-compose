@@ -16,7 +16,11 @@ func (c *execChecker) Status() (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.timeout)*time.Second)
 	defer cancel()
 
-	cmd := command.BuildCommandContext(ctx, c.command)
+	cmd := command.BuildCommandShellArgContext(
+		ctx,
+		*command.DefaultShellConfig(),
+		c.command,
+	)
 	cmd.SetDir(c.workingDir)
 
 	if err := cmd.Run(); err != nil {

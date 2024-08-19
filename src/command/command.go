@@ -20,12 +20,6 @@ func BuildPtyCommand(cmd string, args []string) *CmdWrapperPty {
 	}
 }
 
-func BuildCommandContext(ctx context.Context, shellCmd string) *CmdWrapper {
-	return &CmdWrapper{
-		cmd: exec.CommandContext(ctx, getRunnerShell(), getRunnerArg(), shellCmd),
-	}
-}
-
 func BuildCommandShellArgContext(ctx context.Context, shell ShellConfig, cmd string) *CmdWrapper {
 	return &CmdWrapper{
 		cmd: exec.CommandContext(ctx, shell.ShellCommand, shell.ShellArgument, cmd),
