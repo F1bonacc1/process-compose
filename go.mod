@@ -3,7 +3,7 @@ module github.com/f1bonacc1/process-compose
 go 1.22
 
 require (
-	dario.cat/mergo v1.0.0
+	dario.cat/mergo v1.0.1
 	github.com/InVisionApp/go-health/v2 v2.1.4
 	github.com/adrg/xdg v0.5.0
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
