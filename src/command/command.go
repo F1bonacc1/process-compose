@@ -8,15 +8,15 @@ import (
 	"runtime"
 )
 
-func BuildCommand(cmd string, args []string) *CmdWrapper {
-	return &CmdWrapper{
-		cmd: exec.Command(cmd, args...),
-	}
+func BuildCommandContext(ctx context.Context, onCancel func() error, cmd string, args []string) *CmdWrapper {
+	cmdCtx := exec.CommandContext(ctx, cmd, args...)
+	cmdCtx.Cancel = onCancel
+	return &CmdWrapper{cmd: cmdCtx}
 }
 
-func BuildPtyCommand(cmd string, args []string) *CmdWrapperPty {
+func BuildPtyCommandContext(ctx context.Context, onCancel func() error, cmd string, args []string) *CmdWrapperPty {
 	return &CmdWrapperPty{
-		CmdWrapper: BuildCommand(cmd, args),
+		CmdWrapper: BuildCommandContext(ctx, onCancel, cmd, args),
 	}
 }
 

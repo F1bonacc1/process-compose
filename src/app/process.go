@@ -73,6 +73,8 @@ type Process struct {
 	stdin               io.WriteCloser
 	passProvided        bool
 	isTuiEnabled        bool
+	canceller           context.CancelFunc
+	waitDone            chan struct{}
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
@@ -85,6 +87,7 @@ func NewProcess(opts ...ProcOpts) *Process {
 		started:       false,
 		done:          false,
 		procStateChan: make(chan string, 1),
+		waitDone:      make(chan struct{}, 1),
 	}
 
 	for _, opt := range opts {
@@ -113,6 +116,10 @@ func (p *Process) run() int {
 
 	p.onProcessStart()
 	for {
+		if len(p.waitDone) > 0 {
+			<-p.waitDone
+		}
+
 		err := p.setStateAndRun(p.getStartingStateName(), p.getProcessStarter())
 		if err != nil {
 			log.Error().Err(err).Msgf(`Failed to run command ["%v"] for process %s`, strings.Join(p.getCommand(), `" "`), p.getName())
@@ -137,6 +144,8 @@ func (p *Process) run() int {
 		//TODO Fix this
 		time.Sleep(50 * time.Millisecond)
 		_ = p.command.Wait()
+		p.waitDone <- struct{}{}
+
 		p.Lock()
 		p.setExitCode(p.command.ExitCode())
 		p.Unlock()
@@ -202,18 +211,50 @@ func (p *Process) getProcessStarter() func() error {
 }
 
 func (p *Process) getCommander() command.Commander {
+	ctx, canceller := context.WithCancel(context.Background())
+	p.canceller = canceller
+	onCancel := func() error {
+		err := p.command.Stop(
+			p.procConf.ShutDownParams.Signal,
+			p.procConf.ShutDownParams.ParentOnly,
+		)
+
+		if err != nil {
+			return err
+		}
+
+		timeoutInt := p.procConf.ShutDownParams.ShutDownTimeout
+		if timeoutInt != UndefinedShutdownTimeoutSec {
+			timeout := time.Duration(timeoutInt) * time.Second
+			select {
+			case <-p.waitDone:
+				break
+			case <-time.After(timeout):
+				return p.command.Stop(
+					int(syscall.SIGKILL),
+					p.procConf.ShutDownParams.ParentOnly,
+				)
+			}
+		}
+
+		return nil
+	}
+
 	if p.procConf.IsTty && !p.isMain {
-		return command.BuildPtyCommand(
+		return command.BuildPtyCommandContext(
+			ctx,
+			onCancel,
 			p.procConf.Executable,
 			p.mergeExtraArgs(),
 		)
 	} else {
-		return command.BuildCommand(
+		return command.BuildCommandContext(
+			ctx,
+			onCancel,
 			p.procConf.Executable,
 			p.mergeExtraArgs(),
 		)
 	}
-
 }
 
 func (p *Process) mergeExtraArgs() []string {
@@ -364,8 +405,8 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
 	}
-
-	return p.command.Stop(p.procConf.ShutDownParams.Signal, p.procConf.ShutDownParams.ParentOnly)
+	p.canceller()
+	return nil
 }
 
 func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
