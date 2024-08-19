@@ -28,7 +28,7 @@ func (c *CmdWrapper) Stop(sig int, parentOnly bool) error {
 		Msg("Stop Unix process.")
 
 	if parentOnly {
-		return syscall.Kill(c.Pid(), syscall.Signal(sig))
+		return c.cmd.Process.Signal(syscall.Signal(sig))
 	}
 
 	pgid, err := syscall.Getpgid(c.Pid())
