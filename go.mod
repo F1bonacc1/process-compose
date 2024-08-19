@@ -7,7 +7,7 @@ require (
 	github.com/InVisionApp/go-health/v2 v2.1.4
 	github.com/adrg/xdg v0.5.0
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
-	github.com/creack/pty v1.1.21
+	github.com/creack/pty v1.1.23
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
 	github.com/fatih/color v1.17.0
 	github.com/gdamore/tcell/v2 v2.7.4
