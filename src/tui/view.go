@@ -286,9 +286,10 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 				return event
 			}
 			pv.shortcuts.ShortCutKeys[ActionLogFindExit].actionFn()
-		case pv.shortcuts.ShortCutKeys[ActionMarkLog].rune:
-			pv.shortcuts.ShortCutKeys[ActionMarkLog].actionFn()
 		default:
+			if !pv.isCommandModeDisabled() {
+				return event
+			}
 			return pv.shortcuts.runRuneAction(event.Rune(), event) //event
 		}
 	default:
