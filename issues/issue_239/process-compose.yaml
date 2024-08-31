@@ -1,0 +1,6 @@
+version: "0.5"
+
+processes:
+  api:
+    disabled: true # <-- The bug only occurs when this is set to `true`
+    command: echo hello

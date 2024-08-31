@@ -520,7 +520,7 @@ func (pv *pcView) changeFocus() {
 	}
 }
 
-func SetupTui(project app.IProject, options ...Option) {
+func setupTui(project app.IProject, options ...Option) {
 
 	pv := newPcView(project)
 	for _, option := range options {
@@ -535,7 +535,21 @@ func SetupTui(project app.IProject, options ...Option) {
 	}
 
 	pcv = pv
-	if err := pv.appView.Run(); err != nil {
+
+}
+
+func RunTUIAsync(project app.IProject, options ...Option) {
+	setupTui(project, options...)
+	go func() {
+		if err := pcv.appView.Run(); err != nil {
+			log.Fatal().Err(err).Msgf("Failed to start TUI")
+		}
+	}()
+}
+
+func RunTUI(project app.IProject, options ...Option) {
+	setupTui(project, options...)
+	if err := pcv.appView.Run(); err != nil {
 		log.Fatal().Err(err).Msgf("Failed to start TUI")
 	}
 }
@@ -562,5 +576,6 @@ func Stop() {
 func Wait() {
 	if pcv != nil {
 		<-pcv.ctxApp.Done()
+		log.Debug().Msg("TUI Wait stopped")
 	}
 }

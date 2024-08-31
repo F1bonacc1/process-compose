@@ -75,7 +75,7 @@ func runHeadless(project *app.ProjectRunner) error {
 }
 
 func runTui(project *app.ProjectRunner) error {
-	go startTui(project)
+	startTui(project, true)
 	err := project.Run()
 	if !*pcFlags.KeepProjectOn && !*pcFlags.KeepTuiOn {
 		tui.Stop()
@@ -85,7 +85,7 @@ func runTui(project *app.ProjectRunner) error {
 	return err
 }
 
-func startTui(runner app.IProject) {
+func startTui(runner app.IProject, isAsync bool) {
 	tuiOptions := []tui.Option{
 		tui.WithRefreshRate(*pcFlags.RefreshRate),
 		tui.WithReadOnlyMode(*pcFlags.IsReadOnlyMode),
@@ -106,7 +106,11 @@ func startTui(runner app.IProject) {
 			tui.WithStateSorter(getColumnId(settings.Sort.By), !settings.Sort.IsReversed)),
 	)
 
-	tui.SetupTui(runner, tuiOptions...)
+	if isAsync {
+		tui.RunTUIAsync(runner, tuiOptions...)
+	} else {
+		tui.RunTUI(runner, tuiOptions...)
+	}
 }
 
 func getColumnId(columnName string) tui.ColumnID {
