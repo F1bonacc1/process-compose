@@ -3,18 +3,18 @@ module github.com/f1bonacc1/process-compose
 go 1.22
 
 require (
-	dario.cat/mergo v1.0.0
+	dario.cat/mergo v1.0.1
 	github.com/InVisionApp/go-health/v2 v2.1.4
 	github.com/adrg/xdg v0.5.0
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
-	github.com/creack/pty v1.1.21
+	github.com/creack/pty v1.1.23
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
 	github.com/fatih/color v1.17.0
 	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
-	github.com/rivo/tview v0.0.0-20240807205129-e4c497cc59ed
+	github.com/rivo/tview v0.0.0-20240818110301-fd649dbf1223
 	github.com/shirou/gopsutil/v4 v4.24.7
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
