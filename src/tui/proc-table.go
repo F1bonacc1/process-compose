@@ -241,6 +241,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 func (pv *pcView) updateTable(ctx context.Context) {
 	pv.appView.QueueUpdateDraw(func() {
 		pv.fillTableData()
+		pv.selectFirstEnabledProcess()
 	})
 	ticker := time.NewTicker(pv.refreshRate)
 	defer ticker.Stop()
@@ -442,6 +443,16 @@ func (pv *pcView) getSelectedProcName() string {
 func (pv *pcView) selectTableProcess(name string) {
 	for i := 1; i < pv.procTable.GetRowCount(); i++ {
 		if pv.procTable.GetCell(i, int(ProcessStateName)).Text == name {
+			pv.procTable.Select(i, 1)
+			return
+		}
+	}
+}
+
+func (pv *pcView) selectFirstEnabledProcess() {
+	for i := 1; i < pv.procTable.GetRowCount(); i++ {
+		status := pv.procTable.GetCell(i, int(ProcessStateStatus)).Text
+		if status != types.ProcessStateDisabled && status != types.ProcessStateForeground {
 			pv.procTable.Select(i, 1)
 			return
 		}

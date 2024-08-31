@@ -1,0 +1,11 @@
+version: "0.5"
+processes:
+  elevated:
+    command: echo "hi"
+    is_elevated: true
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+  date:
+    command: while true; do date && sleep 1; done
+    disabled: true
