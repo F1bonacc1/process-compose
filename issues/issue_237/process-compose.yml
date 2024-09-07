@@ -1,0 +1,11 @@
+version: "0.5"
+log_level: debug
+
+processes:
+  sleep:
+    command: "sleep 100"
+  echo:
+    command: |
+      echo 1
+      sleep .1
+      echo 2

@@ -73,6 +73,8 @@ type Process struct {
 	stdin               io.WriteCloser
 	passProvided        bool
 	isTuiEnabled        bool
+	stdOutDone          chan struct{}
+	stdErrDone          chan struct{}
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
@@ -132,10 +134,7 @@ func (p *Process) run() int {
 
 		p.startProbes()
 
-		//Wait should wait for I/O consumption, but if the execution is too fast
-		//e.g. echo 'hello world' the output will not reach the pipe
-		//TODO Fix this
-		time.Sleep(50 * time.Millisecond)
+		p.waitForStdOutErr()
 		_ = p.command.Wait()
 		p.Lock()
 		p.setExitCode(p.command.ExitCode())
@@ -171,6 +170,17 @@ func (p *Process) run() int {
 	return p.getExitCode()
 }
 
+func (p *Process) waitForStdOutErr() {
+	if p.stdOutDone != nil {
+		<-p.stdOutDone
+		p.stdOutDone = nil
+	}
+	if p.stdErrDone != nil {
+		<-p.stdErrDone
+		p.stdErrDone = nil
+	}
+}
+
 func (p *Process) getProcessStarter() func() error {
 	return func() error {
 		p.command = p.getCommander()
@@ -182,10 +192,12 @@ func (p *Process) getProcessStarter() func() error {
 		} else {
 			p.command.SetCmdArgs()
 			stdout, _ := p.command.StdoutPipe()
-			go p.handleOutput(stdout, p.handleInfo)
+			p.stdOutDone = make(chan struct{})
+			go p.handleOutput(stdout, "stdout", p.handleInfo, p.stdOutDone)
 			if !p.procConf.IsTty {
 				stderr, _ := p.command.StderrPipe()
-				go p.handleOutput(stderr, p.handleError)
+				p.stdErrDone = make(chan struct{})
+				go p.handleOutput(stderr, "stderr", p.handleError, p.stdErrDone)
 			}
 		}
 
@@ -527,7 +539,7 @@ func (p *Process) handleInput(pipe io.WriteCloser) {
 	}
 }
 
-func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string)) {
+func (p *Process) handleOutput(pipe io.ReadCloser, output string, handler func(message string), done chan struct{}) {
 	reader := bufio.NewReader(pipe)
 	for {
 		line, err := reader.ReadString('\n')
@@ -542,7 +554,7 @@ func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string))
 			}
 			log.Err(err).
 				Str("process", p.getName()).
-				Msg("error reading from stdout")
+				Msgf("error reading from %s", output)
 			break
 		}
 		if p.procConf.ReadyLogLine != "" && p.procState.Health == types.ProcessHealthUnknown && strings.Contains(line, p.procConf.ReadyLogLine) {
@@ -567,6 +579,7 @@ func (p *Process) handleOutput(pipe io.ReadCloser, handler func(message string))
 		}
 		handler(strings.TrimSuffix(line, "\n"))
 	}
+	close(done)
 }
 
 func (p *Process) handleInfo(message string) {
