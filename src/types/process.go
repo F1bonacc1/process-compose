@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/health"
 	"math"
+	"reflect"
 	"time"
 )
 
@@ -66,6 +67,68 @@ func (p *ProcessConfig) IsDeferred() bool {
 	return p.IsForeground || p.Disabled
 }
 
+// Compare returns true if two process configs are equal
+func (p *ProcessConfig) Compare(another *ProcessConfig) bool {
+	if p == nil || another == nil {
+		return p == another
+	}
+
+	// Compare simple fields
+	if p.Name != another.Name ||
+		p.Disabled != another.Disabled ||
+		p.IsDaemon != another.IsDaemon ||
+		p.Command != another.Command ||
+		p.LogLocation != another.LogLocation ||
+		p.ReadyLogLine != another.ReadyLogLine ||
+		p.DisableAnsiColors != another.DisableAnsiColors ||
+		p.WorkingDir != another.WorkingDir ||
+		p.Namespace != another.Namespace ||
+		p.Replicas != another.Replicas ||
+		p.Description != another.Description ||
+		p.IsForeground != another.IsForeground ||
+		p.IsTty != another.IsTty ||
+		p.IsElevated != another.IsElevated {
+		return false
+	}
+
+	if !reflect.DeepEqual(p.LoggerConfig, another.LoggerConfig) ||
+		!reflect.DeepEqual(p.LivenessProbe, another.LivenessProbe) ||
+		!reflect.DeepEqual(p.ReadinessProbe, another.ReadinessProbe) ||
+		!reflect.DeepEqual(p.ShutDownParams, another.ShutDownParams) ||
+		!reflect.DeepEqual(p.Vars, another.Vars) ||
+		!reflect.DeepEqual(p.Extensions, another.Extensions) ||
+		!reflect.DeepEqual(p.DependsOn, another.DependsOn) ||
+		!reflect.DeepEqual(p.RestartPolicy, another.RestartPolicy) ||
+		!reflect.DeepEqual(p.Environment, another.Environment) ||
+		!reflect.DeepEqual(p.Args, another.Args) {
+		return false
+	}
+
+	return true
+}
+
+func compareStructs(a, b interface{}) []string {
+	var differences []string
+	aValue := reflect.ValueOf(a)
+	bValue := reflect.ValueOf(b)
+
+	if aValue.Type() != bValue.Type() {
+		return []string{"Types are different"}
+	}
+
+	for i := 0; i < aValue.NumField(); i++ {
+		aField := aValue.Field(i)
+		bField := bValue.Field(i)
+		fieldName := aValue.Type().Field(i).Name
+
+		if !reflect.DeepEqual(aField.Interface(), bField.Interface()) {
+			differences = append(differences, fmt.Sprintf("Field %s differs: %v != %v", fieldName, aField, bField))
+		}
+	}
+
+	return differences
+}
+
 func NewProcessState(proc *ProcessConfig) *ProcessState {
 	state := &ProcessState{
 		Name:       proc.ReplicaName,
@@ -100,9 +163,8 @@ type ProcessState struct {
 	Pid              int           `json:"pid"`
 	IsElevated       bool          `json:"is_elevated"`
 	PasswordProvided bool          `json:"password_provided"`
-    Mem              int64         `json:"mem"`
-    IsRunning        bool
-
+	Mem              int64         `json:"mem"`
+	IsRunning        bool
 }
 
 type ProcessPorts struct {
@@ -180,3 +242,10 @@ type ProcessDependency struct {
 	Condition  string                 `yaml:",omitempty"`
 	Extensions map[string]interface{} `yaml:",inline"`
 }
+
+const (
+	ProcessUpdateUpdated = "updated"
+	ProcessUpdateRemoved = "removed"
+	ProcessUpdateAdded   = "added"
+	ProcessUpdateError   = "error"
+)

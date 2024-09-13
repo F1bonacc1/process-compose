@@ -50,6 +50,7 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r.POST("/process/start/:name", handler.StartProcess)
 	r.POST("/process/restart/:name", handler.RestartProcess)
 	r.POST("/project/stop", handler.ShutDownProject)
+	r.POST("/project", handler.UpdateProject)
 	r.GET("/project/state", handler.GetProjectState)
 	r.PATCH("/process/scale/:name/:scale", handler.ScaleProcess)
 

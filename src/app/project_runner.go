@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/pclog"
@@ -842,13 +843,59 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 	return runner, nil
 }
 
-//func getProcessName(process *Process) string {
-//	return process.getNameWithSmartReplica()
-//}
-//
-//func getProcessNameFromConf(process types.ProcessConfig, replica int) string {
-//	if process.Replicas > 1 {
-//		return fmt.Sprintf("%s-%d", process.Name, replica)
-//	}
-//	return process.Name
-//}
+func (p *ProjectRunner) UpdateProject(project *types.Project) (map[string]string, error) {
+	newProcs := make(map[string]types.ProcessConfig)
+	delProcs := make(map[string]types.ProcessConfig)
+	updatedProcs := make(map[string]types.ProcessConfig)
+	for name, newProc := range project.Processes {
+		if currentProc, ok := p.project.Processes[name]; ok {
+			equal := currentProc.Compare(&newProc)
+			if equal {
+				log.Debug().Msgf("Process %s is up to date", name)
+				continue
+			}
+			log.Debug().Msgf("Process %s is updated", name)
+			updatedProcs[name] = newProc
+		} else {
+			log.Debug().Msgf("Process %s is new", name)
+			newProcs[name] = newProc
+		}
+	}
+	for name, currentProc := range p.project.Processes {
+		if _, ok := project.Processes[name]; !ok {
+			log.Debug().Msgf("Process %s is deleted", name)
+			delProcs[name] = currentProc
+		}
+	}
+	status := make(map[string]string)
+	errs := make([]error, 0)
+	//Delete removed processes
+	for name := range delProcs {
+		err := p.removeProcess(name)
+		if err != nil {
+			log.Err(err).Msgf("Failed to remove process %s", name)
+			errs = append(errs, err)
+			status[name] = types.ProcessUpdateError
+			continue
+		}
+		status[name] = types.ProcessUpdateRemoved
+	}
+	//Add new processes
+	for name, proc := range newProcs {
+		p.addProcessAndRun(proc)
+		status[name] = types.ProcessUpdateAdded
+	}
+	//Update processes
+	for name, proc := range updatedProcs {
+		err := p.removeProcess(name)
+		if err != nil {
+			log.Err(err).Msgf("Failed to remove process %s", name)
+			errs = append(errs, err)
+			status[name] = types.ProcessUpdateError
+			continue
+		}
+		p.addProcessAndRun(proc)
+		status[name] = types.ProcessUpdateUpdated
+	}
+	return status, errors.Join(errs...)
+}

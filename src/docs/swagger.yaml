@@ -225,6 +225,17 @@ paths:
       summary: Stop processes
       tags:
       - Process
+  /project:
+    post:
+      description: Update running project
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Updates running processes
+      tags:
+      - Project
   /project/state:
     get:
       description: Retrieves project state information

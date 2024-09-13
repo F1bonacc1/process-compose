@@ -86,5 +86,7 @@ func (b *ProcessLogBuffer) UnSubscribe(observer LogObserver) {
 }
 
 func (b *ProcessLogBuffer) Close() {
+	b.mx.Lock()
+	defer b.mx.Unlock()
 	b.observers = map[string]LogObserver{}
 }

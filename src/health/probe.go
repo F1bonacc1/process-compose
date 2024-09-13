@@ -27,21 +27,21 @@ type HttpProbe struct {
 	Path    string `yaml:"path,omitempty"`
 	Scheme  string `yaml:"scheme,omitempty"`
 	Port    string `yaml:"port,omitempty"`
-	numPort int
+	NumPort int    `yaml:"num_port,omitempty"`
 }
 
 func (h *HttpProbe) getUrl() (*url.URL, error) {
 	urlStr := ""
-	if h.numPort != 0 {
-		urlStr = fmt.Sprintf("%s://%s:%d%s", h.Scheme, h.Host, h.numPort, h.Path)
+	if h.NumPort != 0 {
+		urlStr = fmt.Sprintf("%s://%s:%d%s", h.Scheme, h.Host, h.NumPort, h.Path)
 	}
-	if h.numPort == 0 {
+	if h.NumPort == 0 {
 		urlStr = fmt.Sprintf("%s://%s%s", h.Scheme, h.Host, h.Path)
 	}
 	return url.Parse(urlStr)
 }
 
-func (p *Probe) validateAndSetDefaults() {
+func (p *Probe) ValidateAndSetDefaults() {
 	if p.InitialDelay < 0 {
 		p.InitialDelay = 0
 	}
@@ -74,12 +74,12 @@ func (p *HttpProbe) validateAndSetHttpDefaults() {
 		p.Path = "/"
 	}
 	if p.Port == "" {
-		p.numPort = 0
+		p.NumPort = 0
 	} else {
-		p.numPort, _ = strconv.Atoi(p.Port)
+		p.NumPort, _ = strconv.Atoi(p.Port)
 	}
-	if p.numPort < 1 || p.numPort > 65535 {
+	if p.NumPort < 1 || p.NumPort > 65535 {
 		// if undefined or wrong value - will be treated as undefined
-		p.numPort = 0
+		p.NumPort = 0
 	}
 }

@@ -23,7 +23,7 @@ type Prober struct {
 }
 
 func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober, error) {
-	probe.validateAndSetDefaults()
+	probe.ValidateAndSetDefaults()
 	p := &Prober{
 		probe:          probe,
 		name:           name,

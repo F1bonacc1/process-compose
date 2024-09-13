@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	verboseOutput = false
+	stopVerboseOutput = false
 )
 
 // stopCmd represents the stop command
@@ -24,7 +24,7 @@ var stopCmd = &cobra.Command{
 			log.Fatal().Err(err).Msgf("failed to stop processes %v", args)
 		}
 
-		if verboseOutput {
+		if stopVerboseOutput {
 			status, exitCode := prepareVerboseOutput(stopped, args)
 			fmt.Print(status)
 			os.Exit(exitCode)
@@ -78,5 +78,5 @@ func prepareConciseOutput(stopped map[string]string, processes []string) (string
 
 func init() {
 	processCmd.AddCommand(stopCmd)
-	stopCmd.Flags().BoolVarP(&verboseOutput, "verbose", "v", verboseOutput, "verbose output")
+	stopCmd.Flags().BoolVarP(&stopVerboseOutput, "verbose", "v", stopVerboseOutput, "verbose output")
 }

@@ -59,7 +59,7 @@ func (p *PcClient) stopProcesses(names []string) (map[string]string, error) {
 	}
 	var respErr pcError
 	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-		log.Err(err).Msgf("failed to decode err stop process %v", names)
+		log.Err(err).Msgf("failed to decode err stop processes %v", names)
 		return nil, err
 	}
 	return nil, fmt.Errorf(respErr.Error)

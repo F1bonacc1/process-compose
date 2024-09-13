@@ -357,6 +357,23 @@ const docTemplate = `{
                 }
             }
         },
+        "/project": {
+            "post": {
+                "description": "Update running project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Updates running processes",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/project/state": {
             "get": {
                 "description": "Retrieves project state information",

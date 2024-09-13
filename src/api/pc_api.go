@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/f1bonacc1/process-compose/src/types"
 	"net/http"
 	"strconv"
 
@@ -276,6 +277,31 @@ func (api *PcApi) ShutDownProject(c *gin.Context) {
 }
 
 // @Schemes
+// @Description Update running project
+// @Tags Project
+// @Summary Updates running processes
+// @Produce  json
+// @Success 200
+// @Router /project [post]
+func (api *PcApi) UpdateProject(c *gin.Context) {
+	var project types.Project
+	if err := c.ShouldBindJSON(&project); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	status, err := api.project.UpdateProject(&project)
+	if err != nil {
+		if len(status) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusMultiStatus, status)
+		}
+		return
+	}
+	c.JSON(http.StatusOK, status)
+}
+
+// @Schemes
 // @Description Retrieves project state information
 // @Tags Project
 // @Summary Get project state
@@ -285,12 +311,12 @@ func (api *PcApi) ShutDownProject(c *gin.Context) {
 func (api *PcApi) GetProjectState(c *gin.Context) {
 	withMemory := c.DefaultQuery("withMemory", "false")
 	checkMem, _ := strconv.ParseBool(withMemory)
-	ports, err := api.project.GetProjectState(checkMem)
+	state, err := api.project.GetProjectState(checkMem)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, ports)
+	c.JSON(http.StatusOK, state)
 }

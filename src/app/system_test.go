@@ -639,3 +639,173 @@ func TestSystem_TestReadyLine(t *testing.T) {
 		return
 	}
 }
+
+func TestUpdateProject(t *testing.T) {
+	proc1 := "process1"
+	proc2 := "process2"
+	proc3 := "process3"
+	shell := command.DefaultShellConfig()
+	p, err := NewProjectRunner(&ProjectOpts{
+		project: &types.Project{
+			ShellConfig: shell,
+			Processes: map[string]types.ProcessConfig{
+				"process1": {
+					Name:        proc1,
+					ReplicaName: proc1,
+					Executable:  shell.ShellCommand,
+					Args:        []string{shell.ShellArgument, "echo process1"},
+					Environment: []string{
+						"VAR1=value1",
+						"VAR2=value2",
+					},
+				},
+				"process2": {
+					Name:        proc2,
+					ReplicaName: proc2,
+					Executable:  shell.ShellCommand,
+					Args:        []string{shell.ShellArgument, "echo process2"},
+					Environment: []string{
+						"VAR3=value3",
+						"VAR4=value4",
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	go p.Run()
+	time.Sleep(100 * time.Millisecond)
+
+	// Test when no changes are made
+	project := &types.Project{
+		ShellConfig: shell,
+		Processes: map[string]types.ProcessConfig{
+			"process1": {
+				Name:        proc1,
+				ReplicaName: proc1,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo process1"},
+				Environment: []string{
+					"VAR1=value1",
+					"VAR2=value2",
+				},
+			},
+			"process2": {
+				Name:        proc2,
+				ReplicaName: proc2,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo process2"},
+				Environment: []string{
+					"VAR3=value3",
+					"VAR4=value4",
+				},
+			},
+		},
+	}
+	status, err := p.UpdateProject(project)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(status) != 0 {
+		t.Errorf("Unexpected status: %v", status)
+	}
+
+	// Test when a process is updated
+	project = &types.Project{
+		ShellConfig: shell,
+		Processes: map[string]types.ProcessConfig{
+			"process1": {
+				Name:        proc1,
+				ReplicaName: proc1,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo updated"},
+				Environment: []string{
+					"VAR1=value1",
+					"VAR2=value2",
+				},
+			},
+			"process2": {
+				Name:        proc2,
+				ReplicaName: proc2,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo process2"},
+				Environment: []string{
+					"VAR3=value3",
+					"VAR4=value4",
+				},
+			},
+		},
+	}
+	status, err = p.UpdateProject(project)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	proc, ok := p.project.Processes[proc1]
+	if !ok {
+		t.Errorf("Process 'process1' not found in updated project")
+	}
+	if proc.Args[1] != "echo updated" {
+		t.Errorf("Process 'process1' command is %s want 'echo updated'", proc.Args[1])
+	}
+	updatedStatus := status[proc1]
+	if updatedStatus != types.ProcessUpdateUpdated {
+		t.Errorf("Process 'process1' status is %s want %s", updatedStatus, types.ProcessUpdateUpdated)
+	}
+
+	// Test when a process is deleted
+	project = &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			"process2": {
+				Name:        proc2,
+				ReplicaName: proc2,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo process2"},
+				Environment: []string{
+					"VAR3=value3",
+					"VAR4=value4",
+				},
+			},
+		},
+	}
+	status, err = p.UpdateProject(project)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if _, ok = p.project.Processes[proc1]; ok {
+		t.Errorf("Process 'process1' still exists in updated project")
+	}
+	updatedStatus = status[proc1]
+	if updatedStatus != types.ProcessUpdateRemoved {
+		t.Errorf("Process 'process1' status is %s want %s", updatedStatus, types.ProcessUpdateRemoved)
+	}
+
+	// Test when a new process is added
+	project = &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			"process3": {
+				Name:        proc3,
+				ReplicaName: proc3,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo process3"},
+				Environment: []string{
+					"VAR5=value5",
+					"VAR6=value6",
+				},
+			},
+		},
+	}
+	status, err = p.UpdateProject(project)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if _, ok = p.project.Processes[proc3]; !ok {
+		t.Errorf("Process 'process3' not found in updated project")
+	}
+	updatedStatus = status[proc3]
+	if updatedStatus != types.ProcessUpdateAdded {
+		t.Errorf("Process 'process1' status is %s want %s", updatedStatus, types.ProcessUpdateAdded)
+	}
+}

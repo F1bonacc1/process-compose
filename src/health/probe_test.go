@@ -78,7 +78,7 @@ func TestProbe_validateAndSetDefaults(t *testing.T) {
 				SuccessThreshold: tt.fields.SuccessThreshold,
 				FailureThreshold: tt.fields.FailureThreshold,
 			}
-			p.validateAndSetDefaults()
+			p.ValidateAndSetDefaults()
 			if p.InitialDelay != tt.want.InitialDelay {
 				t.Errorf("Probe.InitialDelay = %v, want %v", p.InitialDelay, tt.want.InitialDelay)
 			}
