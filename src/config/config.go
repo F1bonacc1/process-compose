@@ -43,6 +43,8 @@ var (
 		"attach",
 		"process",
 		"project",
+		"list",
+		"ls",
 	}
 )
 

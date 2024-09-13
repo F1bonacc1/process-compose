@@ -101,6 +101,7 @@ func printStatesAsTable(states []types.ProcessState) {
 
 func init() {
 	processCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().StringVarP(pcFlags.OutputFormat, "output", "o", *pcFlags.OutputFormat, "Output format. One of: (json, wide)")
 }

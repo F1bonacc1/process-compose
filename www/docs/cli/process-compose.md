@@ -38,6 +38,7 @@ process-compose [flags]
 * [process-compose completion](process-compose_completion.md)	 - Generate the autocompletion script for the specified shell
 * [process-compose down](process-compose_down.md)	 - Stops all the running processes and terminates the Process Compose
 * [process-compose info](process-compose_info.md)	 - Print configuration info
+* [process-compose list](process-compose_list.md)	 - List available processes
 * [process-compose process](process-compose_process.md)	 - Execute operations on the available processes
 * [process-compose project](process-compose_project.md)	 - Execute operations on a running Process Compose project
 * [process-compose run](process-compose_run.md)	 - Run PROCESS in the foreground, and its dependencies in the background
