@@ -175,6 +175,8 @@ In case the `shutdown.command` is defined:
 2. Wait for `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
 3. In case of timeout, the process group will receive the `SIGKILL` signal (irrespective of the `shutdown.parent_only` option).
 
+In case the `shutdown.timeout_seconds` is defined (without `shutdown.command`) and the process will fail to terminate within that time, the process group will receive the `SIGKILL` signal.
+
 ## Background (detached) Processes
 
 ```yaml hl_lines="4"

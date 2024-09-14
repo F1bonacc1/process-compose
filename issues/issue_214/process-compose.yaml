@@ -1,0 +1,15 @@
+version: "0.5"
+log_level: info
+log_length: 300
+
+processes:
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+    shutdown:
+      timeout_seconds: 5
+
+  sigterm_resistant:
+    command: "trap '' SIGTERM && sleep 60"
+    shutdown:
+      timeout_seconds: 5

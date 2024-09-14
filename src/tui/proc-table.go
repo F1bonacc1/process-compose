@@ -183,7 +183,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 		switch event.Key() {
 		case pv.shortcuts.ShortCutKeys[ActionProcessStop].key:
 			name := pv.getSelectedProcName()
-			pv.project.StopProcess(name)
+			go pv.handleProcessStopped(name)
 		case pv.shortcuts.ShortCutKeys[ActionProcessStart].key:
 			pv.startProcess()
 			pv.showPassIfNeeded()
@@ -456,5 +456,15 @@ func (pv *pcView) selectFirstEnabledProcess() {
 			pv.procTable.Select(i, 1)
 			return
 		}
+	}
+}
+
+func (pv *pcView) handleProcessStopped(name string) {
+	ctx, cancel := context.WithCancel(context.Background())
+	pv.showAutoProgress(ctx, time.Second*1)
+	err := pv.project.StopProcess(name)
+	cancel()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to stop process")
 	}
 }

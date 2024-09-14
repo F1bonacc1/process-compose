@@ -34,9 +34,11 @@ func (pv *pcView) createStatTable() *tview.Table {
 	table.SetCell(2, 1, pv.procCountCell)
 	table.SetCell(0, 2, tview.NewTableCell("").
 		SetSelectable(false).
+		SetAlign(tview.AlignCenter).
 		SetExpansion(0))
 	table.SetCell(1, 2, tview.NewTableCell("").
 		SetSelectable(false).
+		SetAlign(tview.AlignCenter).
 		SetExpansion(0))
 
 	table.SetCell(0, 3, tview.NewTableCell(pv.getPcTitle()).
@@ -102,7 +104,10 @@ func (pv *pcView) showAutoProgress(ctx context.Context, duration time.Duration) 
 	go func() {
 		ticker := time.NewTicker(duration / time.Duration(full))
 		defer ticker.Stop()
-		defer pv.statTable.SetCell(1, 2, tview.NewTableCell(""))
+		defer pv.statTable.SetCell(1, 2, tview.NewTableCell("").
+			SetSelectable(false).
+			SetAlign(tview.AlignCenter).
+			SetExpansion(0))
 		for {
 			select {
 			case <-ctx.Done():
@@ -132,5 +137,8 @@ func (pv *pcView) showAutoProgress(ctx context.Context, duration time.Duration) 
 }
 
 func (pv *pcView) hideAttentionMessage() {
-	pv.statTable.SetCell(0, 2, tview.NewTableCell(""))
+	pv.statTable.SetCell(0, 2, tview.NewTableCell("").
+		SetSelectable(false).
+		SetAlign(tview.AlignCenter).
+		SetExpansion(0))
 }

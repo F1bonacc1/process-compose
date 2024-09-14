@@ -53,6 +53,9 @@ type Process struct {
 	runCancelFn         context.CancelFunc
 	waitForPassCtx      context.Context
 	waitForPassCancelFn context.CancelFunc
+	mtxStopFn           sync.Mutex
+	waitForStoppedCtx   context.Context
+	waitForStoppedFn    context.CancelFunc
 	procColor           func(a ...interface{}) string
 	noColor             func(a ...interface{}) string
 	redColor            func(a ...interface{}) string
@@ -362,7 +365,9 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.getStatusName())
 		// prevent pending process from running
-		p.onProcessEnd(types.ProcessStateTerminating)
+		if p.isOneOfStates(types.ProcessStatePending) {
+			p.onProcessEnd(types.ProcessStateTerminating)
+		}
 		return nil
 	}
 	p.setState(types.ProcessStateTerminating)
@@ -376,8 +381,26 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
 	}
-
-	return p.command.Stop(p.procConf.ShutDownParams.Signal, p.procConf.ShutDownParams.ParentOnly)
+	err := p.command.Stop(p.procConf.ShutDownParams.Signal, p.procConf.ShutDownParams.ParentOnly)
+	if p.procConf.ShutDownParams.ShutDownTimeout == UndefinedShutdownTimeoutSec {
+		return err
+	}
+	p.mtxStopFn.Lock()
+	p.waitForStoppedCtx, p.waitForStoppedFn = context.WithTimeout(context.Background(), time.Duration(p.procConf.ShutDownParams.ShutDownTimeout)*time.Second)
+	p.mtxStopFn.Unlock()
+	select {
+	case <-p.waitForStoppedCtx.Done():
+		err = p.waitForStoppedCtx.Err()
+		switch {
+		case errors.Is(err, context.Canceled):
+			return nil
+		case errors.Is(err, context.DeadlineExceeded):
+			return p.command.Stop(int(syscall.SIGKILL), p.procConf.ShutDownParams.ParentOnly)
+		default:
+			log.Error().Err(err).Msgf("terminating %s with timeout %d failed", p.getName(), p.procConf.ShutDownParams.ShutDownTimeout)
+			return err
+		}
+	}
 }
 
 func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
@@ -428,6 +451,12 @@ func (p *Process) onProcessEnd(state string) {
 	if isStringDefined(p.procConf.LogLocation) {
 		p.logger.Close()
 	}
+	p.mtxStopFn.Lock()
+	if p.waitForStoppedFn != nil {
+		p.waitForStoppedFn()
+		p.waitForStoppedFn = nil
+	}
+	p.mtxStopFn.Unlock()
 	p.stopProbes()
 	if p.readyProber != nil {
 		p.readyCancelFn()

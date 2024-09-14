@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -808,4 +809,88 @@ func TestUpdateProject(t *testing.T) {
 	if updatedStatus != types.ProcessUpdateAdded {
 		t.Errorf("Process 'process1' status is %s want %s", updatedStatus, types.ProcessUpdateAdded)
 	}
+}
+
+func assertProcessStatus(t *testing.T, proc *Process, procName string, wantStatus string) {
+	t.Helper()
+	status := proc.getStatusName()
+	if status != wantStatus {
+		t.Fatalf("process %s status want %s got %s", procName, wantStatus, status)
+	}
+}
+
+func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
+	ignoresSigTerm := "IgnoresSIGTERM"
+	shell := command.DefaultShellConfig()
+	timeout := 3
+
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			ignoresSigTerm: {
+				Name:        ignoresSigTerm,
+				ReplicaName: ignoresSigTerm,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, ""},
+				ShutDownParams: types.ShutDownParams{
+					ShutDownTimeout: timeout,
+					Signal:          int(syscall.SIGTERM),
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+	t.Run("with timeout sigterm fail", func(t *testing.T) {
+		procConf := project.Processes[ignoresSigTerm]
+		procConf.Args[1] = "trap '' SIGTERM && sleep 60"
+		project.Processes[ignoresSigTerm] = procConf
+		runner, err := NewProjectRunner(&ProjectOpts{project: project})
+		if err != nil {
+			t.Fatalf("%s", err)
+		}
+		go runner.Run()
+		time.Sleep(100 * time.Millisecond)
+		proc := runner.getRunningProcess(ignoresSigTerm)
+		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateRunning)
+
+		// If the test fails, cleanup after ourselves
+		defer proc.command.Stop(int(syscall.SIGKILL), true)
+
+		go func() {
+			err = runner.StopProcess(ignoresSigTerm)
+			if err != nil {
+				t.Fatalf("%s", err)
+			}
+		}()
+
+		for i := 0; i < timeout-1; i++ {
+			time.Sleep(time.Second)
+			assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateTerminating)
+		}
+
+		time.Sleep(2 * time.Second)
+		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateCompleted)
+	})
+
+	t.Run("with timeout sigterm success", func(t *testing.T) {
+		procConf := project.Processes[ignoresSigTerm]
+		procConf.Args[1] = "sleep 60"
+		project.Processes[ignoresSigTerm] = procConf
+		runner, err := NewProjectRunner(&ProjectOpts{project: project})
+		if err != nil {
+			t.Fatalf("%s", err)
+		}
+		go runner.Run()
+		time.Sleep(100 * time.Millisecond)
+		proc := runner.getRunningProcess(ignoresSigTerm)
+		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateRunning)
+		go func() {
+			err = runner.StopProcess(ignoresSigTerm)
+			if err != nil {
+				t.Fatalf("%s", err)
+			}
+		}()
+		time.Sleep(200 * time.Millisecond)
+		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateCompleted)
+	})
+
 }
