@@ -542,7 +542,8 @@ func RunTUIAsync(project app.IProject, options ...Option) {
 	setupTui(project, options...)
 	go func() {
 		if err := pcv.appView.Run(); err != nil {
-			log.Fatal().Err(err).Msgf("Failed to start TUI")
+			log.Error().Err(err).Msgf("TUI stopped")
+			pcv.handleShutDown()
 		}
 	}()
 }
@@ -550,7 +551,8 @@ func RunTUIAsync(project app.IProject, options ...Option) {
 func RunTUI(project app.IProject, options ...Option) {
 	setupTui(project, options...)
 	if err := pcv.appView.Run(); err != nil {
-		log.Fatal().Err(err).Msgf("Failed to start TUI")
+		log.Error().Err(err).Msgf("TUI stopped")
+		pcv.handleShutDown()
 	}
 }
 
