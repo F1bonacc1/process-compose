@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 )
 
 func BuildCommand(cmd string, args []string) *CmdWrapper {
@@ -29,6 +30,18 @@ func BuildCommandContext(ctx context.Context, shellCmd string) *CmdWrapper {
 func BuildCommandShellArgContext(ctx context.Context, shell ShellConfig, cmd string) *CmdWrapper {
 	return &CmdWrapper{
 		cmd: exec.CommandContext(ctx, shell.ShellCommand, shell.ShellArgument, cmd),
+	}
+}
+
+func BuildApptainerCommand(containerRuntime string, containerExecution string, containerVolumes []string, containerArgs []string, containerImage string, containerCmd string, cmdArgs []string) *CmdWrapper {
+	volumes := "-B " + strings.Join(containerVolumes, ",")
+	container_args := strings.Join(containerArgs, " ")
+	args_string := strings.Join(cmdArgs, " ")
+
+	args := []string{containerExecution, volumes, container_args, containerImage, containerCmd, args_string}
+
+	return &CmdWrapper{
+		cmd: exec.Command(containerRuntime, args...),
 	}
 }
 
