@@ -167,3 +167,7 @@ func (p *PcClient) SetProcessPassword(_, _ string) error {
 func (p *PcClient) UpdateProject(project *types.Project) (map[string]string, error) {
 	return p.updateProject(project)
 }
+
+func (p *PcClient) UpdateProcess(updated *types.ProcessConfig) error {
+	return p.updateProcess(updated)
+}

@@ -21,7 +21,7 @@ type LoggerConfig struct {
 	// Rotation is the configuration for logging rotation
 	Rotation *LogRotationConfig `yaml:"rotation"`
 	// FieldsOrder is the order in which fields are logged
-	FieldsOrder []string `yaml:"fields_order"`
+	FieldsOrder []string `yaml:"fields_order,omitempty"`
 	// DisableJSON disables log JSON formatting
 	DisableJSON bool `yaml:"disable_json"`
 	// TimestampFormat is the format of the timestamp

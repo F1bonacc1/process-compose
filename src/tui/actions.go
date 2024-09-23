@@ -39,6 +39,7 @@ const (
 	ActionFocusChange      = ActionName("focus_change")
 	ActionClearLog         = ActionName("clear_log")
 	ActionMarkLog          = ActionName("mark_log")
+	ActionEditProcess      = ActionName("edit_process")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -67,6 +68,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionFocusChange:      tcell.KeyTab,
 	ActionClearLog:         tcell.KeyCtrlK,
 	ActionMarkLog:          tcell.KeyRune,
+	ActionEditProcess:      tcell.KeyCtrlE,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -99,6 +101,7 @@ var procActionsOrder = []ActionName{
 	ActionProcessScreen,
 	ActionProcessStop,
 	ActionProcessRestart,
+	ActionEditProcess,
 	ActionNsFilter,
 	ActionHideDisabled,
 	ActionQuit,
@@ -358,6 +361,9 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionMarkLog: {
 				Description: "Add Mark to Log",
+			},
+			ActionEditProcess: {
+				Description: "Edit Process",
 			},
 		},
 	}

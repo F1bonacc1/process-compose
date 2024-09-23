@@ -7,6 +7,7 @@ TUI Allows you to:
 - Stop processes
 - Review logs
 - Restart running processes
+- Edit processes' configuration
 
 TUI is the default run mode, but it's possible to disable it:
 

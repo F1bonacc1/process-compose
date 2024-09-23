@@ -50,6 +50,23 @@ const docTemplate = `{
                 }
             }
         },
+        "/process": {
+            "post": {
+                "description": "Update porcess",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Updates process configuration",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/process/info/{name}": {
             "get": {
                 "description": "Retrieves the given process and its config",

@@ -1,10 +1,12 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
+	"net/http"
 	"sort"
 )
 
@@ -91,4 +93,28 @@ func (p *PcClient) getProcessPorts(name string) (*types.ProcessPorts, error) {
 	}
 
 	return &sResp, nil
+}
+
+func (p *PcClient) updateProcess(procInfo *types.ProcessConfig) error {
+	url := fmt.Sprintf("http://%s/process", p.address)
+	jsonData, err := json.Marshal(procInfo)
+	if err != nil {
+		log.Err(err).Msg("failed to marshal process")
+		return err
+	}
+	resp, err := p.client.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Err(err).Msg("failed to update process")
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		return nil
+	}
+	var respErr pcError
+	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
+		log.Err(err).Msg("failed to decode err update process")
+		return err
+	}
+	return fmt.Errorf(respErr.Error)
 }

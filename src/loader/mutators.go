@@ -7,7 +7,6 @@ import (
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
-	"os"
 )
 
 type mutatorFunc func(p *types.Project)
@@ -96,33 +95,12 @@ func cloneReplicas(p *types.Project) {
 }
 
 func assignExecutableAndArgs(p *types.Project) {
+	elevatedShellArg := p.ShellConfig.ElevatedShellArg
+	if p.IsTuiDisabled {
+		elevatedShellArg = ""
+	}
 	for name, proc := range p.Processes {
-		elevatedShellArg := p.ShellConfig.ElevatedShellArg
-		if p.IsTuiDisabled {
-			elevatedShellArg = ""
-		}
-		if proc.Command != "" || len(proc.Entrypoint) == 0 {
-			if len(proc.Entrypoint) > 0 {
-				message := fmt.Sprintf("'command' and 'entrypoint' are set! Using command (process: %s)", name)
-				_, _ = fmt.Fprintln(os.Stderr, "process-compose:", message)
-				log.Warn().Msg(message)
-			}
-
-			proc.Executable = p.ShellConfig.ShellCommand
-
-			if proc.IsElevated {
-				proc.Args = []string{p.ShellConfig.ShellArgument, fmt.Sprintf("%s %s %s", p.ShellConfig.ElevatedShellCmd, elevatedShellArg, proc.Command)}
-			} else {
-				proc.Args = []string{p.ShellConfig.ShellArgument, proc.Command}
-			}
-		} else {
-			if proc.IsElevated {
-				proc.Entrypoint = append([]string{p.ShellConfig.ElevatedShellCmd, elevatedShellArg}, proc.Entrypoint...)
-			}
-			proc.Executable = proc.Entrypoint[0]
-			proc.Args = proc.Entrypoint[1:]
-
-		}
+		proc.AssignProcessExecutableAndArgs(p.ShellConfig, elevatedShellArg)
 
 		p.Processes[name] = proc
 	}

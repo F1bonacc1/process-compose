@@ -239,6 +239,9 @@ func (pv *pcView) setShortCutsActions() {
 	pv.shortcuts.setAction(ActionMarkLog, func() {
 		pv.logsText.AddMark()
 	})
+	pv.shortcuts.setAction(ActionEditProcess, func() {
+		pv.editSelectedProcess()
+	})
 }
 
 func (pv *pcView) setFullScreen(isFullScreen bool) {

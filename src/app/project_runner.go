@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
+	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
@@ -579,13 +580,14 @@ func (p *ProjectRunner) ScaleProcess(name string, scale int) error {
 		return err
 	}
 	if processConfig, ok := p.project.Processes[name]; ok {
-		scaleDelta := scale - processConfig.Replicas
+		origScale := p.getCurrentReplicaCount(processConfig.Name)
+		scaleDelta := scale - origScale
 		if scaleDelta < 0 {
-			log.Info().Msgf("scaling down %s by %d", name, scaleDelta*-1)
+			log.Info().Msgf("scaling down %s by %d", name, -scaleDelta)
 			p.scaleDownProcess(processConfig.Name, scale)
 		} else if scaleDelta > 0 {
 			log.Info().Msgf("scaling up %s by %d", name, scaleDelta)
-			p.scaleUpProcess(processConfig, scaleDelta, scale)
+			p.scaleUpProcess(processConfig, scaleDelta, scale, origScale)
 		} else {
 			log.Info().Msgf("no change in scale of %s", name)
 			return nil
@@ -597,8 +599,17 @@ func (p *ProjectRunner) ScaleProcess(name string, scale int) error {
 	return nil
 }
 
-func (p *ProjectRunner) scaleUpProcess(proc types.ProcessConfig, toAdd, scale int) {
-	origScale := proc.Replicas
+func (p *ProjectRunner) getCurrentReplicaCount(name string) int {
+	counter := 0
+	for _, proc := range p.project.Processes {
+		if proc.Name == name {
+			counter++
+		}
+	}
+	return counter
+}
+
+func (p *ProjectRunner) scaleUpProcess(proc types.ProcessConfig, toAdd, scale, origScale int) {
 	for i := 0; i < toAdd; i++ {
 		proc.ReplicaNum = origScale + i
 		proc.Replicas = scale
@@ -708,7 +719,9 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	p.statesMutex.Unlock()
 	p.project.Processes[proc.ReplicaName] = proc
 	p.initProcessLog(proc.ReplicaName)
-	p.runProcess(&proc)
+	if !proc.Disabled {
+		p.runProcess(&proc)
+	}
 }
 
 func (p *ProjectRunner) selectRunningProcesses(procList []string) error {
@@ -887,15 +900,58 @@ func (p *ProjectRunner) UpdateProject(project *types.Project) (map[string]string
 	}
 	//Update processes
 	for name, proc := range updatedProcs {
-		err := p.removeProcess(name)
+		err := p.UpdateProcess(&proc)
 		if err != nil {
-			log.Err(err).Msgf("Failed to remove process %s", name)
+			log.Err(err).Msgf("Failed to update process %s", name)
 			errs = append(errs, err)
 			status[name] = types.ProcessUpdateError
 			continue
 		}
-		p.addProcessAndRun(proc)
 		status[name] = types.ProcessUpdateUpdated
 	}
 	return status, errors.Join(errs...)
+}
+
+func (p *ProjectRunner) UpdateProcess(updated *types.ProcessConfig) error {
+	isScaleChanged := false
+	validateProbes(updated.LivenessProbe)
+	validateProbes(updated.ReadinessProbe)
+	updated.AssignProcessExecutableAndArgs(p.project.ShellConfig, p.project.ShellConfig.ElevatedShellArg)
+	if currentProc, ok := p.project.Processes[updated.ReplicaName]; ok {
+		equal := currentProc.Compare(updated)
+		if equal {
+			log.Debug().Msgf("Process %s is up to date", updated.Name)
+			return nil
+		}
+		log.Debug().Msgf("Process %s is updated", updated.Name)
+		if currentProc.Replicas != updated.Replicas {
+			isScaleChanged = true
+		}
+	} else {
+		err := fmt.Errorf("no such process: %s", updated.ReplicaName)
+		log.Err(err).Msgf("Failed to update process %s", updated.ReplicaName)
+		return err
+	}
+
+	err := p.removeProcess(updated.ReplicaName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to remove process %s", updated.ReplicaName)
+		return err
+	}
+	p.addProcessAndRun(*updated)
+
+	if isScaleChanged {
+		err = p.ScaleProcess(updated.ReplicaName, updated.Replicas)
+		if err != nil {
+			log.Err(err).Msgf("Failed to scale process %s", updated.Name)
+			return err
+		}
+	}
+	return nil
+}
+
+func validateProbes(probe *health.Probe) {
+	if probe != nil {
+		probe.ValidateAndSetDefaults()
+	}
 }

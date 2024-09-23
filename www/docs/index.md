@@ -44,3 +44,5 @@ Check the [Documentation](launcher.md) for more advanced use cases.
 - Run Multiple Replicas of a Process
 - Run a Foreground Process 
 - Themes Support
+- On the fly Process configuration edit
+- On the fly Project update

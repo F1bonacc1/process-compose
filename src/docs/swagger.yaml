@@ -23,6 +23,17 @@ paths:
       summary: Liveness Check
       tags:
       - Liveness
+  /process:
+    post:
+      description: Update porcess
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Updates process configuration
+      tags:
+      - Process
   /process/{name}:
     get:
       description: Retrieves the given process and its status

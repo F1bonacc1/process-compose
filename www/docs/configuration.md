@@ -224,6 +224,45 @@ Using multiple `process-compose` files lets you customize a `process-compose` ap
 
 See the [Merging Configuration](merge.md) for more information on merging files.
 
+## On the Fly Configuration Edit
+
+Process Compose allows you to edit processes configuration without restarting the entire project. To achieve that, select one of the following options:
+
+### Project Edit
+
+Modify your `process-compose.yaml` file (or files) and apply the changes by running:
+
+```shell
+process-compose project update -f process-compose.yaml # add -v for verbose output, add -f for additional files to be merged
+```
+
+This command will:
+
+1. If there are changes to existing processes in the updated `process-compose.yaml` file, stop the old instances of these processes and start new instances with the updated config.
+2. If there are only new processes in the updated `process-compose.yaml` file, start the new processes without affecting the others.
+3. If some processes no longer exist in the updated `process-compose.yaml` file, stop only those old processes without touching the others.
+
+### Process Edit
+
+To edit a single process:
+
+1. Select it in the TUI or in the TUI client.
+2. Press `CTRL+E`
+3. Apply the changes, save and quit the editor.
+4. The process will restart with the new configuration, or won't restart if there are no changes.
+
+:bulb: **Notes:**
+
+1. These changes are not persisted and not applied to your `process-compose.yaml`
+2. In case of parsing errors or unrecognized fields:
+   1. All the changes will be reverted to the last known correct state.
+   2. The editor will open again with a detailed error description at the top of the file.
+3. Process Compose will use one of:
+   1. Your default editor defined in `$EDITOR` environment variable. If empty:
+   2. For non-Windows OSs: `vim`, `nano`, `vi` in that order.
+   3. For Windows OS: `notepad.exe`, `notepad++.exe`, `code.exe`, `gvim.exe` in that order.
+4. Some of the fields are read only.
+
 ## Backend
 
 For cases where your process compose requires a non default or transferable backend definition, setting an environment variable won't do. For that, you can configure it directly in the `process-compose.yaml` file:

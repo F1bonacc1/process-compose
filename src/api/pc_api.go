@@ -302,6 +302,27 @@ func (api *PcApi) UpdateProject(c *gin.Context) {
 }
 
 // @Schemes
+// @Description Update porcess
+// @Tags Process
+// @Summary Updates process configuration
+// @Produce  json
+// @Success 200
+// @Router /process [post]
+func (api *PcApi) UpdateProcess(c *gin.Context) {
+	var proc types.ProcessConfig
+	if err := c.ShouldBindJSON(&proc); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := api.project.UpdateProcess(&proc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, proc)
+}
+
+// @Schemes
 // @Description Retrieves project state information
 // @Tags Project
 // @Summary Get project state

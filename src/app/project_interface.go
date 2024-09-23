@@ -30,4 +30,5 @@ type IProject interface {
 	GetProcessPorts(name string) (*types.ProcessPorts, error)
 	SetProcessPassword(name string, password string) error
 	UpdateProject(project *types.Project) (map[string]string, error)
+	UpdateProcess(updated *types.ProcessConfig) error
 }

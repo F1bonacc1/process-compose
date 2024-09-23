@@ -40,6 +40,17 @@ func (pv *pcView) runShellProcess() {
 	pv.runForeground(shellCmd)
 }
 
+func (pv *pcView) runCommandInForeground(cmd string, args ...string) {
+	shellCmd := &types.ProcessConfig{
+		Executable: cmd,
+		Args:       args,
+		RestartPolicy: types.RestartPolicyConfig{
+			Restart: types.RestartPolicyNo,
+		},
+	}
+	pv.runForeground(shellCmd)
+}
+
 func (pv *pcView) runForeground(info *types.ProcessConfig) bool {
 	pv.halt()
 	defer pv.resume()

@@ -7,7 +7,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"os/exec"
 	"runtime"
-	"strings"
 )
 
 type validatorFunc func(p *types.Project) error
@@ -38,19 +37,13 @@ func validateLogLevel(p *types.Project) error {
 }
 
 func validateProcessConfig(p *types.Project) error {
-	for key, proc := range p.Processes {
-		if len(proc.Extensions) == 0 {
-			continue
-		}
-		for extKey := range proc.Extensions {
-			if strings.HasPrefix(extKey, "x-") {
-				continue
-			}
-			errStr := fmt.Sprintf("unknown key '%s' found in process '%s'", extKey, key)
+	for _, proc := range p.Processes {
+		err := proc.ValidateProcessConfig()
+		if err != nil {
+			log.Err(err).Msgf("Process config validation failed")
 			if p.IsStrict {
-				return fmt.Errorf(errStr)
+				return err
 			}
-			log.Error().Msgf(errStr)
 		}
 	}
 	return nil

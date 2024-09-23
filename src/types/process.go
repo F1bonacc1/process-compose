@@ -2,9 +2,13 @@ package types
 
 import (
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/health"
+	"github.com/rs/zerolog/log"
 	"math"
+	"os"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -18,7 +22,7 @@ type ProcessConfig struct {
 	Disabled          bool                   `yaml:"disabled,omitempty"`
 	IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
 	Command           string                 `yaml:"command"`
-	Entrypoint        []string               `yaml:"entrypoint"`
+	Entrypoint        []string               `yaml:"entrypoint,omitempty"`
 	LogLocation       string                 `yaml:"log_location,omitempty"`
 	LoggerConfig      *LoggerConfig          `yaml:"log_configuration,omitempty"`
 	Environment       Environment            `yaml:"environment,omitempty"`
@@ -34,7 +38,7 @@ type ProcessConfig struct {
 	Replicas          int                    `yaml:"replicas"`
 	Extensions        map[string]interface{} `yaml:",inline"`
 	Description       string                 `yaml:"description,omitempty"`
-	Vars              Vars                   `yaml:"vars"`
+	Vars              Vars                   `yaml:"vars,omitempty"`
 	IsForeground      bool                   `yaml:"is_foreground"`
 	IsTty             bool                   `yaml:"is_tty"`
 	IsElevated        bool                   `yaml:"is_elevated"`
@@ -101,10 +105,52 @@ func (p *ProcessConfig) Compare(another *ProcessConfig) bool {
 		!reflect.DeepEqual(p.RestartPolicy, another.RestartPolicy) ||
 		!reflect.DeepEqual(p.Environment, another.Environment) ||
 		!reflect.DeepEqual(p.Args, another.Args) {
+		//diffs := compareStructs(*p, *another)
+		//log.Warn().Msgf("Structs are different: %s", diffs)
 		return false
 	}
 
 	return true
+}
+func (p *ProcessConfig) AssignProcessExecutableAndArgs(shellConf *command.ShellConfig, elevatedShellArg string) {
+	if p.Command != "" || len(p.Entrypoint) == 0 {
+		if len(p.Entrypoint) > 0 {
+			message := fmt.Sprintf("'command' and 'entrypoint' are set! Using command (process: %s)", p.Name)
+			_, _ = fmt.Fprintln(os.Stderr, "process-compose:", message)
+			log.Warn().Msg(message)
+		}
+
+		p.Executable = shellConf.ShellCommand
+
+		if len(p.Command) == 0 {
+			return
+		}
+		if p.IsElevated {
+			p.Args = []string{shellConf.ShellArgument, fmt.Sprintf("%s %s %s", shellConf.ElevatedShellCmd, elevatedShellArg, p.Command)}
+		} else {
+			p.Args = []string{shellConf.ShellArgument, p.Command}
+		}
+	} else {
+		if p.IsElevated {
+			p.Entrypoint = append([]string{shellConf.ElevatedShellCmd, elevatedShellArg}, p.Entrypoint...)
+		}
+		p.Executable = p.Entrypoint[0]
+		p.Args = p.Entrypoint[1:]
+	}
+}
+
+func (p *ProcessConfig) ValidateProcessConfig() error {
+	if len(p.Extensions) == 0 {
+		return nil // no error
+	}
+	for extKey := range p.Extensions {
+		if strings.HasPrefix(extKey, "x-") {
+			continue
+		}
+		return fmt.Errorf("unknown key '%s' found in process '%s'", extKey, p.Name)
+	}
+
+	return nil
 }
 
 func compareStructs(a, b interface{}) []string {

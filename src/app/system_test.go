@@ -650,7 +650,7 @@ func TestUpdateProject(t *testing.T) {
 		project: &types.Project{
 			ShellConfig: shell,
 			Processes: map[string]types.ProcessConfig{
-				"process1": {
+				proc1: {
 					Name:        proc1,
 					ReplicaName: proc1,
 					Executable:  shell.ShellCommand,
@@ -660,7 +660,7 @@ func TestUpdateProject(t *testing.T) {
 						"VAR2=value2",
 					},
 				},
-				"process2": {
+				proc2: {
 					Name:        proc2,
 					ReplicaName: proc2,
 					Executable:  shell.ShellCommand,
@@ -684,7 +684,7 @@ func TestUpdateProject(t *testing.T) {
 	project := &types.Project{
 		ShellConfig: shell,
 		Processes: map[string]types.ProcessConfig{
-			"process1": {
+			proc1: {
 				Name:        proc1,
 				ReplicaName: proc1,
 				Executable:  shell.ShellCommand,
@@ -694,7 +694,7 @@ func TestUpdateProject(t *testing.T) {
 					"VAR2=value2",
 				},
 			},
-			"process2": {
+			proc2: {
 				Name:        proc2,
 				ReplicaName: proc2,
 				Executable:  shell.ShellCommand,
@@ -718,7 +718,7 @@ func TestUpdateProject(t *testing.T) {
 	project = &types.Project{
 		ShellConfig: shell,
 		Processes: map[string]types.ProcessConfig{
-			"process1": {
+			proc1: {
 				Name:        proc1,
 				ReplicaName: proc1,
 				Executable:  shell.ShellCommand,
@@ -728,11 +728,10 @@ func TestUpdateProject(t *testing.T) {
 					"VAR2=value2",
 				},
 			},
-			"process2": {
+			proc2: {
 				Name:        proc2,
 				ReplicaName: proc2,
-				Executable:  shell.ShellCommand,
-				Args:        []string{shell.ShellArgument, "echo process2"},
+				Command:     "echo process2 updated",
 				Environment: []string{
 					"VAR3=value3",
 					"VAR4=value4",
@@ -756,10 +755,22 @@ func TestUpdateProject(t *testing.T) {
 		t.Errorf("Process 'process1' status is %s want %s", updatedStatus, types.ProcessUpdateUpdated)
 	}
 
+	proc, ok = p.project.Processes[proc2]
+	if !ok {
+		t.Errorf("Process 'process2' not found in updated project")
+	}
+	if proc.Args[1] != "echo process2 updated" {
+		t.Errorf("Process 'process2' command is %s want 'echo process2 updated'", proc.Args[1])
+	}
+	updatedStatus = status[proc2]
+	if updatedStatus != types.ProcessUpdateUpdated {
+		t.Errorf("Process 'process2' status is %s want %s", updatedStatus, types.ProcessUpdateUpdated)
+	}
+
 	// Test when a process is deleted
 	project = &types.Project{
 		Processes: map[string]types.ProcessConfig{
-			"process2": {
+			proc2: {
 				Name:        proc2,
 				ReplicaName: proc2,
 				Executable:  shell.ShellCommand,

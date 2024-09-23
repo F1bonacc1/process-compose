@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/api"
@@ -154,7 +155,8 @@ func setupLogger() *os.File {
 func handleErrorAndExit(err error) {
 	if err != nil {
 		log.Error().Err(err)
-		if exitErr, ok := err.(*app.ExitError); ok {
+		var exitErr *app.ExitError
+		if errors.As(err, &exitErr) {
 			os.Exit(exitErr.Code)
 		}
 		os.Exit(1)
