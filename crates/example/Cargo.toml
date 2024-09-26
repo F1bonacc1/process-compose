@@ -1,0 +1,19 @@
+[package]
+name = "example"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+reqwest = { version = "0.12", default-features = false, features = [
+  "json",
+  "stream",
+] }
+serde = { version = "1.0", default-features = false, features = ["derive"]}
+tokio = { version = "1.41", features = ["macros", "rt-multi-thread"] }
+serde_json = { version = "1.0", default-features = false }
+
+progenitor-client = { version = "0.10", default-features = false, optional = false}
+
+[build-dependencies]
+process-compose-client = { path = "../client", default-features = false, features = ["progenitor", "typify"] }
