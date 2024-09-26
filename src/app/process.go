@@ -590,9 +590,16 @@ func (p *Process) handleOutput(pipe io.ReadCloser, output string, handler func(m
 			p.procState.Health = types.ProcessHealthReady
 			p.readyLogCancelFn(nil)
 		}
-		if p.procConf.IsElevated &&
-			!p.passProvided &&
-			p.waitForPassCancelFn != nil {
+		p.checkElevatedProcOutput(line)
+		handler(strings.TrimSuffix(line, "\n"))
+	}
+	close(done)
+}
+
+func (p *Process) checkElevatedProcOutput(line string) {
+	if p.procConf.IsElevated &&
+		!p.passProvided {
+		if p.waitForPassCancelFn != nil {
 			if isWrongPasswordEntered(line) {
 				log.Warn().
 					Str("process", p.getName()).
@@ -605,10 +612,10 @@ func (p *Process) handleOutput(pipe io.ReadCloser, output string, handler func(m
 			}
 			p.waitForPassCancelFn()
 			p.waitForPassCancelFn = nil
+		} else {
+			p.passProvided = true
 		}
-		handler(strings.TrimSuffix(line, "\n"))
 	}
-	close(done)
 }
 
 func (p *Process) handleInfo(message string) {
