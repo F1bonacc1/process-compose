@@ -1,0 +1,34 @@
+[package]
+name = "process-compose-client"
+version = "1.64.1"
+description = "Client for Process Compose via OpenAPI and/or project file"
+license = "Apache-2.0"
+edition = "2021"
+include = [
+  "src/**",
+  "Cargo.toml",
+  "../../src/docs/swagger.json",
+  "../../schemas/process-compose-schema.json",
+  "../../README.md",
+]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+serde_json = { version = "^1.0", default-features = false }
+openapiv3 = { version = "^2", default-features = false }
+
+progenitor = { version = "^0.10", default-features = false, optional = true }
+prettyplease = { version = "^0.2.24", optional = true }
+syn = { version = "^2.0.80", optional = true }
+schemars = { version = "^0.8.*" }
+
+typify = { version = "^0.4", default-features = false, optional = true }
+
+[features]
+default = ["progenitor", "typify"]
+
+typify = ["dep:typify", "dep:prettyplease"]
+
+progenitor = ["dep:progenitor", "dep:prettyplease", "dep:syn"]
