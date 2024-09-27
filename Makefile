@@ -30,8 +30,8 @@ setup:
 
 ci: setup build testrace
 
-swag:
-	~/go/bin/swag init --dir src --output src/docs --parseDependency --parseInternal --parseDepth 1
+swag: swag2op ## Generate docs from swagger attributes in the code
+	./bin/swag2op init --dir src --output src/docs -g api/pc_api.go --openapiOutputDir src/docs
 
 build:
 	CGO_ENABLED=0 go build -o bin/${NAME}${EXT} ${LD_FLAGS} ./src
@@ -88,3 +88,16 @@ docs:
 	for f in ${DOCS_DIR}/*.md ; do sed -i 's/${USER}/<user>/g' $$f ; done
 	for f in ${DOCS_DIR}/*.md ; do sed -i 's/process-compose-[0-9]\+.sock/process-compose-<pid>.sock/g' $$f ; done
 
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+## Tool Binaries
+SWAG2OP_GEN ?= $(LOCALBIN)/swag2op
+
+.PHONY: swag2op
+swag2op: $(SWAG2OP_GEN) ## Download swag2op locally if necessary.
+$(SWAG2OP_GEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/swag2op || \
+	GOBIN=$(LOCALBIN) go install github.com/zxmfke/swagger2openapi3/cmd/swag2op@latest

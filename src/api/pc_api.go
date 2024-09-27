@@ -9,6 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @title           Swagger Process Compose API
+// @version         1.0
+// @description     This is a sample server Process Compose server.
+
+// @contact.name   Eugene Berger
+// @contact.url    https://f1bonacc1.github.io/process-compose/
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
 type PcApi struct {
 	project app.IProject
 }

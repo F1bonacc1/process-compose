@@ -1,419 +1,449 @@
 {
-    "swagger": "2.0",
+    "components": {},
     "info": {
-        "contact": {}
+        "contact": {
+            "name": "Eugene Berger",
+            "url": "https://f1bonacc1.github.io/process-compose/"
+        },
+        "description": "This is a sample server Process Compose server.",
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "title": "Swagger Process Compose API",
+        "version": "1.0"
     },
+    "openapi": "3.0.3",
     "paths": {
         "/hostname": {
             "get": {
                 "description": "Get process compose hostname",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Hostname"
-                ],
-                "summary": "Get Hostname",
                 "responses": {
                     "200": {
                         "description": "OK"
                     }
-                }
+                },
+                "summary": "Get Hostname",
+                "tags": [
+                    "Hostname"
+                ]
             }
         },
         "/live": {
             "get": {
                 "description": "Check if server is responding",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Liveness"
-                ],
-                "summary": "Liveness Check",
                 "responses": {
                     "200": {
                         "description": "OK"
                     }
-                }
+                },
+                "summary": "Liveness Check",
+                "tags": [
+                    "Liveness"
+                ]
             }
         },
         "/process": {
             "post": {
                 "description": "Update porcess",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Updates process configuration",
                 "responses": {
                     "200": {
                         "description": "OK"
                     }
-                }
+                },
+                "summary": "Updates process configuration",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/process/info/{name}": {
             "get": {
                 "description": "Retrieves the given process and its config",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Get process config",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "Process Name",
-                        "name": "name",
                         "in": "path",
-                        "required": true
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process Config",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Process Config"
                     }
-                }
+                },
+                "summary": "Get process config",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/process/logs/{name}/{endOffset}/{limit}": {
             "get": {
                 "description": "Retrieves the process logs",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Get process logs",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "Process Name",
+                        "in": "path",
                         "name": "name",
-                        "in": "path",
-                        "required": true
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     {
-                        "type": "integer",
                         "description": "Offset from the end of the log",
-                        "name": "endOffset",
                         "in": "path",
-                        "required": true
+                        "name": "endOffset",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     },
                     {
-                        "type": "integer",
                         "description": "Limit of lines to get (0 will get all the lines till the end)",
-                        "name": "limit",
                         "in": "path",
-                        "required": true
+                        "name": "limit",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process Logs",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Process Logs"
                     }
-                }
+                },
+                "summary": "Get process logs",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/process/ports/{name}": {
             "get": {
                 "description": "Retrieves process open ports",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Get process ports",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "Process Name",
-                        "name": "name",
                         "in": "path",
-                        "required": true
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process Ports",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Process Ports"
                     }
-                }
+                },
+                "summary": "Get process ports",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/process/restart/{name}": {
             "post": {
                 "description": "Restarts the process",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Restart a process",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "Process Name",
-                        "name": "name",
                         "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Restarted Process Name",
+                        "name": "name",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
                     }
-                }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Restarted Process Name"
+                    }
+                },
+                "summary": "Restart a process",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/process/scale/{name}/{scale}": {
             "patch": {
                 "description": "Scale a process",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Scale a process to a given replicas count",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "Process Name",
-                        "name": "name",
                         "in": "path",
-                        "required": true
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     {
-                        "type": "integer",
                         "description": "New amount of process replicas",
-                        "name": "scale",
                         "in": "path",
-                        "required": true
+                        "name": "scale",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Scaled Process Name",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Scaled Process Name"
                     }
-                }
+                },
+                "summary": "Scale a process to a given replicas count",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/process/start/{name}": {
             "post": {
                 "description": "Starts the process if the state is not 'running' or 'pending'",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Start a process",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "Process Name",
-                        "name": "name",
                         "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Started Process Name",
+                        "name": "name",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
                     }
-                }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Started Process Name"
+                    }
+                },
+                "summary": "Start a process",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/process/stop/{name}": {
             "patch": {
                 "description": "Sends kill signal to the process",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Stop a process",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "Process Name",
-                        "name": "name",
                         "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Stopped Process Name",
+                        "name": "name",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
                     }
-                }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Stopped Process Name"
+                    }
+                },
+                "summary": "Stop a process",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/process/{name}": {
             "get": {
                 "description": "Retrieves the given process and its status",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Get process state",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "Process Name",
-                        "name": "name",
                         "in": "path",
-                        "required": true
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process State",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Process State"
                     }
-                }
+                },
+                "summary": "Get process state",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/processes": {
             "get": {
                 "description": "Retrieves all the configured processes and their status",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Get all processes",
                 "responses": {
                     "200": {
-                        "description": "Processes Status",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Processes Status"
                     }
-                }
+                },
+                "summary": "Get all processes",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/processes/stop": {
             "patch": {
                 "description": "Sends kill signal to the processes list",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Process"
-                ],
-                "summary": "Stop processes",
-                "parameters": [
-                    {
-                        "description": "Processes Names",
-                        "name": "[]string",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
+                "requestBody": {
+                    "content": {
+                        "*/*": {
+                            "schema": {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
                             }
                         }
-                    }
-                ],
+                    },
+                    "description": "Processes Names",
+                    "required": true,
+                    "x-originalParamName": "[]string"
+                },
                 "responses": {
                     "200": {
-                        "description": "Stopped Processes Names",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Stopped Processes Names"
                     }
-                }
+                },
+                "summary": "Stop processes",
+                "tags": [
+                    "Process"
+                ]
             }
         },
         "/project": {
             "post": {
                 "description": "Update running project",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Project"
-                ],
-                "summary": "Updates running processes",
                 "responses": {
                     "200": {
                         "description": "OK"
                     }
-                }
+                },
+                "summary": "Updates running processes",
+                "tags": [
+                    "Project"
+                ]
             }
         },
         "/project/state": {
             "get": {
                 "description": "Retrieves project state information",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Project"
-                ],
-                "summary": "Get project state",
                 "responses": {
                     "200": {
-                        "description": "Project State",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Project State"
                     }
-                }
+                },
+                "summary": "Get project state",
+                "tags": [
+                    "Project"
+                ]
             }
         },
         "/project/stop": {
             "post": {
                 "description": "Shuts down the server",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Project"
-                ],
-                "summary": "Stops all the processes and the server",
                 "responses": {
                     "200": {
                         "description": "OK"
                     }
-                }
+                },
+                "summary": "Stops all the processes and the server",
+                "tags": [
+                    "Project"
+                ]
             }
         }
     }
