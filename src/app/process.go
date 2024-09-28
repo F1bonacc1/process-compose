@@ -790,6 +790,14 @@ func (p *Process) getOpenPorts(ports *types.ProcessPorts) error {
 		log.Err(err).Msgf("failed to get open ports for %s", p.getName())
 		return err
 	}
+	socksv6, err := netstat.TCP6Socks(func(s *netstat.SockTabEntry) bool {
+		return s.State == netstat.Listen
+	})
+	socks = append(socks, socksv6...)
+	if err != nil {
+		log.Err(err).Msgf("failed to get open ports for %s", p.getName())
+		return err
+	}
 	for _, e := range socks {
 		if e.Process != nil && e.Process.Pid == p.procState.Pid {
 			log.Debug().Msgf("%s is listening on %d", p.getName(), e.LocalAddr.Port)
