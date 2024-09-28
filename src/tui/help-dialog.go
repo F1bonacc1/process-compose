@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -20,11 +21,18 @@ type helpDialog struct {
 func newHelpDialog(shortcuts *ShortCuts, closeFn func()) *helpDialog {
 	dialog := &helpDialog{
 		Grid:        tview.NewGrid().SetBorders(true).SetRows(30, 1),
-		table:       createHelpTable(shortcuts),
+		table:       createHelpTable(shortcuts, closeFn),
 		closeButton: tview.NewButton("Close").SetSelectedFunc(closeFn),
 	}
-	dialog.AddItem(dialog.table, 0, 0, 1, 1, 0, 0, false).
-		AddItem(dialog.closeButton, 1, 0, 1, 1, 0, 0, true)
+	dialog.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			closeFn()
+			return nil
+		}
+		return event
+	})
+	dialog.AddItem(dialog.table, 0, 0, 1, 1, 0, 0, true).
+		AddItem(dialog.closeButton, 1, 0, 1, 1, 0, 0, false)
 	return dialog
 }
 
@@ -55,8 +63,8 @@ func (hd *helpDialog) StylesChanged(s *config.Styles) {
 	}
 }
 
-func createHelpTable(shortcuts *ShortCuts) *tview.Table {
-	table := tview.NewTable().SetBorders(false).SetSelectable(false, false)
+func createHelpTable(shortcuts *ShortCuts, fn func()) *tview.Table {
+	table := tview.NewTable().SetBorders(false).SetSelectable(true, false)
 
 	row := 0
 	//GENERAL
@@ -64,10 +72,10 @@ func createHelpTable(shortcuts *ShortCuts) *tview.Table {
 		action := shortcuts.ShortCutKeys[act]
 		table.SetCell(row, 0, tview.NewTableCell(action.ShortCut).SetSelectable(false))
 		if len(action.Description) > 0 {
-			table.SetCell(row, 1, tview.NewTableCell(action.Description).SetSelectable(false).SetExpansion(1))
+			table.SetCell(row, 1, tview.NewTableCell(action.Description).SetSelectable(true).SetExpansion(1).SetReference(act))
 		} else {
 			td := fmt.Sprintf("%s/%s", action.ToggleDescription[true], action.ToggleDescription[false])
-			table.SetCell(row, 1, tview.NewTableCell(td).SetSelectable(false).SetExpansion(1))
+			table.SetCell(row, 1, tview.NewTableCell(td).SetSelectable(true).SetExpansion(1).SetReference(act))
 		}
 		row++
 	}
@@ -83,10 +91,10 @@ func createHelpTable(shortcuts *ShortCuts) *tview.Table {
 		action := shortcuts.ShortCutKeys[act]
 		table.SetCell(row, 0, tview.NewTableCell(action.ShortCut).SetSelectable(false))
 		if len(action.Description) > 0 {
-			table.SetCell(row, 1, tview.NewTableCell(action.Description).SetSelectable(false).SetExpansion(1))
+			table.SetCell(row, 1, tview.NewTableCell(action.Description).SetSelectable(true).SetExpansion(1).SetReference(act))
 		} else {
 			td := fmt.Sprintf("%s/%s", action.ToggleDescription[true], action.ToggleDescription[false])
-			table.SetCell(row, 1, tview.NewTableCell(td).SetSelectable(false).SetExpansion(1))
+			table.SetCell(row, 1, tview.NewTableCell(td).SetSelectable(true).SetExpansion(1).SetReference(act))
 		}
 		row++
 	}
@@ -98,15 +106,23 @@ func createHelpTable(shortcuts *ShortCuts) *tview.Table {
 		action := shortcuts.ShortCutKeys[act]
 		table.SetCell(row, 0, tview.NewTableCell(action.ShortCut).SetSelectable(false))
 		if len(action.Description) > 0 {
-			table.SetCell(row, 1, tview.NewTableCell(action.Description).SetSelectable(false).SetExpansion(1))
+			table.SetCell(row, 1, tview.NewTableCell(action.Description).SetSelectable(true).SetExpansion(1).SetReference(act))
 		} else {
 			td := fmt.Sprintf("%s/%s", action.ToggleDescription[true], action.ToggleDescription[false])
-			table.SetCell(row, 1, tview.NewTableCell(td).SetSelectable(false).SetExpansion(1))
+			table.SetCell(row, 1, tview.NewTableCell(td).SetSelectable(true).SetExpansion(1).SetReference(act))
 		}
 		row++
 	}
 
 	table.SetBorder(true).SetTitle("Shortcuts")
+	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEnter {
+			act := table.GetCell(table.GetSelection()).GetReference().(ActionName)
+			fn()
+			shortcuts.ShortCutKeys[act].actionFn()
+		}
+		return event
+	})
 
 	return table
 }

@@ -221,7 +221,7 @@ func (pv *pcView) setShortCutsActions() {
 		pv.updateHelpTextView()
 	})
 	pv.shortcuts.setAction(ActionHelp, func() {
-		pv.showDialog(pv.helpDialog, 50, 32)
+		pv.showDialog(pv.helpDialog, 50, 33)
 	})
 	pv.shortcuts.setAction(ActionThemeSelector, pv.showThemeSelector)
 	pv.shortcuts.setAction(ActionSendToBackground, pv.runShellProcess)
