@@ -1,5 +1,8 @@
 use progenitor::generate_api;
-generate_api!(spec = "../../src/docs/swagger.3.json");
+generate_api!(
+  spec = "../../src/docs/swagger.3.json",
+  derives = [  ],
+);
 
 // https://github.com/oxidecomputer/progenitor/issues/694#issuecomment-1901006117
 
