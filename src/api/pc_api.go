@@ -13,11 +13,13 @@ import (
 // @version         1.0
 // @description     This is a sample server Process Compose server.
 
-// @contact.name   Eugene Berger
-// @contact.url    https://f1bonacc1.github.io/process-compose/
+// @contact.name   Process Compose Discord Channel
+// @contact.url    https://discord.gg/S4xgmRSHdC
 
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @externalDocs.url  https://f1bonacc1.github.io/process-compose/
 
 type PcApi struct {
 	project app.IProject
@@ -33,7 +35,8 @@ func NewPcApi(project app.IProject) *PcApi {
 // @Summary Get process state
 // @Produce  json
 // @Param name path string true "Process Name"
-// @Success 200 {object} object "Process State"
+// @Success 200 {object} types.ProcessState
+// @Failure 400 {object} map[string]string
 // @Router /process/{name} [get]
 func (api *PcApi) GetProcess(c *gin.Context) {
 	name := c.Param("name")
@@ -53,7 +56,8 @@ func (api *PcApi) GetProcess(c *gin.Context) {
 // @Summary Get process config
 // @Produce  json
 // @Param name path string true "Process Name"
-// @Success 200 {object} object "Process Config"
+// @Success 200 {object} types.ProcessConfig
+// @Failure 400 {object} map[string]string
 // @Router /process/info/{name} [get]
 func (api *PcApi) GetProcessInfo(c *gin.Context) {
 	name := c.Param("name")
@@ -72,7 +76,8 @@ func (api *PcApi) GetProcessInfo(c *gin.Context) {
 // @Tags Process
 // @Summary Get all processes
 // @Produce  json
-// @Success 200 {object} object "Processes Status"
+// @Success 200 {object} types.ProcessesState "Processes Status"
+// @Failure 400 {object} map[string]string
 // @Router /processes [get]
 func (api *PcApi) GetProcesses(c *gin.Context) {
 	states, err := api.project.GetProcessesState()
@@ -92,7 +97,8 @@ func (api *PcApi) GetProcesses(c *gin.Context) {
 // @Param name path string true "Process Name"
 // @Param endOffset path int true "Offset from the end of the log"
 // @Param limit path int true "Limit of lines to get (0 will get all the lines till the end)"
-// @Success 200 {object} object "Process Logs"
+// @Success 200 {object} map[string][]string "Process Logs"
+// @Failure 400 {object} map[string]string
 // @Router /process/logs/{name}/{endOffset}/{limit} [get]
 func (api *PcApi) GetProcessLogs(c *gin.Context) {
 	name := c.Param("name")
@@ -123,7 +129,8 @@ func (api *PcApi) GetProcessLogs(c *gin.Context) {
 // @Summary Stop a process
 // @Produce  json
 // @Param name path string true "Process Name"
-// @Success 200 {string} string "Stopped Process Name"
+// @Success 200 {object} map[string]string "Stopped Process Name"
+// @Failure 400 {object} map[string]string
 // @Router /process/stop/{name} [patch]
 func (api *PcApi) StopProcess(c *gin.Context) {
 	name := c.Param("name")
@@ -142,7 +149,9 @@ func (api *PcApi) StopProcess(c *gin.Context) {
 // @Summary Stop processes
 // @Produce  json
 // @Param []string body []string true "Processes Names"
-// @Success 200 {object} string "Stopped Processes Names"
+// @Success 200 {object} map[string]string "Stopped Processes Names"
+// @Success 207 {object} map[string]string "Stopped Processes Names"
+// @Failure 400 {object} map[string]string
 // @Router /processes/stop [patch]
 func (api *PcApi) StopProcesses(c *gin.Context) {
 	var names []string
@@ -169,7 +178,8 @@ func (api *PcApi) StopProcesses(c *gin.Context) {
 // @Summary Start a process
 // @Produce  json
 // @Param name path string true "Process Name"
-// @Success 200 {string} string "Started Process Name"
+// @Success 200 {object} map[string]string "Started Process Name"
+// @Failure 400 {object} map[string]string
 // @Router /process/start/{name} [post]
 func (api *PcApi) StartProcess(c *gin.Context) {
 	name := c.Param("name")
@@ -188,7 +198,8 @@ func (api *PcApi) StartProcess(c *gin.Context) {
 // @Summary Restart a process
 // @Produce  json
 // @Param name path string true "Process Name"
-// @Success 200 {string} string "Restarted Process Name"
+// @Success 200 {object} map[string]string "Restarted Process Name"
+// @Failure 400 {object} map[string]string
 // @Router /process/restart/{name} [post]
 func (api *PcApi) RestartProcess(c *gin.Context) {
 	name := c.Param("name")
@@ -208,7 +219,8 @@ func (api *PcApi) RestartProcess(c *gin.Context) {
 // @Produce  json
 // @Param name path string true "Process Name"
 // @Param scale path int true "New amount of process replicas"
-// @Success 200 {string} string "Scaled Process Name"
+// @Success 200 {object} map[string]string "Scaled Process Name"
+// @Failure 400 {object} map[string]string
 // @Router /process/scale/{name}/{scale} [patch]
 func (api *PcApi) ScaleProcess(c *gin.Context) {
 	name := c.Param("name")
@@ -242,7 +254,8 @@ func (api *PcApi) IsAlive(c *gin.Context) {
 // @Tags Hostname
 // @Summary Get Hostname
 // @Produce  json
-// @Success 200
+// @Success 200 {object} map[string]string "Hostname"
+// @Failure 400 {object} map[string]string
 // @Router /hostname [get]
 func (api *PcApi) GetHostName(c *gin.Context) {
 	name, err := api.project.GetHostName()
@@ -260,7 +273,8 @@ func (api *PcApi) GetHostName(c *gin.Context) {
 // @Summary Get process ports
 // @Produce  json
 // @Param name path string true "Process Name"
-// @Success 200 {object} object "Process Ports"
+// @Success 200 {object} types.ProcessPorts "Process Ports"
+// @Failure 400 {object} map[string]string
 // @Router /process/ports/{name} [get]
 func (api *PcApi) GetProcessPorts(c *gin.Context) {
 	name := c.Param("name")
@@ -279,7 +293,7 @@ func (api *PcApi) GetProcessPorts(c *gin.Context) {
 // @Tags Project
 // @Summary Stops all the processes and the server
 // @Produce  json
-// @Success 200
+// @Success 200 {object} map[string]string "Stopped Server"
 // @Router /project/stop [post]
 func (api *PcApi) ShutDownProject(c *gin.Context) {
 	api.project.ShutDownProject()
@@ -291,7 +305,9 @@ func (api *PcApi) ShutDownProject(c *gin.Context) {
 // @Tags Project
 // @Summary Updates running processes
 // @Produce  json
-// @Success 200
+// @Success 200 {object} map[string]string "Update Project Status"
+// @Success 207 {object} map[string]string "Update Project Status"
+// @Failure 400 {object} map[string]string
 // @Router /project [post]
 func (api *PcApi) UpdateProject(c *gin.Context) {
 	var project types.Project
@@ -316,7 +332,8 @@ func (api *PcApi) UpdateProject(c *gin.Context) {
 // @Tags Process
 // @Summary Updates process configuration
 // @Produce  json
-// @Success 200
+// @Success 200 {object} types.ProcessConfig "Updated Process Config"
+// @Failure 400 {object} map[string]string
 // @Router /process [post]
 func (api *PcApi) UpdateProcess(c *gin.Context) {
 	var proc types.ProcessConfig
@@ -337,7 +354,8 @@ func (api *PcApi) UpdateProcess(c *gin.Context) {
 // @Tags Project
 // @Summary Get project state
 // @Produce  json
-// @Success 200 {object} object "Project State"
+// @Success 200 {object} types.ProjectState "Project State"
+// @Failure 500 {object} map[string]string
 // @Router /project/state [get]
 func (api *PcApi) GetProjectState(c *gin.Context) {
 	withMemory := c.DefaultQuery("withMemory", "false")
@@ -350,4 +368,26 @@ func (api *PcApi) GetProjectState(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, state)
+}
+
+// @Schemes
+// @Description Reload project state from config
+// @Tags Project
+// @Summary Reload project
+// @Produce  json
+// @Success 200 {object} map[string]string "Update Project Status"
+// @Success 207 {object} map[string]string "Update Project Status"
+// @Failure 400 {object} map[string]string
+// @Router /project/configuration [post]
+func (api *PcApi) ReloadProject(c *gin.Context) {
+	status, err := api.project.ReloadProject()
+	if err != nil {
+		if len(status) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusMultiStatus, status)
+		}
+		return
+	}
+	c.JSON(http.StatusOK, status)
 }

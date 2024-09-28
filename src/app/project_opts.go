@@ -10,6 +10,7 @@ type ProjectOpts struct {
 	mainProcessArgs   []string
 	isTuiOn           bool
 	isOrderedShutDown bool
+	disableDotenv     bool
 }
 
 func (p *ProjectOpts) WithProject(project *types.Project) *ProjectOpts {
@@ -44,4 +45,8 @@ func (p *ProjectOpts) WithIsTuiOn(isTuiOn bool) *ProjectOpts {
 func (p *ProjectOpts) WithOrderedShutDown(isOrderedShutDown bool) *ProjectOpts {
 	p.isOrderedShutDown = isOrderedShutDown
 	return p
+}
+
+func (o *ProjectOpts) WithDotEnvDisabled(disabled bool) {
+	o.disableDotenv = disabled
 }

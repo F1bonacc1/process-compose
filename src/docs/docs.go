@@ -10,8 +10,8 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "Eugene Berger",
-            "url": "https://f1bonacc1.github.io/process-compose/"
+            "name": "Process Compose Discord Channel",
+            "url": "https://discord.gg/S4xgmRSHdC"
         },
         "license": {
             "name": "Apache 2.0",
@@ -34,7 +34,22 @@ const docTemplate = `{
                 "summary": "Get Hostname",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Hostname",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -68,7 +83,19 @@ const docTemplate = `{
                 "summary": "Updates process configuration",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Updated Process Config",
+                        "schema": {
+                            "$ref": "#/definitions/types.ProcessConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -94,9 +121,18 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process Config",
+                        "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/types.ProcessConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -139,7 +175,22 @@ const docTemplate = `{
                     "200": {
                         "description": "Process Logs",
                         "schema": {
-                            "type": "object"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -168,7 +219,16 @@ const docTemplate = `{
                     "200": {
                         "description": "Process Ports",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/types.ProcessPorts"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -197,7 +257,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Restarted Process Name",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -233,7 +305,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Scaled Process Name",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -262,7 +346,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Started Process Name",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -291,7 +387,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Stopped Process Name",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -318,9 +426,18 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process State",
+                        "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/types.ProcessState"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -340,7 +457,16 @@ const docTemplate = `{
                     "200": {
                         "description": "Processes Status",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/types.ProcessesState"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -374,7 +500,28 @@ const docTemplate = `{
                     "200": {
                         "description": "Stopped Processes Names",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Stopped Processes Names",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -392,7 +539,72 @@ const docTemplate = `{
                 "summary": "Updates running processes",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Update Project Status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Update Project Status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/project/configuration": {
+            "post": {
+                "description": "Reload project state from config",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Reload project",
+                "responses": {
+                    "200": {
+                        "description": "Update Project Status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Update Project Status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -411,7 +623,16 @@ const docTemplate = `{
                     "200": {
                         "description": "Project State",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/types.ProjectState"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -429,11 +650,460 @@ const docTemplate = `{
                 "summary": "Stops all the processes and the server",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Stopped Server",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
         }
+    },
+    "definitions": {
+        "health.ExecProbe": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "workingDir": {
+                    "type": "string"
+                }
+            }
+        },
+        "health.HttpProbe": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "numPort": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "string"
+                },
+                "scheme": {
+                    "type": "string"
+                }
+            }
+        },
+        "health.Probe": {
+            "type": "object",
+            "properties": {
+                "exec": {
+                    "$ref": "#/definitions/health.ExecProbe"
+                },
+                "failureThreshold": {
+                    "type": "integer"
+                },
+                "httpGet": {
+                    "$ref": "#/definitions/health.HttpProbe"
+                },
+                "initialDelay": {
+                    "type": "integer"
+                },
+                "periodSeconds": {
+                    "type": "integer"
+                },
+                "successThreshold": {
+                    "type": "integer"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
+                }
+            }
+        },
+        "time.Duration": {
+            "type": "integer",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
+        },
+        "types.DependsOnConfig": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/types.ProcessDependency"
+            }
+        },
+        "types.LogRotationConfig": {
+            "type": "object",
+            "properties": {
+                "compress": {
+                    "description": "Compress determines if the rotated log files should be compressed\nusing gzip. The default is not to perform compression.",
+                    "type": "boolean"
+                },
+                "directory": {
+                    "description": "Directory to log to when filelogging is enabled",
+                    "type": "string"
+                },
+                "filename": {
+                    "description": "Filename is the name of the logfile which will be placed inside the directory",
+                    "type": "string"
+                },
+                "maxAge": {
+                    "description": "MaxAge the max age in days to keep a logfile",
+                    "type": "integer"
+                },
+                "maxBackups": {
+                    "description": "MaxBackups the max number of rolled files to keep",
+                    "type": "integer"
+                },
+                "maxSize": {
+                    "description": "MaxSize the max size in MB of the logfile before it's rolled",
+                    "type": "integer"
+                }
+            }
+        },
+        "types.LoggerConfig": {
+            "type": "object",
+            "properties": {
+                "addTimestamp": {
+                    "description": "AddTimestamp adds timestamp to log",
+                    "type": "boolean"
+                },
+                "disableJSON": {
+                    "description": "DisableJSON disables log JSON formatting",
+                    "type": "boolean"
+                },
+                "fieldsOrder": {
+                    "description": "FieldsOrder is the order in which fields are logged",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "flushEachLine": {
+                    "description": "FlushEachLine flushes the logger on each line",
+                    "type": "boolean"
+                },
+                "noColor": {
+                    "description": "NoColor disables coloring",
+                    "type": "boolean"
+                },
+                "noMetadata": {
+                    "description": "NoMetadata disables log metadata (process, replica)",
+                    "type": "boolean"
+                },
+                "rotation": {
+                    "description": "Rotation is the configuration for logging rotation",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.LogRotationConfig"
+                        }
+                    ]
+                },
+                "timestampFormat": {
+                    "description": "TimestampFormat is the format of the timestamp",
+                    "type": "string"
+                }
+            }
+        },
+        "types.MemoryState": {
+            "type": "object",
+            "properties": {
+                "allocated": {
+                    "type": "integer"
+                },
+                "gcCycles": {
+                    "type": "integer"
+                },
+                "systemMemory": {
+                    "type": "integer"
+                },
+                "totalAllocated": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.ProcessConfig": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "command": {
+                    "type": "string"
+                },
+                "dependsOn": {
+                    "$ref": "#/definitions/types.DependsOnConfig"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "disableAnsiColors": {
+                    "type": "boolean"
+                },
+                "disabled": {
+                    "type": "boolean"
+                },
+                "entrypoint": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "environment": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "executable": {
+                    "type": "string"
+                },
+                "extensions": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "isDaemon": {
+                    "type": "boolean"
+                },
+                "isElevated": {
+                    "type": "boolean"
+                },
+                "isForeground": {
+                    "type": "boolean"
+                },
+                "isTty": {
+                    "type": "boolean"
+                },
+                "livenessProbe": {
+                    "$ref": "#/definitions/health.Probe"
+                },
+                "logLocation": {
+                    "type": "string"
+                },
+                "loggerConfig": {
+                    "$ref": "#/definitions/types.LoggerConfig"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "readinessProbe": {
+                    "$ref": "#/definitions/health.Probe"
+                },
+                "readyLogLine": {
+                    "type": "string"
+                },
+                "replicaName": {
+                    "type": "string"
+                },
+                "replicaNum": {
+                    "type": "integer"
+                },
+                "replicas": {
+                    "type": "integer"
+                },
+                "restartPolicy": {
+                    "$ref": "#/definitions/types.RestartPolicyConfig"
+                },
+                "shutDownParams": {
+                    "$ref": "#/definitions/types.ShutDownParams"
+                },
+                "vars": {
+                    "$ref": "#/definitions/types.Vars"
+                },
+                "workingDir": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.ProcessDependency": {
+            "type": "object",
+            "properties": {
+                "condition": {
+                    "type": "string"
+                },
+                "extensions": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "types.ProcessPorts": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "tcp_ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "udp_ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "types.ProcessState": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "exit_code": {
+                    "type": "integer"
+                },
+                "isRunning": {
+                    "type": "boolean"
+                },
+                "is_elevated": {
+                    "type": "boolean"
+                },
+                "is_ready": {
+                    "type": "string"
+                },
+                "mem": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "password_provided": {
+                    "type": "boolean"
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "restarts": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "system_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.ProcessesState": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.ProcessState"
+                    }
+                }
+            }
+        },
+        "types.ProjectState": {
+            "type": "object",
+            "properties": {
+                "fileNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hostName": {
+                    "type": "string"
+                },
+                "memoryState": {
+                    "$ref": "#/definitions/types.MemoryState"
+                },
+                "processNum": {
+                    "type": "integer"
+                },
+                "runningProcessNum": {
+                    "type": "integer"
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "upTime": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "userName": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.RestartPolicyConfig": {
+            "type": "object",
+            "properties": {
+                "backoffSeconds": {
+                    "type": "integer"
+                },
+                "exitOnEnd": {
+                    "type": "boolean"
+                },
+                "exitOnSkipped": {
+                    "type": "boolean"
+                },
+                "maxRestarts": {
+                    "type": "integer"
+                },
+                "restart": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.ShutDownParams": {
+            "type": "object",
+            "properties": {
+                "parentOnly": {
+                    "type": "boolean"
+                },
+                "shutDownCommand": {
+                    "type": "string"
+                },
+                "shutDownTimeout": {
+                    "type": "integer"
+                },
+                "signal": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.Vars": {
+            "type": "object",
+            "additionalProperties": {}
+        }
+    },
+    "externalDocs": {
+        "url": "https://f1bonacc1.github.io/process-compose/"
     }
 }`
 

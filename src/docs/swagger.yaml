@@ -1,8 +1,309 @@
-components: {}
+components:
+    schemas:
+        health.ExecProbe:
+            properties:
+                command:
+                    type: string
+                workingDir:
+                    type: string
+            type: object
+        health.HttpProbe:
+            properties:
+                host:
+                    type: string
+                numPort:
+                    type: integer
+                path:
+                    type: string
+                port:
+                    type: string
+                scheme:
+                    type: string
+            type: object
+        health.Probe:
+            properties:
+                exec:
+                    $ref: '#/components/schemas/health.ExecProbe'
+                failureThreshold:
+                    type: integer
+                httpGet:
+                    $ref: '#/components/schemas/health.HttpProbe'
+                initialDelay:
+                    type: integer
+                periodSeconds:
+                    type: integer
+                successThreshold:
+                    type: integer
+                timeoutSeconds:
+                    type: integer
+            type: object
+        time.Duration:
+            enum:
+                - -9.223372036854776e+18
+                - 9223372036854776000
+                - 1
+                - 1000
+                - 1000000
+                - 1000000000
+                - 60000000000
+                - 3600000000000
+            type: integer
+            x-enum-varnames:
+                - minDuration
+                - maxDuration
+                - Nanosecond
+                - Microsecond
+                - Millisecond
+                - Second
+                - Minute
+                - Hour
+        types.DependsOnConfig:
+            additionalProperties:
+                $ref: '#/components/schemas/types.ProcessDependency'
+            type: object
+        types.LogRotationConfig:
+            properties:
+                compress:
+                    description: |-
+                        Compress determines if the rotated log files should be compressed
+                        using gzip. The default is not to perform compression.
+                    type: boolean
+                directory:
+                    description: Directory to log to when filelogging is enabled
+                    type: string
+                filename:
+                    description: Filename is the name of the logfile which will be placed inside the directory
+                    type: string
+                maxAge:
+                    description: MaxAge the max age in days to keep a logfile
+                    type: integer
+                maxBackups:
+                    description: MaxBackups the max number of rolled files to keep
+                    type: integer
+                maxSize:
+                    description: MaxSize the max size in MB of the logfile before it's rolled
+                    type: integer
+            type: object
+        types.LoggerConfig:
+            properties:
+                addTimestamp:
+                    description: AddTimestamp adds timestamp to log
+                    type: boolean
+                disableJSON:
+                    description: DisableJSON disables log JSON formatting
+                    type: boolean
+                fieldsOrder:
+                    description: FieldsOrder is the order in which fields are logged
+                    items:
+                        type: string
+                    type: array
+                flushEachLine:
+                    description: FlushEachLine flushes the logger on each line
+                    type: boolean
+                noColor:
+                    description: NoColor disables coloring
+                    type: boolean
+                noMetadata:
+                    description: NoMetadata disables log metadata (process, replica)
+                    type: boolean
+                rotation:
+                    allOf:
+                        - $ref: '#/components/schemas/types.LogRotationConfig'
+                    description: Rotation is the configuration for logging rotation
+                timestampFormat:
+                    description: TimestampFormat is the format of the timestamp
+                    type: string
+            type: object
+        types.MemoryState:
+            properties:
+                allocated:
+                    type: integer
+                gcCycles:
+                    type: integer
+                systemMemory:
+                    type: integer
+                totalAllocated:
+                    type: integer
+            type: object
+        types.ProcessConfig:
+            properties:
+                args:
+                    items:
+                        type: string
+                    type: array
+                command:
+                    type: string
+                dependsOn:
+                    $ref: '#/components/schemas/types.DependsOnConfig'
+                description:
+                    type: string
+                disableAnsiColors:
+                    type: boolean
+                disabled:
+                    type: boolean
+                entrypoint:
+                    items:
+                        type: string
+                    type: array
+                environment:
+                    items:
+                        type: string
+                    type: array
+                executable:
+                    type: string
+                extensions:
+                    additionalProperties: true
+                    type: object
+                isDaemon:
+                    type: boolean
+                isElevated:
+                    type: boolean
+                isForeground:
+                    type: boolean
+                isTty:
+                    type: boolean
+                livenessProbe:
+                    $ref: '#/components/schemas/health.Probe'
+                logLocation:
+                    type: string
+                loggerConfig:
+                    $ref: '#/components/schemas/types.LoggerConfig'
+                name:
+                    type: string
+                namespace:
+                    type: string
+                readinessProbe:
+                    $ref: '#/components/schemas/health.Probe'
+                readyLogLine:
+                    type: string
+                replicaName:
+                    type: string
+                replicaNum:
+                    type: integer
+                replicas:
+                    type: integer
+                restartPolicy:
+                    $ref: '#/components/schemas/types.RestartPolicyConfig'
+                shutDownParams:
+                    $ref: '#/components/schemas/types.ShutDownParams'
+                vars:
+                    $ref: '#/components/schemas/types.Vars'
+                workingDir:
+                    type: string
+            type: object
+        types.ProcessDependency:
+            properties:
+                condition:
+                    type: string
+                extensions:
+                    additionalProperties: true
+                    type: object
+            type: object
+        types.ProcessPorts:
+            properties:
+                name:
+                    type: string
+                tcp_ports:
+                    items:
+                        type: integer
+                    type: array
+                udp_ports:
+                    items:
+                        type: integer
+                    type: array
+            type: object
+        types.ProcessState:
+            properties:
+                age:
+                    $ref: '#/components/schemas/time.Duration'
+                exit_code:
+                    type: integer
+                is_elevated:
+                    type: boolean
+                is_ready:
+                    type: string
+                isRunning:
+                    type: boolean
+                mem:
+                    type: integer
+                name:
+                    type: string
+                namespace:
+                    type: string
+                password_provided:
+                    type: boolean
+                pid:
+                    type: integer
+                restarts:
+                    type: integer
+                status:
+                    type: string
+                system_time:
+                    type: string
+            type: object
+        types.ProcessesState:
+            properties:
+                data:
+                    items:
+                        $ref: '#/components/schemas/types.ProcessState'
+                    type: array
+            type: object
+        types.ProjectState:
+            properties:
+                fileNames:
+                    items:
+                        type: string
+                    type: array
+                hostName:
+                    type: string
+                memoryState:
+                    $ref: '#/components/schemas/types.MemoryState'
+                processNum:
+                    type: integer
+                runningProcessNum:
+                    type: integer
+                startTime:
+                    type: string
+                upTime:
+                    $ref: '#/components/schemas/time.Duration'
+                userName:
+                    type: string
+                version:
+                    type: string
+            type: object
+        types.RestartPolicyConfig:
+            properties:
+                backoffSeconds:
+                    type: integer
+                exitOnEnd:
+                    type: boolean
+                exitOnSkipped:
+                    type: boolean
+                maxRestarts:
+                    type: integer
+                restart:
+                    type: string
+            type: object
+        types.ShutDownParams:
+            properties:
+                parentOnly:
+                    type: boolean
+                shutDownCommand:
+                    type: string
+                shutDownTimeout:
+                    type: integer
+                signal:
+                    type: integer
+            type: object
+        types.Vars:
+            additionalProperties: {}
+            type: object
+externalDocs:
+    url: https://f1bonacc1.github.io/process-compose/
 info:
     contact:
-        name: Eugene Berger
-        url: https://f1bonacc1.github.io/process-compose/
+        name: Process Compose Discord Channel
+        url: https://discord.gg/S4xgmRSHdC
     description: This is a sample server Process Compose server.
     license:
         name: Apache 2.0
@@ -16,7 +317,21 @@ paths:
             description: Get process compose hostname
             responses:
                 "200":
-                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Hostname
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Get Hostname
             tags:
                 - Hostname
@@ -34,7 +349,19 @@ paths:
             description: Update porcess
             responses:
                 "200":
-                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/types.ProcessConfig'
+                    description: Updated Process Config
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Updates process configuration
             tags:
                 - Process
@@ -53,8 +380,16 @@ paths:
                     content:
                         application/json:
                             schema:
+                                $ref: '#/components/schemas/types.ProcessState'
+                    description: OK
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
                                 type: object
-                    description: Process State
+                    description: Bad Request
             summary: Get process state
             tags:
                 - Process
@@ -73,8 +408,16 @@ paths:
                     content:
                         application/json:
                             schema:
+                                $ref: '#/components/schemas/types.ProcessConfig'
+                    description: OK
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
                                 type: object
-                    description: Process Config
+                    description: Bad Request
             summary: Get process config
             tags:
                 - Process
@@ -105,8 +448,20 @@ paths:
                     content:
                         application/json:
                             schema:
+                                additionalProperties:
+                                    items:
+                                        type: string
+                                    type: array
                                 type: object
                     description: Process Logs
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Get process logs
             tags:
                 - Process
@@ -125,8 +480,16 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
+                                $ref: '#/components/schemas/types.ProcessPorts'
                     description: Process Ports
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Get process ports
             tags:
                 - Process
@@ -145,8 +508,18 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: string
+                                additionalProperties:
+                                    type: string
+                                type: object
                     description: Restarted Process Name
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Restart a process
             tags:
                 - Process
@@ -171,8 +544,18 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: string
+                                additionalProperties:
+                                    type: string
+                                type: object
                     description: Scaled Process Name
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Scale a process to a given replicas count
             tags:
                 - Process
@@ -191,8 +574,18 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: string
+                                additionalProperties:
+                                    type: string
+                                type: object
                     description: Started Process Name
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Start a process
             tags:
                 - Process
@@ -211,8 +604,18 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: string
+                                additionalProperties:
+                                    type: string
+                                type: object
                     description: Stopped Process Name
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Stop a process
             tags:
                 - Process
@@ -224,8 +627,16 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
+                                $ref: '#/components/schemas/types.ProcessesState'
                     description: Processes Status
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Get all processes
             tags:
                 - Process
@@ -247,8 +658,26 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: string
+                                additionalProperties:
+                                    type: string
+                                type: object
                     description: Stopped Processes Names
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Stopped Processes Names
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Stop processes
             tags:
                 - Process
@@ -257,8 +686,61 @@ paths:
             description: Update running project
             responses:
                 "200":
-                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Update Project Status
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Update Project Status
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
             summary: Updates running processes
+            tags:
+                - Project
+    /project/configuration:
+        post:
+            description: Reload project state from config
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Update Project Status
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Update Project Status
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
+            summary: Reload project
             tags:
                 - Project
     /project/state:
@@ -269,8 +751,16 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
+                                $ref: '#/components/schemas/types.ProjectState'
                     description: Project State
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Internal Server Error
             summary: Get project state
             tags:
                 - Project
@@ -279,7 +769,13 @@ paths:
             description: Shuts down the server
             responses:
                 "200":
-                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Stopped Server
             summary: Stops all the processes and the server
             tags:
                 - Project

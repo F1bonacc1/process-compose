@@ -78,3 +78,29 @@ func (p *PcClient) updateProject(project *types.Project) (map[string]string, err
 	}
 	return nil, fmt.Errorf(respErr.Error)
 }
+
+func (p *PcClient) reloadProject() (map[string]string, error) {
+	url := fmt.Sprintf("http://%s/project/configuration", p.address)
+	resp, err := p.client.Post(url, "application/json", nil)
+	if err != nil {
+		log.Err(err).Msg("failed to update project")
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusMultiStatus {
+		status := map[string]string{}
+		if err = json.NewDecoder(resp.Body).Decode(&status); err != nil {
+			log.Err(err).Msg("failed to decode updated processes")
+			return status, err
+		}
+		log.Info().Msgf("status: %v", status)
+
+		return status, nil
+	}
+	var respErr pcError
+	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
+		log.Err(err).Msg("failed to decode err update project")
+		return nil, err
+	}
+	return nil, fmt.Errorf(respErr.Error)
+}

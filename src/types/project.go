@@ -23,6 +23,7 @@ type Project struct {
 	DisableEnvExpansion bool                 `yaml:"disable_env_expansion"`
 	IsTuiDisabled       bool                 `yaml:"is_tui_disabled"`
 	FileNames           []string
+	EnvFileNames        []string
 }
 
 type ProcessFunc func(process ProcessConfig) error

@@ -31,4 +31,5 @@ type IProject interface {
 	SetProcessPassword(name string, password string) error
 	UpdateProject(project *types.Project) (map[string]string, error)
 	UpdateProcess(updated *types.ProcessConfig) error
+	ReloadProject() (map[string]string, error)
 }

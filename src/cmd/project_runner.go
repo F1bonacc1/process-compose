@@ -12,12 +12,8 @@ import (
 )
 
 func getProjectRunner(process []string, noDeps bool, mainProcess string, mainProcessArgs []string) *app.ProjectRunner {
-	if *pcFlags.DisableDotEnv {
-		opts.DisableDotenv()
-	}
-	if !*pcFlags.IsTuiEnabled {
-		opts.WithTuiDisabled()
-	}
+	opts.DisableDotenv(*pcFlags.DisableDotEnv)
+	opts.WithTuiDisabled(!*pcFlags.IsTuiEnabled)
 
 	project, err := loader.Load(opts)
 	if err != nil {

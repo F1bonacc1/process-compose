@@ -242,6 +242,12 @@ func (pv *pcView) setShortCutsActions() {
 	pv.shortcuts.setAction(ActionEditProcess, func() {
 		pv.editSelectedProcess()
 	})
+	pv.shortcuts.setAction(ActionReloadConfig, func() {
+		_, err := pv.project.ReloadProject()
+		if err != nil {
+			pv.showError(err.Error())
+		}
+	})
 }
 
 func (pv *pcView) setFullScreen(isFullScreen bool) {

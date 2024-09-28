@@ -40,6 +40,7 @@ const (
 	ActionClearLog         = ActionName("clear_log")
 	ActionMarkLog          = ActionName("mark_log")
 	ActionEditProcess      = ActionName("edit_process")
+	ActionReloadConfig     = ActionName("reload_config")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -69,6 +70,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionClearLog:         tcell.KeyCtrlK,
 	ActionMarkLog:          tcell.KeyRune,
 	ActionEditProcess:      tcell.KeyCtrlE,
+	ActionReloadConfig:     tcell.KeyCtrlL,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -102,6 +104,7 @@ var procActionsOrder = []ActionName{
 	ActionProcessStop,
 	ActionProcessRestart,
 	ActionEditProcess,
+	ActionReloadConfig,
 	ActionNsFilter,
 	ActionHideDisabled,
 	ActionQuit,
@@ -364,6 +367,9 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionEditProcess: {
 				Description: "Edit Process",
+			},
+			ActionReloadConfig: {
+				Description: "Reload Project Configuration",
 			},
 		},
 	}

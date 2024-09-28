@@ -37,10 +37,10 @@ func (o *LoaderOptions) getWorkingDir() (string, error) {
 	return os.Getwd()
 }
 
-func (o *LoaderOptions) DisableDotenv() {
-	o.disableDotenv = true
+func (o *LoaderOptions) DisableDotenv(disabled bool) {
+	o.disableDotenv = disabled
 }
 
-func (o *LoaderOptions) WithTuiDisabled() {
-	o.isTuiDisabled = true
+func (o *LoaderOptions) WithTuiDisabled(disabled bool) {
+	o.isTuiDisabled = disabled
 }

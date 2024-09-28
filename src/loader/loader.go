@@ -31,6 +31,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		return nil, err
 	}
 	mergedProject.FileNames = opts.FileNames
+	mergedProject.EnvFileNames = opts.EnvFileNames
 	mergedProject.IsTuiDisabled = opts.isTuiDisabled || mergedProject.IsTuiDisabled
 
 	apply(mergedProject,

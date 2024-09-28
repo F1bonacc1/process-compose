@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/health"
+	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
@@ -45,6 +46,7 @@ type ProjectRunner struct {
 	isOrderedShutDown bool
 	ctxApp            context.Context
 	cancelAppFn       context.CancelFunc
+	disableDotenv     bool
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -833,6 +835,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		mainProcessArgs:   opts.mainProcessArgs,
 		isTuiOn:           opts.isTuiOn,
 		isOrderedShutDown: opts.isOrderedShutDown,
+		disableDotenv:     opts.disableDotenv,
 		projectState: &types.ProjectState{
 			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),
@@ -912,6 +915,25 @@ func (p *ProjectRunner) UpdateProject(project *types.Project) (map[string]string
 	return status, errors.Join(errs...)
 }
 
+func (p *ProjectRunner) ReloadProject() (map[string]string, error) {
+	opts := &loader.LoaderOptions{
+		FileNames:    p.project.FileNames,
+		EnvFileNames: p.project.EnvFileNames,
+	}
+	opts.WithTuiDisabled(p.disableDotenv)
+	opts.WithTuiDisabled(p.isTuiOn)
+	project, err := loader.Load(opts)
+	if err != nil {
+		log.Err(err).Msg("Failed to load project")
+		return nil, err
+	}
+	status, err := p.UpdateProject(project)
+	if err != nil {
+		log.Err(err).Msg("Failed to update project")
+		return nil, err
+	}
+	return status, nil
+}
 func (p *ProjectRunner) UpdateProcess(updated *types.ProcessConfig) error {
 	isScaleChanged := false
 	validateProbes(updated.LivenessProbe)

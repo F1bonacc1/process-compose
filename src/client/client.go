@@ -171,3 +171,7 @@ func (p *PcClient) UpdateProject(project *types.Project) (map[string]string, err
 func (p *PcClient) UpdateProcess(updated *types.ProcessConfig) error {
 	return p.updateProcess(updated)
 }
+
+func (p *PcClient) ReloadProject() (map[string]string, error) {
+	return p.reloadProject()
+}

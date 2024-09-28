@@ -242,6 +242,8 @@ This command will:
 2. If there are only new processes in the updated `process-compose.yaml` file, start the new processes without affecting the others.
 3. If some processes no longer exist in the updated `process-compose.yaml` file, stop only those old processes without touching the others.
 
+**Note:** If TUI or TUI client is being used, you can trigger the original files reload with the `Ctrl+L` shortcut.
+
 ### Process Edit
 
 To edit a single process:

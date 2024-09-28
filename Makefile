@@ -31,7 +31,7 @@ setup:
 ci: setup build testrace
 
 swag: swag2op ## Generate docs from swagger attributes in the code
-	./bin/swag2op init --dir src --output src/docs -g api/pc_api.go --openapiOutputDir src/docs
+	./bin/swag2op init --dir src --output src/docs -g api/pc_api.go --openapiOutputDir src/docs --parseDependency --parseInternal
 
 build:
 	CGO_ENABLED=0 go build -o bin/${NAME}${EXT} ${LD_FLAGS} ./src
