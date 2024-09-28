@@ -23,7 +23,10 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	}
 
 	for _, file := range opts.FileNames {
-		p := loadProjectFromFile(file, opts.disableDotenv, opts.EnvFileNames)
+		p, err := loadProjectFromFile(file, opts)
+		if err != nil {
+			return nil, err
+		}
 		opts.projects = append(opts.projects, p)
 	}
 	mergedProject, err := merge(opts)
@@ -79,7 +82,7 @@ func admitProcesses(opts *LoaderOptions, p *types.Project) *types.Project {
 	return p
 }
 
-func loadProjectFromFile(inputFile string, disableDotEnv bool, envFileNames []string) *types.Project {
+func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project, error) {
 	yamlFile, err := os.ReadFile(inputFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -88,9 +91,9 @@ func loadProjectFromFile(inputFile string, disableDotEnv bool, envFileNames []st
 		log.Fatal().Err(err).Msgf("Failed to read %s", inputFile)
 	}
 
-	if !disableDotEnv {
+	if !opts.disableDotenv {
 		// .env is optional we don't care if it errors
-		_ = godotenv.Load(envFileNames...)
+		_ = godotenv.Load(opts.EnvFileNames...)
 	}
 
 	const envEscaped = "##PC_ENV_ESCAPED##"
@@ -104,20 +107,23 @@ func loadProjectFromFile(inputFile string, disableDotEnv bool, envFileNames []st
 	}
 	err = yaml.Unmarshal([]byte(temp), project)
 	if err != nil {
+		if opts.IsInternalLoader {
+			return nil, err
+		}
 		log.Fatal().Err(err).Msgf("Failed to parse %s", inputFile)
 	}
 	if project.DisableEnvExpansion {
 		err = yaml.Unmarshal(yamlFile, project)
 		if err != nil {
+			if opts.IsInternalLoader {
+				return nil, err
+			}
 			log.Fatal().Err(err).Msgf("Failed to parse %s", inputFile)
 		}
 	}
 
-	if err != nil {
-		log.Fatal().Err(err).Msgf("Failed to validate %s", inputFile)
-	}
 	log.Info().Msgf("Loaded project from %s", inputFile)
-	return project
+	return project, nil
 }
 
 func findFiles(names []string, pwd string) []string {

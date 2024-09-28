@@ -917,8 +917,9 @@ func (p *ProjectRunner) UpdateProject(project *types.Project) (map[string]string
 
 func (p *ProjectRunner) ReloadProject() (map[string]string, error) {
 	opts := &loader.LoaderOptions{
-		FileNames:    p.project.FileNames,
-		EnvFileNames: p.project.EnvFileNames,
+		FileNames:        p.project.FileNames,
+		EnvFileNames:     p.project.EnvFileNames,
+		IsInternalLoader: true,
 	}
 	opts.WithTuiDisabled(p.disableDotenv)
 	opts.WithTuiDisabled(p.isTuiOn)

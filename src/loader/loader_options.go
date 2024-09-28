@@ -8,13 +8,14 @@ import (
 )
 
 type LoaderOptions struct {
-	workingDir    string
-	FileNames     []string
-	EnvFileNames  []string
-	projects      []*types.Project
-	admitters     []admitter.Admitter
-	disableDotenv bool
-	isTuiDisabled bool
+	workingDir       string
+	FileNames        []string
+	EnvFileNames     []string
+	IsInternalLoader bool
+	projects         []*types.Project
+	admitters        []admitter.Admitter
+	disableDotenv    bool
+	isTuiDisabled    bool
 }
 
 func (o *LoaderOptions) AddAdmitter(adm ...admitter.Admitter) {
