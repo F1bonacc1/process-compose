@@ -32,6 +32,7 @@ const docTemplate = `{
                     "Hostname"
                 ],
                 "summary": "Get Hostname",
+                "operationId": "GetHostName",
                 "responses": {
                     "200": {
                         "description": "Hostname",
@@ -64,6 +65,7 @@ const docTemplate = `{
                     "Liveness"
                 ],
                 "summary": "Liveness Check",
+                "operationId": "IsAlive",
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -81,6 +83,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Updates process configuration",
+                "operationId": "UpdateProcess",
                 "responses": {
                     "200": {
                         "description": "Updated Process Config",
@@ -110,6 +113,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Get process config",
+                "operationId": "GetProcessInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -148,6 +152,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Get process logs",
+                "operationId": "GetProcessLogs",
                 "parameters": [
                     {
                         "type": "string",
@@ -206,6 +211,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Get process ports",
+                "operationId": "GetProcessPorts",
                 "parameters": [
                     {
                         "type": "string",
@@ -244,6 +250,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Restart a process",
+                "operationId": "RestartProcess",
                 "parameters": [
                     {
                         "type": "string",
@@ -285,6 +292,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Scale a process to a given replicas count",
+                "operationId": "ScaleProcess",
                 "parameters": [
                     {
                         "type": "string",
@@ -333,6 +341,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Start a process",
+                "operationId": "StartProcess",
                 "parameters": [
                     {
                         "type": "string",
@@ -374,6 +383,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Stop a process",
+                "operationId": "StopProcess",
                 "parameters": [
                     {
                         "type": "string",
@@ -415,6 +425,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Get process state",
+                "operationId": "GetProcess",
                 "parameters": [
                     {
                         "type": "string",
@@ -453,6 +464,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Get all processes",
+                "operationId": "GetProcesses",
                 "responses": {
                     "200": {
                         "description": "Processes Status",
@@ -475,6 +487,9 @@ const docTemplate = `{
         "/processes/stop": {
             "patch": {
                 "description": "Sends kill signal to the processes list",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -482,6 +497,7 @@ const docTemplate = `{
                     "Process"
                 ],
                 "summary": "Stop processes",
+                "operationId": "StopProcesses",
                 "parameters": [
                     {
                         "description": "Processes Names",
@@ -537,6 +553,7 @@ const docTemplate = `{
                     "Project"
                 ],
                 "summary": "Updates running processes",
+                "operationId": "UpdateProject",
                 "responses": {
                     "200": {
                         "description": "Update Project Status",
@@ -578,6 +595,7 @@ const docTemplate = `{
                     "Project"
                 ],
                 "summary": "Reload project",
+                "operationId": "ReloadProject",
                 "responses": {
                     "200": {
                         "description": "Update Project Status",
@@ -619,6 +637,7 @@ const docTemplate = `{
                     "Project"
                 ],
                 "summary": "Get project state",
+                "operationId": "GetProjectState",
                 "responses": {
                     "200": {
                         "description": "Project State",
@@ -648,6 +667,7 @@ const docTemplate = `{
                     "Project"
                 ],
                 "summary": "Stops all the processes and the server",
+                "operationId": "ShutDownProject",
                 "responses": {
                     "200": {
                         "description": "Stopped Server",
@@ -719,29 +739,6 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
-        },
-        "time.Duration": {
-            "type": "integer",
-            "enum": [
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000
-            ],
-            "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour"
-            ]
         },
         "types.DependsOnConfig": {
             "type": "object",
@@ -974,7 +971,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "age": {
-                    "$ref": "#/definitions/time.Duration"
+                    "type": "integer"
                 },
                 "exit_code": {
                     "type": "integer"
@@ -1050,7 +1047,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "upTime": {
-                    "$ref": "#/definitions/time.Duration"
+                    "type": "integer"
                 },
                 "userName": {
                     "type": "string"
@@ -1110,11 +1107,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "",
-	BasePath:         "",
+	Host:             "localhost:8080",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "Swagger Process Compose API",
-	Description:      "This is a sample server Process Compose server.",
+	Title:            "Process Compose API",
+	Description:      "This is a sample Process Compose server.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

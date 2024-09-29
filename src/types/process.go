@@ -202,7 +202,7 @@ type ProcessState struct {
 	Namespace        string        `json:"namespace"`
 	Status           string        `json:"status"`
 	SystemTime       string        `json:"system_time"`
-	Age              time.Duration `json:"age"`
+	Age              time.Duration `json:"age" swaggertype:"primitive,integer"`
 	Health           string        `json:"is_ready"`
 	Restarts         int           `json:"restarts"`
 	ExitCode         int           `json:"exit_code"`

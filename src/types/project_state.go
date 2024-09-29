@@ -4,7 +4,7 @@ import "time"
 
 type ProjectState struct {
 	FileNames         []string      `json:"fileNames"`
-	UpTime            time.Duration `json:"upTime"`
+	UpTime            time.Duration `json:"upTime" swaggertype:"primitive,integer"`
 	StartTime         time.Time     `json:"startTime"`
 	ProcessNum        int           `json:"processNum"`
 	RunningProcessNum int           `json:"runningProcessNum"`

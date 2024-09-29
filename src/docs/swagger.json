@@ -58,29 +58,6 @@
                 },
                 "type": "object"
             },
-            "time.Duration": {
-                "enum": [
-                    -9223372036854776000,
-                    9223372036854776000,
-                    1,
-                    1000,
-                    1000000,
-                    1000000000,
-                    60000000000,
-                    3600000000000
-                ],
-                "type": "integer",
-                "x-enum-varnames": [
-                    "minDuration",
-                    "maxDuration",
-                    "Nanosecond",
-                    "Microsecond",
-                    "Millisecond",
-                    "Second",
-                    "Minute",
-                    "Hour"
-                ]
-            },
             "types.DependsOnConfig": {
                 "additionalProperties": {
                     "$ref": "#/components/schemas/types.ProcessDependency"
@@ -311,7 +288,7 @@
             "types.ProcessState": {
                 "properties": {
                     "age": {
-                        "$ref": "#/components/schemas/time.Duration"
+                        "type": "integer"
                     },
                     "exit_code": {
                         "type": "integer"
@@ -387,7 +364,7 @@
                         "type": "string"
                     },
                     "upTime": {
-                        "$ref": "#/components/schemas/time.Duration"
+                        "type": "integer"
                     },
                     "userName": {
                         "type": "string"
@@ -449,12 +426,12 @@
             "name": "Process Compose Discord Channel",
             "url": "https://discord.gg/S4xgmRSHdC"
         },
-        "description": "This is a sample server Process Compose server.",
+        "description": "This is a sample Process Compose server.",
         "license": {
             "name": "Apache 2.0",
             "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         },
-        "title": "Swagger Process Compose API",
+        "title": "Process Compose API",
         "version": "1.0"
     },
     "openapi": "3.0.3",
@@ -462,6 +439,7 @@
         "/hostname": {
             "get": {
                 "description": "Get process compose hostname",
+                "operationId": "GetHostName",
                 "responses": {
                     "200": {
                         "content": {
@@ -499,6 +477,7 @@
         "/live": {
             "get": {
                 "description": "Check if server is responding",
+                "operationId": "IsAlive",
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -513,6 +492,7 @@
         "/process": {
             "post": {
                 "description": "Update porcess",
+                "operationId": "UpdateProcess",
                 "responses": {
                     "200": {
                         "content": {
@@ -547,6 +527,7 @@
         "/process/info/{name}": {
             "get": {
                 "description": "Retrieves the given process and its config",
+                "operationId": "GetProcessInfo",
                 "parameters": [
                     {
                         "description": "Process Name",
@@ -592,6 +573,7 @@
         "/process/logs/{name}/{endOffset}/{limit}": {
             "get": {
                 "description": "Retrieves the process logs",
+                "operationId": "GetProcessLogs",
                 "parameters": [
                     {
                         "description": "Process Name",
@@ -661,6 +643,7 @@
         "/process/ports/{name}": {
             "get": {
                 "description": "Retrieves process open ports",
+                "operationId": "GetProcessPorts",
                 "parameters": [
                     {
                         "description": "Process Name",
@@ -706,6 +689,7 @@
         "/process/restart/{name}": {
             "post": {
                 "description": "Restarts the process",
+                "operationId": "RestartProcess",
                 "parameters": [
                     {
                         "description": "Process Name",
@@ -754,6 +738,7 @@
         "/process/scale/{name}/{scale}": {
             "patch": {
                 "description": "Scale a process",
+                "operationId": "ScaleProcess",
                 "parameters": [
                     {
                         "description": "Process Name",
@@ -811,6 +796,7 @@
         "/process/start/{name}": {
             "post": {
                 "description": "Starts the process if the state is not 'running' or 'pending'",
+                "operationId": "StartProcess",
                 "parameters": [
                     {
                         "description": "Process Name",
@@ -859,6 +845,7 @@
         "/process/stop/{name}": {
             "patch": {
                 "description": "Sends kill signal to the process",
+                "operationId": "StopProcess",
                 "parameters": [
                     {
                         "description": "Process Name",
@@ -907,6 +894,7 @@
         "/process/{name}": {
             "get": {
                 "description": "Retrieves the given process and its status",
+                "operationId": "GetProcess",
                 "parameters": [
                     {
                         "description": "Process Name",
@@ -952,6 +940,7 @@
         "/processes": {
             "get": {
                 "description": "Retrieves all the configured processes and their status",
+                "operationId": "GetProcesses",
                 "responses": {
                     "200": {
                         "content": {
@@ -986,9 +975,10 @@
         "/processes/stop": {
             "patch": {
                 "description": "Sends kill signal to the processes list",
+                "operationId": "StopProcesses",
                 "requestBody": {
                     "content": {
-                        "*/*": {
+                        "application/json": {
                             "schema": {
                                 "items": {
                                     "type": "string"
@@ -1051,6 +1041,7 @@
         "/project": {
             "post": {
                 "description": "Update running project",
+                "operationId": "UpdateProject",
                 "responses": {
                     "200": {
                         "content": {
@@ -1101,6 +1092,7 @@
         "/project/configuration": {
             "post": {
                 "description": "Reload project state from config",
+                "operationId": "ReloadProject",
                 "responses": {
                     "200": {
                         "content": {
@@ -1151,6 +1143,7 @@
         "/project/state": {
             "get": {
                 "description": "Retrieves project state information",
+                "operationId": "GetProjectState",
                 "responses": {
                     "200": {
                         "content": {
@@ -1185,6 +1178,7 @@
         "/project/stop": {
             "post": {
                 "description": "Shuts down the server",
+                "operationId": "ShutDownProject",
                 "responses": {
                     "200": {
                         "content": {
@@ -1206,5 +1200,10 @@
                 ]
             }
         }
-    }
+    },
+    "servers": [
+        {
+            "url": "https://localhost:8080/"
+        }
+    ]
 }

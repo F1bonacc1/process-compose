@@ -9,21 +9,6 @@ import (
 	"net/url"
 )
 
-// @title Process Compose API
-// @version 1.0
-// @description process compose description
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name Appache 2.0
-// @license.url https://opensource.org/licenses/MIT
-
-// @host localhost:8080
-// @BasePath /
-// @query.collection.format multi
-
 // InitRoutes initialize routing information
 func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r := gin.New()
