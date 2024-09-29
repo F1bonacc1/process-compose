@@ -13,3 +13,9 @@ serde_json ={ version = "^1.0.42", default-features = false}
 
 [dev-dependencies]
 tokio = { version = "1.4", features = ["macros"]}
+
+[build-dependencies]
+progenitor = { git = "https://github.com/oxidecomputer/progenitor", tag = "v0.8.0", version = "0.8.0"}
+syn = {version = "*"}
+prettyplease = {version = "*"}
+serde_json ={ version = "^1.0.42", default-features = false}
