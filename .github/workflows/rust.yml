@@ -1,0 +1,23 @@
+# build and publish rust crate
+name: Rust
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, dz/1 ]
+
+jobs:
+  release:
+    name: Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+            toolchain: stable
+            override: true
+      - uses: katyo/publish-crates@v2
+        with:
+            registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+            path: crates/openapi-client
