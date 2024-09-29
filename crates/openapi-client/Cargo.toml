@@ -2,6 +2,8 @@
 name = "process-compose-openapi-client"
 version = "1.27.0"
 edition = "2021"
+description = "OpenAPI client for Process Compose"
+license = "Apache-2.0"
 
 [dependencies]
 futures = "0.3"
