@@ -471,7 +471,7 @@ dependencies = [
 
 [[package]]
 name = "process-compose-openapi-client"
-version = "0.1.0"
+version = "1.27.0"
 dependencies = [
  "futures",
  "progenitor",
