@@ -248,6 +248,19 @@ func (pv *pcView) setShortCutsActions() {
 			pv.showError(err.Error())
 		}
 	})
+	pv.shortcuts.setAction(ActionProcessStop, func() {
+		name := pv.getSelectedProcName()
+		go pv.handleProcessStopped(name)
+	})
+	pv.shortcuts.setAction(ActionProcessStart, func() {
+		pv.startProcess()
+		pv.showPassIfNeeded()
+	})
+	pv.shortcuts.setAction(ActionProcessRestart, func() {
+		name := pv.getSelectedProcName()
+		pv.project.RestartProcess(name)
+		pv.showPassIfNeeded()
+	})
 }
 
 func (pv *pcView) setFullScreen(isFullScreen bool) {

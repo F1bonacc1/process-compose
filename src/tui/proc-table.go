@@ -181,16 +181,6 @@ func (pv *pcView) createProcTable() *tview.Table {
 
 	table.Select(1, 1).SetFixed(1, 0).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case pv.shortcuts.ShortCutKeys[ActionProcessStop].key:
-			name := pv.getSelectedProcName()
-			go pv.handleProcessStopped(name)
-		case pv.shortcuts.ShortCutKeys[ActionProcessStart].key:
-			pv.startProcess()
-			pv.showPassIfNeeded()
-		case pv.shortcuts.ShortCutKeys[ActionProcessRestart].key:
-			name := pv.getSelectedProcName()
-			pv.project.RestartProcess(name)
-			pv.showPassIfNeeded()
 		case tcell.KeyRune:
 			if event.Rune() == 'S' {
 				pv.setTableSorter(ProcessStateStatus)
