@@ -388,18 +388,16 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 	p.mtxStopFn.Lock()
 	p.waitForStoppedCtx, p.waitForStoppedFn = context.WithTimeout(context.Background(), time.Duration(p.procConf.ShutDownParams.ShutDownTimeout)*time.Second)
 	p.mtxStopFn.Unlock()
-	select {
-	case <-p.waitForStoppedCtx.Done():
-		err = p.waitForStoppedCtx.Err()
-		switch {
-		case errors.Is(err, context.Canceled):
-			return nil
-		case errors.Is(err, context.DeadlineExceeded):
-			return p.command.Stop(int(syscall.SIGKILL), p.procConf.ShutDownParams.ParentOnly)
-		default:
-			log.Error().Err(err).Msgf("terminating %s with timeout %d failed", p.getName(), p.procConf.ShutDownParams.ShutDownTimeout)
-			return err
-		}
+	<-p.waitForStoppedCtx.Done()
+	err = p.waitForStoppedCtx.Err()
+	switch {
+	case errors.Is(err, context.Canceled):
+		return nil
+	case errors.Is(err, context.DeadlineExceeded):
+		return p.command.Stop(int(syscall.SIGKILL), p.procConf.ShutDownParams.ParentOnly)
+	default:
+		log.Error().Err(err).Msgf("terminating %s with timeout %d failed", p.getName(), p.procConf.ShutDownParams.ShutDownTimeout)
+		return err
 	}
 }
 
@@ -839,13 +837,11 @@ func (p *Process) setPassword(password string) error {
 }
 
 func (p *Process) waitForPass() error {
-	select {
-	case <-p.waitForPassCtx.Done():
-		if !p.passProvided {
-			return fmt.Errorf("wrong password for elevated process %s, %s", p.getName(), p.waitForPassCtx.Err())
-		}
-		return nil
+	<-p.waitForPassCtx.Done()
+	if !p.passProvided {
+		return fmt.Errorf("wrong password for elevated process %s, %s", p.getName(), p.waitForPassCtx.Err())
 	}
+	return nil
 }
 
 func isWrongPasswordEntered(output string) bool {
