@@ -139,7 +139,7 @@ func (p *PcClient) ErrorForSecs() int {
 	if !p.isErrored {
 		return 0
 	}
-	return int(time.Now().Sub(p.firstError).Seconds())
+	return int(time.Since(p.firstError).Seconds())
 }
 
 func (p *PcClient) logError(err error) error {
