@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog"
@@ -114,7 +115,7 @@ func validateHealthDependencyHasHealthCheck(p *types.Project) error {
 			if !ok {
 				errStr := fmt.Sprintf("dependency process '%s' in process '%s' is not defined", depName, procName)
 				if p.IsStrict {
-					return fmt.Errorf(errStr)
+					return errors.New(errStr)
 				}
 				log.Error().Msg(errStr)
 				continue
@@ -122,14 +123,14 @@ func validateHealthDependencyHasHealthCheck(p *types.Project) error {
 			if dep.Condition == types.ProcessConditionHealthy && depProc.ReadinessProbe == nil && depProc.LivenessProbe == nil {
 				errStr := fmt.Sprintf("health dependency defined in '%s' but no health check exists in '%s'", procName, depName)
 				if p.IsStrict {
-					return fmt.Errorf(errStr)
+					return errors.New(errStr)
 				}
 				log.Error().Msg(errStr)
 			}
 			if dep.Condition == types.ProcessConditionLogReady && depProc.ReadyLogLine == "" {
 				errStr := fmt.Sprintf("log ready dependency defined in '%s' but no ready log line exists in '%s'", procName, depName)
 				log.Error().Msg(errStr)
-				return fmt.Errorf(errStr)
+				return errors.New(errStr)
 			}
 		}
 	}
@@ -141,7 +142,7 @@ func validateNoIncompatibleHealthChecks(p *types.Project) error {
 		if proc.ReadinessProbe != nil && proc.ReadyLogLine != "" {
 			errStr := fmt.Sprintf("'ready_log_line' and readiness probe defined in '%s' are incompatible", procName)
 			log.Error().Msg(errStr)
-			return fmt.Errorf(errStr)
+			return errors.New(errStr)
 		}
 	}
 	return nil
@@ -154,7 +155,7 @@ func validateDependencyIsEnabled(p *types.Project) error {
 			if !ok {
 				errStr := fmt.Sprintf("dependency process '%s' in process '%s' is not defined", depName, procName)
 				if p.IsStrict {
-					return fmt.Errorf(errStr)
+					return errors.New(errStr)
 				}
 				log.Error().Msg(errStr)
 				continue
@@ -162,7 +163,7 @@ func validateDependencyIsEnabled(p *types.Project) error {
 			if depProc.Disabled {
 				errStr := fmt.Sprintf("dependency process '%s' in process '%s' is disabled", depName, procName)
 				if p.IsStrict {
-					return fmt.Errorf(errStr)
+					return errors.New(errStr)
 				}
 				log.Error().Msg(errStr)
 			}

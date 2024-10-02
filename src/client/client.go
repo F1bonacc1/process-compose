@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
@@ -161,7 +162,7 @@ func (p *PcClient) GetProjectState(withMemory bool) (*types.ProjectState, error)
 }
 
 func (p *PcClient) SetProcessPassword(_, _ string) error {
-	return fmt.Errorf("set process password not allowed for PC client")
+	return errors.New("set process password not allowed for PC client")
 }
 
 func (p *PcClient) UpdateProject(project *types.Project) (map[string]string, error) {

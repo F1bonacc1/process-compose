@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"sort"
@@ -81,7 +82,7 @@ type sortFn func(i, j int) bool
 func sortProcessesState(sortBy ColumnID, asc bool, states *types.ProcessesState) error {
 
 	if states == nil {
-		return fmt.Errorf("empty states")
+		return errors.New("empty states")
 	}
 	sorter := getSorter(sortBy, states)
 	if !asc {

@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -22,5 +23,5 @@ func (p *PcClient) restartProcess(name string) error {
 		log.Error().Msgf("failed to decode restart process %s response: %v", name, err)
 		return err
 	}
-	return fmt.Errorf(respErr.Error)
+	return errors.New(respErr.Error)
 }

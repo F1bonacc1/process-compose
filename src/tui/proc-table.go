@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
@@ -159,7 +160,7 @@ func (pv *pcView) isPassModeNeeded(state *types.ProcessState) bool {
 func (pv *pcView) getSelectedProcState() (*types.ProcessState, error) {
 	name := pv.getSelectedProcName()
 	if len(name) == 0 {
-		return nil, fmt.Errorf("no process selected")
+		return nil, errors.New("no process selected")
 	}
 	return pv.project.GetProcessState(name)
 }

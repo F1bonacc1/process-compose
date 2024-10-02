@@ -319,7 +319,7 @@ func (p *ProjectRunner) StopProcesses(names []string) (map[string]string, error)
 		if successes == 0 {
 			return stopped, fmt.Errorf("no such processes or not running: %v", names)
 		}
-		return stopped, fmt.Errorf("failed to stop some processes")
+		return stopped, errors.New("failed to stop some processes")
 	}
 	return stopped, nil
 }
@@ -398,7 +398,7 @@ func (p *ProjectRunner) SetProcessPassword(name, pass string) error {
 		}
 	}
 
-	return fmt.Errorf("password not accepted")
+	return errors.New("password not accepted")
 
 }
 

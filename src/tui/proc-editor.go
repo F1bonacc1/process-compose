@@ -130,5 +130,5 @@ func findTextEditor() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("no text editor found")
+	return "", errors.New("no text editor found")
 }

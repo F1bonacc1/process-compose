@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -26,5 +27,5 @@ func (p *PcClient) scaleProcess(name string, scale int) error {
 		log.Error().Msgf("failed to decode scale process %s response: %v", name, err)
 		return err
 	}
-	return fmt.Errorf(respErr.Error)
+	return errors.New(respErr.Error)
 }

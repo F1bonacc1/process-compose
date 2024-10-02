@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -28,7 +29,7 @@ func (p *PcClient) stopProcess(name string) error {
 		log.Error().Msgf("failed to decode stop process %s response: %v", name, err)
 		return err
 	}
-	return fmt.Errorf(respErr.Error)
+	return errors.New(respErr.Error)
 }
 
 func (p *PcClient) stopProcesses(names []string) (map[string]string, error) {
@@ -62,5 +63,5 @@ func (p *PcClient) stopProcesses(names []string) (map[string]string, error) {
 		log.Err(err).Msgf("failed to decode err stop processes %v", names)
 		return nil, err
 	}
-	return nil, fmt.Errorf(respErr.Error)
+	return nil, errors.New(respErr.Error)
 }

@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"github.com/creack/pty"
 	"golang.org/x/term"
@@ -39,7 +40,7 @@ func (c *CmdWrapperPty) StdoutPipe() (io.ReadCloser, error) {
 }
 
 func (c *CmdWrapperPty) StderrPipe() (io.ReadCloser, error) {
-	return nil, fmt.Errorf("not supported in PTY")
+	return nil, errors.New("not supported in PTY")
 }
 func (c *CmdWrapperPty) StdinPipe() (io.WriteCloser, error) {
 	if c.ptmx == nil {
