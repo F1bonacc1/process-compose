@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 var (
@@ -22,7 +21,6 @@ type LogView struct {
 	isWrapOn               bool
 	buffer                 *bytes.Buffer
 	ansiWriter             io.Writer
-	mx                     sync.Mutex
 	useAnsi                bool
 	uniqueId               string
 	searchCurrentSelection int
