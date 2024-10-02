@@ -20,13 +20,13 @@ import (
 	"github.com/rivo/tview"
 )
 
-type ScrSplitState int
+type scrSplitState int
 type commandType int
 
 const (
-	LogFull     ScrSplitState = 0
-	ProcFull                  = 1
-	LogProcHalf               = 2
+	LogFull     scrSplitState = 0
+	ProcFull    scrSplitState = 1
+	LogProcHalf scrSplitState = 2
 )
 
 const (
@@ -57,7 +57,7 @@ type pcView struct {
 	procNames         []string
 	logFollow         bool
 	logSelect         bool
-	scrSplitState     ScrSplitState
+	scrSplitState     scrSplitState
 	loggedProc        string
 	shortcuts         *ShortCuts
 	procCountCell     *tview.TableCell
