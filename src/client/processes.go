@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
@@ -116,5 +117,5 @@ func (p *PcClient) updateProcess(procInfo *types.ProcessConfig) error {
 		log.Err(err).Msg("failed to decode err update process")
 		return err
 	}
-	return fmt.Errorf(respErr.Error)
+	return errors.New(respErr.Error)
 }

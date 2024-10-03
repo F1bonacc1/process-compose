@@ -26,7 +26,7 @@ endif
 buildrun: build run
 
 setup:
-	go mod tidy
+	go mod download
 
 ci: setup build testrace
 
@@ -88,6 +88,9 @@ docs:
 	for f in ${DOCS_DIR}/*.md ; do sed -i 's/${USER}/<user>/g' $$f ; done
 	for f in ${DOCS_DIR}/*.md ; do sed -i 's/process-compose-[0-9]\+.sock/process-compose-<pid>.sock/g' $$f ; done
 
+lint: golangci-lint
+	./bin/golangci-lint run --show-stats -c golangci.yaml
+
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
@@ -95,9 +98,16 @@ $(LOCALBIN):
 
 ## Tool Binaries
 SWAG2OP_GEN ?= $(LOCALBIN)/swag2op
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 .PHONY: swag2op
 swag2op: $(SWAG2OP_GEN) ## Download swag2op locally if necessary.
 $(SWAG2OP_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/swag2op || \
 	GOBIN=$(LOCALBIN) go install github.com/zxmfke/swagger2openapi3/cmd/swag2op@latest
+
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): $(LOCALBIN)
+	test -s $(LOCALBIN)/golangci-lint || \
+	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0

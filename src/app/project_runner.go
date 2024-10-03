@@ -63,7 +63,9 @@ func (p *ProjectRunner) init() {
 }
 
 func (p *ProjectRunner) Run() error {
+	p.runProcMutex.Lock()
 	p.runningProcesses = make(map[string]*Process)
+	p.runProcMutex.Unlock()
 	runOrder := []types.ProcessConfig{}
 	err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
 		runOrder = append(runOrder, process)
@@ -186,14 +188,14 @@ func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
 func (p *ProjectRunner) onProcessEnd(exitCode int, procConf *types.ProcessConfig) {
 	if (exitCode != 0 && procConf.RestartPolicy.Restart == types.RestartPolicyExitOnFailure) ||
 		procConf.RestartPolicy.ExitOnEnd {
-		p.ShutDownProject()
+		_ = p.ShutDownProject()
 		p.exitCode = exitCode
 	}
 }
 
 func (p *ProjectRunner) onProcessSkipped(procConf *types.ProcessConfig) {
 	if procConf.RestartPolicy.ExitOnSkipped {
-		p.ShutDownProject()
+		_ = p.ShutDownProject()
 		p.exitCode = 1
 	}
 }
@@ -234,6 +236,24 @@ func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error
 	}
 }
 
+func (p *ProjectRunner) getProcessStateData(name string, filter filterFn) error {
+	proc := p.getRunningProcess(name)
+	if proc != nil {
+		proc.getStateData(filter)
+	} else {
+		p.statesMutex.Lock()
+		defer p.statesMutex.Unlock()
+		state, ok := p.processStates[name]
+		if !ok {
+			log.Error().Msgf("Error: process %s doesn't exist", name)
+			return fmt.Errorf("can't get state of process %s: no such process", name)
+		}
+		filter(state)
+		return nil
+	}
+	return nil
+}
+
 func (p *ProjectRunner) GetProcessesState() (*types.ProcessesState, error) {
 	states := &types.ProcessesState{
 		States: make([]types.ProcessState, 0),
@@ -247,6 +267,16 @@ func (p *ProjectRunner) GetProcessesState() (*types.ProcessesState, error) {
 
 	}
 	return states, nil
+}
+
+func (p *ProjectRunner) getProcessesStateData(filter filterFn) error {
+	for name := range p.project.Processes {
+		err := p.getProcessStateData(name, filter)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p *ProjectRunner) addRunningProcess(process *Process) {

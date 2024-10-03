@@ -47,6 +47,6 @@ func (p *ProjectOpts) WithOrderedShutDown(isOrderedShutDown bool) *ProjectOpts {
 	return p
 }
 
-func (o *ProjectOpts) WithDotEnvDisabled(disabled bool) {
-	o.disableDotenv = disabled
+func (p *ProjectOpts) WithDotEnvDisabled(disabled bool) {
+	p.disableDotenv = disabled
 }

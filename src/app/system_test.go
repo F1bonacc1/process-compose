@@ -31,7 +31,7 @@ func TestSystem_TestFixtures(t *testing.T) {
 				FileNames: []string{fixture},
 			})
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err.Error())
 				return
 			}
 			runner, err := NewProjectRunner(&ProjectOpts{
@@ -43,10 +43,14 @@ func TestSystem_TestFixtures(t *testing.T) {
 				isTuiOn:         false,
 			})
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err.Error())
 				return
 			}
-			runner.Run()
+			err = runner.Run()
+			if err != nil {
+				t.Error(err.Error())
+				return
+			}
 		})
 	}
 }
@@ -58,7 +62,7 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 			FileNames: []string{fixture},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		runner, err := NewProjectRunner(&ProjectOpts{
@@ -67,10 +71,14 @@ func TestSystem_TestComposeWithLog(t *testing.T) {
 			mainProcessArgs: []string{},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
-		runner.Run()
+		err = runner.Run()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
 		if _, err := os.Stat(runner.project.LogLocation); err != nil {
 			t.Errorf("log file %s not found", runner.project.LogLocation)
 		}
@@ -95,7 +103,7 @@ func TestSystem_TestComposeChain(t *testing.T) {
 			FileNames: []string{fixture},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		runner, err := NewProjectRunner(&ProjectOpts{
@@ -104,7 +112,7 @@ func TestSystem_TestComposeChain(t *testing.T) {
 			mainProcessArgs: []string{},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		names, err := runner.GetDependenciesOrderNames()
@@ -135,7 +143,7 @@ func TestSystem_TestComposeChainExit(t *testing.T) {
 			FileNames: []string{fixture},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		runner, err := NewProjectRunner(&ProjectOpts{
@@ -144,7 +152,7 @@ func TestSystem_TestComposeChainExit(t *testing.T) {
 			mainProcessArgs: []string{},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		err = runner.Run()
@@ -163,7 +171,7 @@ func TestSystem_TestComposeCircular(t *testing.T) {
 			FileNames: []string{fixture1},
 		})
 		if err == nil {
-			t.Errorf("should fail on cirlcular dependency")
+			t.Error("should fail on cirlcular dependency")
 			return
 		}
 
@@ -171,7 +179,7 @@ func TestSystem_TestComposeCircular(t *testing.T) {
 			FileNames: []string{fixture2},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 	})
@@ -184,7 +192,7 @@ func TestSystem_TestComposeScale(t *testing.T) {
 			FileNames: []string{fixture},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		runner, err := NewProjectRunner(&ProjectOpts{
@@ -193,14 +201,19 @@ func TestSystem_TestComposeScale(t *testing.T) {
 			mainProcessArgs: []string{},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
-		go runner.Run()
+		go func() {
+			err = runner.Run()
+			if err != nil {
+				t.Error(err.Error())
+			}
+		}()
 		time.Sleep(200 * time.Millisecond)
 		states, err := runner.GetProcessesState()
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		want := 4
@@ -211,12 +224,12 @@ func TestSystem_TestComposeScale(t *testing.T) {
 		//scale to 10
 		err = runner.ScaleProcess("process1-0", 10)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		states, err = runner.GetProcessesState()
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		want = 12
@@ -227,19 +240,19 @@ func TestSystem_TestComposeScale(t *testing.T) {
 		//check scale to 0 - should fail
 		err = runner.ScaleProcess("process1-00", 0)
 		if err == nil {
-			t.Errorf("should fail on scale 0")
+			t.Error("should fail on scale 0")
 			return
 		}
 
 		//scale to 1 and new name with -00
 		err = runner.ScaleProcess("process1-00", 1)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		states, err = runner.GetProcessesState()
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		want = 3
@@ -250,12 +263,12 @@ func TestSystem_TestComposeScale(t *testing.T) {
 		//scale to 5 process2
 		err = runner.ScaleProcess("process2", 5)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		states, err = runner.GetProcessesState()
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		want = 7
@@ -266,12 +279,12 @@ func TestSystem_TestComposeScale(t *testing.T) {
 		//check no change
 		err = runner.ScaleProcess("process2-0", 5)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		states, err = runner.GetProcessesState()
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		want = 7
@@ -282,7 +295,7 @@ func TestSystem_TestComposeScale(t *testing.T) {
 		//wrong process name
 		err = runner.ScaleProcess("process2-00", 5)
 		if err == nil {
-			t.Errorf("should fail on wrong process name")
+			t.Error("should fail on wrong process name")
 			return
 		}
 	})
@@ -295,7 +308,7 @@ func TestSystem_TestTransitiveDependency(t *testing.T) {
 			FileNames: []string{fixture1},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		runner, err := NewProjectRunner(&ProjectOpts{
@@ -303,9 +316,21 @@ func TestSystem_TestTransitiveDependency(t *testing.T) {
 			processesToRun:  []string{},
 			mainProcessArgs: []string{},
 		})
-		runner.Run()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		err = runner.Run()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
 
 		states, err := runner.GetProcessesState()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
 		for _, state := range states.States {
 			if state.ExitCode != 1 {
 				t.Errorf("process %s exit code is not 1", state.Name)
@@ -321,7 +346,7 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 			FileNames: []string{fixture1},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		numProc := len(project.Processes)
@@ -331,7 +356,7 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 			mainProcessArgs: []string{},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		if len(runner.project.Processes) != numProc {
@@ -355,7 +380,7 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 			FileNames: []string{fixture1},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		numProc := len(project.Processes)
@@ -365,7 +390,7 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 			mainProcessArgs: []string{},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		if len(runner.project.Processes) != numProc {
@@ -382,7 +407,7 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 			FileNames: []string{fixture1},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		numProc := len(project.Processes)
@@ -393,7 +418,7 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 			noDeps:          true,
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		if len(runner.project.Processes) != numProc {
@@ -421,7 +446,7 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			FileNames: []string{fixture1},
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		numProc := len(project.Processes)
@@ -432,7 +457,7 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			isOrderedShutDown: true,
 		})
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		if len(runner.project.Processes) != numProc {
@@ -444,6 +469,10 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			}
 		}
 		file, err := os.CreateTemp("/tmp", "pc_log.*.log")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
 		defer os.Remove(file.Name())
 		project.LogLocation = file.Name()
 		project.LoggerConfig = &types.LoggerConfig{
@@ -454,11 +483,16 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			FlushEachLine:   true,
 			NoColor:         true,
 		}
-		go runner.Run()
+		go func() {
+			err := runner.Run()
+			if err != nil {
+				t.Error(err.Error())
+			}
+		}()
 		time.Sleep(10 * time.Millisecond)
 		states, err := runner.GetProcessesState()
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		want := 3
@@ -469,19 +503,18 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 		err = runner.ShutDownProject()
 		if err != nil {
-			t.Errorf(err.Error())
-			return
-		}
-		states, err = runner.GetProcessesState()
-		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 		runningProcesses := 0
-		for _, processState := range states.States {
-			if processState.IsRunning {
+		err = runner.getProcessesStateData(func(state *types.ProcessState) {
+			if state.IsRunning {
 				runningProcesses++
 			}
+		})
+		if err != nil {
+			t.Error(err.Error())
+			return
 		}
 		want = 0
 		if runningProcesses != want {
@@ -535,14 +568,19 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 		project: project,
 	})
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
-	go runner.Run()
+	go func() {
+		err := runner.Run()
+		if err != nil {
+			t.Error(err.Error())
+		}
+	}()
 	time.Sleep(100 * time.Millisecond)
 	state, err := runner.GetProcessState(restarting)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 	if state.Status != types.ProcessStateRunning {
@@ -551,14 +589,14 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 	}
 	err = runner.StopProcess(restarting)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	time.Sleep(100 * time.Millisecond)
 	state, err = runner.GetProcessState(restarting)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 	if state.Status != types.ProcessStateCompleted {
@@ -567,7 +605,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 	}
 	state, err = runner.GetProcessState(notRestarting)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 	if state.Status != types.ProcessStateRunning {
@@ -576,14 +614,14 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 	}
 	err = runner.StopProcess(notRestarting)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	time.Sleep(100 * time.Millisecond)
 	state, err = runner.GetProcessState(notRestarting)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 	if state.Status != types.ProcessStateCompleted {
@@ -622,10 +660,15 @@ func TestSystem_TestReadyLine(t *testing.T) {
 		project: project,
 	})
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
-	go runner.Run()
+	go func() {
+		err = runner.Run()
+		if err != nil {
+			t.Error(err.Error())
+		}
+	}()
 	time.Sleep(100 * time.Millisecond)
 	state := runner.getRunningProcess(proc2).getStatusName()
 
@@ -674,10 +717,15 @@ func TestUpdateProject(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
-	go p.Run()
+	go func() {
+		err := p.Run()
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	}()
 	time.Sleep(100 * time.Millisecond)
 
 	// Test when no changes are made
@@ -858,18 +906,26 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s", err)
 		}
-		go runner.Run()
+		go func() {
+			err := runner.Run()
+			if err != nil {
+				t.Errorf("%s", err)
+			}
+		}()
 		time.Sleep(100 * time.Millisecond)
 		proc := runner.getRunningProcess(ignoresSigTerm)
 		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateRunning)
 
 		// If the test fails, cleanup after ourselves
-		defer proc.command.Stop(int(syscall.SIGKILL), true)
+		defer func(command command.Commander) {
+			_ = command.Stop(int(syscall.SIGKILL), true)
+		}(proc.command)
 
 		go func() {
-			err = runner.StopProcess(ignoresSigTerm)
+			err := runner.StopProcess(ignoresSigTerm)
 			if err != nil {
-				t.Fatalf("%s", err)
+				t.Errorf("%s", err)
+				return
 			}
 		}()
 
@@ -890,14 +946,20 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s", err)
 		}
-		go runner.Run()
+		go func() {
+			err1 := runner.Run()
+			if err1 != nil {
+				t.Errorf("%s", err1)
+			}
+		}()
 		time.Sleep(100 * time.Millisecond)
 		proc := runner.getRunningProcess(ignoresSigTerm)
 		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateRunning)
 		go func() {
-			err = runner.StopProcess(ignoresSigTerm)
-			if err != nil {
-				t.Fatalf("%s", err)
+			err1 := runner.StopProcess(ignoresSigTerm)
+			if err1 != nil {
+				t.Errorf("%s", err1)
+				return
 			}
 		}()
 		time.Sleep(200 * time.Millisecond)

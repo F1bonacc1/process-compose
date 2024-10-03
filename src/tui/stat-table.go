@@ -74,7 +74,7 @@ func (pv *pcView) getHostNameTitle() string {
 }
 
 // AttentionMessage shows an attention message in the status table
-// It will disappear after the specified duration
+// It will disappear after the specified duration.
 // duration == 0 will not hide the message
 func (pv *pcView) attentionMessage(message string, duration time.Duration) {
 	go func() {

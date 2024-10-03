@@ -90,9 +90,9 @@ func (l *LogView) IsWrapOn() bool {
 
 func (l *LogView) Flush() {
 	if l.useAnsi {
-		l.buffer.WriteTo(l.ansiWriter)
+		_, _ = l.buffer.WriteTo(l.ansiWriter)
 	} else {
-		l.buffer.WriteTo(l)
+		_, _ = l.buffer.WriteTo(l)
 	}
 }
 

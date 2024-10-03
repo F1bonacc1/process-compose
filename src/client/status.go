@@ -33,8 +33,8 @@ func (p *PcClient) getHostName() (string, error) {
 
 	nameMap := map[string]string{}
 	//Decode the data
-	if err := json.NewDecoder(resp.Body).Decode(&nameMap); err != nil {
-		log.Err(err)
+	if err = json.NewDecoder(resp.Body).Decode(&nameMap); err != nil {
+		log.Err(err).Send()
 		return "", err
 	}
 	return nameMap["name"], nil

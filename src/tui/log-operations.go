@@ -99,7 +99,10 @@ func (pv *pcView) createLogSelectionTextArea() {
 		switch event.Key() {
 		case tcell.KeyCR:
 			text, start, _ := pv.logsTextArea.GetSelection()
-			glippy.Set(text)
+			err := glippy.Set(text)
+			if err != nil {
+				log.Err(err).Msg("failed to set clipboard")
+			}
 			pv.logsTextArea.Select(start, start)
 		case tcell.KeyEsc:
 			pv.toggleLogSelection()

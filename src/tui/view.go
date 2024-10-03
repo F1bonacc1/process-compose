@@ -159,7 +159,7 @@ func (pv *pcView) loadProcNames() {
 func (pv *pcView) loadShortcuts() {
 	path := config.GetShortCutsPath()
 	if len(path) > 0 {
-		pv.shortcuts.loadFromFile(path)
+		_ = pv.shortcuts.loadFromFile(path)
 	}
 }
 
@@ -258,7 +258,10 @@ func (pv *pcView) setShortCutsActions() {
 	})
 	pv.shortcuts.setAction(ActionProcessRestart, func() {
 		name := pv.getSelectedProcName()
-		pv.project.RestartProcess(name)
+		err := pv.project.RestartProcess(name)
+		if err != nil {
+			pv.showError(err.Error())
+		}
 		pv.showPassIfNeeded()
 	})
 }

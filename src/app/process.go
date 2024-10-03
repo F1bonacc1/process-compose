@@ -562,7 +562,7 @@ func (p *Process) handleInput(pipe io.WriteCloser) {
 				Msg("error reading from stdin")
 			continue
 		}
-		pipe.Write([]byte(input))
+		_, _ = pipe.Write([]byte(input))
 	}
 }
 
@@ -661,6 +661,17 @@ func (p *Process) getState() *types.ProcessState {
 	p.stateMtx.Lock()
 	defer p.stateMtx.Unlock()
 	return p.procState
+}
+
+type filterFn func(*types.ProcessState)
+
+func (p *Process) getStateData(filter filterFn) {
+	p.updateProcState()
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
+	if filter != nil {
+		filter(p.procState)
+	}
 }
 
 func (p *Process) getStatusName() string {

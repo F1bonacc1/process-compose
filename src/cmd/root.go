@@ -154,7 +154,7 @@ func setupLogger() *os.File {
 // Logs and exits with a non-zero code if there are any errors.
 func handleErrorAndExit(err error) {
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Send()
 		var exitErr *app.ExitError
 		if errors.As(err, &exitErr) {
 			os.Exit(exitErr.Code)

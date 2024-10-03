@@ -10,6 +10,6 @@ func GenerateUniqueID(length int) string {
 		length += 1
 	}
 	b := make([]byte, length/2) //each byte is 2 chars
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
 }

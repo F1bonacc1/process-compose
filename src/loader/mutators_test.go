@@ -34,13 +34,13 @@ func Test_assignDefaultProcessValues(t *testing.T) {
 			assignDefaultProcessValues(tt.args.p)
 			for _, p := range tt.args.p.Processes {
 				if p.Namespace == "" {
-					t.Errorf("Expected namespace to be set")
+					t.Error("Expected namespace to be set")
 				}
 				if p.Replicas == 0 {
-					t.Errorf("Expected replicas to be set")
+					t.Error("Expected replicas to be set")
 				}
 				if p.Name == "" {
-					t.Errorf("Expected name to be set")
+					t.Error("Expected name to be set")
 				}
 			}
 		})
@@ -79,10 +79,10 @@ func Test_setDefaultShell(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			setDefaultShell(tt.args.p)
 			if tt.args.p.ShellConfig.ShellCommand != "bash" {
-				t.Errorf("Expected shell command to be bash")
+				t.Error("Expected shell command to be bash")
 			}
 			if tt.args.p.ShellConfig.ShellArgument != "-c" {
-				t.Errorf("Expected shell argument to be '-c'")
+				t.Error("Expected shell argument to be '-c'")
 			}
 		})
 	}
@@ -145,20 +145,20 @@ func Test_copyWorkingDirToProbes(t *testing.T) {
 				switch p.Name {
 				case procWithWorkingDir:
 					if p.LivenessProbe.Exec.WorkingDir != "/another" {
-						t.Errorf("Expected liveness probe working dir to be another")
+						t.Error("Expected liveness probe working dir to be another")
 					}
 					if p.ReadinessProbe.Exec.WorkingDir != "/another" {
-						t.Errorf("Expected readiness probe working dir to be another")
+						t.Error("Expected readiness probe working dir to be another")
 					}
 				case procNoWorkingDir:
 					if p.LivenessProbe.Exec.WorkingDir != "/tmp" {
-						t.Errorf("Expected lieveness probe working dir to be tmp")
+						t.Error("Expected lieveness probe working dir to be tmp")
 					}
 					if p.ReadinessProbe.Exec.WorkingDir != "/tmp" {
-						t.Errorf("Expected readiness probe working dir to be tmp")
+						t.Error("Expected readiness probe working dir to be tmp")
 					}
 				default:
-					t.Errorf("Expected process to exist")
+					t.Error("Expected process to exist")
 				}
 			}
 		})

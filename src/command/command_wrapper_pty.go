@@ -19,6 +19,9 @@ func (c *CmdWrapperPty) Start() (err error) {
 		return nil
 	}
 	c.ptmx, err = pty.Start(c.cmd)
+	if err != nil {
+		return fmt.Errorf("error starting PTY command: %w", err)
+	}
 	// No need to capture/restore old state, because we close the PTY when we're done.
 	_, err = term.MakeRaw(int(c.ptmx.Fd()))
 	if err != nil {
@@ -34,7 +37,10 @@ func (c *CmdWrapperPty) Wait() error {
 
 func (c *CmdWrapperPty) StdoutPipe() (io.ReadCloser, error) {
 	if c.ptmx == nil {
-		c.Start()
+		err := c.Start()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return c.ptmx, nil
 }
@@ -44,7 +50,10 @@ func (c *CmdWrapperPty) StderrPipe() (io.ReadCloser, error) {
 }
 func (c *CmdWrapperPty) StdinPipe() (io.WriteCloser, error) {
 	if c.ptmx == nil {
-		c.Start()
+		err := c.Start()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return c.ptmx, nil
 }

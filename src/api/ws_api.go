@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -64,11 +65,20 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 	if follow {
 		go handleIncoming(ws, done)
 	}
-	api.project.GetLogsAndSubscribe(procName, connector)
+	err = api.project.GetLogsAndSubscribe(procName, connector)
+	if err != nil {
+		log.Err(err).Msg("Failed to subscribe to logger")
+		return
+	}
 }
 
 func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclog.Connector, logChan chan LogMessage, done chan struct{}) {
-	defer api.project.UnSubscribeLogger(procName, connector)
+	defer func(project app.IProject, name string, observer pclog.LogObserver) {
+		err := project.UnSubscribeLogger(name, observer)
+		if err != nil {
+			log.Err(err).Msg("Failed to unsubscribe from logger")
+		}
+	}(api.project, procName, connector)
 	defer ws.Close()
 	for {
 		select {
