@@ -384,7 +384,7 @@ func (pv *pcView) showInfo() {
 	}
 	ports, _ := pv.project.GetProcessPorts(name)
 	form := pv.createProcInfoForm(info, ports)
-	pv.showDialog(form, 0, 0)
+	pv.showDialog(form, 0, 5+form.GetFormItemCount()*2)
 }
 
 func (pv *pcView) handleShutDown() {
