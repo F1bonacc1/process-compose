@@ -20,8 +20,9 @@ const (
 	ProcessStateAge       ColumnID = 5
 	ProcessStateHealth    ColumnID = 6
 	ProcessStateMem       ColumnID = 7
-	ProcessStateRestarts  ColumnID = 8
-	ProcessStateExit      ColumnID = 9
+	ProcessStateCPU       ColumnID = 8
+	ProcessStateRestarts  ColumnID = 9
+	ProcessStateExit      ColumnID = 10
 )
 
 var columnNames = map[ColumnID]string{
@@ -33,6 +34,7 @@ var columnNames = map[ColumnID]string{
 	ProcessStateAge:       "AGE",
 	ProcessStateHealth:    "HEALTH",
 	ProcessStateMem:       "MEM",
+	ProcessStateCPU:       "CPU",
 	ProcessStateRestarts:  "RESTARTS",
 	ProcessStateExit:      "EXIT",
 }
@@ -46,6 +48,7 @@ var columnIDs = map[string]ColumnID{
 	"AGE":       ProcessStateAge,
 	"HEALTH":    ProcessStateHealth,
 	"MEM":       ProcessStateMem,
+	"CPU":       ProcessStateCPU,
 	"RESTARTS":  ProcessStateRestarts,
 	"EXIT":      ProcessStateExit,
 }
@@ -155,6 +158,10 @@ func getSorter(sortBy ColumnID, states *types.ProcessesState) sortFn {
 	case ProcessStateMem:
 		return func(i, j int) bool {
 			return states.States[i].Mem < states.States[j].Mem
+		}
+	case ProcessStateCPU:
+		return func(i, j int) bool {
+			return states.States[i].CPU < states.States[j].CPU
 		}
 	case ProcessStateName:
 		fallthrough

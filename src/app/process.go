@@ -512,7 +512,7 @@ func (p *Process) updateProcState() {
 		p.procState.SystemTime = durationToString(dur)
 		p.procState.Age = dur
 		p.procState.Name = p.getName()
-		p.procState.Mem = p.getMemUsage()
+		p.procState.Mem, p.procState.CPU = p.getResourceUsage()
 	}
 	p.procState.IsRunning = isRunning
 	p.procState.IsElevated = p.procConf.IsElevated
@@ -532,14 +532,14 @@ func (p *Process) getStartTime() time.Time {
 	return p.startTime
 }
 
-func (p *Process) getMemUsage() int64 {
+func (p *Process) getResourceUsage() (int64, float64) {
 	if p.procConf.IsDaemon {
-		return 0
+		return -1, -1
 	}
 	proc, err := puproc.NewProcess(int32(p.procState.Pid))
 	if err != nil {
 		log.Err(err).Msgf("Could not find process")
-		return -1
+		return -1, -1
 	}
 	meminfo, err := proc.MemoryInfo()
 	if err != nil {
@@ -547,9 +547,17 @@ func (p *Process) getMemUsage() int64 {
 			Str("process", p.getName()).
 			Int("pid", p.procState.Pid).
 			Msg("Error retrieving memory stats")
-		return -1
+		return -1, -1
 	}
-	return int64(meminfo.RSS)
+	cpuPercent, err := proc.CPUPercentWithContext(context.Background())
+	if err != nil {
+		log.Err(err).
+			Str("process", p.getName()).
+			Int("pid", p.procState.Pid).
+			Msg("Error retrieving cpu stats")
+		return int64(meminfo.RSS), -1
+	}
+	return int64(meminfo.RSS), cpuPercent
 }
 
 func (p *Process) handleInput(pipe io.WriteCloser) {

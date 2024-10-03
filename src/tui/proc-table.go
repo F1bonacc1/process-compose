@@ -23,6 +23,7 @@ type tableRowValues struct {
 	status    string
 	age       string
 	mem       string
+	cpu       string
 	health    string
 	restarts  string
 	exitCode  string
@@ -113,6 +114,7 @@ func setRowValues(procTable *tview.Table, row int, rowVals tableRowValues) {
 	procTable.SetCell(row, int(ProcessStateAge), tview.NewTableCell(rowVals.age).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
 	procTable.SetCell(row, int(ProcessStateHealth), tview.NewTableCell(rowVals.health).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
 	procTable.SetCell(row, int(ProcessStateMem), tview.NewTableCell(rowVals.mem).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
+	procTable.SetCell(row, int(ProcessStateCPU), tview.NewTableCell(rowVals.cpu).SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(rowVals.fgColor))
 	procTable.SetCell(row, int(ProcessStateRestarts), tview.NewTableCell(rowVals.restarts).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(rowVals.fgColor))
 	procTable.SetCell(row, int(ProcessStateExit), tview.NewTableCell(rowVals.exitCode).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(rowVals.fgColor))
 }
@@ -176,6 +178,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 		ProcessStateAge:       "AGE(A)",
 		ProcessStateHealth:    "HEALTH(H)",
 		ProcessStateMem:       "MEM(M)",
+		ProcessStateCPU:       "CPU(U)",
 		ProcessStateRestarts:  "RESTARTS(R)",
 		ProcessStateExit:      "EXIT CODE(E)",
 	}
@@ -195,6 +198,8 @@ func (pv *pcView) createProcTable() *tview.Table {
 				pv.setTableSorter(ProcessStateHealth)
 			} else if event.Rune() == 'M' {
 				pv.setTableSorter(ProcessStateMem)
+			} else if event.Rune() == 'U' {
+				pv.setTableSorter(ProcessStateCPU)
 			} else if event.Rune() == 'R' {
 				pv.setTableSorter(ProcessStateRestarts)
 			} else if event.Rune() == 'E' {
@@ -371,14 +376,27 @@ func byteCountIEC(b int64) string {
 		float64(b)/float64(div), "KMGTPE"[exp])
 }
 
-func getStrForMem(mem int64) string {
+func getStrForMem(mem int64, running bool) string {
+	if !running {
+		return types.PlaceHolderValue
+	}
 	if mem < 0 {
 		return "unknown"
 	}
 	if mem == 0 {
-		return "-"
+		return types.PlaceHolderValue
 	}
 	return byteCountIEC(mem)
+}
+
+func getStrForCPU(cpu float64, running bool) string {
+	if !running {
+		return types.PlaceHolderValue
+	}
+	if cpu < 0 {
+		return "unknown"
+	}
+	return fmt.Sprintf("%.1f%%", cpu)
 }
 
 func getStrForRestarts(restarts int) string {
@@ -414,7 +432,8 @@ func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
 		status:    state.Status,
 		age:       state.SystemTime,
 		health:    state.Health,
-		mem:       getStrForMem(state.Mem),
+		mem:       getStrForMem(state.Mem, state.IsRunning),
+		cpu:       getStrForCPU(state.CPU, state.IsRunning),
 		restarts:  getStrForRestarts(state.Restarts),
 		exitCode:  getStrForExitCode(state),
 	}

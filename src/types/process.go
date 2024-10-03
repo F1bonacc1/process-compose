@@ -187,6 +187,7 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 		Restarts:   0,
 		ExitCode:   0,
 		Mem:        0,
+		CPU:        0,
 		Pid:        0,
 	}
 	if proc.Disabled {
@@ -210,6 +211,7 @@ type ProcessState struct {
 	IsElevated       bool          `json:"is_elevated"`
 	PasswordProvided bool          `json:"password_provided"`
 	Mem              int64         `json:"mem"`
+	CPU              float64       `json:"cpu"`
 	IsRunning        bool
 }
 
