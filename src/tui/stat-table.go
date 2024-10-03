@@ -32,6 +32,13 @@ func (pv *pcView) createStatTable() *tview.Table {
 		SetSelectable(false).
 		SetExpansion(1)
 	table.SetCell(2, 1, pv.procCountCell)
+	pv.procMemCpuCell = tview.NewTableCell("").
+		SetSelectable(false).
+		SetExpansion(1)
+	table.SetCell(2, 2, tview.NewTableCell(""))
+	table.SetCell(3, 0, tview.NewTableCell("RAM | CPU:").
+		SetSelectable(false))
+	table.SetCell(3, 1, pv.procMemCpuCell)
 	table.SetCell(0, 2, tview.NewTableCell("").
 		SetSelectable(false).
 		SetAlign(tview.AlignCenter).

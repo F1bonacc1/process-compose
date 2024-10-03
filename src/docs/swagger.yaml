@@ -196,6 +196,8 @@ components:
             properties:
                 age:
                     type: integer
+                cpu:
+                    type: number
                 exit_code:
                     type: integer
                 is_elevated:

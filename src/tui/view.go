@@ -61,6 +61,7 @@ type pcView struct {
 	loggedProc        string
 	shortcuts         *ShortCuts
 	procCountCell     *tview.TableCell
+	procMemCpuCell    *tview.TableCell
 	mainGrid          *tview.Grid
 	logsTextArea      *tview.TextArea
 	project           app.IProject
@@ -91,19 +92,20 @@ type pcView struct {
 func newPcView(project app.IProject) *pcView {
 
 	pv := &pcView{
-		appView:       tview.NewApplication(),
-		logsText:      NewLogView(project.GetLogLength()),
-		statusText:    tview.NewTextView().SetDynamicColors(true),
-		logFollow:     true,
-		scrSplitState: LogProcHalf,
-		helpText:      tview.NewTextView().SetDynamicColors(true),
-		loggedProc:    "",
-		procCountCell: tview.NewTableCell(""),
-		mainGrid:      tview.NewGrid(),
-		logsTextArea:  tview.NewTextArea(),
-		logSelect:     false,
-		project:       project,
-		refreshRate:   time.Second,
+		appView:        tview.NewApplication(),
+		logsText:       NewLogView(project.GetLogLength()),
+		statusText:     tview.NewTextView().SetDynamicColors(true),
+		logFollow:      true,
+		scrSplitState:  LogProcHalf,
+		helpText:       tview.NewTextView().SetDynamicColors(true),
+		loggedProc:     "",
+		procCountCell:  tview.NewTableCell(""),
+		procMemCpuCell: tview.NewTableCell(""),
+		mainGrid:       tview.NewGrid(),
+		logsTextArea:   tview.NewTextArea(),
+		logSelect:      false,
+		project:        project,
+		refreshRate:    time.Second,
 		stateSorter: StateSorter{
 			sortByColumn: ProcessStateName,
 			isAsc:        true,

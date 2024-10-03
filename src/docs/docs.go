@@ -973,6 +973,9 @@ const docTemplate = `{
                 "age": {
                     "type": "integer"
                 },
+                "cpu": {
+                    "type": "number"
+                },
                 "exit_code": {
                     "type": "integer"
                 },

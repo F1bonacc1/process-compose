@@ -34,6 +34,8 @@ func (pv *pcView) fillTableData() {
 		return
 	}
 	runningProcCount := 0
+	totalMem := int64(0)
+	totalCPU := 0.0
 	states, err := pv.project.GetProcessesState()
 	if err != nil {
 		log.Err(err).Msg("failed to get processes state")
@@ -64,6 +66,8 @@ func (pv *pcView) fillTableData() {
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
 			runningProcCount += 1
+			totalMem += state.Mem
+			totalCPU += state.CPU
 		}
 		selectedRow, _ := pv.procTable.GetSelection()
 		if selectedRow == row && pv.isPassModeNeeded(&state) {
@@ -88,6 +92,13 @@ func (pv *pcView) fillTableData() {
 			nsLbl = " (" + pv.getSelectedNs() + ")"
 		}
 		pv.procCountCell.SetText(fmt.Sprintf("%d/%d%s", runningProcCount, len(pv.procNames), nsLbl))
+	}
+	if pv.procMemCpuCell != nil {
+		nsLbl := ""
+		if !pv.isNsSelected(AllNS) {
+			nsLbl = " (" + pv.getSelectedNs() + ")"
+		}
+		pv.procMemCpuCell.SetText(fmt.Sprintf("%s | %s%s", getStrForMem(totalMem, true), getStrForCPU(totalCPU, true), nsLbl))
 	}
 
 	pv.autoAdjustProcTableHeight()
