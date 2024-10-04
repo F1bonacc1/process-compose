@@ -52,7 +52,7 @@ snapshot:
 brews:
   - name: process-compose
     homepage: https://github.com/F1bonacc1/process-compose
-    tap:
+    repository:
       owner: f1bonacc1
       name: homebrew-tap
     install: |-
