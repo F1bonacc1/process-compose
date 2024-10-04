@@ -125,7 +125,6 @@ func specialProcessesMerge(dst, src reflect.Value) error {
 }
 func mergeProcesses(base, override types.Processes) (types.Processes, error) {
 	for name, overrideProcess := range override {
-		overrideProcess := overrideProcess
 		if baseProcess, ok := base[name]; ok {
 			merged, err := mergeProcess(&baseProcess, &overrideProcess)
 			if err != nil {

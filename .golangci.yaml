@@ -10,7 +10,7 @@ linters:
     - canonicalheader
 #    - containedctx
     - contextcheck
-#    - copyloopvar
+    - copyloopvar
 #    - cyclop
     - decorder
 #    - depguard

@@ -89,7 +89,7 @@ docs:
 	for f in ${DOCS_DIR}/*.md ; do sed -i 's/process-compose-[0-9]\+.sock/process-compose-<pid>.sock/g' $$f ; done
 
 lint: golangci-lint
-	./bin/golangci-lint run --show-stats -c golangci.yaml
+	./bin/golangci-lint run --show-stats -c .golangci.yaml
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
