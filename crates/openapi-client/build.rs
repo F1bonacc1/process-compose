@@ -1,7 +1,7 @@
 fn main() {
-    let src = "swagger.3.json";
+    let src = "../../src/docs/swagger.json";
     println!("cargo:rerun-if-changed={}", src);
-    let spec = include_str!("swagger.3.json");
+    let spec = include_str!("../../src/docs/swagger.json");
     let spec = serde_json::from_str(spec).unwrap();
     let mut generator = progenitor::Generator::default();
     let tokens = generator.generate_tokens(&spec).unwrap();
