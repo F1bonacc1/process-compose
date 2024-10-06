@@ -4,8 +4,6 @@ name: Rust
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main, dz/1 ]
 
 jobs:
   release:
@@ -21,3 +19,6 @@ jobs:
         with:
             registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
             path: crates/openapi-client
+            check-repo: true
+            ignore-unpublished-changes: true
+            dry-run: true
