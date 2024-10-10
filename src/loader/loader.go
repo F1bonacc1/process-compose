@@ -58,6 +58,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		validateProcessConfig,
 		validateNoCircularDependencies,
 		validateShellConfig,
+        validateDependenciesExist,
 		validatePlatformCompatibility,
 		validateHealthDependencyHasHealthCheck,
 		validateDependencyIsEnabled,
