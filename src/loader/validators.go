@@ -70,6 +70,18 @@ func validatePlatformCompatibility(p *types.Project) error {
 	return nil
 }
 
+func validateDependenciesExist(p *types.Project) error {
+	for process, config := range p.Processes {
+		for dependency := range config.DependsOn {
+			_, exists := p.Processes[dependency]
+			if !exists {
+				return fmt.Errorf("dependency process '%s' in process '%s' is not defined", dependency, process)
+			}
+		}
+	}
+	return nil
+}
+
 func validateNoCircularDependencies(p *types.Project) error {
 	visited := make(map[string]bool, len(p.Processes))
 	stack := make(map[string]bool)
