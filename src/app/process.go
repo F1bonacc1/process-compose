@@ -222,6 +222,16 @@ func (p *Process) getCommander() command.Commander {
 			p.procConf.Executable,
 			p.mergeExtraArgs(),
 		)
+	} else if p.procConf.IsContainer && strings.ToLower(p.procConf.ContainerRuntime) == "apptainer" {
+		return command.BuildApptainerCommand(
+			p.procConf.ContainerRuntime,
+			p.procConf.ContainerExec,
+			p.procConf.ContainerVolumes,
+			p.procConf.ContainerArgs,
+			p.procConf.ContainerImage,
+			p.procConf.Executable,
+			p.mergeExtraArgs(),
+		)
 	} else {
 		return command.BuildCommand(
 			p.procConf.Executable,
