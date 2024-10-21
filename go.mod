@@ -5,7 +5,7 @@ go 1.22
 require (
 	dario.cat/mergo v1.0.1
 	github.com/InVisionApp/go-health/v2 v2.1.4
-	github.com/adrg/xdg v0.5.0
+	github.com/adrg/xdg v0.5.1
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/creack/pty v1.1.23
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
@@ -85,5 +85,5 @@ require (
 	github.com/rs/zerolog v1.33.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 )
