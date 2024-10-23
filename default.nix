@@ -6,6 +6,7 @@ buildGoModule rec {
   pname = "process-compose";
   version = "1.34.0";
 
+  CGO_ENABLED = 0;
 
   src = lib.cleanSource ./.;
   ldflags = [
