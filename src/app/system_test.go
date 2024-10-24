@@ -814,6 +814,7 @@ func TestUpdateProject(t *testing.T) {
 	if updatedStatus != types.ProcessUpdateUpdated {
 		t.Errorf("Process 'process2' status is %s want %s", updatedStatus, types.ProcessUpdateUpdated)
 	}
+	time.Sleep(100 * time.Millisecond)
 
 	// Test when a process is deleted
 	project = &types.Project{
@@ -841,6 +842,7 @@ func TestUpdateProject(t *testing.T) {
 	if updatedStatus != types.ProcessUpdateRemoved {
 		t.Errorf("Process 'process1' status is %s want %s", updatedStatus, types.ProcessUpdateRemoved)
 	}
+	time.Sleep(100 * time.Millisecond)
 
 	// Test when a new process is added
 	project = &types.Project{
