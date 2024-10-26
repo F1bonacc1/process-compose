@@ -315,7 +315,9 @@ func (api *PcApi) GetProcessPorts(c *gin.Context) {
 // @Success		200	{object}	map[string]string	"Stopped Server"
 // @Router			/project/stop [post]
 func (api *PcApi) ShutDownProject(c *gin.Context) {
-	_ = api.project.ShutDownProject()
+	go func() {
+		_ = api.project.ShutDownProject()
+	}()
 	c.JSON(http.StatusOK, gin.H{"status": "stopped"})
 }
 
