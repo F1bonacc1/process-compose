@@ -174,12 +174,29 @@ func (p *Process) run() int {
 }
 
 func (p *Process) waitForStdOutErr() {
+	ctx, cancel := context.WithCancel(context.Background())
+	if p.procConf.IsDaemon {
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	}
+	defer cancel()
 	if p.stdOutDone != nil {
-		<-p.stdOutDone
+		select {
+		case <-ctx.Done():
+			log.Debug().Msgf("%s stdout done with timeout", p.getName())
+			return
+		case <-p.stdOutDone:
+			log.Debug().Msgf("%s stdout done", p.getName())
+		}
 		p.stdOutDone = nil
 	}
 	if p.stdErrDone != nil {
-		<-p.stdErrDone
+		select {
+		case <-ctx.Done():
+			log.Debug().Msgf("%s stderr done with timeout", p.getName())
+			return
+		case <-p.stdErrDone:
+			log.Debug().Msgf("%s stderr done", p.getName())
+		}
 		p.stdErrDone = nil
 	}
 }
@@ -424,7 +441,7 @@ func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
 }
 
 func (p *Process) isRunning() bool {
-	return p.isOneOfStates(types.ProcessStateRunning, types.ProcessStateLaunched)
+	return p.isOneOfStates(types.ProcessStateRunning, types.ProcessStateLaunched, types.ProcessStateLaunching)
 }
 
 func (p *Process) prepareForShutDown() {
