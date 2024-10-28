@@ -9,7 +9,7 @@ require (
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/creack/pty v1.1.23
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
-	github.com/fatih/color v1.17.0
+	github.com/fatih/color v1.18.0
 	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gorilla/websocket v1.5.3
