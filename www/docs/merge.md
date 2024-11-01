@@ -145,3 +145,45 @@ processes:
       - "B=5"
       - "C=8"
 ```
+
+### Configuration Inheritance with `extends`
+
+`process-compose` provides the `extends` keyword to simplify configuration file inheritance:
+
+```yaml
+# ./some/dir/process-compose.prod.yaml
+version: "0.5"
+extends: "process-compose.yaml"
+
+processes:
+```
+
+```yaml
+# ./some/dir/process-compose.yaml
+version: "0.5"
+
+processes:
+```
+
+This is equivalent to running:
+
+```shell
+$ process-compose -f ./some/dir/process-compose.yaml -f ./some/dir/process-compose.prod.yaml
+```
+
+And allows you to use the shorter command:
+
+```shell
+$ process-compose -f ./some/dir/process-compose.prod.yaml
+```
+
+With the same result.
+
+**Notes**:
+
+1. Inheritance chains are limited only by available memory.
+2. Circular inheritance will cause loading to fail.
+3. The `extends` path is relative to the extending file's location (as shown in the example above).
+4. Absolute paths are automatically detected and used as-is.
+5. The `.env` file is loaded only from the `CWD`. Additional env files can be specified using `--env` (`-e`).
+6. If file `B` uses the `extends` keyword to extend file `A`, loading both with `process-compose up -f A -f B` will fail. Load only the last file in the chain with `process-compose -f B` instead.

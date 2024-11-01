@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -22,12 +23,19 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		return nil, err
 	}
 
-	for _, file := range opts.FileNames {
-		p, err := loadProjectFromFile(file, opts)
+	for idx, file := range opts.FileNames {
+		prj, err := loadProjectFromFile(file, opts)
 		if err != nil {
 			return nil, err
 		}
-		opts.projects = append(opts.projects, p)
+		err = loadExtendProject(prj, opts, file, idx)
+		if err != nil {
+			if opts.IsInternalLoader {
+				return nil, err
+			}
+			log.Fatal().Err(err).Send()
+		}
+		opts.projects = append(opts.projects, prj)
 	}
 	mergedProject, err := merge(opts)
 	if err != nil {
@@ -58,7 +66,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		validateProcessConfig,
 		validateNoCircularDependencies,
 		validateShellConfig,
-        validateDependenciesExist,
+		validateDependenciesExist,
 		validatePlatformCompatibility,
 		validateHealthDependencyHasHealthCheck,
 		validateDependencyIsEnabled,
@@ -66,6 +74,30 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	)
 	admitProcesses(opts, mergedProject)
 	return mergedProject, err
+}
+
+func loadExtendProject(p *types.Project, opts *LoaderOptions, file string, index int) error {
+	if p.ExtendsProject != "" {
+		if !filepath.IsAbs(p.ExtendsProject) {
+			p.ExtendsProject = filepath.Join(filepath.Dir(file), p.ExtendsProject)
+		}
+		if slices.Contains(opts.FileNames, p.ExtendsProject) {
+			log.Error().Msgf("Project %s extends itself", p.ExtendsProject)
+			return fmt.Errorf("project %s is already specified in files to load", p.ExtendsProject)
+		}
+		opts.FileNames = slices.Insert(opts.FileNames, index, p.ExtendsProject)
+		project, err := loadProjectFromFile(p.ExtendsProject, opts)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to load the extend project %s", p.ExtendsProject)
+			return fmt.Errorf("failed to load extend project %s: %w", p.ExtendsProject, err)
+		}
+		opts.projects = slices.Insert(opts.projects, index, project)
+		err = loadExtendProject(project, opts, p.ExtendsProject, index)
+		if err != nil {
+			return fmt.Errorf("failed to load extend project %s: %w", p.ExtendsProject, err)
+		}
+	}
+	return nil
 }
 
 func admitProcesses(opts *LoaderOptions, p *types.Project) *types.Project {
@@ -88,6 +120,9 @@ func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project,
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Error().Msgf("File %s doesn't exist", inputFile)
+		}
+		if opts.IsInternalLoader {
+			return nil, err
 		}
 		log.Fatal().Err(err).Msgf("Failed to read %s", inputFile)
 	}

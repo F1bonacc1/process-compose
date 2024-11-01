@@ -22,6 +22,7 @@ type Project struct {
 	Vars                Vars                 `yaml:"vars"`
 	DisableEnvExpansion bool                 `yaml:"disable_env_expansion"`
 	IsTuiDisabled       bool                 `yaml:"is_tui_disabled"`
+	ExtendsProject      string               `yaml:"extends,omitempty"`
 	FileNames           []string
 	EnvFileNames        []string
 }

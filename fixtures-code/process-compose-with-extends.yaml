@@ -1,0 +1,5 @@
+version: "0.5"
+extends: process-compose-chain.yaml
+processes:
+  process1:
+    command: "echo extending"

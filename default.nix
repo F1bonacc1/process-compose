@@ -16,7 +16,6 @@ buildGoModule rec {
     "-s"
     "-w"
   ];
-  CGO_ENABLED = 0;
 
   nativeBuildInputs = [ installShellFiles ];
 
