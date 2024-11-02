@@ -47,46 +47,47 @@ const shutDownAfterSec = 10
 var pcv *pcView
 
 type pcView struct {
-	procTable         *tview.Table
-	statTable         *tview.Table
-	appView           *tview.Application
-	logsText          *LogView
-	statusText        *tview.TextView
-	helpText          *tview.TextView
-	pages             *tview.Pages
-	procNames         []string
-	logFollow         bool
-	logSelect         bool
-	scrSplitState     scrSplitState
-	loggedProc        string
-	shortcuts         *ShortCuts
-	procCountCell     *tview.TableCell
-	procMemCpuCell    *tview.TableCell
-	mainGrid          *tview.Grid
-	logsTextArea      *tview.TextArea
-	project           app.IProject
-	sortMtx           sync.Mutex
-	stateSorter       StateSorter
-	procRegex         *regexp.Regexp
-	procRegexMtx      sync.Mutex
-	procColumns       map[ColumnID]string
-	refreshRate       time.Duration
-	cancelFn          context.CancelFunc
-	cancelLogFn       context.CancelFunc
-	cancelSigFn       context.CancelFunc
-	ctxApp            context.Context
-	cancelAppFn       context.CancelFunc
-	selectedNsMtx     sync.Mutex
-	selectedNs        string
-	selectedNsChanged atomic.Bool
-	hideDisabled      atomic.Bool
-	commandModeType   commandType
-	styles            *config.Styles
-	themes            *config.Themes
-	helpDialog        *helpDialog
-	settings          *config.Settings
-	isFullScreen      bool
-	isReadOnlyMode    bool
+	procTable             *tview.Table
+	statTable             *tview.Table
+	appView               *tview.Application
+	logsText              *LogView
+	statusText            *tview.TextView
+	helpText              *tview.TextView
+	pages                 *tview.Pages
+	procNames             []string
+	logFollow             bool
+	logSelect             bool
+	scrSplitState         scrSplitState
+	loggedProc            string
+	shortcuts             *ShortCuts
+	procCountCell         *tview.TableCell
+	procMemCpuCell        *tview.TableCell
+	mainGrid              *tview.Grid
+	logsTextArea          *tview.TextArea
+	project               app.IProject
+	sortMtx               sync.Mutex
+	stateSorter           StateSorter
+	procRegex             *regexp.Regexp
+	procRegexMtx          sync.Mutex
+	procColumns           map[ColumnID]string
+	refreshRate           time.Duration
+	cancelFn              context.CancelFunc
+	cancelLogFn           context.CancelFunc
+	cancelSigFn           context.CancelFunc
+	ctxApp                context.Context
+	cancelAppFn           context.CancelFunc
+	selectedNsMtx         sync.Mutex
+	selectedNs            string
+	selectedNsChanged     atomic.Bool
+	hideDisabled          atomic.Bool
+	commandModeType       commandType
+	styles                *config.Styles
+	themes                *config.Themes
+	helpDialog            *helpDialog
+	settings              *config.Settings
+	isFullScreen          bool
+	isReadOnlyMode        bool
+	isExitConfirmDisabled bool
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -336,6 +337,10 @@ func (pv *pcView) terminateAppView() {
 	result := "This will terminate all the running processes."
 	if pv.project.IsRemote() {
 		result = ""
+	}
+	if pv.isExitConfirmDisabled {
+		go pv.handleShutDown()
+		return
 	}
 	m := tview.NewModal().
 		SetText("Are you sure you want to quit?\n" + result).
