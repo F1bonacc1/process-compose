@@ -70,18 +70,6 @@ func validatePlatformCompatibility(p *types.Project) error {
 	return nil
 }
 
-func validateDependenciesExist(p *types.Project) error {
-	for process, config := range p.Processes {
-		for dependency := range config.DependsOn {
-			_, exists := p.Processes[dependency]
-			if !exists {
-				return fmt.Errorf("dependency process '%s' in process '%s' is not defined", dependency, process)
-			}
-		}
-	}
-	return nil
-}
-
 func validateNoCircularDependencies(p *types.Project) error {
 	visited := make(map[string]bool, len(p.Processes))
 	stack := make(map[string]bool)
@@ -166,13 +154,9 @@ func validateDependencyIsEnabled(p *types.Project) error {
 			depProc, ok := p.Processes[depName]
 			if !ok {
 				errStr := fmt.Sprintf("dependency process '%s' in process '%s' is not defined", depName, procName)
-				if p.IsStrict {
-					return errors.New(errStr)
-				}
-				log.Error().Msg(errStr)
-				continue
+				return errors.New(errStr)
 			}
-			if depProc.Disabled {
+			if depProc.Disabled && !proc.Disabled {
 				errStr := fmt.Sprintf("dependency process '%s' in process '%s' is disabled", depName, procName)
 				if p.IsStrict {
 					return errors.New(errStr)

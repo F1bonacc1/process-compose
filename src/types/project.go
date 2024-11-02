@@ -37,6 +37,9 @@ func (p *Project) WithProcesses(names []string, fn ProcessFunc) error {
 func (p *Project) GetDependenciesOrderNames() ([]string, error) {
 	order := []string{}
 	err := p.WithProcesses([]string{}, func(process ProcessConfig) error {
+		if process.IsDeferred() {
+			return nil
+		}
 		order = append(order, process.ReplicaName)
 		return nil
 	})
@@ -57,27 +60,18 @@ func (p *Project) GetProcesses(names ...string) ([]ProcessConfig, error) {
 	processes := []ProcessConfig{}
 	if len(names) == 0 {
 		for _, proc := range p.Processes {
-			if proc.IsDeferred() {
-				continue
-			}
 			processes = append(processes, proc)
 		}
 		return processes, nil
 	}
 	for _, name := range names {
 		if proc, ok := p.Processes[name]; ok {
-			if proc.IsDeferred() {
-				continue
-			}
 			processes = append(processes, proc)
 		} else {
 			found := false
 			for _, process := range p.Processes {
 				if process.Name == name {
 					found = true
-					if process.IsDeferred() {
-						continue
-					}
 					processes = append(processes, process)
 				}
 			}

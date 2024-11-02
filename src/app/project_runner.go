@@ -53,10 +53,6 @@ func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
 	return p.project.GetLexicographicProcessNames()
 }
 
-func (p *ProjectRunner) WithProcesses(names []string, fn func(process types.ProcessConfig) error) error {
-	return p.project.WithProcesses(names, fn)
-}
-
 func (p *ProjectRunner) init() {
 	p.initProcessStates()
 	p.initProcessLogs()
@@ -68,6 +64,9 @@ func (p *ProjectRunner) Run() error {
 	p.runProcMutex.Unlock()
 	runOrder := []types.ProcessConfig{}
 	err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
+		if process.IsDeferred() {
+			return nil
+		}
 		runOrder = append(runOrder, process)
 		return nil
 	})
@@ -751,7 +750,7 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	p.statesMutex.Unlock()
 	p.project.Processes[proc.ReplicaName] = proc
 	p.initProcessLog(proc.ReplicaName)
-	if !proc.Disabled {
+	if !proc.IsDeferred() {
 		p.runProcess(&proc)
 	}
 }
@@ -762,6 +761,9 @@ func (p *ProjectRunner) selectRunningProcesses(procList []string) error {
 	}
 	newProcMap := types.Processes{}
 	err := p.project.WithProcesses(procList, func(process types.ProcessConfig) error {
+		if process.IsForeground {
+			return nil
+		}
 		newProcMap[process.ReplicaName] = process
 		return nil
 	})
@@ -772,8 +774,10 @@ func (p *ProjectRunner) selectRunningProcesses(procList []string) error {
 	for name, proc := range p.project.Processes {
 		if _, ok := newProcMap[name]; !ok {
 			proc.Disabled = true
-			p.project.Processes[name] = proc
+		} else {
+			proc.Disabled = false
 		}
+		p.project.Processes[name] = proc
 	}
 	return nil
 }
@@ -792,11 +796,11 @@ func (p *ProjectRunner) selectRunningProcessesNoDeps(procList []string) error {
 		}
 		if !found {
 			proc.Disabled = true
-			p.project.Processes[name] = proc
 		} else {
 			proc.DependsOn = types.DependsOnConfig{}
-			p.project.Processes[name] = proc
+			proc.Disabled = false
 		}
+		p.project.Processes[name] = proc
 	}
 
 	return nil
@@ -806,6 +810,7 @@ func (p *ProjectRunner) GetLogLength() int {
 	return p.project.LogLength
 }
 
+// GetDependenciesOrderNames used for testing
 func (p *ProjectRunner) GetDependenciesOrderNames() ([]string, error) {
 	return p.project.GetDependenciesOrderNames()
 }
