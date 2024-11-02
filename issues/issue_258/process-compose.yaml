@@ -8,6 +8,7 @@ processes:
   postgresql:
     command: "exec pg_ctl start -o \"-k /home/eugene/projects/go/process-compose/issues/issue_258/.devbox/virtenv/postgresql\" && wait"
     is_daemon: true
+    launch_timeout_seconds: 2
     shutdown:
       command: "pg_ctl stop -m fast"
     availability:

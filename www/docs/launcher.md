@@ -184,6 +184,7 @@ processes:
   nginx:
     command: "docker run -d --rm --name nginx_test nginx" # note the '-d' for detached mode
     is_daemon: true # this flag is required for background processes (default false)
+    launch_timeout_seconds: 2 # default 5s
     shutdown:
       command: "docker stop nginx_test"
       timeout_seconds: 10 # default 10
@@ -195,6 +196,8 @@ processes:
 2. In case a process is daemon it will be considered running until stopped.
 
 3. Daemon processes can only be stopped with the `$PROCESSNAME.shutdown.command` as in the example above.
+
+4. If parent process (starter) won’t close `stdout` and `stderr` within specified `launch_timeout_seconds`, (default 5 seconds) process compose will stop waiting for its log completion and start waiting for process termination. (more details are [here](https://github.com/F1bonacc1/process-compose/issues/258#issuecomment-2439544894))
 
 ## Foreground Processes
 
