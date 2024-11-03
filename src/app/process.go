@@ -337,24 +337,25 @@ func (p *Process) waitForCompletion() int {
 }
 
 func (p *Process) waitUntilReady() bool {
-	for {
-		select {
-		case <-p.procReadyCtx.Done():
-			if p.procState.Health == types.ProcessHealthReady {
-				return true
-			}
-			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
-			p.setExitCode(1)
-			return false
-		case <-p.procLogReadyCtx.Done():
-			err := context.Cause(p.procLogReadyCtx)
-			if errors.Is(err, context.Canceled) {
-				return true
-			}
-			log.Error().Err(err).Msgf("Process %s was aborted and won't become log ready", p.getName())
-			return false
-		}
+	<-p.procReadyCtx.Done()
+	if p.procState.Health == types.ProcessHealthReady {
+		return true
 	}
+	log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
+	p.setExitCode(1)
+	return false
+
+}
+
+func (p *Process) waitUntilLogReady() bool {
+	<-p.procLogReadyCtx.Done()
+	err := context.Cause(p.procLogReadyCtx)
+	if errors.Is(err, context.Canceled) {
+		return true
+	}
+	log.Error().Err(err).Msgf("Process %s was aborted and won't become log ready", p.getName())
+	return false
+
 }
 
 func (p *Process) wontRun() {
