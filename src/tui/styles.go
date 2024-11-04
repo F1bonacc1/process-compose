@@ -54,9 +54,8 @@ func (pv *pcView) setLogViewStyle(s *config.Styles) {
 }
 
 func (pv *pcView) setHelpTextStyles(s *config.Styles) {
-	pv.helpText.SetBackgroundColor(s.BgColor())
-	pv.helpText.SetBorderColor(s.BorderColor())
-	pv.helpText.SetTextColor(s.Help().KeyColor.Color())
+	pv.helpFooter.SetBackgroundColor(s.BgColor())
+	pv.helpFooter.SetBorderColor(s.BorderColor())
 	pv.shortcuts.StylesChanged(s)
 	pv.updateHelpTextView()
 }

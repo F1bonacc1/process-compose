@@ -111,7 +111,7 @@ func (pv *pcView) fillTableData() {
 func (pv *pcView) getMaxProcHeight() int {
 	_, _, _, gridHeight := pv.mainGrid.GetRect()
 	const padding = 7
-	_, _, _, helpHeight := pv.helpText.GetRect()
+	_, _, _, helpHeight := pv.helpFooter.GetRect()
 	gridHeight = gridHeight - pv.statTable.GetRowCount() - helpHeight - padding
 	return gridHeight / 2
 }

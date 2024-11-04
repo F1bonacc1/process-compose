@@ -52,7 +52,7 @@ type pcView struct {
 	appView               *tview.Application
 	logsText              *LogView
 	statusText            *tview.TextView
-	helpText              *tview.TextView
+	helpFooter            *tview.Flex
 	pages                 *tview.Pages
 	procNames             []string
 	logFollow             bool
@@ -98,7 +98,7 @@ func newPcView(project app.IProject) *pcView {
 		statusText:     tview.NewTextView().SetDynamicColors(true),
 		logFollow:      true,
 		scrSplitState:  LogProcHalf,
-		helpText:       tview.NewTextView().SetDynamicColors(true),
+		helpFooter:     tview.NewFlex(),
 		loggedProc:     "",
 		procCountCell:  tview.NewTableCell(""),
 		procMemCpuCell: tview.NewTableCell(""),
@@ -426,35 +426,35 @@ func (pv *pcView) onProcRowSpanChange() {
 func (pv *pcView) updateHelpTextView() {
 	logScrBool := pv.scrSplitState != LogFull
 	procScrBool := pv.scrSplitState != ProcFull
-	pv.helpText.Clear()
+	pv.helpFooter.Clear()
+	defer pv.helpFooter.AddItem(tview.NewBox(), 0, 1, false)
 	if pv.logsText.isSearchActive() {
-		pv.shortcuts.writeButton(ActionLogFind, pv.helpText)
-		pv.shortcuts.writeButton(ActionLogFindNext, pv.helpText)
-		pv.shortcuts.writeButton(ActionLogFindPrev, pv.helpText)
+		pv.shortcuts.addButton(ActionLogFind, pv.helpFooter)
+		pv.shortcuts.addButton(ActionLogFindNext, pv.helpFooter)
+		pv.shortcuts.addButton(ActionLogFindPrev, pv.helpFooter)
 		if config.IsLogSelectionOn() {
-			pv.shortcuts.writeToggleButton(ActionLogSelection, pv.helpText, !pv.logSelect)
+			pv.shortcuts.addToggleButton(ActionLogSelection, pv.helpFooter, !pv.logSelect)
 		}
-		pv.shortcuts.writeButton(ActionLogFindExit, pv.helpText)
+		pv.shortcuts.addButton(ActionLogFindExit, pv.helpFooter)
 		return
 	}
-	pv.shortcuts.writeButton(ActionHelp, pv.helpText)
-	pv.shortcuts.writeCategory("LOGS:", pv.helpText)
-	pv.shortcuts.writeToggleButton(ActionLogScreen, pv.helpText, logScrBool)
-	pv.shortcuts.writeToggleButton(ActionFollowLog, pv.helpText, !pv.logFollow)
-	pv.shortcuts.writeToggleButton(ActionWrapLog, pv.helpText, !pv.logsText.IsWrapOn())
+	pv.shortcuts.addButton(ActionHelp, pv.helpFooter)
+	pv.shortcuts.addCategory("LOGS:", pv.helpFooter)
+	pv.shortcuts.addToggleButton(ActionLogScreen, pv.helpFooter, logScrBool)
+	pv.shortcuts.addToggleButton(ActionFollowLog, pv.helpFooter, !pv.logFollow)
+	pv.shortcuts.addToggleButton(ActionWrapLog, pv.helpFooter, !pv.logsText.IsWrapOn())
 	if config.IsLogSelectionOn() {
-		pv.shortcuts.writeToggleButton(ActionLogSelection, pv.helpText, !pv.logSelect)
+		pv.shortcuts.addToggleButton(ActionLogSelection, pv.helpFooter, !pv.logSelect)
 	}
-	pv.shortcuts.writeButton(ActionLogFind, pv.helpText)
-	//fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
-	pv.shortcuts.writeCategory("PROCESS:", pv.helpText)
-	pv.shortcuts.writeButton(ActionProcessScale, pv.helpText)
-	pv.shortcuts.writeButton(ActionProcessInfo, pv.helpText)
-	pv.shortcuts.writeButton(ActionProcessStart, pv.helpText)
-	pv.shortcuts.writeToggleButton(ActionProcessScreen, pv.helpText, procScrBool)
-	pv.shortcuts.writeButton(ActionProcessStop, pv.helpText)
-	pv.shortcuts.writeButton(ActionProcessRestart, pv.helpText)
-	pv.shortcuts.writeButton(ActionQuit, pv.helpText)
+	pv.shortcuts.addButton(ActionLogFind, pv.helpFooter)
+	pv.shortcuts.addCategory("PROCESS:", pv.helpFooter)
+	pv.shortcuts.addButton(ActionProcessScale, pv.helpFooter)
+	pv.shortcuts.addButton(ActionProcessInfo, pv.helpFooter)
+	pv.shortcuts.addButton(ActionProcessStart, pv.helpFooter)
+	pv.shortcuts.addToggleButton(ActionProcessScreen, pv.helpFooter, procScrBool)
+	pv.shortcuts.addButton(ActionProcessStop, pv.helpFooter)
+	pv.shortcuts.addButton(ActionProcessRestart, pv.helpFooter)
+	pv.shortcuts.addButton(ActionQuit, pv.helpFooter)
 }
 
 func (pv *pcView) saveTuiState() {
