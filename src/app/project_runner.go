@@ -36,6 +36,8 @@ type ProjectRunner struct {
 	processStates     map[string]*types.ProcessState
 	runProcMutex      sync.Mutex
 	runningProcesses  map[string]*Process
+	doneProcMutex     sync.Mutex
+	doneProcesses     map[string]*Process
 	logger            pclog.PcLogger
 	waitGroup         sync.WaitGroup
 	exitCode          int
@@ -66,6 +68,9 @@ func (p *ProjectRunner) Run() error {
 	p.runProcMutex.Lock()
 	p.runningProcesses = make(map[string]*Process)
 	p.runProcMutex.Unlock()
+	p.doneProcMutex.Lock()
+	p.doneProcesses = make(map[string]*Process)
+	p.doneProcMutex.Unlock()
 	runOrder := []types.ProcessConfig{}
 	err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
 		runOrder = append(runOrder, process)
@@ -142,6 +147,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 			p.onProcessSkipped(proc.procConf)
 		} else {
 			exitCode := proc.run()
+			p.addDoneProcess(proc)
 			p.onProcessEnd(exitCode, proc.procConf)
 		}
 	}(process)
@@ -149,36 +155,35 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 
 func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
 	for k := range process.DependsOn {
-		if runningProc := p.getRunningProcess(k); runningProc != nil {
-
+		if proc := p.getDoneOrRunningProcess(k); proc != nil {
 			switch process.DependsOn[k].Condition {
 			case types.ProcessConditionCompleted:
-				runningProc.waitForCompletion()
+				proc.waitForCompletion()
 			case types.ProcessConditionCompletedSuccessfully:
 				log.Info().Msgf("%s is waiting for %s to complete successfully", process.ReplicaName, k)
-				exitCode := runningProc.waitForCompletion()
+				exitCode := proc.waitForCompletion()
 				if exitCode != 0 {
 					return fmt.Errorf("process %s depended on %s to complete successfully, but it exited with status %d",
 						process.ReplicaName, k, exitCode)
 				}
 			case types.ProcessConditionHealthy:
 				log.Info().Msgf("%s is waiting for %s to be healthy", process.ReplicaName, k)
-				ready := runningProc.waitUntilReady()
+				ready := proc.waitUntilReady()
 				if !ready {
 					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.ReplicaName, k)
 				}
 			case types.ProcessConditionLogReady:
-				log.Info().Msgf("%s is waiting for %s log line %s", process.ReplicaName, k, runningProc.procConf.ReadyLogLine)
-				ready := runningProc.waitUntilReady()
+				log.Info().Msgf("%s is waiting for %s log line %s", process.ReplicaName, k, proc.procConf.ReadyLogLine)
+				ready := proc.waitUntilReady()
 				if !ready {
 					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.ReplicaName, k)
 				}
 			case types.ProcessConditionStarted:
 				log.Info().Msgf("%s is waiting for %s to start", process.ReplicaName, k)
-				runningProc.waitForStarted()
+				proc.waitForStarted()
 			}
 		} else {
-			log.Error().Msgf("Error: process %s depends on %s, but it isn't running", process.ReplicaName, k)
+			log.Error().Msgf("Error: process %s depends on %s, but it isn't running or completed", process.ReplicaName, k)
 		}
 
 	}
@@ -285,6 +290,12 @@ func (p *ProjectRunner) addRunningProcess(process *Process) {
 	p.runProcMutex.Unlock()
 }
 
+func (p *ProjectRunner) addDoneProcess(process *Process) {
+	p.doneProcMutex.Lock()
+	p.doneProcesses[process.getName()] = process
+	p.doneProcMutex.Unlock()
+}
+
 func (p *ProjectRunner) getRunningProcess(name string) *Process {
 	p.runProcMutex.Lock()
 	defer p.runProcMutex.Unlock()
@@ -292,6 +303,22 @@ func (p *ProjectRunner) getRunningProcess(name string) *Process {
 		return runningProc
 	}
 	return nil
+}
+
+func (p *ProjectRunner) getDoneProcess(name string) *Process {
+	p.doneProcMutex.Lock()
+	defer p.doneProcMutex.Unlock()
+	if doneProc, ok := p.doneProcesses[name]; ok {
+		return doneProc
+	}
+	return nil
+}
+
+func (p *ProjectRunner) getDoneOrRunningProcess(name string) *Process {
+	if doneProc := p.getDoneProcess(name); doneProc != nil {
+		return doneProc
+	}
+	return p.getRunningProcess(name)
 }
 
 func (p *ProjectRunner) removeRunningProcess(process *Process) {
