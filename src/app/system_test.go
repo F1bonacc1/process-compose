@@ -969,3 +969,43 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 	})
 
 }
+
+func TestSystem_TestRestartingProcessShutDown(t *testing.T) {
+	proc1 := "proc1"
+	shell := command.DefaultShellConfig()
+	p, err := NewProjectRunner(&ProjectOpts{
+		project: &types.Project{
+			ShellConfig: shell,
+			Processes: map[string]types.ProcessConfig{
+				proc1: {
+					Name:        proc1,
+					ReplicaName: proc1,
+					Executable:  shell.ShellCommand,
+					Args:        []string{shell.ShellArgument, "sleep 0.2"},
+					RestartPolicy: types.RestartPolicyConfig{
+						Restart:        types.RestartPolicyAlways,
+						BackoffSeconds: 1,
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	go func() {
+		err := p.Run()
+		if err != nil {
+			t.Errorf("Failed to run project: %v", err)
+		}
+	}()
+	time.Sleep(300 * time.Millisecond)
+	proc := p.getRunningProcess(proc1)
+	assertProcessStatus(t, proc, proc1, types.ProcessStateRestarting)
+	err = p.StopProcess(proc1)
+	if err != nil {
+		t.Fatalf("Failed to stop process: %v", err)
+	}
+	time.Sleep(100 * time.Millisecond)
+	assertProcessStatus(t, proc, proc1, types.ProcessStateCompleted)
+}
