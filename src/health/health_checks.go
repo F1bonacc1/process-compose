@@ -3,6 +3,7 @@ package health
 import (
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/InVisionApp/go-health/v2"
@@ -19,7 +20,7 @@ type Prober struct {
 	name           string
 	onCheckEndFunc func(bool, bool, string)
 	hc             *health.Health
-	stopped        bool
+	stopped        atomic.Bool
 }
 
 func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober, error) {
@@ -29,7 +30,6 @@ func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober
 		name:           name,
 		onCheckEndFunc: onCheckEnd,
 		hc:             health.New(),
-		stopped:        false,
 	}
 	p.hc.DisableLogging()
 	if probe.Exec != nil {
@@ -51,9 +51,9 @@ func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober
 
 func (p *Prober) Start() {
 	go func() {
-		p.stopped = false
+		p.stopped.Store(false)
 		time.Sleep(time.Duration(p.probe.InitialDelay) * time.Second)
-		if p.stopped {
+		if p.stopped.Load() {
 			return
 		}
 		err := p.hc.Start()
@@ -68,7 +68,7 @@ func (p *Prober) Start() {
 func (p *Prober) Stop() {
 	if p.hc != nil {
 		_ = p.hc.Stop()
-		p.stopped = true
+		p.stopped.Store(true)
 	}
 }
 
@@ -81,7 +81,7 @@ func (p *Prober) healthCheckCompleted(state *health.State) {
 	if state.Status == OK {
 		ok = true
 	}
-	if p.stopped {
+	if p.stopped.Load() {
 		return
 	}
 	p.onCheckEndFunc(ok, fatal, state.Err)

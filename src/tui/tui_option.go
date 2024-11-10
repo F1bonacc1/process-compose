@@ -45,3 +45,10 @@ func WithDisabledHidden(isHidden bool) Option {
 		return nil
 	}
 }
+
+func WithDisabledExitConfirm(isDisabled bool) Option {
+	return func(view *pcView) error {
+		view.isExitConfirmDisabled = isDisabled
+		return nil
+	}
+}

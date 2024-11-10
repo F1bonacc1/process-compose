@@ -46,13 +46,16 @@ func NewThemes() *Themes {
 				log.Err(err).Msgf("Error parsing theme %s", fileName)
 				continue
 			}
+			s.setDefaults()
 			t.styles = append(t.styles, s)
 		}
 	} else {
 		log.Err(err).Msg("Error reading themes folder")
 	}
 	custom, err := t.loadFromFile()
+
 	if err == nil {
+		custom.setDefaults()
 		t.styles = append(t.styles, custom)
 	}
 
@@ -103,6 +106,7 @@ func (t *Themes) SelectStyles(name string) {
 func (t *Themes) SelectStylesFromFile() {
 	custom, err := t.loadFromFile()
 	if err == nil {
+		custom.setDefaults()
 		t.activeStyles = custom
 		t.activeStyles.Update()
 		t.fireStylesChanged()

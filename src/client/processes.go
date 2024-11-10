@@ -49,6 +49,14 @@ func (p *PcClient) getProcessState(name string) (*types.ProcessState, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		var respErr pcError
+		if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
+			log.Err(err).Msg("failed to decode err update process")
+			return nil, err
+		}
+		return nil, errors.New(respErr.Error)
+	}
 	//Create a variable of the same type as our model
 	var sResp types.ProcessState
 

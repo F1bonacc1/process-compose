@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"path/filepath"
 	"testing"
 )
 
@@ -59,5 +60,98 @@ func Test_autoDiscoverComposeFile(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestLoadExtendProject(t *testing.T) {
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-with-log.yaml")
+	opts := &LoaderOptions{
+		FileNames:        []string{fixture},
+		IsInternalLoader: true,
+	}
+	project, err := Load(opts)
+	if err != nil {
+		t.Error("failed to load project", err.Error())
+		return
+	}
+	t.Run("no extend", func(t *testing.T) {
+		err = loadExtendProject(project, opts, "", 0)
+		if err != nil {
+			t.Error("failed to load project", err.Error())
+			return
+		}
+		if len(opts.projects) != 1 {
+			t.Errorf("expected 1 project, got %d", len(opts.projects))
+		}
+	})
+	t.Run("extend", func(t *testing.T) {
+		project.ExtendsProject = "process-compose-chain.yaml"
+		err = loadExtendProject(project, opts, fixture, 0)
+		if err != nil {
+			t.Error("failed to load project", err.Error())
+			return
+		}
+		if len(opts.projects) != 2 {
+			t.Errorf("expected 2 projects, got %d", len(opts.projects))
+			return
+		}
+		if len(opts.FileNames) != 2 {
+			t.Errorf("expected 2 files, got %d", len(opts.FileNames))
+			return
+		}
+		//check files order
+		if opts.FileNames[0] != project.ExtendsProject {
+			t.Errorf("expected %s, got %s", project.ExtendsProject, opts.FileNames[0])
+		}
+		if opts.FileNames[1] != fixture {
+			t.Errorf("expected %s, got %s", fixture, opts.FileNames[1])
+		}
+	})
+	t.Run("prevent same project", func(t *testing.T) {
+		project.ExtendsProject = filepath.Base(fixture)
+		err = loadExtendProject(project, opts, fixture, 0)
+		if err == nil {
+			t.Error("expected error for same project, got nil")
+			return
+		}
+	})
+	t.Run("missing file", func(t *testing.T) {
+		project.ExtendsProject = "missing.yaml"
+		err = loadExtendProject(project, opts, "", 0)
+		if err == nil {
+			t.Error("expected error for missing extend project file, got nil")
+			return
+		}
+	})
+}
+
+func TestLoadFileWithExtendProject(t *testing.T) {
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-with-extends.yaml")
+	opts := &LoaderOptions{
+		FileNames:        []string{fixture},
+		IsInternalLoader: true,
+	}
+	project, err := Load(opts)
+	if err != nil {
+		t.Error("failed to load project", err.Error())
+		return
+	}
+	if len(opts.projects) != 2 {
+		t.Errorf("expected 2 project, got %d", len(opts.projects))
+	}
+	if len(opts.FileNames) != 2 {
+		t.Fatalf("expected 2 file, got %d", len(opts.FileNames))
+	}
+
+	//check files order
+	expected := filepath.Join("..", "..", "fixtures-code", "process-compose-chain.yaml")
+	if opts.FileNames[0] != expected {
+		t.Errorf("expected %s, got %s", expected, opts.FileNames[1])
+	}
+	if opts.FileNames[1] != fixture {
+		t.Errorf("expected %s, got %s", fixture, opts.FileNames[0])
+	}
+	if project.Processes["process1"].Command != "echo extending" {
+		t.Errorf("expected %s, got %s", "echo extending", project.Processes["process1"].Command)
 	}
 }

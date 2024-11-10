@@ -14,6 +14,7 @@ import (
 
 const DefaultNamespace = "default"
 const PlaceHolderValue = "-"
+const DefaultLaunchTimeout = 5
 
 type Processes map[string]ProcessConfig
 type Environment []string
@@ -42,6 +43,7 @@ type ProcessConfig struct {
 	IsForeground      bool                   `yaml:"is_foreground"`
 	IsTty             bool                   `yaml:"is_tty"`
 	IsElevated        bool                   `yaml:"is_elevated"`
+	LaunchTimeout     int                    `yaml:"launch_timeout_seconds"`
 	ReplicaNum        int
 	ReplicaName       string
 	Executable        string

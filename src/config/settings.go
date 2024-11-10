@@ -12,8 +12,9 @@ type (
 		IsReversed bool   `yaml:"isReversed"`
 	}
 	Settings struct {
-		Theme string `yaml:"theme"`
-		Sort  Sort   `yaml:"sort"`
+		Theme                   string `yaml:"theme"`
+		Sort                    Sort   `yaml:"sort"`
+		DisableExitConfirmation bool   `yaml:"disable_exit_confirmation"`
 	}
 )
 

@@ -19,7 +19,7 @@ loop:
 }
 
 func (p *Process) notifyDaemonStopped() {
-	if p.isDaemonLaunched() {
+	if p.procConf.IsDaemon {
 		p.procStateChan <- types.ProcessStateCompleted
 	}
 }

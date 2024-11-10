@@ -202,3 +202,16 @@ processes:
     description: "disable elevation cache"
     command: "sudo -k"
 
+  disabled:
+    description: "disabled process"
+    command: "echo I\\'m disabled"
+    disabled: true
+    depends_on:
+      disabled_dependency:
+        condition: process_completed
+
+  disabled_dependency:
+    description: "disabled dependency process"
+    command: "echo I\\'m disabled dependency"
+    disabled: true
+

@@ -82,16 +82,17 @@ func runTui(project *app.ProjectRunner) error {
 }
 
 func startTui(runner app.IProject, isAsync bool) {
+	if !*pcFlags.IsReadOnlyMode {
+		config.CreateProcCompHome()
+	}
+	settings := config.NewSettings().Load()
 	tuiOptions := []tui.Option{
 		tui.WithRefreshRate(*pcFlags.RefreshRate),
 		tui.WithReadOnlyMode(*pcFlags.IsReadOnlyMode),
 		tui.WithFullScreen(*pcFlags.IsTuiFullScreen),
 		tui.WithDisabledHidden(*pcFlags.HideDisabled),
+		tui.WithDisabledExitConfirm(settings.DisableExitConfirmation),
 	}
-	if !*pcFlags.IsReadOnlyMode {
-		config.CreateProcCompHome()
-	}
-	settings := config.NewSettings().Load()
 
 	tuiOptions = append(tuiOptions,
 		ternary(pcFlags.PcThemeChanged, tui.WithTheme(*pcFlags.PcTheme), tui.WithTheme(settings.Theme)))

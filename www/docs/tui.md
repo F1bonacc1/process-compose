@@ -170,7 +170,7 @@ style:
 
 ## TUI State Settings
 
-TUI will automatically save its state when the after changing the following:
+TUI will automatically save its state after changing the following:
 
 1. TUI Theme
 2. Processes sort column
@@ -187,6 +187,7 @@ theme: Cobalt
 sort:
     by: NAME
     isReversed: false
+disable_exit_confirmation: false # if true, will disable the TUI exit confirmation dialog
 ```
 
 > :bulb: The auto save feature can be disabled by using the `--read-only` flag.

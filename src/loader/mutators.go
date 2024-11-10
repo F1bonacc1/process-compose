@@ -46,6 +46,9 @@ func assignDefaultProcessValues(p *types.Project) {
 		if proc.Replicas == 0 {
 			proc.Replicas = 1
 		}
+		if proc.LaunchTimeout < 1 {
+			proc.LaunchTimeout = types.DefaultLaunchTimeout
+		}
 		proc.Name = name
 		p.Processes[name] = proc
 	}

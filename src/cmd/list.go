@@ -25,23 +25,29 @@ var listCmd = &cobra.Command{
 		sort.Slice(states.States, func(i, j int) bool {
 			return states.States[i].Name < states.States[j].Name
 		})
-		switch *pcFlags.OutputFormat {
-		case "json":
-			b, err := json.MarshalIndent(states.States, "", "\t")
-			if err != nil {
-				log.Fatal().Err(err).Msg("failed to marshal processes")
-			}
-			os.Stdout.Write(b)
-		case "wide":
-			printStatesAsTable(states.States)
-		case "":
-			for _, state := range states.States {
-				fmt.Println(state.Name)
-			}
-		default:
-			log.Fatal().Err(err).Msgf("unknown output format %s", *pcFlags.OutputFormat)
-		}
+
+		printStates(states)
+
 	},
+}
+
+func printStates(states *types.ProcessesState) {
+	switch *pcFlags.OutputFormat {
+	case "json":
+		b, err := json.MarshalIndent(states.States, "", "\t")
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to marshal processes")
+		}
+		os.Stdout.Write(b)
+	case "wide":
+		printStatesAsTable(states.States)
+	case "":
+		for _, state := range states.States {
+			fmt.Println(state.Name)
+		}
+	default:
+		log.Fatal().Msgf("unknown output format %s", *pcFlags.OutputFormat)
+	}
 }
 
 func printStatesAsTable(states []types.ProcessState) {

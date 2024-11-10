@@ -117,6 +117,7 @@ func (p *Process) run() int {
 	}
 
 	p.onProcessStart()
+loop:
 	for {
 		err := p.setStateAndRun(p.getStartingStateName(), p.getProcessStarter())
 		if err != nil {
@@ -163,7 +164,7 @@ func (p *Process) run() int {
 		select {
 		case <-p.procRunCtx.Done():
 			log.Debug().Str("process", p.getName()).Msg("process stopped while waiting to restart")
-			break
+			break loop
 		case <-time.After(p.getBackoff()):
 			p.handleInfo("\n")
 			continue
@@ -174,12 +175,29 @@ func (p *Process) run() int {
 }
 
 func (p *Process) waitForStdOutErr() {
+	ctx, cancel := context.WithCancel(context.Background())
+	if p.procConf.IsDaemon {
+		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(p.procConf.LaunchTimeout)*time.Second)
+	}
+	defer cancel()
 	if p.stdOutDone != nil {
-		<-p.stdOutDone
+		select {
+		case <-ctx.Done():
+			log.Debug().Msgf("%s stdout done with timeout", p.getName())
+			return
+		case <-p.stdOutDone:
+			log.Debug().Msgf("%s stdout done", p.getName())
+		}
 		p.stdOutDone = nil
 	}
 	if p.stdErrDone != nil {
-		<-p.stdErrDone
+		select {
+		case <-ctx.Done():
+			log.Debug().Msgf("%s stderr done with timeout", p.getName())
+			return
+		case <-p.stdErrDone:
+			log.Debug().Msgf("%s stderr done", p.getName())
+		}
 		p.stdErrDone = nil
 	}
 }
@@ -320,24 +338,25 @@ func (p *Process) waitForCompletion() int {
 }
 
 func (p *Process) waitUntilReady() bool {
-	for {
-		select {
-		case <-p.procReadyCtx.Done():
-			if p.procState.Health == types.ProcessHealthReady {
-				return true
-			}
-			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
-			p.setExitCode(1)
-			return false
-		case <-p.procLogReadyCtx.Done():
-			err := context.Cause(p.procLogReadyCtx)
-			if errors.Is(err, context.Canceled) {
-				return true
-			}
-			log.Error().Err(err).Msgf("Process %s was aborted and won't become log ready", p.getName())
-			return false
-		}
+	<-p.procReadyCtx.Done()
+	if p.procState.Health == types.ProcessHealthReady {
+		return true
 	}
+	log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
+	p.setExitCode(1)
+	return false
+
+}
+
+func (p *Process) waitUntilLogReady() bool {
+	<-p.procLogReadyCtx.Done()
+	err := context.Cause(p.procLogReadyCtx)
+	if errors.Is(err, context.Canceled) {
+		return true
+	}
+	log.Error().Err(err).Msgf("Process %s was aborted and won't become log ready", p.getName())
+	return false
+
 }
 
 func (p *Process) wontRun() {
@@ -382,18 +401,26 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
 	}
 	err := p.command.Stop(p.procConf.ShutDownParams.Signal, p.procConf.ShutDownParams.ParentOnly)
-	if p.procConf.ShutDownParams.ShutDownTimeout == UndefinedShutdownTimeoutSec {
-		return err
+	if err != nil {
+		log.Error().Err(err).Msgf("terminating %s failed", p.getName())
 	}
+	if p.procConf.ShutDownParams.ShutDownTimeout != UndefinedShutdownTimeoutSec {
+		return p.forceKillOnTimeout()
+	}
+	return err
+}
+
+func (p *Process) forceKillOnTimeout() error {
 	p.mtxStopFn.Lock()
 	p.waitForStoppedCtx, p.waitForStoppedFn = context.WithTimeout(context.Background(), time.Duration(p.procConf.ShutDownParams.ShutDownTimeout)*time.Second)
 	p.mtxStopFn.Unlock()
 	<-p.waitForStoppedCtx.Done()
-	err = p.waitForStoppedCtx.Err()
+	err := p.waitForStoppedCtx.Err()
 	switch {
 	case errors.Is(err, context.Canceled):
 		return nil
 	case errors.Is(err, context.DeadlineExceeded):
+		log.Debug().Msgf("process failed to shut down within %d seconds, sending %d", p.procConf.ShutDownParams.ShutDownTimeout, syscall.SIGKILL)
 		return p.command.Stop(int(syscall.SIGKILL), p.procConf.ShutDownParams.ParentOnly)
 	default:
 		log.Error().Err(err).Msgf("terminating %s with timeout %d failed", p.getName(), p.procConf.ShutDownParams.ShutDownTimeout)
@@ -424,7 +451,7 @@ func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
 }
 
 func (p *Process) isRunning() bool {
-	return p.isOneOfStates(types.ProcessStateRunning, types.ProcessStateLaunched)
+	return p.isOneOfStates(types.ProcessStateRunning, types.ProcessStateLaunched, types.ProcessStateLaunching)
 }
 
 func (p *Process) prepareForShutDown() {
@@ -538,7 +565,7 @@ func (p *Process) getResourceUsage() (int64, float64) {
 	}
 	proc, err := puproc.NewProcess(int32(p.procState.Pid))
 	if err != nil {
-		log.Err(err).Msgf("Could not find process")
+		log.Err(err).Msgf("Could not find pid %d with name %s", p.procState.Pid, p.getName())
 		return -1, -1
 	}
 	meminfo, err := proc.MemoryInfo()

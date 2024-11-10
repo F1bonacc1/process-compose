@@ -65,6 +65,7 @@ type (
 		KeyColor        Color `yaml:"keyColor"`
 		FgColor         Color `yaml:"fgColor"`
 		HlColor         Color `yaml:"hlColor"`
+		ButtonBgColor   Color `yaml:"buttonBgColor"`
 		FgCategoryColor Color `yaml:"categoryFgColor"`
 	}
 
@@ -85,7 +86,7 @@ type (
 )
 
 func newStyle() Style {
-	return Style{
+	s := Style{
 		Name:      "Default",
 		Body:      newBody(),
 		StatTable: newStatTable(),
@@ -93,6 +94,7 @@ func newStyle() Style {
 		Help:      newHelp(),
 		Dialog:    newDialog(),
 	}
+	return s
 }
 
 func newBody() Body {
@@ -131,6 +133,7 @@ func newHelp() Help {
 		FgColor:         "black",
 		KeyColor:        "white",
 		HlColor:         "green",
+		ButtonBgColor:   "black",
 		FgCategoryColor: "lightskyblue",
 	}
 }
@@ -170,6 +173,7 @@ func (s *Styles) Load(path string) error {
 	if err := yaml.Unmarshal(b, s); err != nil {
 		return err
 	}
+	s.setDefaults()
 
 	return nil
 }
@@ -242,6 +246,11 @@ func (s *Styles) Update() {
 // GetStyleName returns the style name
 func (s *Styles) GetStyleName() string {
 	return s.Style.Name
+}
+
+// setDefaults sets the background color to help button.
+func (s *Styles) setDefaults() {
+	s.Style.Help.ButtonBgColor = s.Body().BgColor
 }
 
 // Dump for debug.

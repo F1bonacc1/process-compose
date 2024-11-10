@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
-	"io"
 	"os"
 	"strings"
 )
@@ -171,18 +171,21 @@ func (s *ShortCuts) applyValid(newSc *ShortCuts) {
 	}
 }
 
-func (s *ShortCuts) writeButton(action ActionName, w io.Writer) {
-	s.ShortCutKeys[action].writeButton(w, s.style)
+func (s *ShortCuts) addButton(action ActionName, flex *tview.Flex) {
+	s.ShortCutKeys[action].addButton(flex, s.style)
 }
 
-func (s *ShortCuts) writeToggleButton(action ActionName, w io.Writer, state bool) {
-	s.ShortCutKeys[action].writeToggleButton(w, state, s.style)
+func (s *ShortCuts) addToggleButton(action ActionName, flex *tview.Flex, state bool) {
+	s.ShortCutKeys[action].addToggleButton(flex, state, s.style)
 }
 
-func (s *ShortCuts) writeCategory(category string, w io.Writer) {
-	_, _ = fmt.Fprintf(w, "[%s::b]%s[-:-:-] ",
+func (s *ShortCuts) addCategory(category string, flex *tview.Flex) {
+	textView := tview.NewTextView().SetDynamicColors(true)
+	_, _ = fmt.Fprintf(textView, "[%s::b]%s[-:-:-] ",
 		string(s.style.FgCategoryColor),
 		category)
+
+	flex.AddItem(textView, len(category)+1, 1, false)
 }
 
 func (s *ShortCuts) StylesChanged(style *config.Styles) {
@@ -253,20 +256,28 @@ type Action struct {
 	actionFn          func()
 }
 
-func (a Action) writeButton(w io.Writer, style config.Help) {
-	_, _ = fmt.Fprintf(w, "%s[%s:%s:]%s[-:-:-] ",
+func (a Action) addButton(flex *tview.Flex, style config.Help) {
+	btnText := fmt.Sprintf("%s[%s:%s:]%s[-:-:-] ",
 		a.ShortCut,
 		string(style.FgColor),
 		string(style.HlColor),
 		a.Description)
+	button := tview.NewButton(btnText).SetSelectedFunc(a.actionFn)
+	button.SetStyle(tcell.StyleDefault.Background(style.ButtonBgColor.Color()).Foreground(style.KeyColor.Color()))
+	button.SetActivatedStyle(tcell.StyleDefault.Background(style.ButtonBgColor.Color()).Foreground(style.KeyColor.Color()))
+	flex.AddItem(button, len(a.ShortCut+a.Description)+1, 1, false)
 }
 
-func (a Action) writeToggleButton(w io.Writer, state bool, style config.Help) {
-	_, _ = fmt.Fprintf(w, "%s[%s:%s:]%s[-:-:-] ",
+func (a Action) addToggleButton(flex *tview.Flex, state bool, style config.Help) {
+	btnText := fmt.Sprintf("%s[%s:%s:]%s[-:-:-] ",
 		a.ShortCut,
 		string(style.FgColor),
 		string(style.HlColor),
 		a.ToggleDescription[state])
+	button := tview.NewButton(btnText).SetSelectedFunc(a.actionFn)
+	button.SetStyle(tcell.StyleDefault.Background(style.ButtonBgColor.Color()).Foreground(style.KeyColor.Color()))
+	button.SetActivatedStyle(tcell.StyleDefault.Background(style.ButtonBgColor.Color()).Foreground(style.KeyColor.Color()))
+	flex.AddItem(button, len(a.ShortCut+a.ToggleDescription[state])+1, 1, false)
 }
 
 func newShortCuts() *ShortCuts {

@@ -47,46 +47,47 @@ const shutDownAfterSec = 10
 var pcv *pcView
 
 type pcView struct {
-	procTable         *tview.Table
-	statTable         *tview.Table
-	appView           *tview.Application
-	logsText          *LogView
-	statusText        *tview.TextView
-	helpText          *tview.TextView
-	pages             *tview.Pages
-	procNames         []string
-	logFollow         bool
-	logSelect         bool
-	scrSplitState     scrSplitState
-	loggedProc        string
-	shortcuts         *ShortCuts
-	procCountCell     *tview.TableCell
-	procMemCpuCell    *tview.TableCell
-	mainGrid          *tview.Grid
-	logsTextArea      *tview.TextArea
-	project           app.IProject
-	sortMtx           sync.Mutex
-	stateSorter       StateSorter
-	procRegex         *regexp.Regexp
-	procRegexMtx      sync.Mutex
-	procColumns       map[ColumnID]string
-	refreshRate       time.Duration
-	cancelFn          context.CancelFunc
-	cancelLogFn       context.CancelFunc
-	cancelSigFn       context.CancelFunc
-	ctxApp            context.Context
-	cancelAppFn       context.CancelFunc
-	selectedNsMtx     sync.Mutex
-	selectedNs        string
-	selectedNsChanged atomic.Bool
-	hideDisabled      atomic.Bool
-	commandModeType   commandType
-	styles            *config.Styles
-	themes            *config.Themes
-	helpDialog        *helpDialog
-	settings          *config.Settings
-	isFullScreen      bool
-	isReadOnlyMode    bool
+	procTable             *tview.Table
+	statTable             *tview.Table
+	appView               *tview.Application
+	logsText              *LogView
+	statusText            *tview.TextView
+	helpFooter            *tview.Flex
+	pages                 *tview.Pages
+	procNames             []string
+	logFollow             bool
+	logSelect             bool
+	scrSplitState         scrSplitState
+	loggedProc            string
+	shortcuts             *ShortCuts
+	procCountCell         *tview.TableCell
+	procMemCpuCell        *tview.TableCell
+	mainGrid              *tview.Grid
+	logsTextArea          *tview.TextArea
+	project               app.IProject
+	sortMtx               sync.Mutex
+	stateSorter           StateSorter
+	procRegex             *regexp.Regexp
+	procRegexMtx          sync.Mutex
+	procColumns           map[ColumnID]string
+	refreshRate           time.Duration
+	cancelFn              context.CancelFunc
+	cancelLogFn           context.CancelFunc
+	cancelSigFn           context.CancelFunc
+	ctxApp                context.Context
+	cancelAppFn           context.CancelFunc
+	selectedNsMtx         sync.Mutex
+	selectedNs            string
+	selectedNsChanged     atomic.Bool
+	hideDisabled          atomic.Bool
+	commandModeType       commandType
+	styles                *config.Styles
+	themes                *config.Themes
+	helpDialog            *helpDialog
+	settings              *config.Settings
+	isFullScreen          bool
+	isReadOnlyMode        bool
+	isExitConfirmDisabled bool
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -97,7 +98,7 @@ func newPcView(project app.IProject) *pcView {
 		statusText:     tview.NewTextView().SetDynamicColors(true),
 		logFollow:      true,
 		scrSplitState:  LogProcHalf,
-		helpText:       tview.NewTextView().SetDynamicColors(true),
+		helpFooter:     tview.NewFlex(),
 		loggedProc:     "",
 		procCountCell:  tview.NewTableCell(""),
 		procMemCpuCell: tview.NewTableCell(""),
@@ -337,6 +338,10 @@ func (pv *pcView) terminateAppView() {
 	if pv.project.IsRemote() {
 		result = ""
 	}
+	if pv.isExitConfirmDisabled {
+		go pv.handleShutDown()
+		return
+	}
 	m := tview.NewModal().
 		SetText("Are you sure you want to quit?\n" + result).
 		AddButtons([]string{"Quit", "Cancel"}).
@@ -421,35 +426,35 @@ func (pv *pcView) onProcRowSpanChange() {
 func (pv *pcView) updateHelpTextView() {
 	logScrBool := pv.scrSplitState != LogFull
 	procScrBool := pv.scrSplitState != ProcFull
-	pv.helpText.Clear()
+	pv.helpFooter.Clear()
+	defer pv.helpFooter.AddItem(tview.NewBox(), 0, 1, false)
 	if pv.logsText.isSearchActive() {
-		pv.shortcuts.writeButton(ActionLogFind, pv.helpText)
-		pv.shortcuts.writeButton(ActionLogFindNext, pv.helpText)
-		pv.shortcuts.writeButton(ActionLogFindPrev, pv.helpText)
+		pv.shortcuts.addButton(ActionLogFind, pv.helpFooter)
+		pv.shortcuts.addButton(ActionLogFindNext, pv.helpFooter)
+		pv.shortcuts.addButton(ActionLogFindPrev, pv.helpFooter)
 		if config.IsLogSelectionOn() {
-			pv.shortcuts.writeToggleButton(ActionLogSelection, pv.helpText, !pv.logSelect)
+			pv.shortcuts.addToggleButton(ActionLogSelection, pv.helpFooter, !pv.logSelect)
 		}
-		pv.shortcuts.writeButton(ActionLogFindExit, pv.helpText)
+		pv.shortcuts.addButton(ActionLogFindExit, pv.helpFooter)
 		return
 	}
-	pv.shortcuts.writeButton(ActionHelp, pv.helpText)
-	pv.shortcuts.writeCategory("LOGS:", pv.helpText)
-	pv.shortcuts.writeToggleButton(ActionLogScreen, pv.helpText, logScrBool)
-	pv.shortcuts.writeToggleButton(ActionFollowLog, pv.helpText, !pv.logFollow)
-	pv.shortcuts.writeToggleButton(ActionWrapLog, pv.helpText, !pv.logsText.IsWrapOn())
+	pv.shortcuts.addButton(ActionHelp, pv.helpFooter)
+	pv.shortcuts.addCategory("LOGS:", pv.helpFooter)
+	pv.shortcuts.addToggleButton(ActionLogScreen, pv.helpFooter, logScrBool)
+	pv.shortcuts.addToggleButton(ActionFollowLog, pv.helpFooter, !pv.logFollow)
+	pv.shortcuts.addToggleButton(ActionWrapLog, pv.helpFooter, !pv.logsText.IsWrapOn())
 	if config.IsLogSelectionOn() {
-		pv.shortcuts.writeToggleButton(ActionLogSelection, pv.helpText, !pv.logSelect)
+		pv.shortcuts.addToggleButton(ActionLogSelection, pv.helpFooter, !pv.logSelect)
 	}
-	pv.shortcuts.writeButton(ActionLogFind, pv.helpText)
-	//fmt.Fprintf(pv.helpText, "%s ", "[lightskyblue::b]PROCESS:[-:-:-]")
-	pv.shortcuts.writeCategory("PROCESS:", pv.helpText)
-	pv.shortcuts.writeButton(ActionProcessScale, pv.helpText)
-	pv.shortcuts.writeButton(ActionProcessInfo, pv.helpText)
-	pv.shortcuts.writeButton(ActionProcessStart, pv.helpText)
-	pv.shortcuts.writeToggleButton(ActionProcessScreen, pv.helpText, procScrBool)
-	pv.shortcuts.writeButton(ActionProcessStop, pv.helpText)
-	pv.shortcuts.writeButton(ActionProcessRestart, pv.helpText)
-	pv.shortcuts.writeButton(ActionQuit, pv.helpText)
+	pv.shortcuts.addButton(ActionLogFind, pv.helpFooter)
+	pv.shortcuts.addCategory("PROCESS:", pv.helpFooter)
+	pv.shortcuts.addButton(ActionProcessScale, pv.helpFooter)
+	pv.shortcuts.addButton(ActionProcessInfo, pv.helpFooter)
+	pv.shortcuts.addButton(ActionProcessStart, pv.helpFooter)
+	pv.shortcuts.addToggleButton(ActionProcessScreen, pv.helpFooter, procScrBool)
+	pv.shortcuts.addButton(ActionProcessStop, pv.helpFooter)
+	pv.shortcuts.addButton(ActionProcessRestart, pv.helpFooter)
+	pv.shortcuts.addButton(ActionQuit, pv.helpFooter)
 }
 
 func (pv *pcView) saveTuiState() {
