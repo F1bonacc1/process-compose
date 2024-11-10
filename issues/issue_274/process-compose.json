@@ -1,0 +1,45 @@
+{
+  "processes": {
+    "bundle-install": { "command": "sleep 10", "namespace": "default" },
+    "configure": { "command": "diff a b", "namespace": "default" },
+    "mysql": {
+      "availability": { "max_restarts": 5, "restart": "on_failure" },
+      "command": "sleep 100",
+      "namespace": "mysql.mysql",
+      "readiness_probe": {
+        "exec": {
+          "command": "echo mysql"
+        },
+        "failure_threshold": 5,
+        "initial_delay_seconds": 2,
+        "period_seconds": 10,
+        "success_threshold": 1,
+        "timeout_seconds": 4
+      }
+    },
+    "mysql-configure": {
+      "command": "sleep 3",
+      "depends_on": { "mysql": { "condition": "process_healthy" } },
+      "namespace": "mysql.mysql"
+    },
+    "prepare-db": {
+      "command": "echo PREPARE DB",
+      "depends_on": {
+        "bundle-install": { "condition": "process_completed_successfully" },
+        "configure": { "condition": "process_completed_successfully" },
+        "mysql-configure": { "condition": "process_completed_successfully" }
+      },
+      "namespace": "default"
+    },
+    "web": {
+      "command": "sleep 100",
+      "depends_on": {
+        "bundle-install": { "condition": "process_completed_successfully" },
+        "configure": { "condition": "process_completed_successfully" },
+        "prepare-db": { "condition": "process_completed_successfully" }
+      },
+      "namespace": "default"
+    }
+  },
+  "shell": { "shell_argument": "-c", "shell_command": "/bin/bash" }
+}
