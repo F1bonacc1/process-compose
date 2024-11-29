@@ -1,0 +1,18 @@
+processes:
+  process0:
+    command: "echo process0"
+    depends_on:
+      process2:
+        condition: process_started
+  process1:
+    command: "echo process1"
+    depends_on:
+      process2:
+        condition: process_started
+  process2:
+    command: "echo process2"
+    depends_on:
+      process3:
+        condition: process_completed_successfully
+  process3:
+    command: "sleep 9"

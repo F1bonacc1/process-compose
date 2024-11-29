@@ -1009,3 +1009,73 @@ func TestSystem_TestRestartingProcessShutDown(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	assertProcessStatus(t, proc, proc1, types.ProcessStateCompleted)
 }
+
+// Test for Issue #280
+func TestSystem_WaitForStartShutDown(t *testing.T) {
+	proc1 := "proc1"
+	proc2 := "proc2"
+	proc3 := "proc3"
+	proc4 := "proc4"
+	shell := command.DefaultShellConfig()
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			proc1: {
+				Name:        proc1,
+				ReplicaName: proc1,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo " + proc1},
+				DependsOn: map[string]types.ProcessDependency{
+					proc3: {
+						Condition: types.ProcessConditionStarted,
+					},
+				},
+			},
+			proc2: {
+				Name:        proc2,
+				ReplicaName: proc2,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo " + proc2},
+				DependsOn: map[string]types.ProcessDependency{
+					proc3: {
+						Condition: types.ProcessConditionStarted,
+					},
+				},
+			},
+			proc3: {
+				Name:        proc3,
+				ReplicaName: proc3,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo " + proc3},
+				DependsOn: map[string]types.ProcessDependency{
+					proc4: {
+						Condition: types.ProcessConditionCompleted,
+					},
+				},
+			},
+			proc4: {
+				Name:        proc4,
+				ReplicaName: proc4,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "sleep 5 && echo " + proc4},
+			},
+		},
+		ShellConfig: shell,
+	}
+	p, err := NewProjectRunner(&ProjectOpts{
+		project: project,
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	go func() {
+		err := p.Run()
+		if err != nil {
+			t.Errorf("Failed to run project: %v", err)
+		}
+	}()
+	time.Sleep(300 * time.Millisecond)
+	err = p.ShutDownProject()
+	if err != nil {
+		t.Fatalf("Failed to stop project: %v", err)
+	}
+}

@@ -43,7 +43,7 @@ type Process struct {
 	procState           *types.ProcessState
 	stateMtx            sync.Mutex
 	procCond            sync.Cond
-	procStartedCond     sync.Cond
+	procStartedChan     chan struct{}
 	procStateChan       chan string
 	procReadyCtx        context.Context
 	readyCancelFn       context.CancelFunc
@@ -84,12 +84,13 @@ func NewProcess(opts ...ProcOpts) *Process {
 	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
 
 	proc := &Process{
-		procColor:     color.New(color.Attribute(colNumeric), color.Bold).SprintFunc(),
-		redColor:      color.New(color.FgHiRed).SprintFunc(),
-		noColor:       color.New(color.Reset).SprintFunc(),
-		started:       false,
-		done:          false,
-		procStateChan: make(chan string, 1),
+		procColor:       color.New(color.Attribute(colNumeric), color.Bold).SprintFunc(),
+		redColor:        color.New(color.FgHiRed).SprintFunc(),
+		noColor:         color.New(color.Reset).SprintFunc(),
+		started:         false,
+		done:            false,
+		procStateChan:   make(chan string, 1),
+		procStartedChan: make(chan struct{}, 1),
 	}
 
 	for _, opt := range opts {
@@ -101,7 +102,6 @@ func NewProcess(opts ...ProcOpts) *Process {
 	proc.procRunCtx, proc.runCancelFn = context.WithCancel(context.Background())
 	proc.setUpProbes()
 	proc.procCond = *sync.NewCond(proc)
-	proc.procStartedCond = *sync.NewCond(proc)
 	return proc
 }
 
@@ -319,11 +319,9 @@ func (p *Process) isRestartable() bool {
 }
 
 func (p *Process) waitForStarted() {
-	p.Lock()
-	defer p.Unlock()
-
-	for !p.started {
-		p.procStartedCond.Wait()
+	select {
+	case <-p.procStartedChan:
+	case <-p.procRunCtx.Done():
 	}
 }
 
@@ -469,7 +467,7 @@ func (p *Process) onProcessStart() {
 	p.Lock()
 	p.started = true
 	p.Unlock()
-	p.procStartedCond.Broadcast()
+	close(p.procStartedChan)
 }
 
 func (p *Process) onProcessEnd(state string) {
