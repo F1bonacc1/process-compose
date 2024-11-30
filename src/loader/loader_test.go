@@ -154,4 +154,31 @@ func TestLoadFileWithExtendProject(t *testing.T) {
 	if project.Processes["process1"].Command != "echo extending" {
 		t.Errorf("expected %s, got %s", "echo extending", project.Processes["process1"].Command)
 	}
+
+	//check working dir assignment
+	expected = filepath.Join("..", "..", "fixtures-code")
+	for _, proc := range opts.projects[0].Processes {
+		// check ABS working dir for process2
+		if proc.Name == "process2" {
+			if proc.WorkingDir != "/tmp" {
+				t.Errorf("expected %s, got %s", "/tmp", proc.WorkingDir)
+			}
+			continue
+		}
+		// check REL working dir for process3
+		if proc.Name == "process3" {
+			if proc.WorkingDir != "../../.." {
+				t.Errorf("expected %s, got %s", "../../..", proc.WorkingDir)
+			}
+			continue
+		}
+		if proc.WorkingDir != expected {
+			t.Errorf("expected %s, got %s", expected, proc.WorkingDir)
+		}
+	}
+	for _, proc := range opts.projects[1].Processes {
+		if proc.WorkingDir != "" {
+			t.Errorf("expected empty, got %s", proc.WorkingDir)
+		}
+	}
 }

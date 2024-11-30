@@ -7,6 +7,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
+	"path/filepath"
 )
 
 type mutatorFunc func(p *types.Project)
@@ -51,6 +52,19 @@ func assignDefaultProcessValues(p *types.Project) {
 		}
 		proc.Name = name
 		p.Processes[name] = proc
+	}
+}
+
+// this function is used only in extended projects to assign the location of the compose.yaml as the working dir
+func copyWorkingDirToProcesses(p *types.Project, wd string) {
+	for name, proc := range p.Processes {
+		if proc.WorkingDir == "" {
+			proc.WorkingDir = wd
+			p.Processes[name] = proc
+		} else if !filepath.IsAbs(proc.WorkingDir) {
+			proc.WorkingDir = filepath.Join(wd, proc.WorkingDir)
+			p.Processes[name] = proc
+		}
 	}
 }
 

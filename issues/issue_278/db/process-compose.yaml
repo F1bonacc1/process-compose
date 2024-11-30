@@ -1,0 +1,4 @@
+processes:
+  # starts DB process
+  db:
+    command: ./db.sh

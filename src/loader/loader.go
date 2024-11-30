@@ -90,6 +90,7 @@ func loadExtendProject(p *types.Project, opts *LoaderOptions, file string, index
 			log.Error().Err(err).Msgf("Failed to load the extend project %s", p.ExtendsProject)
 			return fmt.Errorf("failed to load extend project %s: %w", p.ExtendsProject, err)
 		}
+		copyWorkingDirToProcesses(project, filepath.Dir(p.ExtendsProject))
 		opts.projects = slices.Insert(opts.projects, index, project)
 		err = loadExtendProject(project, opts, p.ExtendsProject, index)
 		if err != nil {

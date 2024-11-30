@@ -8,6 +8,7 @@ processes:
 
   process2:
     command: "echo process2"
+    working_dir: "/tmp"
     availability:
       restart: "on_failure"
     depends_on:
@@ -16,6 +17,7 @@ processes:
 
   process3:
     command: "echo process3"
+    working_dir: "../../"
     availability:
       restart: "on_failure"
       backoff_seconds: 2

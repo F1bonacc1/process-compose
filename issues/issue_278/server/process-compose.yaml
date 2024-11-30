@@ -1,0 +1,9 @@
+extends: ../db/process-compose.yaml
+
+processes:
+  # starts server process, which depends on `db` process of the `db` package:
+  server:
+    command: ./server.sh
+    depends_on:
+      db:
+        condition: process_completed_successfully
