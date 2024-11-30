@@ -51,6 +51,11 @@ func (pv *pcView) setLogViewStyle(s *config.Styles) {
 	pv.logsText.SetTitleColor(s.Body().SecondaryTextColor.Color())
 	pv.logsText.SetBackgroundColor(s.BgColor())
 	pv.logsText.SetTextColor(s.FgColor())
+
+	pv.logsTextArea.SetBorderColor(s.BorderColor())
+	pv.logsTextArea.SetTitleColor(s.Body().SecondaryTextColor.Color())
+	pv.logsTextArea.SetBackgroundColor(s.BgColor())
+	pv.logsTextArea.SetTextStyle(tcell.StyleDefault.Background(s.BgColor()).Foreground(s.FgColor()))
 }
 
 func (pv *pcView) setHelpTextStyles(s *config.Styles) {
