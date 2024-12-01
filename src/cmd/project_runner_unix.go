@@ -15,7 +15,7 @@ func runInDetachedMode() {
 	fmt.Println("Starting Process Compose in detached mode. Use 'process-compose attach' to connect to it or 'process-compose down' to stop it")
 	//remove detached flag
 	for i, arg := range os.Args {
-		if arg == "-D" || arg == "--detached" {
+		if arg == "-D" || arg == "--detached" || arg == "--detached-with-tui" {
 			os.Args = append(os.Args[:i], os.Args[i+1:]...)
 			break
 		}
@@ -36,7 +36,9 @@ func runInDetachedMode() {
 	if err := cmd.Start(); err != nil {
 		panic(err)
 	}
-
+	if *pcFlags.IsDetachedWithTui {
+		startTui(getClient(), false)
+	}
 	// Exit the parent process
 	os.Exit(0)
 }

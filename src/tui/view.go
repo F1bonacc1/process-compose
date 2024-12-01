@@ -334,19 +334,19 @@ func (pv *pcView) exitSearch() {
 
 func (pv *pcView) terminateAppView() {
 
-	result := "This will terminate all the running processes."
+	result := "Are you sure you want to quit?\nThis will terminate all the running processes."
 	if pv.project.IsRemote() {
-		result = ""
+		result = "Detach from the remote project?"
 	}
 	if pv.isExitConfirmDisabled {
 		go pv.handleShutDown()
 		return
 	}
 	m := tview.NewModal().
-		SetText("Are you sure you want to quit?\n" + result).
-		AddButtons([]string{"Quit", "Cancel"}).
+		SetText(result).
+		AddButtons([]string{"Yes", "No"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			if buttonLabel == "Quit" {
+			if buttonLabel == "Yes" {
 				go pv.handleShutDown()
 			}
 			pv.pages.SwitchToPage(PageMain)

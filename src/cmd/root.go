@@ -50,7 +50,7 @@ func runProjectCmd(args []string) {
 		_ = logFile.Close()
 	}()
 	runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
-	if *pcFlags.IsDetached {
+	if *pcFlags.IsDetached || *pcFlags.IsDetachedWithTui {
 		//placing it here ensures that if the compose.yaml is invalid, the program will exit immediately
 		runInDetachedMode()
 	}
@@ -99,6 +99,7 @@ func init() {
 
 	if runtime.GOOS != "windows" {
 		rootCmd.Flags().BoolVarP(pcFlags.IsDetached, "detached", "D", *pcFlags.IsDetached, "run process-compose in detached mode")
+		rootCmd.Flags().BoolVar(pcFlags.IsDetachedWithTui, "detached-with-tui", *pcFlags.IsDetachedWithTui, "run process-compose in detached mode with TUI")
 		rootCmd.PersistentFlags().StringVarP(pcFlags.UnixSocketPath, "unix-socket", "u", config.GetUnixSocketPath(), "path to unix socket (env: "+config.EnvVarUnixSocketPath+")")
 		rootCmd.PersistentFlags().BoolVarP(pcFlags.IsUnixSocket, "use-uds", "U", *pcFlags.IsUnixSocket, "use unix domain sockets instead of tcp")
 	}

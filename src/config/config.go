@@ -45,6 +45,7 @@ var (
 		"project",
 		"list",
 		"ls",
+		"--detached-with-tui",
 	}
 )
 
