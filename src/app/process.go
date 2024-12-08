@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 	"os"
 	"runtime"
 	"strconv"
@@ -81,10 +80,7 @@ type Process struct {
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
-	colNumeric := rand.Intn(int(color.FgHiWhite)-int(color.FgHiBlack)) + int(color.FgHiBlack)
-
 	proc := &Process{
-		procColor:       color.New(color.Attribute(colNumeric), color.Bold).SprintFunc(),
 		redColor:        color.New(color.FgHiRed).SprintFunc(),
 		noColor:         color.New(color.Reset).SprintFunc(),
 		started:         false,
@@ -96,6 +92,7 @@ func NewProcess(opts ...ProcOpts) *Process {
 	for _, opt := range opts {
 		opt(proc)
 	}
+	proc.procColor = pclog.Name2Color(proc.getName())
 
 	proc.procReadyCtx, proc.readyCancelFn = context.WithCancel(context.Background())
 	proc.procLogReadyCtx, proc.readyLogCancelFn = context.WithCancelCause(context.Background())

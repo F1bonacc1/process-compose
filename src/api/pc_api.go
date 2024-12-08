@@ -4,6 +4,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/gin-gonic/gin"
@@ -26,10 +27,11 @@ import (
 
 type PcApi struct {
 	project app.IProject
+	wsMtx   sync.Mutex
 }
 
 func NewPcApi(project app.IProject) *PcApi {
-	return &PcApi{project}
+	return &PcApi{project: project}
 }
 
 // @Schemes

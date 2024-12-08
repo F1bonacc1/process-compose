@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"net"
@@ -75,7 +76,10 @@ func (p *PcClient) GetLogLength() int {
 }
 
 func (p *PcClient) GetLogsAndSubscribe(name string, observer pclog.LogObserver) error {
-	_, err := p.logger.ReadProcessLogs(name, p.logLength, true, observer)
+	fn := func(message api.LogMessage) {
+		_, _ = observer.WriteString(message.Message)
+	}
+	_, err := p.logger.ReadProcessLogs(name, p.logLength, true, fn)
 	return err
 }
 

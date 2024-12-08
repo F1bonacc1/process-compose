@@ -1,20 +1,24 @@
 package api
 
 import (
+	"errors"
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
+	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 )
 
 var upgrader = websocket.Upgrader{}
 
 func (api *PcApi) HandleLogsStream(c *gin.Context) {
-	procName := c.Query("name")
+	procNamesStr := c.Query("name")
+	procNames := strings.Split(procNamesStr, ",")
 	follow := c.Query("follow") == "true"
 	endOffset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
@@ -28,48 +32,52 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 	}
 
 	done := make(chan struct{})
-	logChan := make(chan LogMessage, 256)
-	chanCloseMtx := &sync.Mutex{}
-	isChannelClosed := false
-	connector := pclog.NewConnector(
-		func(messages []string) {
-			for _, message := range messages {
+	if follow {
+		go handleIncoming(ws, done)
+	}
+	for _, procName := range procNames {
+		logChan := make(chan LogMessage, 256)
+		chanCloseMtx := &sync.Mutex{}
+		isChannelClosed := false
+		connector := pclog.NewConnector(
+			func(messages []string) {
+				for _, message := range messages {
+					msg := LogMessage{
+						Message:     message,
+						ProcessName: procName,
+					}
+					logChan <- msg
+				}
+				if !follow {
+					chanCloseMtx.Lock()
+					defer chanCloseMtx.Unlock()
+					close(logChan)
+					isChannelClosed = true
+				}
+			},
+			func(message string) (n int, err error) {
 				msg := LogMessage{
 					Message:     message,
 					ProcessName: procName,
 				}
-				logChan <- msg
-			}
-			if !follow {
 				chanCloseMtx.Lock()
 				defer chanCloseMtx.Unlock()
-				close(logChan)
-				isChannelClosed = true
-			}
-		},
-		func(message string) (n int, err error) {
-			msg := LogMessage{
-				Message:     message,
-				ProcessName: procName,
-			}
-			chanCloseMtx.Lock()
-			defer chanCloseMtx.Unlock()
-			if isChannelClosed {
-				return 0, nil
-			}
-			logChan <- msg
-			return len(message), nil
-		},
-		endOffset)
-	go api.handleLog(ws, procName, connector, logChan, done)
-	if follow {
-		go handleIncoming(ws, done)
+				if isChannelClosed {
+					return 0, nil
+				}
+				logChan <- msg
+				return len(message), nil
+			},
+			endOffset)
+		go api.handleLog(ws, procName, connector, logChan, done)
+
+		err = api.project.GetLogsAndSubscribe(procName, connector)
+		if err != nil {
+			log.Err(err).Msg("Failed to subscribe to logger")
+			return
+		}
 	}
-	err = api.project.GetLogsAndSubscribe(procName, connector)
-	if err != nil {
-		log.Err(err).Msg("Failed to subscribe to logger")
-		return
-	}
+
 }
 
 func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclog.Connector, logChan chan LogMessage, done chan struct{}) {
@@ -83,7 +91,13 @@ func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclo
 	for {
 		select {
 		case msg, open := <-logChan:
-			if err := ws.WriteJSON(&msg); err != nil {
+			api.wsMtx.Lock()
+			err := ws.WriteJSON(&msg)
+			api.wsMtx.Unlock()
+			if err != nil {
+				if errors.Is(err, net.ErrClosed) {
+					return
+				}
 				log.Err(err).Msg("Failed to write to socket")
 				return
 			}
@@ -92,6 +106,7 @@ func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclo
 			}
 		case <-done:
 			log.Warn().Msg("Socket closed remotely")
+			close(logChan)
 			return
 		}
 

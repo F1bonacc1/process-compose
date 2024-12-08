@@ -6,29 +6,31 @@ import (
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
-	"io"
 	"net"
-    "os"
+	"os"
 	"sync/atomic"
 )
 
 type LogClient struct {
-	ws         *websocket.Conn
-	Format     string
-	isClosed   atomic.Bool
-	socketPath string
-	address    string
+	ws               *websocket.Conn
+	Format           string
+	isClosed         atomic.Bool
+	socketPath       string
+	address          string
+	PrintProcessName bool
+	printLogFn       func(api.LogMessage)
 }
 
 func NewLogClient(address, socketPath string) *LogClient {
 	return &LogClient{
-		Format:     "%s",
-		address:    address,
-		socketPath: socketPath,
+		Format:           "%s",
+		PrintProcessName: false,
+		address:          address,
+		socketPath:       socketPath,
 	}
 }
 
-func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, out io.StringWriter) (done chan struct{}, err error) {
+func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, fn func(api.LogMessage)) (done chan struct{}, err error) {
 
 	url := fmt.Sprintf("ws://%s/process/logs/ws?name=%s&offset=%d&follow=%v", l.address, name, offset, follow)
 	log.Info().Msgf("Connecting to %s", url)
@@ -48,7 +50,7 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, out io
 	//defer l.ws.Close()
 	done = make(chan struct{})
 
-	go l.readLogs(done, l.ws, follow, out)
+	go l.readLogs(done, l.ws, follow, fn)
 
 	return done, nil
 }
@@ -65,7 +67,7 @@ func (l *LogClient) CloseChannel() error {
 	return l.ws.Close()
 }
 
-func (l *LogClient) readLogs(done chan struct{}, ws *websocket.Conn, follow bool, out io.StringWriter) {
+func (l *LogClient) readLogs(done chan struct{}, ws *websocket.Conn, follow bool, fn func(api.LogMessage)) {
 	defer close(done)
 	for {
 		var message api.LogMessage
@@ -82,8 +84,8 @@ func (l *LogClient) readLogs(done chan struct{}, ws *websocket.Conn, follow bool
 			log.Error().Msgf("failed to read message: %v", err)
 			return
 		}
-		if len(message.ProcessName) > 0 {
-			_, _ = out.WriteString(fmt.Sprintf(l.Format, message.Message))
+		if message.ProcessName != "" {
+			fn(message)
 		}
 	}
 }

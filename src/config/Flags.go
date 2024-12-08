@@ -50,6 +50,7 @@ type Flags struct {
 	LogLength         *int
 	LogFollow         *bool
 	LogTailLength     *int
+	IsRawLogOutput    *bool
 	IsTuiEnabled      *bool
 	Command           *string
 	Write             *bool
@@ -103,6 +104,7 @@ func NewFlags() *Flags {
 		IsTuiFullScreen:   toPtr(getTuiFullScreenDefault()),
 		IsDetached:        toPtr(false),
 		IsDetachedWithTui: toPtr(false),
+		IsRawLogOutput:    toPtr(false),
 	}
 }
 
