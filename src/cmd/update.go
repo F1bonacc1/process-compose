@@ -7,6 +7,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (
@@ -85,5 +86,7 @@ func init() {
 	projectCmd.AddCommand(updateCmd)
 	updateCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
 	updateCmd.Flags().BoolVarP(&updateVerboseOutput, "verbose", "v", updateVerboseOutput, "verbose output")
-	_ = updateCmd.MarkFlagRequired("config")
+	if os.Getenv(config.EnvVarNameConfig) == "" {
+		_ = updateCmd.MarkFlagRequired("config")
+	}
 }
