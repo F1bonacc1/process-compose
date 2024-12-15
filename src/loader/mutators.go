@@ -40,6 +40,9 @@ func setDefaultShell(p *types.Project) {
 }
 
 func assignDefaultProcessValues(p *types.Project) {
+	if p.Processes == nil {
+		p.Processes = make(map[string]types.ProcessConfig)
+	}
 	for name, proc := range p.Processes {
 		if proc.Namespace == "" {
 			proc.Namespace = types.DefaultNamespace
