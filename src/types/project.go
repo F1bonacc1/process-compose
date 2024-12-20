@@ -56,6 +56,14 @@ func (p *Project) GetLexicographicProcessNames() ([]string, error) {
 	return names, nil
 }
 
+func (p *Project) GetElevatedShellArg() string {
+	elevatedShellArg := p.ShellConfig.ElevatedShellArg
+	if p.IsTuiDisabled {
+		elevatedShellArg = ""
+	}
+	return elevatedShellArg
+}
+
 func (p *Project) GetProcesses(names ...string) ([]ProcessConfig, error) {
 	processes := []ProcessConfig{}
 	if len(names) == 0 {

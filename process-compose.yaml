@@ -98,8 +98,13 @@ processes:
       failure_threshold: 3
 
   server:
-    command: "python3 -m http.server 4040"
+    command: "python3 -m http.server 404{{.PC_REPLICA_NUM}}"
     is_tty: true
+    readiness_probe:
+      http_get:
+        host: "127.0.0.1"
+        port: "404{{.PC_REPLICA_NUM}}"
+        scheme: "http"
 
   kcalc:
     command: "kcalc"

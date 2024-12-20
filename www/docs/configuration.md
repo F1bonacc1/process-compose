@@ -202,7 +202,23 @@ processes:
         command: '[ $(docker inspect -f {{ "{{.State.Running}}" }} nginx_test) = true ]'
 ```
 
-> :bulb: For backward compatibility, if neither global nor local variables exist in `process-compose.yaml` the template engine won't run.
+### Auto Inserted Variables
+
+Process Compose will insert `PC_REPLICA_NUM` variable that will represent the replica number of the process. This will allow to conveniently scale processes using the following example configuration:
+
+```yaml hl_lines="3 8"
+processes:  
+  server:
+    command: "python3 -m http.server 404{{.PC_REPLICA_NUM}}"
+    is_tty: true
+    readiness_probe:
+      http_get:
+        host: "127.0.0.1"
+        port: "404{{.PC_REPLICA_NUM}}"
+        scheme: "http"
+```
+
+
 
 ## Specify which configuration files to use
 

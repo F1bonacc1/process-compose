@@ -3,7 +3,6 @@ package loader
 import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/command"
-	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
@@ -115,10 +114,7 @@ func cloneReplicas(p *types.Project) {
 }
 
 func assignExecutableAndArgs(p *types.Project) {
-	elevatedShellArg := p.ShellConfig.ElevatedShellArg
-	if p.IsTuiDisabled {
-		elevatedShellArg = ""
-	}
+	elevatedShellArg := p.GetElevatedShellArg()
 	for name, proc := range p.Processes {
 		proc.AssignProcessExecutableAndArgs(p.ShellConfig, elevatedShellArg)
 
@@ -129,15 +125,7 @@ func assignExecutableAndArgs(p *types.Project) {
 func renderTemplates(p *types.Project) error {
 	tpl := templater.New(p.Vars)
 	for name, proc := range p.Processes {
-		if len(p.Vars) == 0 && len(proc.Vars) == 0 {
-			continue
-		}
-		proc.Command = tpl.RenderWithExtraVars(proc.Command, proc.Vars)
-		proc.WorkingDir = tpl.RenderWithExtraVars(proc.WorkingDir, proc.Vars)
-		proc.LogLocation = tpl.RenderWithExtraVars(proc.LogLocation, proc.Vars)
-		proc.Description = tpl.RenderWithExtraVars(proc.Description, proc.Vars)
-		renderProbe(proc.ReadinessProbe, tpl, proc.Vars)
-		renderProbe(proc.LivenessProbe, tpl, proc.Vars)
+		tpl.RenderProcess(&proc)
 
 		if tpl.GetError() != nil {
 			return fmt.Errorf("error rendering template for process %s: %w", name, tpl.GetError())
@@ -145,20 +133,4 @@ func renderTemplates(p *types.Project) error {
 		p.Processes[name] = proc
 	}
 	return nil
-}
-
-func renderProbe(probe *health.Probe, tpl *templater.Templater, vars types.Vars) {
-	if probe == nil {
-		return
-	}
-
-	if probe.Exec != nil {
-		probe.Exec.Command = tpl.RenderWithExtraVars(probe.Exec.Command, vars)
-	} else if probe.HttpGet != nil {
-		probe.HttpGet.Path = tpl.RenderWithExtraVars(probe.HttpGet.Path, vars)
-		probe.HttpGet.Host = tpl.RenderWithExtraVars(probe.HttpGet.Host, vars)
-		probe.HttpGet.Scheme = tpl.RenderWithExtraVars(probe.HttpGet.Scheme, vars)
-		probe.HttpGet.Port = tpl.RenderWithExtraVars(probe.HttpGet.Port, vars)
-	}
-	probe.ValidateAndSetDefaults()
 }

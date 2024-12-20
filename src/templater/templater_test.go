@@ -48,6 +48,20 @@ func TestTemplater_RenderWithExtraVars(t *testing.T) {
 			t.Errorf("Expected %s but got %s", expected, result)
 		}
 	})
+	t.Run("Rendering with proc conf", func(t *testing.T) {
+		vars := types.Vars{"Name": "Alice"}
+
+		procConf := &types.ProcessConfig{
+			ReplicaNum: 3,
+			Command:    "Name: {{.Name}}, Replica: {{.PC_REPLICA_NUM}}",
+		}
+		templater := New(vars)
+		templater.RenderProcess(procConf)
+		expected := "Name: Alice, Replica: 3"
+		if procConf.Command != expected {
+			t.Errorf("Expected %s but got %s", expected, procConf.Command)
+		}
+	})
 }
 
 func TestTemplater_GetError(t *testing.T) {

@@ -2,12 +2,14 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/pclog"
+	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"os/user"
@@ -669,10 +671,19 @@ func (p *ProjectRunner) getCurrentReplicaCount(name string) int {
 
 func (p *ProjectRunner) scaleUpProcess(proc types.ProcessConfig, toAdd, scale, origScale int) {
 	for i := 0; i < toAdd; i++ {
-		proc.ReplicaNum = origScale + i
-		proc.Replicas = scale
-		proc.ReplicaName = proc.CalculateReplicaName()
-		p.addProcessAndRun(proc)
+		var procFromConf types.ProcessConfig
+		err := json.Unmarshal([]byte(proc.OriginalConfig), &procFromConf)
+		if err != nil {
+			log.Err(err).Msgf("failed to unmarshal config for %s", proc.Name)
+			return
+		}
+		procFromConf.ReplicaNum = origScale + i
+		procFromConf.Replicas = scale
+		procFromConf.ReplicaName = procFromConf.CalculateReplicaName()
+		tpl := templater.New(p.project.Vars)
+		tpl.RenderProcess(&procFromConf)
+		procFromConf.AssignProcessExecutableAndArgs(p.project.ShellConfig, p.project.GetElevatedShellArg())
+		p.addProcessAndRun(procFromConf)
 	}
 }
 
@@ -735,11 +746,11 @@ func (p *ProjectRunner) renameProcess(name string, newName string) {
 		state.Name = newName
 		p.processStates[newName] = state
 	}
-	config, ok := p.project.Processes[name]
+	procConf, ok := p.project.Processes[name]
 	if ok {
 		delete(p.project.Processes, name)
-		config.ReplicaName = newName
-		p.project.Processes[newName] = config
+		procConf.ReplicaName = newName
+		p.project.Processes[newName] = procConf
 	}
 }
 func (p *ProjectRunner) removeProcessLogs(name string) *pclog.ProcessLogBuffer {

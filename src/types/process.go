@@ -44,6 +44,7 @@ type ProcessConfig struct {
 	IsTty             bool                   `yaml:"is_tty"`
 	IsElevated        bool                   `yaml:"is_elevated"`
 	LaunchTimeout     int                    `yaml:"launch_timeout_seconds"`
+	OriginalConfig    string
 	ReplicaNum        int
 	ReplicaName       string
 	Executable        string

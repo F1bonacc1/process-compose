@@ -449,7 +449,7 @@ func Test_renderTemplates(t *testing.T) {
 			for _, p := range tt.args.p.Processes {
 				switch tt.name {
 				case "no vars":
-					expected := "echo {{ .TEST }}"
+					expected := "echo <no value>"
 					compareStrings(t, expected, p.ReadinessProbe.Exec.Command, "readiness probe command")
 					compareStrings(t, expected, p.LivenessProbe.Exec.Command, "liveness probe command")
 					compareStrings(t, expected, p.Command, "process command")
@@ -480,6 +480,7 @@ func Test_renderTemplates(t *testing.T) {
 }
 
 func compareStrings(t *testing.T, expected, actual, scope string) {
+	t.Helper()
 	if expected != actual {
 		t.Errorf("Expected %s '%s' to be '%s'", scope, expected, actual)
 	}
