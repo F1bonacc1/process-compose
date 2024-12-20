@@ -116,6 +116,26 @@ announce:
       Thanks,
       f1bonacc1
 
+  bluesky:
+    # Whether it's enabled or not.
+    enabled: true
+
+    # Message template to use while publishing.
+    #
+    # Default: '{{ .ProjectName }} {{ .Tag }} is out! Check it out at {{ .ReleaseURL }}'.
+    # Templates: allowed.
+    message_template: |
+      **New Release: Process Compose {{.Tag}}**
+      Process Compose {{.Tag}} is out.
+
+      What's new: {{.ReleaseURL}}
+
+      Thanks,
+      f1bonacc1
+
+    # The username of the account that will post
+    # to Bluesky
+    username: "processcompose.bsky.social"
 # modelines, feel free to remove those if you don't want/use them:
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
