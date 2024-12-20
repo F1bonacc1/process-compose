@@ -531,7 +531,7 @@ func (p *Process) updateProcState() {
 	defer p.stateMtx.Unlock()
 	if isRunning {
 		dur := time.Since(p.getStartTime())
-		p.procState.SystemTime = durationToString(dur)
+		p.procState.SystemTime = HumanDuration(dur)
 		p.procState.Age = dur
 		p.procState.Name = p.getName()
 		p.procState.Mem, p.procState.CPU = p.getResourceUsage()
