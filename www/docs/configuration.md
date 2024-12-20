@@ -107,6 +107,83 @@ Process Compose provides 2 ways to disable the automatic environment variables e
 >
 >  **Output**: `I am `
 
+## Environment Commands
+
+The `env_cmds` feature allows you to dynamically populate environment variables by executing short commands before starting your processes. This is useful when you need environment values that are determined at runtime or need to be fetched from the system.
+
+### Configuration
+
+Environment commands are defined in the `env_cmds` section of your `process-compose.yaml` file. Each entry consists of:
+- An environment variable name (key)
+- A command to execute (value)
+
+```yaml
+env_cmds:
+  ENV_VAR_NAME: "command to execute"
+```
+
+### Example Configuration
+
+```yaml
+env_cmds:
+  DATE: "date"
+  OS_NAME: "awk -F= '/PRETTY/ {print $2}' /etc/os-release"
+  UPTIME: "uptime -p"
+```
+
+### Usage
+
+To use the environment variables populated by `env_cmds`, reference them in your process definitions using `$${VAR_NAME}` syntax:
+
+```yaml
+processes:
+  my-process:
+    command: "echo Current date is: $${DATE}"
+```
+
+### Constraints and Considerations
+
+1. **Execution Time**: Commands should complete within 2 seconds. Longer-running commands may cause process-compose startup delays or timeouts.
+
+2. **Command Output**: 
+   - Commands should output a single line of text
+   - The output will be trimmed of leading/trailing whitespace
+   - The output becomes the value of the environment variable
+
+3. **Error Handling**:
+   - If a command fails, the environment variable will not be set
+   - Process-compose will log any command execution errors
+
+### Best Practices
+
+1. Keep commands simple and fast-executing
+2. Use commands that produce consistent, predictable output
+3. Validate command output format before using in production
+4. Consider caching values that don't need frequent updates
+
+### Example Use Cases
+
+1. **System Information**:
+```yaml
+env_cmds:
+  HOSTNAME: "hostname"
+  KERNEL_VERSION: "uname -r"
+```
+
+2. **Time-based Values**:
+```yaml
+env_cmds:
+  TIMESTAMP: "date +%s"
+  DATE_ISO: "date -u +%Y-%m-%dT%H:%M:%SZ"
+```
+
+3. **Resource Information**:
+```yaml
+env_cmds:
+  AVAILABLE_MEMORY: "free -m | awk '/Mem:/ {print $7}'"
+  CPU_CORES: "nproc"
+```
+
 ## Variables
 
 Variables in Process Compose rely on [Go template engine](https://pkg.go.dev/text/template)

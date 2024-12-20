@@ -55,3 +55,7 @@ func (c *CmdWrapper) SetEnv(env []string) {
 func (c *CmdWrapper) SetDir(dir string) {
 	c.cmd.Dir = dir
 }
+
+func (c *CmdWrapper) Output() ([]byte, error) {
+	return c.cmd.Output()
+}

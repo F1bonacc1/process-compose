@@ -17,6 +17,10 @@ vars:
   PWD: /tmp
   DISABLED: true
   PORT: 80
+env_cmds:
+  DATE: "date"
+  OS_NAME: "awk -F= '/PRETTY/ {print $2}' /etc/os-release"
+  UPTIME: "uptime -p"
 
 processes:
   process0:
@@ -123,6 +127,9 @@ processes:
       timeout_seconds: 1
       success_threshold: 1
       failure_threshold: 3
+
+  env-cmd-test:
+    command: "echo Date: $${DATE}, OS: $${OS_NAME}, Uptime: $${UPTIME}"
 
   nginx:
     command: "docker run -d --rm -p80:80 --name nginx_test nginx"

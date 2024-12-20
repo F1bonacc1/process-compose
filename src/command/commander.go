@@ -16,4 +16,5 @@ type Commander interface {
 	AttachIo()
 	SetEnv(env []string)
 	SetDir(dir string)
+	Output() ([]byte, error)
 }

@@ -23,6 +23,7 @@ type Project struct {
 	DisableEnvExpansion bool                 `yaml:"disable_env_expansion"`
 	IsTuiDisabled       bool                 `yaml:"is_tui_disabled"`
 	ExtendsProject      string               `yaml:"extends,omitempty"`
+	EnvCommands         EnvCmd               `yaml:"env_cmds,omitempty"`
 	FileNames           []string
 	EnvFileNames        []string
 }

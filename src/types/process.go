@@ -16,40 +16,43 @@ const DefaultNamespace = "default"
 const PlaceHolderValue = "-"
 const DefaultLaunchTimeout = 5
 
-type Processes map[string]ProcessConfig
-type Environment []string
-type ProcessConfig struct {
-	Name              string
-	Disabled          bool                   `yaml:"disabled,omitempty"`
-	IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
-	Command           string                 `yaml:"command"`
-	Entrypoint        []string               `yaml:"entrypoint,omitempty"`
-	LogLocation       string                 `yaml:"log_location,omitempty"`
-	LoggerConfig      *LoggerConfig          `yaml:"log_configuration,omitempty"`
-	Environment       Environment            `yaml:"environment,omitempty"`
-	RestartPolicy     RestartPolicyConfig    `yaml:"availability,omitempty"`
-	DependsOn         DependsOnConfig        `yaml:"depends_on,omitempty"`
-	LivenessProbe     *health.Probe          `yaml:"liveness_probe,omitempty"`
-	ReadinessProbe    *health.Probe          `yaml:"readiness_probe,omitempty"`
-	ReadyLogLine      string                 `yaml:"ready_log_line,omitempty"`
-	ShutDownParams    ShutDownParams         `yaml:"shutdown,omitempty"`
-	DisableAnsiColors bool                   `yaml:"disable_ansi_colors,omitempty"`
-	WorkingDir        string                 `yaml:"working_dir"`
-	Namespace         string                 `yaml:"namespace"`
-	Replicas          int                    `yaml:"replicas"`
-	Extensions        map[string]interface{} `yaml:",inline"`
-	Description       string                 `yaml:"description,omitempty"`
-	Vars              Vars                   `yaml:"vars,omitempty"`
-	IsForeground      bool                   `yaml:"is_foreground"`
-	IsTty             bool                   `yaml:"is_tty"`
-	IsElevated        bool                   `yaml:"is_elevated"`
-	LaunchTimeout     int                    `yaml:"launch_timeout_seconds"`
-	OriginalConfig    string
-	ReplicaNum        int
-	ReplicaName       string
-	Executable        string
-	Args              []string
-}
+type (
+	Processes     map[string]ProcessConfig
+	Environment   []string
+	EnvCmd        map[string]string
+	ProcessConfig struct {
+		Name              string
+		Disabled          bool                   `yaml:"disabled,omitempty"`
+		IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
+		Command           string                 `yaml:"command"`
+		Entrypoint        []string               `yaml:"entrypoint,omitempty"`
+		LogLocation       string                 `yaml:"log_location,omitempty"`
+		LoggerConfig      *LoggerConfig          `yaml:"log_configuration,omitempty"`
+		Environment       Environment            `yaml:"environment,omitempty"`
+		RestartPolicy     RestartPolicyConfig    `yaml:"availability,omitempty"`
+		DependsOn         DependsOnConfig        `yaml:"depends_on,omitempty"`
+		LivenessProbe     *health.Probe          `yaml:"liveness_probe,omitempty"`
+		ReadinessProbe    *health.Probe          `yaml:"readiness_probe,omitempty"`
+		ReadyLogLine      string                 `yaml:"ready_log_line,omitempty"`
+		ShutDownParams    ShutDownParams         `yaml:"shutdown,omitempty"`
+		DisableAnsiColors bool                   `yaml:"disable_ansi_colors,omitempty"`
+		WorkingDir        string                 `yaml:"working_dir"`
+		Namespace         string                 `yaml:"namespace"`
+		Replicas          int                    `yaml:"replicas"`
+		Extensions        map[string]interface{} `yaml:",inline"`
+		Description       string                 `yaml:"description,omitempty"`
+		Vars              Vars                   `yaml:"vars,omitempty"`
+		IsForeground      bool                   `yaml:"is_foreground"`
+		IsTty             bool                   `yaml:"is_tty"`
+		IsElevated        bool                   `yaml:"is_elevated"`
+		LaunchTimeout     int                    `yaml:"launch_timeout_seconds"`
+		OriginalConfig    string
+		ReplicaNum        int
+		ReplicaName       string
+		Executable        string
+		Args              []string
+	}
+)
 
 func (p *ProcessConfig) GetDependencies() []string {
 	dependencies := make([]string, len(p.DependsOn))

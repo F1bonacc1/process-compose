@@ -66,3 +66,7 @@ func (c *MockCommand) SetEnv(env []string) {
 func (c *MockCommand) SetDir(dir string) {
 	c.dir = dir
 }
+
+func (c *MockCommand) Output() ([]byte, error) {
+	return nil, nil
+}

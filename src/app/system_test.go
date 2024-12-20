@@ -1079,3 +1079,46 @@ func TestSystem_WaitForStartShutDown(t *testing.T) {
 		t.Fatalf("Failed to stop project: %v", err)
 	}
 }
+
+func TestSystem_TestEnvCmds(t *testing.T) {
+	proc1 := "proc1"
+	shell := command.DefaultShellConfig()
+	project := &types.Project{
+		EnvCommands: map[string]string{
+			"LIVE":    "echo live",
+			"LONG":    "echo long",
+			"PROSPER": "echo prosper",
+		},
+		Processes: map[string]types.ProcessConfig{
+			proc1: {
+				Name:        proc1,
+				ReplicaName: proc1,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo $LIVE $LONG and $PROSPER"},
+			},
+		},
+		ShellConfig: shell,
+	}
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project: project,
+	})
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	err = runner.Run()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	log, err := runner.GetProcessLog(proc1, 1, 1)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if len(log) != 1 {
+		t.Fatalf("Expected 1 log message, got %d", len(log))
+	}
+	if log[0] != "live long and prosper" {
+		t.Errorf("Expected log message to be 'live long and prosper', got %s", log[0])
+	}
+}

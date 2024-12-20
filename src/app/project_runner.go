@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/loader"
@@ -15,6 +16,7 @@ import (
 	"os/user"
 	"runtime"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -90,6 +92,7 @@ func (p *ProjectRunner) Run() error {
 		p.logger.Open(p.project.LogLocation, p.project.LoggerConfig)
 		defer p.logger.Close()
 	}
+	p.prepareEnvCmds()
 	//zerolog.SetGlobalLevel(zerolog.PanicLevel)
 	log.Debug().Msgf("Spinning up %d processes. Order: %q", len(runOrder), nameOrder)
 	for _, proc := range runOrder {
@@ -1044,6 +1047,33 @@ func (p *ProjectRunner) UpdateProcess(updated *types.ProcessConfig) error {
 		}
 	}
 	return nil
+}
+
+func (p *ProjectRunner) prepareEnvCmds() {
+	for env, cmd := range p.project.EnvCommands {
+		output, err := runCmd(cmd)
+		if err != nil {
+			log.Err(err).Msgf("Failed to run Env command %s for %s variable", cmd, env)
+			continue
+		}
+		if p.project.Environment == nil {
+			p.project.Environment = make(types.Environment, 0)
+		}
+		p.project.Environment = append(p.project.Environment, fmt.Sprintf("%s=%s", env, output))
+	}
+}
+
+func runCmd(envCmd string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := command.BuildCommandContext(ctx, envCmd)
+	out, err := cmd.Output()
+	if err != nil {
+		log.Err(err).Msgf("Failed to run Env command %s", envCmd)
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
 }
 
 func validateProbes(probe *health.Probe) {
