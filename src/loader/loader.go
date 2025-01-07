@@ -23,7 +23,10 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		return nil, err
 	}
 
-	for idx, file := range opts.FileNames {
+	fileNames := make([]string, len(opts.FileNames))
+	_ = copy(fileNames, opts.FileNames)
+
+	for idx, file := range fileNames {
 		prj, err := loadProjectFromFile(file, opts)
 		if err != nil {
 			return nil, err
