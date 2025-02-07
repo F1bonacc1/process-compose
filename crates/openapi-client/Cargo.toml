@@ -4,6 +4,9 @@ version = "1.46.0"
 description = "OpenAPI client for Process Compose"
 license = "Apache-2.0"
 edition = "2021"
+include = [
+  "../../src/docs/swagger.json",
+]
 [dependencies]
 progenitor-client = { version = "0.9" }
 reqwest = { version = "0.12", default-features = false, features = [
