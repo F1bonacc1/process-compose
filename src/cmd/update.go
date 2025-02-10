@@ -86,6 +86,7 @@ func init() {
 	projectCmd.AddCommand(updateCmd)
 	updateCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
 	updateCmd.Flags().BoolVarP(&updateVerboseOutput, "verbose", "v", updateVerboseOutput, "verbose output")
+	updateCmd.Flags().AddFlag(rootCmd.Flags().Lookup("namespace"))
 	if os.Getenv(config.EnvVarNameConfig) == "" {
 		_ = updateCmd.MarkFlagRequired("config")
 	}
