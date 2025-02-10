@@ -97,6 +97,23 @@ processes:
       success_threshold: 1
       failure_threshold: 3
 
+  process5:
+    command: "./test_loop.bash process5"
+    disable_ansi_colors: true
+    # availability:
+    #   restart: on_failure
+    environment:
+      - 'EXIT_CODE=4'
+    readiness_probe:
+      exec:
+        command: "ps -ef | grep -v grep | grep process5"
+      initial_delay_seconds: 5
+      period_seconds: 2
+      timeout_seconds: 1
+      success_threshold: 1
+      failure_threshold: 3
+    namespace: test
+
   server:
     command: "python3 -m http.server 404{{.PC_REPLICA_NUM}}"
     is_tty: true
