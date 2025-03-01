@@ -75,7 +75,7 @@ clean:
 	$(RM) bin/${NAME}*
 release:
 	source exports
-	goreleaser release --clean --skip-validate
+	goreleaser release --clean --skip validate
 snapshot:
 	goreleaser release --snapshot --clean
 
