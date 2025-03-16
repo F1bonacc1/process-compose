@@ -563,7 +563,38 @@ func (p *Process) getResourceUsage() (int64, float64) {
 		log.Err(err).Msgf("Could not find pid %d with name %s", p.procState.Pid, p.getName())
 		return -1, -1
 	}
-	meminfo, err := proc.MemoryInfo()
+	totalMem, totalCpu := p.getProcResourcesRecursive(proc)
+
+	return totalMem, totalCpu
+}
+
+// recursively get the memory and cpu usage of the process and its children
+func (p *Process) getProcResourcesRecursive(proc *puproc.Process) (int64, float64) {
+	totalMem, totalCpu := p.getProcResources(proc)
+	childrenProcs, err := proc.Children()
+	if err != nil {
+		log.Err(err).
+			Str("process", p.getName()).
+			Int("pid", p.procState.Pid).
+			Msg("Error retrieving children")
+		return totalMem, totalCpu
+	}
+	for _, childProc := range childrenProcs {
+		childMem, childCpu := p.getProcResourcesRecursive(childProc)
+		if childMem >= 0 {
+			totalMem += childMem
+		}
+		if childCpu >= 0 {
+			totalCpu += childCpu
+		}
+	}
+	return totalMem, totalCpu
+}
+
+// getResourceUsage returns the memory and cpu usage of the process
+// if the process is not running, returns -1 for both values
+func (p *Process) getProcResources(proc *puproc.Process) (int64, float64) {
+	memoryInfo, err := proc.MemoryInfo()
 	if err != nil {
 		log.Err(err).
 			Str("process", p.getName()).
@@ -577,9 +608,9 @@ func (p *Process) getResourceUsage() (int64, float64) {
 			Str("process", p.getName()).
 			Int("pid", p.procState.Pid).
 			Msg("Error retrieving cpu stats")
-		return int64(meminfo.RSS), -1
+		return int64(memoryInfo.RSS), -1
 	}
-	return int64(meminfo.RSS), cpuPercent
+	return int64(memoryInfo.RSS), cpuPercent
 }
 
 func (p *Process) handleInput(pipe io.WriteCloser) {
