@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -49,6 +50,7 @@ func (pv *pcView) fillTableData() {
 	}
 	showPass := false
 	row := 1
+	succeeded := true
 	for _, state := range states.States {
 		if !pv.isNsSelected(state.Namespace) {
 			pv.procTable.RemoveRow(row)
@@ -62,6 +64,16 @@ func (pv *pcView) fillTableData() {
 			pv.procTable.RemoveRow(row)
 			continue
 		}
+
+		hasHealthProbe := false
+		cfg, err := pv.project.GetProcessInfo(state.Name)
+		if err != nil {
+			log.Err(err).Msgf("failed to get configuration for process: %s", state.Name)
+		} else {
+			hasHealthProbe = cfg.ReadinessProbe != nil || cfg.LivenessProbe != nil
+		}
+		succeeded = succeeded && state.IsReady(hasHealthProbe)
+
 		rowVals := pv.getTableRowValues(state)
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
@@ -105,6 +117,12 @@ func (pv *pcView) fillTableData() {
 	if showPass {
 		pv.commandModeType = commandModePassword
 		pv.redrawGrid()
+	}
+
+	if succeeded && pv.detachOnSuccess {
+		pv.handleShutDown()
+		fmt.Println("All processes started successfully, detached from TUI")
+		app.PrintStatesAsTable(states.States)
 	}
 }
 

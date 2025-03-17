@@ -73,6 +73,7 @@ type Flags struct {
 	IsTuiFullScreen   *bool
 	IsDetached        *bool
 	IsDetachedWithTui *bool
+	DetachOnSuccess   *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -105,6 +106,7 @@ func NewFlags() *Flags {
 		IsDetached:        toPtr(false),
 		IsDetachedWithTui: toPtr(false),
 		IsRawLogOutput:    toPtr(false),
+		DetachOnSuccess:   toPtr(false),
 	}
 }
 
