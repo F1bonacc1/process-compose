@@ -88,6 +88,7 @@ type pcView struct {
 	isFullScreen          bool
 	isReadOnlyMode        bool
 	isExitConfirmDisabled bool
+	detachOnSuccess       bool
 }
 
 func newPcView(project app.IProject) *pcView {
