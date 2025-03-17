@@ -52,3 +52,10 @@ func WithDisabledExitConfirm(isDisabled bool) Option {
 		return nil
 	}
 }
+
+func WithDetachOnSuccess(detachOnSuccess bool) Option {
+	return func(view *pcView) error {
+		view.detachOnSuccess = detachOnSuccess
+		return nil
+	}
+}

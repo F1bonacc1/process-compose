@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -29,6 +30,10 @@ type tableRowValues struct {
 	exitCode  string
 }
 
+var (
+	DetachOnSuccessMessage = "All processes started successfully, detached from TUI"
+)
+
 func (pv *pcView) fillTableData() {
 	if pv.project == nil {
 		return
@@ -49,6 +54,7 @@ func (pv *pcView) fillTableData() {
 	}
 	showPass := false
 	row := 1
+	succeeded := true
 	for _, state := range states.States {
 		if !pv.isNsSelected(state.Namespace) {
 			pv.procTable.RemoveRow(row)
@@ -62,6 +68,9 @@ func (pv *pcView) fillTableData() {
 			pv.procTable.RemoveRow(row)
 			continue
 		}
+
+		succeeded = succeeded && state.IsReady()
+
 		rowVals := pv.getTableRowValues(state)
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
@@ -105,6 +114,12 @@ func (pv *pcView) fillTableData() {
 	if showPass {
 		pv.commandModeType = commandModePassword
 		pv.redrawGrid()
+	}
+
+	if succeeded && pv.detachOnSuccess {
+		pv.handleShutDown()
+		fmt.Println(DetachOnSuccessMessage)
+		app.PrintStatesAsTable(states.States)
 	}
 }
 

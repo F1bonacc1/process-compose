@@ -100,6 +100,7 @@ func init() {
 	if runtime.GOOS != "windows" {
 		rootCmd.Flags().BoolVarP(pcFlags.IsDetached, "detached", "D", *pcFlags.IsDetached, "run process-compose in detached mode")
 		rootCmd.Flags().BoolVar(pcFlags.IsDetachedWithTui, "detached-with-tui", *pcFlags.IsDetachedWithTui, "run process-compose in detached mode with TUI")
+		rootCmd.Flags().BoolVar(pcFlags.DetachOnSuccess, "detach-on-success", *pcFlags.DetachOnSuccess, "detach the process-compose TUI after successful startup. Requires --detached-with-tui")
 		rootCmd.PersistentFlags().StringVarP(pcFlags.UnixSocketPath, "unix-socket", "u", config.GetUnixSocketPath(), "path to unix socket (env: "+config.EnvVarUnixSocketPath+")")
 		rootCmd.PersistentFlags().BoolVarP(pcFlags.IsUnixSocket, "use-uds", "U", *pcFlags.IsUnixSocket, "use unix domain sockets instead of tcp")
 	}

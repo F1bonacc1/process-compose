@@ -183,18 +183,19 @@ func compareStructs(a, b interface{}) []string {
 
 func NewProcessState(proc *ProcessConfig) *ProcessState {
 	state := &ProcessState{
-		Name:       proc.ReplicaName,
-		Namespace:  proc.Namespace,
-		Status:     ProcessStatePending,
-		SystemTime: PlaceHolderValue,
-		Age:        time.Duration(0),
-		IsRunning:  false,
-		Health:     ProcessHealthUnknown,
-		Restarts:   0,
-		ExitCode:   0,
-		Mem:        0,
-		CPU:        0,
-		Pid:        0,
+		Name:           proc.ReplicaName,
+		Namespace:      proc.Namespace,
+		Status:         ProcessStatePending,
+		SystemTime:     PlaceHolderValue,
+		Age:            time.Duration(0),
+		IsRunning:      false,
+		Health:         ProcessHealthUnknown,
+		HasHealthProbe: proc.ReadinessProbe != nil || proc.LivenessProbe != nil,
+		Restarts:       0,
+		ExitCode:       0,
+		Mem:            0,
+		CPU:            0,
+		Pid:            0,
 	}
 	if proc.Disabled {
 		state.Status = ProcessStateDisabled
@@ -211,6 +212,7 @@ type ProcessState struct {
 	SystemTime       string        `json:"system_time"`
 	Age              time.Duration `json:"age" swaggertype:"primitive,integer"`
 	Health           string        `json:"is_ready"`
+	HasHealthProbe   bool          `json:"has_ready_probe"`
 	Restarts         int           `json:"restarts"`
 	ExitCode         int           `json:"exit_code"`
 	Pid              int           `json:"pid"`
@@ -229,6 +231,41 @@ type ProcessPorts struct {
 
 type ProcessesState struct {
 	States []ProcessState `json:"data"`
+}
+
+func (p *ProcessesState) IsReady() bool {
+	for _, state := range p.States {
+		if !state.IsReady() {
+			return false
+		}
+	}
+	return true
+}
+
+// Check if a process is running and healthy.
+//
+// If `hasHealthProbe` is true, the process must be healthy to be considered
+// ready.
+func (p *ProcessState) IsReady() bool {
+	if p.Status != ProcessStateRunning &&
+		p.Status != ProcessStateForeground &&
+		p.Status != ProcessStateLaunched &&
+		p.Status != ProcessStateCompleted &&
+		p.Status != ProcessStateSkipped &&
+		p.Status != ProcessStateDisabled &&
+		p.Status != ProcessStateRestarting {
+		return false
+	} else if p.Status == ProcessStateDisabled {
+		return true
+	} else if p.HasHealthProbe && p.Health != ProcessHealthReady {
+		return false
+	} else if p.Health != ProcessHealthReady && p.Health != ProcessHealthUnknown {
+		return false
+	} else if p.ExitCode != 0 {
+		// A non-zero exit code means the process has failed.
+		return false
+	}
+	return true
 }
 
 const (
