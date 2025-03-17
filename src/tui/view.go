@@ -395,8 +395,10 @@ func (pv *pcView) showInfo() {
 }
 
 func (pv *pcView) handleShutDown() {
-	pv.attentionMessage("Shutting Down...", 0)
-	if !pv.project.IsRemote() {
+	if pv.project.IsRemote() {
+		pv.attentionMessage("Detaching...", 0)
+	} else {
+		pv.attentionMessage("Shutting Down...", 0)
 		_ = pv.project.ShutDownProject()
 	}
 	time.Sleep(time.Second)
