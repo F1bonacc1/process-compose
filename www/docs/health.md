@@ -6,6 +6,8 @@ Probes configuration and functionality are designed to work similarly to [Kubern
 
 ## Liveness Probe
 
+Liveness probes are used to monitor a [**daemon's**](launcher.md#background-detached-processes) state. If unhealthy, the daemon will transition to the next defined [`availability`](launcher.md#auto-restart-on-exit) state. If it's `always` this will cause a restart, if none the daemon will transition to the completed or failed state.
+
 ```yaml
 processes:
   nginx:
@@ -27,6 +29,8 @@ processes:
 ```
 
 ## Readiness Probe
+
+Readiness probes are used to monitor a **process's** state. If the process is unhealthy, it can be restarted according to the [`availability`](launcher.md#auto-restart-on-exit) policy.
 
 ```yaml
 processes:
