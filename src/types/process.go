@@ -231,6 +231,26 @@ type ProcessesState struct {
 	States []ProcessState `json:"data"`
 }
 
+// Check if a process is running and healthy.
+//
+// If `hasHealthProbe` is true, the process must be healthy to be considered
+// ready.
+func (p *ProcessState) IsReady(hasHealthProbe bool) bool {
+	if p.Status != ProcessStateRunning &&
+		p.Status != ProcessStateForeground &&
+		p.Status != ProcessStateLaunched &&
+		p.Status != ProcessStateCompleted &&
+		p.Status != ProcessStateSkipped {
+		return false
+	}
+	if hasHealthProbe && p.Health != ProcessHealthReady {
+		return false
+	} else if p.Health != ProcessHealthReady && p.Health != ProcessHealthUnknown {
+		return false
+	}
+	return true
+}
+
 const (
 	RestartPolicyAlways        = "always"
 	RestartPolicyOnFailure     = "on_failure"
