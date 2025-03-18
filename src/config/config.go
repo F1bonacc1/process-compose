@@ -120,18 +120,40 @@ func getProcConfigDir() string {
 	return xdgPcHome
 }
 
-func GetShortCutsPath() string {
+func GetShortCutsPaths(extraFiles []string) []string {
+	var existingPaths []string = make([]string, 0, len(scFiles)+len(extraFiles))
+
+	// Load shortcuts in order of precedence, lowest to highest: first from the
+	// config directory, then from environment variables, then from the CLI
+	// argument.
+	//
+	// This lets shortcuts given on the command line override environment
+	// variables and user configuration.
+	//
+	// See: https://clig.dev/#configuration
+
 	pcHome := getProcConfigDir()
-	if pcHome == "" {
-		return ""
-	}
-	for _, path := range scFiles {
-		scPath := filepath.Join(pcHome, path)
-		if _, err := os.Stat(scPath); err == nil {
-			return scPath
+	if pcHome != "" {
+		for _, path := range scFiles {
+			scPath := filepath.Join(pcHome, path)
+			if _, err := os.Stat(scPath); err == nil {
+				existingPaths = append(existingPaths, scPath)
+			}
 		}
 	}
-	return ""
+
+	envShortcutsFiles, hasEnvShortcuts := os.LookupEnv(EnvVarNameShortcuts)
+	if hasEnvShortcuts {
+		existingPaths = append(existingPaths, strings.Split(envShortcutsFiles, ",")...)
+	}
+
+	for _, path := range extraFiles {
+		if _, err := os.Stat(path); err == nil {
+			existingPaths = append(existingPaths, path)
+		}
+	}
+
+	return existingPaths
 }
 
 func GetThemesPath() string {

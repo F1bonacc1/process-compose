@@ -32,6 +32,7 @@ const (
 	EnvVarNamePort       = "PC_PORT_NUM"
 	EnvVarNameTui        = "PC_DISABLE_TUI"
 	EnvVarNameConfig     = "PC_CONFIG_FILES"
+	EnvVarNameShortcuts  = "PC_SHORTCUTS_FILES"
 	EnvVarNameNoServer   = "PC_NO_SERVER"
 	EnvVarUnixSocketPath = "PC_SOCKET_PATH"
 	EnvVarReadOnlyMode   = "PC_READ_ONLY"
@@ -65,6 +66,7 @@ type Flags struct {
 	IsOrderedShutDown *bool
 	PcTheme           *string
 	PcThemeChanged    bool
+	ShortcutPaths     *[]string
 	UnixSocketPath    *string
 	IsUnixSocket      *bool
 	IsReadOnlyMode    *bool
@@ -97,6 +99,7 @@ func NewFlags() *Flags {
 		KeepProjectOn:     toPtr(false),
 		IsOrderedShutDown: toPtr(false),
 		PcTheme:           toPtr(DefaultThemeName),
+		ShortcutPaths:     toPtr(GetShortCutsPaths(nil)),
 		UnixSocketPath:    toPtr(""),
 		IsUnixSocket:      toPtr(false),
 		IsReadOnlyMode:    toPtr(getReadOnlyDefault()),
