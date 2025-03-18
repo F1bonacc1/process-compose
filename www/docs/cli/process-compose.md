@@ -26,6 +26,7 @@ process-compose [flags]
       --read-only               enable read-only mode (env: PC_READ_ONLY)
   -r, --ref-rate duration       TUI refresh rate in seconds or as a Go duration string (e.g. 1s) (default 1)
   -R, --reverse                 sort in reverse order
+      --shortcuts stringArray   paths to shortcut config files to load (env: PC_SHORTCUTS_FILES) (default [/Users/<user>/Library/Application Support/process-compose/shortcuts.yaml])
   -S, --sort string             sort column name. legal values (case insensitive): [AGE, CPU, EXIT, HEALTH, MEM, NAME, NAMESPACE, PID, RESTARTS, STATUS] (default "NAME")
       --theme string            select process compose theme (default "Default")
   -t, --tui                     enable TUI (disable with -t=false) (env: PC_DISABLE_TUI) (default true)
