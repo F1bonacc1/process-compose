@@ -52,3 +52,13 @@ func WithDisabledExitConfirm(isDisabled bool) Option {
 		return nil
 	}
 }
+
+func LoadExtraShortCutsPaths(paths []string) Option {
+	return func(view *pcView) error {
+		for _, path := range paths {
+			_ = view.shortcuts.loadFromFile(path)
+		}
+		view.recreateHelpDialog()
+		return nil
+	}
+}

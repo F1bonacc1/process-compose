@@ -60,6 +60,7 @@ type pcView struct {
 	scrSplitState         scrSplitState
 	loggedProc            string
 	shortcuts             *ShortCuts
+	extraShortCutsPaths   []string
 	procCountCell         *tview.TableCell
 	procMemCpuCell        *tview.TableCell
 	mainGrid              *tview.Grid
@@ -134,9 +135,7 @@ func newPcView(project app.IProject) *pcView {
 
 	pv.mainGrid.SetInputCapture(pv.onMainGridKey)
 	pv.appView.SetRoot(pv.pages, true).EnableMouse(true).SetInputCapture(pv.onAppKey)
-	pv.helpDialog = newHelpDialog(pv.shortcuts, func() {
-		pv.pages.RemovePage(PageDialog)
-	})
+	pv.recreateHelpDialog()
 	pv.loadThemes()
 
 	if len(pv.procNames) > 0 {
@@ -160,8 +159,8 @@ func (pv *pcView) loadProcNames() {
 }
 
 func (pv *pcView) loadShortcuts() {
-	path := config.GetShortCutsPath()
-	if len(path) > 0 {
+	paths := config.GetShortCutsPaths(pv.extraShortCutsPaths)
+	for _, path := range paths {
 		_ = pv.shortcuts.loadFromFile(path)
 	}
 }
@@ -421,6 +420,12 @@ func (pv *pcView) onProcRowSpanChange() {
 	if pv.scrSplitState == ProcFull && pv.logFollow {
 		pv.stopFollowLog()
 	}
+}
+
+func (pv *pcView) recreateHelpDialog() {
+	pv.helpDialog = newHelpDialog(pv.shortcuts, func() {
+		pv.pages.RemovePage(PageDialog)
+	})
 }
 
 func (pv *pcView) updateHelpTextView() {

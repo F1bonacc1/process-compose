@@ -92,6 +92,7 @@ func startTui(runner app.IProject, isAsync bool) {
 		tui.WithFullScreen(*pcFlags.IsTuiFullScreen),
 		tui.WithDisabledHidden(*pcFlags.HideDisabled),
 		tui.WithDisabledExitConfirm(settings.DisableExitConfirmation),
+		tui.LoadExtraShortCutsPaths(*pcFlags.ShortcutPaths),
 	}
 
 	tuiOptions = append(tuiOptions,

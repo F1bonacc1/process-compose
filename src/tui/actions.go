@@ -155,6 +155,7 @@ func (s *ShortCuts) loadFromFile(filePath string) error {
 func (s *ShortCuts) applyValid(newSc *ShortCuts) {
 	for actionName, action := range newSc.ShortCutKeys {
 		if oldAction, found := s.ShortCutKeys[actionName]; found {
+			// Deep copy `action` into `oldAction`.
 			oldAction.ShortCut = action.ShortCut
 			oldAction.key = action.key
 			oldAction.rune = action.rune
@@ -163,6 +164,12 @@ func (s *ShortCuts) applyValid(newSc *ShortCuts) {
 			}
 			if len(action.ToggleDescription) == 2 {
 				oldAction.ToggleDescription = action.ToggleDescription
+			}
+			// Note: this leaves the entries for the old key/rune in the map.
+			if oldAction.rune != 0 {
+				s.runeActionMap[oldAction.rune] = oldAction
+			} else {
+				s.keyActionMap[oldAction.key] = oldAction
 			}
 		} else {
 			log.Error().Msgf("Invalid action '%s' shortcut", actionName)
@@ -229,8 +236,8 @@ func parseShortCuts(sc *ShortCuts) {
 		}
 		key, err := keyName2Key(action.ShortCut)
 		if err != nil {
-			assignDefaultKeys(actionName, action)
 			log.Err(err).Msgf("Failed in parsing '%s' shortcut. Using default: %s", actionName, action.ShortCut)
+			assignDefaultKeys(actionName, action)
 			continue
 		}
 		action.key = key

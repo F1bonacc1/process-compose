@@ -77,6 +77,7 @@ func init() {
 	opts.AddAdmitter(nsAdmitter)
 
 	rootCmd.Flags().BoolVarP(pcFlags.IsTuiEnabled, "tui", "t", *pcFlags.IsTuiEnabled, "enable TUI (disable with -t=false) (env: "+config.EnvVarNameTui+")")
+	rootCmd.Flags().StringArrayVar(pcFlags.ShortcutPaths, "shortcuts", config.GetShortCutsPaths(nil), "paths to shortcut config files to load (env: "+config.EnvVarNameShortcuts+")")
 	rootCmd.Flags().BoolVar(pcFlags.KeepTuiOn, "keep-tui", *pcFlags.KeepTuiOn, "keep TUI running even after all processes exit")
 	rootCmd.Flags().BoolVar(pcFlags.KeepProjectOn, "keep-project", *pcFlags.KeepProjectOn, "keep the project running even after all processes exit")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.NoServer, "no-server", *pcFlags.NoServer, "disable HTTP server (env: "+config.EnvVarNameNoServer+")")

@@ -20,9 +20,9 @@ func printInfo() {
 	fmt.Println("Process Compose")
 	fmt.Printf(format, "Logs:", config.GetLogFilePath())
 
-	path := config.GetShortCutsPath()
+	path := config.GetShortCutsPaths(nil)
 	if len(path) > 0 {
-		fmt.Printf(format, "Shortcuts:", config.GetShortCutsPath())
+		fmt.Printf(format, "Shortcuts:", path)
 	}
 	fmt.Printf(format, "Custom Theme:", config.GetThemesPath())
 	fmt.Printf(format, "Settings:", config.GetSettingsPath())
