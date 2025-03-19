@@ -218,7 +218,7 @@ type ProcessState struct {
 	PasswordProvided bool          `json:"password_provided"`
 	Mem              int64         `json:"mem"`
 	CPU              float64       `json:"cpu"`
-	IsRunning        bool
+	IsRunning        bool          `json:"is_running"`
 }
 
 type ProcessPorts struct {
