@@ -59,3 +59,7 @@ func (c *CmdWrapper) SetDir(dir string) {
 func (c *CmdWrapper) Output() ([]byte, error) {
 	return c.cmd.Output()
 }
+
+func (c *CmdWrapper) CombinedOutput() ([]byte, error) {
+	return c.cmd.CombinedOutput()
+}

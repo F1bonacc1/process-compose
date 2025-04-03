@@ -17,4 +17,5 @@ type Commander interface {
 	SetEnv(env []string)
 	SetDir(dir string)
 	Output() ([]byte, error)
+	CombinedOutput() ([]byte, error)
 }

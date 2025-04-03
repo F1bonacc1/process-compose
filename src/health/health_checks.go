@@ -18,12 +18,12 @@ const (
 type Prober struct {
 	probe          Probe
 	name           string
-	onCheckEndFunc func(bool, bool, string)
+	onCheckEndFunc func(bool, bool, string, interface{})
 	hc             *health.Health
 	stopped        atomic.Bool
 }
 
-func New(name string, probe Probe, onCheckEnd func(bool, bool, string)) (*Prober, error) {
+func New(name string, probe Probe, onCheckEnd func(bool, bool, string, interface{})) (*Prober, error) {
 	probe.ValidateAndSetDefaults()
 	p := &Prober{
 		probe:          probe,
@@ -84,7 +84,7 @@ func (p *Prober) healthCheckCompleted(state *health.State) {
 	if p.stopped.Load() {
 		return
 	}
-	p.onCheckEndFunc(ok, fatal, state.Err)
+	p.onCheckEndFunc(ok, fatal, state.Err, state.Details)
 }
 
 func (p *Prober) addProber(factory func() (health.ICheckable, error)) error {

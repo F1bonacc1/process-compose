@@ -817,18 +817,34 @@ func (p *Process) stopProbes() {
 	}
 }
 
-func (p *Process) onLivenessCheckEnd(_, isFatal bool, err string) {
+func (p *Process) onLivenessCheckEnd(_, isFatal bool, err string, details interface{}) {
 	if isFatal {
-		log.Info().Msgf("%s is not alive anymore - %s", p.getName(), err)
 		p.logBuffer.Write("Error: liveness check fail - " + err)
 		p.notifyDaemonStopped()
+		rcMap, ok := details.(map[string]string)
+		if ok {
+			p.printDetails(rcMap, err, "liveness")
+		}
 	}
 }
 
-func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
+func (p *Process) printDetails(details map[string]string, err, source string) {
+	exitCode := 1
+	output := ""
+	exitCode, _ = strconv.Atoi(details["exit_code"])
+	output = details["output"]
+	log.Warn().
+		Str("error", err).
+		Int("exit_code", exitCode).
+		Msgf("%s %s probe failed", p.getName(), source)
+	if output != "" {
+		log.Debug().Msgf("%s %s failed with output: %s", p.getName(), source, output)
+	}
+}
+
+func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string, details interface{}) {
 	if isFatal {
 		p.procState.Health = types.ProcessHealthNotReady
-		log.Info().Msgf("%s is not ready anymore - %s", p.getName(), err)
 		p.logBuffer.Write("Error: readiness check fail - " + err)
 		_ = p.internalStop()
 	} else if isOk {
@@ -836,6 +852,14 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string) {
 		p.readyCancelFn()
 	} else {
 		p.procState.Health = types.ProcessHealthNotReady
+	}
+
+	//log exec error if not healthy and output is not empty
+	if p.procState.Health == types.ProcessHealthNotReady {
+		rcMap, ok := details.(map[string]string)
+		if ok {
+			p.printDetails(rcMap, err, "readiness")
+		}
 	}
 }
 

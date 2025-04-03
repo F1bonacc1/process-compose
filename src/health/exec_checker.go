@@ -3,6 +3,7 @@ package health
 import (
 	"context"
 	"github.com/f1bonacc1/process-compose/src/command"
+	"strconv"
 	"time"
 )
 
@@ -19,9 +20,12 @@ func (c *execChecker) Status() (interface{}, error) {
 	cmd := command.BuildCommandContext(ctx, c.command)
 	cmd.SetDir(c.workingDir)
 
-	if err := cmd.Run(); err != nil {
-		return nil, err
+	rcMap := make(map[string]string)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		rcMap["error"] = err.Error()
 	}
-
-	return map[string]int{"exit_code": cmd.ExitCode()}, nil
+	rcMap["output"] = string(out)
+	rcMap["exit_code"] = strconv.Itoa(cmd.ExitCode())
+	return rcMap, err
 }
