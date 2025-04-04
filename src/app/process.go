@@ -776,6 +776,7 @@ func (p *Process) setUpProbes() {
 		p.liveProber, err = health.New(
 			p.getName()+"_live_probe",
 			*p.procConf.LivenessProbe,
+			p.getProcessEnvironment(),
 			p.onLivenessCheckEnd,
 		)
 		if err != nil {
@@ -788,6 +789,7 @@ func (p *Process) setUpProbes() {
 		p.readyProber, err = health.New(
 			p.getName()+"_ready_probe",
 			*p.procConf.ReadinessProbe,
+			p.getProcessEnvironment(),
 			p.onReadinessCheckEnd,
 		)
 		if err != nil {

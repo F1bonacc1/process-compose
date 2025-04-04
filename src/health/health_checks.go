@@ -21,15 +21,17 @@ type Prober struct {
 	onCheckEndFunc func(bool, bool, string, interface{})
 	hc             *health.Health
 	stopped        atomic.Bool
+	env            []string
 }
 
-func New(name string, probe Probe, onCheckEnd func(bool, bool, string, interface{})) (*Prober, error) {
+func New(name string, probe Probe, env []string, onCheckEnd func(bool, bool, string, interface{})) (*Prober, error) {
 	probe.ValidateAndSetDefaults()
 	p := &Prober{
 		probe:          probe,
 		name:           name,
 		onCheckEndFunc: onCheckEnd,
 		hc:             health.New(),
+		env:            env,
 	}
 	p.hc.DisableLogging()
 	if probe.Exec != nil {
@@ -121,5 +123,6 @@ func (p *Prober) getExecChecker() (health.ICheckable, error) {
 		command:    p.probe.Exec.Command,
 		timeout:    p.probe.TimeoutSeconds,
 		workingDir: p.probe.Exec.WorkingDir,
+		env:        p.env,
 	}, nil
 }

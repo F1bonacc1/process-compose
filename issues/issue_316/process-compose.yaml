@@ -1,0 +1,13 @@
+version: "0.5"
+is_strict: true
+
+env_cmds:
+  HI: "echo Hello"
+
+
+processes:
+  hello:
+    command: sleep 5
+    liveness_probe:
+      exec:
+        command: echo $${HI} there > test.txt
