@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
@@ -85,6 +86,32 @@ func startTui(runner app.IProject, isAsync bool) {
 	if !*pcFlags.IsReadOnlyMode {
 		config.CreateProcCompHome()
 	}
+
+	// Starting the TUI takes some time, so if let's check if we're going to
+	// just disconnect immediately and avoid the overhead if possible. This
+	// also prevents us from flashing the TUI open for a split second.
+	//
+	// A no-op `process-compose --detached-with-tui --detach-on-success` takes
+	// ~40ms with this optimization and ~90ms without it (for my project).
+	//
+	// A 2x performance improvement is worth a special case here.
+	if *pcFlags.DetachOnSuccess {
+		states, err := runner.GetProcessesState()
+		if err != nil {
+			log.Err(err).Msgf("Failed to get process states")
+		} else if states.IsReady() {
+			// This is kind of a lie, because we've skipped starting the TUI
+			// entirely at this point, but
+			// 1. The line above this says "Starting Process Compose in
+			//    detached mode", so it makes sense to say we're "detaching" here.
+			// 2. This makes the output consistent regardless of if the TUI is
+			//    actually opened or not.
+			fmt.Println(tui.DetachOnSuccessMessage)
+			app.PrintStatesAsTable(states.States)
+			return
+		}
+	}
+
 	settings := config.NewSettings().Load()
 	tuiOptions := []tui.Option{
 		tui.WithRefreshRate(*pcFlags.RefreshRate),
@@ -92,6 +119,7 @@ func startTui(runner app.IProject, isAsync bool) {
 		tui.WithFullScreen(*pcFlags.IsTuiFullScreen),
 		tui.WithDisabledHidden(*pcFlags.HideDisabled),
 		tui.WithDisabledExitConfirm(settings.DisableExitConfirmation),
+		tui.WithDetachOnSuccess(*pcFlags.DetachOnSuccess),
 	}
 
 	tuiOptions = append(tuiOptions,
