@@ -83,10 +83,9 @@ github-workflows:
 	act -W ./.github/workflows/go.yml -j build
 	act -W ./.github/workflows/nix.yml -j build
 
-docs:
+docs: build
 	./bin/process-compose docs ${DOCS_DIR}
-	for f in ${DOCS_DIR}/*.md ; do sed -i 's/${USER}/<user>/g' $$f ; done
-	for f in ${DOCS_DIR}/*.md ; do sed -i 's/process-compose-[0-9]\+.sock/process-compose-<pid>.sock/g' $$f ; done
+	for f in ${DOCS_DIR}/*.md ; do sed -i 's/${USER}/<user>/g; s|${TMPDIR}|/tmp/|g; s/process-compose-[0-9]\+.sock/process-compose-<pid>.sock/g' $$f ; done
 
 lint: golangci-lint
 	./bin/golangci-lint run --show-stats -c .golangci.yaml
