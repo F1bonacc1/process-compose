@@ -41,6 +41,7 @@ func init() {
 	if runtime.GOOS != "windows" {
 		upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("detached"))
 		upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("detached-with-tui"))
+		upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("detach-on-success"))
 	}
 	_ = upCmd.Flags().MarkDeprecated("keep-tui", "use --keep-project instead")
 

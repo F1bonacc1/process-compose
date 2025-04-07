@@ -16,6 +16,7 @@ process-compose up [PROCESS...] [flags]
 
 ```
   -f, --config stringArray      path to config files to load (env: PC_CONFIG_FILES)
+      --detach-on-success       detach the process-compose TUI after successful startup. Requires --detached-with-tui
   -D, --detached                run process-compose in detached mode
       --detached-with-tui       run process-compose in detached mode with TUI
       --disable-dotenv          disable .env file loading (env: PC_DISABLE_DOTENV=1)
