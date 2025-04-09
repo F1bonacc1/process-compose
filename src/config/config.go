@@ -238,3 +238,21 @@ func getHideDisabledDefault() bool {
 	_, found := os.LookupEnv(EnvVarHideDisabled)
 	return found
 }
+
+func getDisabledProcessesDefault() []string {
+	value, found := os.LookupEnv(EnvVarDisabledProcesses)
+	if found {
+		return strings.Split(value, ",")
+	} else {
+		return make([]string, 0)
+	}
+}
+
+func getEnabledProcessesDefault() []string {
+	value, found := os.LookupEnv(EnvVarEnabledProcesses)
+	if found {
+		return strings.Split(value, ",")
+	} else {
+		return make([]string, 0)
+	}
+}

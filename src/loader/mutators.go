@@ -7,6 +7,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
 	"path/filepath"
+	"slices"
 )
 
 type mutatorFunc func(opts *LoaderOptions, p *types.Project)
@@ -82,6 +83,19 @@ func copyWorkingDirToProbes(opts *LoaderOptions, p *types.Project) {
 			proc.ReadinessProbe.Exec != nil &&
 			proc.ReadinessProbe.Exec.WorkingDir == "" {
 			proc.ReadinessProbe.Exec.WorkingDir = proc.WorkingDir
+		}
+		p.Processes[name] = proc
+	}
+}
+
+func disableEnableOverrides(opts *LoaderOptions, p *types.Project) {
+	for name, proc := range p.Processes {
+		if slices.Contains(opts.disabledProcesses, name) {
+			log.Debug().Msgf("Disabling process: %s", name)
+			proc.Disabled = true
+		} else if slices.Contains(opts.enabledProcesses, name) {
+			log.Debug().Msgf("Enabling process: %s", name)
+			proc.Disabled = false
 		}
 		p.Processes[name] = proc
 	}
