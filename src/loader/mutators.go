@@ -9,25 +9,25 @@ import (
 	"path/filepath"
 )
 
-type mutatorFunc func(p *types.Project)
-type mutatorFuncE func(p *types.Project) error
+type mutatorFunc func(opts *LoaderOptions, p *types.Project)
+type mutatorFuncE func(opts *LoaderOptions, p *types.Project) error
 
-func applyWithErr(p *types.Project, m ...mutatorFuncE) error {
+func applyWithErr(opts *LoaderOptions, p *types.Project, m ...mutatorFuncE) error {
 	for _, mut := range m {
-		if err := mut(p); err != nil {
+		if err := mut(opts, p); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func apply(p *types.Project, m ...mutatorFunc) {
+func apply(opts *LoaderOptions, p *types.Project, m ...mutatorFunc) {
 	for _, mut := range m {
-		mut(p)
+		mut(opts, p)
 	}
 }
 
-func setDefaultShell(p *types.Project) {
+func setDefaultShell(opts *LoaderOptions, p *types.Project) {
 	if p.ShellConfig == nil {
 		p.ShellConfig = command.DefaultShellConfig()
 	} else if p.ShellConfig.ElevatedShellCmd == "" || p.ShellConfig.ElevatedShellArg == "" {
@@ -38,7 +38,7 @@ func setDefaultShell(p *types.Project) {
 	log.Info().Msgf("Global shell command: %s %s", p.ShellConfig.ShellCommand, p.ShellConfig.ShellArgument)
 }
 
-func assignDefaultProcessValues(p *types.Project) {
+func assignDefaultProcessValues(opts *LoaderOptions, p *types.Project) {
 	if p.Processes == nil {
 		p.Processes = make(map[string]types.ProcessConfig)
 	}
@@ -71,7 +71,7 @@ func copyWorkingDirToProcesses(p *types.Project, wd string) {
 }
 
 // Exec Probes should use the same working dir if not specified otherwise
-func copyWorkingDirToProbes(p *types.Project) {
+func copyWorkingDirToProbes(opts *LoaderOptions, p *types.Project) {
 	for name, proc := range p.Processes {
 		if proc.LivenessProbe != nil &&
 			proc.LivenessProbe.Exec != nil &&
@@ -87,7 +87,7 @@ func copyWorkingDirToProbes(p *types.Project) {
 	}
 }
 
-func cloneReplicas(p *types.Project) {
+func cloneReplicas(opts *LoaderOptions, p *types.Project) {
 	procsToAdd := make([]types.ProcessConfig, 0)
 	procsToDel := make([]string, 0)
 	for name, proc := range p.Processes {
@@ -113,7 +113,7 @@ func cloneReplicas(p *types.Project) {
 	}
 }
 
-func assignExecutableAndArgs(p *types.Project) {
+func assignExecutableAndArgs(opts *LoaderOptions, p *types.Project) {
 	elevatedShellArg := p.GetElevatedShellArg()
 	for name, proc := range p.Processes {
 		proc.AssignProcessExecutableAndArgs(p.ShellConfig, elevatedShellArg)
@@ -122,7 +122,7 @@ func assignExecutableAndArgs(p *types.Project) {
 	}
 }
 
-func renderTemplates(p *types.Project) error {
+func renderTemplates(opts *LoaderOptions, p *types.Project) error {
 	tpl := templater.New(p.Vars)
 	for name, proc := range p.Processes {
 		tpl.RenderProcess(&proc)
