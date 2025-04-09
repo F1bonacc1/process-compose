@@ -63,5 +63,9 @@ func fileExists(filename string) bool {
 	if os.IsNotExist(err) {
 		return false
 	}
+	if err != nil {
+		log.Warn().Err(err).Msgf("Error checking file %s", filename)
+		return false
+	}
 	return !info.IsDir()
 }
