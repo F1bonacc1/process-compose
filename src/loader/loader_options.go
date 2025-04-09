@@ -8,14 +8,16 @@ import (
 )
 
 type LoaderOptions struct {
-	workingDir       string
-	FileNames        []string
-	EnvFileNames     []string
-	IsInternalLoader bool
-	projects         []*types.Project
-	admitters        []admitter.Admitter
-	disableDotenv    bool
-	isTuiDisabled    bool
+	workingDir        string
+	FileNames         []string
+	EnvFileNames      []string
+	IsInternalLoader  bool
+	projects          []*types.Project
+	admitters         []admitter.Admitter
+	disableDotenv     bool
+	isTuiDisabled     bool
+	disabledProcesses []string
+	enabledProcesses  []string
 }
 
 func (o *LoaderOptions) AddAdmitter(adm ...admitter.Admitter) {
@@ -44,4 +46,12 @@ func (o *LoaderOptions) DisableDotenv(disabled bool) {
 
 func (o *LoaderOptions) WithTuiDisabled(disabled bool) {
 	o.isTuiDisabled = disabled
+}
+
+func (o *LoaderOptions) DisableProcesses(disabled []string) {
+	o.disabledProcesses = disabled
+}
+
+func (o *LoaderOptions) EnableProcesses(enabled []string) {
+	o.enabledProcesses = enabled
 }

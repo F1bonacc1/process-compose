@@ -29,16 +29,18 @@ const (
 )
 
 const (
-	EnvVarNamePort       = "PC_PORT_NUM"
-	EnvVarNameTui        = "PC_DISABLE_TUI"
-	EnvVarNameConfig     = "PC_CONFIG_FILES"
-	EnvVarNameShortcuts  = "PC_SHORTCUTS_FILES"
-	EnvVarNameNoServer   = "PC_NO_SERVER"
-	EnvVarUnixSocketPath = "PC_SOCKET_PATH"
-	EnvVarReadOnlyMode   = "PC_READ_ONLY"
-	EnvVarDisableDotEnv  = "PC_DISABLE_DOTENV"
-	EnvVarTuiFullScreen  = "PC_TUI_FULL_SCREEN"
-	EnvVarHideDisabled   = "PC_HIDE_DISABLED_PROC"
+	EnvVarNamePort          = "PC_PORT_NUM"
+	EnvVarNameTui           = "PC_DISABLE_TUI"
+	EnvVarNameConfig        = "PC_CONFIG_FILES"
+	EnvVarNameShortcuts     = "PC_SHORTCUTS_FILES"
+	EnvVarNameNoServer      = "PC_NO_SERVER"
+	EnvVarUnixSocketPath    = "PC_SOCKET_PATH"
+	EnvVarReadOnlyMode      = "PC_READ_ONLY"
+	EnvVarDisableDotEnv     = "PC_DISABLE_DOTENV"
+	EnvVarTuiFullScreen     = "PC_TUI_FULL_SCREEN"
+	EnvVarHideDisabled      = "PC_HIDE_DISABLED_PROC"
+	EnvVarDisabledProcesses = "PC_DISABLE"
+	EnvVarEnabledProcesses  = "PC_ENABLE"
 )
 
 // Flags represents PC configuration flags.
@@ -57,6 +59,8 @@ type Flags struct {
 	Write             *bool
 	NoDependencies    *bool
 	HideDisabled      *bool
+	DisabledProcesses *[]string
+	EnabledProcesses  *[]string
 	SortColumn        *string
 	SortColumnChanged bool
 	IsReverseSort     *bool
@@ -92,6 +96,8 @@ func NewFlags() *Flags {
 		LogTailLength:     toPtr(math.MaxInt),
 		NoDependencies:    toPtr(false),
 		HideDisabled:      toPtr(getHideDisabledDefault()),
+		DisabledProcesses: toPtr(getDisabledProcessesDefault()),
+		EnabledProcesses:  toPtr(getEnabledProcessesDefault()),
 		SortColumn:        toPtr(DefaultSortColumn),
 		IsReverseSort:     toPtr(false),
 		NoServer:          toPtr(getNoServerDefault()),

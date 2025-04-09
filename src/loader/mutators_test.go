@@ -11,6 +11,7 @@ import (
 func Test_assignDefaultProcessValues(t *testing.T) {
 	type args struct {
 		p *types.Project
+		o *LoaderOptions
 	}
 	tests := []struct {
 		name string
@@ -26,12 +27,13 @@ func Test_assignDefaultProcessValues(t *testing.T) {
 						},
 					},
 				},
+				o: &LoaderOptions{},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assignDefaultProcessValues(tt.args.p)
+			assignDefaultProcessValues(tt.args.o, tt.args.p)
 			for _, p := range tt.args.p.Processes {
 				if p.Namespace == "" {
 					t.Error("Expected namespace to be set")
@@ -50,6 +52,7 @@ func Test_assignDefaultProcessValues(t *testing.T) {
 func Test_setDefaultShell(t *testing.T) {
 	type args struct {
 		p *types.Project
+		o *LoaderOptions
 	}
 	tests := []struct {
 		name string
@@ -64,6 +67,7 @@ func Test_setDefaultShell(t *testing.T) {
 						ShellArgument: "-c",
 					},
 				},
+				o: &LoaderOptions{},
 			},
 		},
 		{
@@ -72,12 +76,13 @@ func Test_setDefaultShell(t *testing.T) {
 				p: &types.Project{
 					ShellConfig: nil,
 				},
+				o: &LoaderOptions{},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setDefaultShell(tt.args.p)
+			setDefaultShell(tt.args.o, tt.args.p)
 			if tt.args.p.ShellConfig.ShellCommand != "bash" {
 				t.Error("Expected shell command to be bash")
 			}
@@ -95,6 +100,7 @@ func Test_copyWorkingDirToProbes(t *testing.T) {
 
 	type args struct {
 		p *types.Project
+		o *LoaderOptions
 	}
 	tests := []struct {
 		name string
@@ -135,12 +141,13 @@ func Test_copyWorkingDirToProbes(t *testing.T) {
 						},
 					},
 				},
+				o: &LoaderOptions{},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			copyWorkingDirToProbes(tt.args.p)
+			copyWorkingDirToProbes(tt.args.o, tt.args.p)
 			for _, p := range tt.args.p.Processes {
 				switch p.Name {
 				case procWithWorkingDir:
@@ -205,8 +212,9 @@ func Test_cloneReplicas(t *testing.T) {
 				},
 			},
 		}
-		assignDefaultProcessValues(p1)
-		cloneReplicas(p1)
+		o := &LoaderOptions{}
+		assignDefaultProcessValues(o, p1)
+		cloneReplicas(o, p1)
 		replicas := []replica{}
 		switch p.Replicas {
 		case 0:
@@ -272,6 +280,7 @@ func Test_renderTemplates(t *testing.T) {
 
 	type args struct {
 		p *types.Project
+		o *LoaderOptions
 	}
 	tests := []struct {
 		name    string
@@ -299,6 +308,7 @@ func Test_renderTemplates(t *testing.T) {
 						},
 					},
 				},
+				o: &LoaderOptions{},
 			},
 			wantErr: false,
 		},
@@ -326,6 +336,7 @@ func Test_renderTemplates(t *testing.T) {
 						},
 					},
 				},
+				o: &LoaderOptions{},
 			},
 			wantErr: false,
 		},
@@ -356,6 +367,7 @@ func Test_renderTemplates(t *testing.T) {
 						},
 					},
 				},
+				o: &LoaderOptions{},
 			},
 			wantErr: false,
 		},
@@ -383,6 +395,7 @@ func Test_renderTemplates(t *testing.T) {
 						},
 					},
 				},
+				o: &LoaderOptions{},
 			},
 			wantErr: false,
 		},
@@ -420,6 +433,7 @@ func Test_renderTemplates(t *testing.T) {
 						},
 					},
 				},
+				o: &LoaderOptions{},
 			},
 			wantErr: false,
 		},
@@ -437,13 +451,14 @@ func Test_renderTemplates(t *testing.T) {
 						},
 					},
 				},
+				o: &LoaderOptions{},
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := renderTemplates(tt.args.p); (err != nil) != tt.wantErr {
+			if err := renderTemplates(tt.args.o, tt.args.p); (err != nil) != tt.wantErr {
 				t.Errorf("renderTemplates() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			for _, p := range tt.args.p.Processes {
@@ -473,6 +488,146 @@ func Test_renderTemplates(t *testing.T) {
 					compareStrings(t, "host", p.LivenessProbe.HttpGet.Host, "liveness probe host")
 					compareStrings(t, "/prj_path/proc_path", p.LivenessProbe.HttpGet.Path, "liveness probe path")
 					compareStrings(t, "echo test", p.Command, "process command")
+				}
+			}
+		})
+	}
+}
+
+func Test_disableEnableOverrides(t *testing.T) {
+	type args struct {
+		p        *types.Project
+		o        *LoaderOptions
+		enabled  []string
+		disabled []string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "disabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"puppy": {
+							Name: "puppy",
+						},
+					},
+				},
+				o: &LoaderOptions{
+					disabledProcesses: []string{"puppy"},
+					enabledProcesses:  []string{},
+				},
+				disabled: []string{"puppy"},
+				enabled:  []string{},
+			},
+		},
+		{
+			name: "default disabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"puppy": {
+							Name:     "puppy",
+							Disabled: true,
+						},
+					},
+				},
+				o: &LoaderOptions{
+					disabledProcesses: []string{},
+					enabledProcesses:  []string{},
+				},
+				disabled: []string{"puppy"},
+				enabled:  []string{},
+			},
+		},
+		{
+			name: "enabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"puppy": {
+							Name:     "puppy",
+							Disabled: true,
+						},
+					},
+				},
+				o: &LoaderOptions{
+					disabledProcesses: []string{},
+					enabledProcesses:  []string{"puppy"},
+				},
+				disabled: []string{},
+				enabled:  []string{"puppy"},
+			},
+		},
+		{
+			name: "disabled wins",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"puppy": {
+							Name: "puppy",
+						},
+					},
+				},
+				o: &LoaderOptions{
+					disabledProcesses: []string{"puppy"},
+					enabledProcesses:  []string{"puppy"},
+				},
+				disabled: []string{"puppy"},
+				enabled:  []string{},
+			},
+		},
+		{
+			name: "multiples",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"puppy": {
+							Name: "puppy",
+						},
+						"doggy": {
+							Name: "doggy",
+						},
+						"little": {
+							Name:     "little",
+							Disabled: true,
+						},
+						"cutie": {
+							Name:     "cutie",
+							Disabled: true,
+						},
+						"teeny": {
+							Name: "teeny",
+						},
+						"weeny": {
+							Name: "weeny",
+						},
+					},
+				},
+				o: &LoaderOptions{
+					disabledProcesses: []string{"puppy", "doggy", "teeny"},
+					enabledProcesses:  []string{"little", "cutie", "weeny"},
+				},
+				disabled: []string{"puppy", "doggy", "teeny"},
+				enabled:  []string{"little", "cutie", "weeny"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			disableEnableOverrides(tt.args.o, tt.args.p)
+
+			for _, name := range tt.args.enabled {
+				if tt.args.p.Processes[name].Disabled {
+					t.Errorf("Expected %s to be enabled", name)
+				}
+			}
+
+			for _, name := range tt.args.disabled {
+				if !tt.args.p.Processes[name].Disabled {
+					t.Errorf("Expected %s to be disabled", name)
 				}
 			}
 		})

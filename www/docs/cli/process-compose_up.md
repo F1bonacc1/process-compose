@@ -19,7 +19,9 @@ process-compose up [PROCESS...] [flags]
       --detach-on-success       detach the process-compose TUI after successful startup. Requires --detached-with-tui
   -D, --detached                run process-compose in detached mode
       --detached-with-tui       run process-compose in detached mode with TUI
+      --disable stringArray     names of processes to disable (comma-delimited) (env: PC_DISABLE)
       --disable-dotenv          disable .env file loading (env: PC_DISABLE_DOTENV=1)
+      --enable stringArray      names of processes to enable (comma-delimited). Processes that are both enabled and disabled will be disabled. (env: PC_ENABLE)
   -e, --env stringArray         path to env files to load (default [.env])
   -h, --help                    help for up
   -d, --hide-disabled           hide disabled processes (env: PC_HIDE_DISABLED_PROC)
