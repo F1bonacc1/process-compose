@@ -48,19 +48,19 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	mergedProject.EnvFileNames = opts.EnvFileNames
 	mergedProject.IsTuiDisabled = opts.isTuiDisabled || mergedProject.IsTuiDisabled
 
-	apply(mergedProject,
+	apply(opts, mergedProject,
 		setDefaultShell,
 		assignDefaultProcessValues,
 		cloneReplicas,
 		copyWorkingDirToProbes,
 	)
-	err = applyWithErr(mergedProject,
+	err = applyWithErr(opts, mergedProject,
 		renderTemplates,
 	)
 	if err != nil {
 		return nil, err
 	}
-	apply(mergedProject,
+	apply(opts, mergedProject,
 		assignExecutableAndArgs,
 	)
 
