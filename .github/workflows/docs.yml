@@ -28,5 +28,13 @@ jobs:
           path: .cache
       - run: pip install mkdocs-material
       - run: pip install pillow cairosvg
-      - run: mkdocs gh-deploy --force
+
+      - name: Build docs
+        if: ${{ github.event_name == 'pull_request' }}
+        run: mkdocs build
+        working-directory: ./www
+
+      - name: Deploy docs to GitHub Pages
+        if: ${{ github.event_name != 'pull_request' }}
+        run: mkdocs gh-deploy --force
         working-directory: ./www
