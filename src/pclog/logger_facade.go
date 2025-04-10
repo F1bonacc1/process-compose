@@ -180,7 +180,6 @@ func (l *PCLog) runCollector() {
 		}
 		level.Msg(event.message)
 		if l.flushEachLine {
-			log.Debug().Msg("flushing")
 			l.writer.Flush()
 		}
 	}
