@@ -401,7 +401,6 @@ func (pv *pcView) handleShutDown() {
 		pv.attentionMessage("Shutting Down...", 0)
 		_ = pv.project.ShutDownProject()
 	}
-	time.Sleep(time.Second)
 	pv.stopFollowLog()
 	pv.appView.Stop()
 	pv.cancelAppFn()
