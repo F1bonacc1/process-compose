@@ -76,6 +76,7 @@ type Flags struct {
 	IsDetached        *bool
 	IsDetachedWithTui *bool
 	DetachOnSuccess   *bool
+	WaitReady         *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -110,6 +111,7 @@ func NewFlags() *Flags {
 		IsDetachedWithTui: toPtr(false),
 		IsRawLogOutput:    toPtr(false),
 		DetachOnSuccess:   toPtr(false),
+		WaitReady:         toPtr(false),
 	}
 }
 
