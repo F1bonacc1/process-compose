@@ -247,6 +247,17 @@ func (p *ProcessesState) IsReady() bool {
 // If `hasHealthProbe` is true, the process must be healthy to be considered
 // ready.
 func (p *ProcessState) IsReady() bool {
+	isReady, _ := p.IsReadyReason()
+	return isReady
+}
+
+// Check if a process is running and healthy and explain why.
+//
+// If `hasHealthProbe` is true, the process must be healthy to be considered
+// ready.
+//
+// The explanation may be empty.
+func (p *ProcessState) IsReadyReason() (bool, string) {
 	if p.Status != ProcessStateRunning &&
 		p.Status != ProcessStateForeground &&
 		p.Status != ProcessStateLaunched &&
@@ -254,18 +265,23 @@ func (p *ProcessState) IsReady() bool {
 		p.Status != ProcessStateSkipped &&
 		p.Status != ProcessStateDisabled &&
 		p.Status != ProcessStateRestarting {
-		return false
+		return false, fmt.Sprintf("status is %s", p.Status)
 	} else if p.Status == ProcessStateDisabled {
-		return true
+		return true, "process is disabled"
 	} else if p.HasHealthProbe && p.Health != ProcessHealthReady {
-		return false
+		health := p.Health
+		if health == ProcessHealthUnknown {
+			// `ProcessHealthUnknown` is `-`, which looks fine in the TUI's table view
+			// but weird in logs.
+			health = "Unknown"
+		}
+		return false, fmt.Sprintf("health is %s", health)
 	} else if p.Health != ProcessHealthReady && p.Health != ProcessHealthUnknown {
-		return false
+		return false, fmt.Sprintf("health is %s", p.Health)
 	} else if p.ExitCode != 0 {
-		// A non-zero exit code means the process has failed.
-		return false
+		return false, fmt.Sprintf("failed with exit code %d", p.ExitCode)
 	}
-	return true
+	return true, ""
 }
 
 const (
