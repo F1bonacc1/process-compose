@@ -277,7 +277,6 @@ func (pv *pcView) setFullScreen(isFullScreen bool) {
 
 func (pv *pcView) loadThemes() {
 	pv.themes.AddListener(pv)
-	pv.themes.AddListener(pv.helpDialog)
 }
 
 func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
@@ -425,9 +424,11 @@ func (pv *pcView) onProcRowSpanChange() {
 }
 
 func (pv *pcView) recreateHelpDialog() {
+	pv.themes.RemoveListener(pv.helpDialog)
 	pv.helpDialog = newHelpDialog(pv.shortcuts, func() {
 		pv.pages.RemovePage(PageDialog)
 	})
+	pv.themes.AddListener(pv.helpDialog)
 }
 
 func (pv *pcView) updateHelpTextView() {
