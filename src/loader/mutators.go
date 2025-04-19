@@ -134,3 +134,14 @@ func renderTemplates(p *types.Project) error {
 	}
 	return nil
 }
+
+func convertStrDisabledToBool(p *types.Project) {
+	for name, proc := range p.Processes {
+		if proc.IsDisabled == "false" {
+			proc.Disabled = false
+		} else if proc.IsDisabled == "true" {
+			proc.Disabled = true
+		}
+		p.Processes[name] = proc
+	}
+}

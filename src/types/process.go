@@ -46,6 +46,7 @@ type (
 		IsTty             bool                   `yaml:"is_tty,omitempty"`
 		IsElevated        bool                   `yaml:"is_elevated,omitempty"`
 		LaunchTimeout     int                    `yaml:"launch_timeout_seconds,omitempty"`
+		IsDisabled        string                 `yaml:"is_disabled,omitempty"`
 		OriginalConfig    string
 		ReplicaNum        int
 		ReplicaName       string

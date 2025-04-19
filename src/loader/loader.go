@@ -53,6 +53,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		assignDefaultProcessValues,
 		cloneReplicas,
 		copyWorkingDirToProbes,
+		convertStrDisabledToBool,
 	)
 	err = applyWithErr(mergedProject,
 		renderTemplates,

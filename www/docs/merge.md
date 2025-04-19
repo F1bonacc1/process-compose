@@ -187,3 +187,89 @@ With the same result.
 4. Absolute paths are automatically detected and used as-is.
 5. The `.env` file is loaded only from the `CWD`. Additional env files can be specified using `--env` (`-e`).
 6. If file `B` uses the `extends` keyword to extend file `A`, loading both with `process-compose up -f A -f B` will fail. Load only the last file in the chain with `process-compose -f B` instead.
+
+## Controlling Process Enabled Status with `is_disabled`
+
+### The Challenge: Overriding `disabled: false`
+
+In `process-compose`, you can define processes in multiple configuration files (e.g., a base `process-compose.yaml` and an `override.yaml`). These files are merged to produce the final configuration.
+
+A common scenario is wanting to disable a process by default in the base configuration and then enable it specifically in an override file. The natural way to attempt this would be:
+
+**`base.yaml`:**
+
+```yaml
+processes:
+  my_process:
+    command: "echo 'running process'"
+    disabled: true
+```
+
+**`override.yaml`:**
+
+```yaml
+processes:
+  my_process:
+    # Attempt to enable the process
+    disabled: false
+```
+
+However, due to the underlying configuration merging library (`mergo`) and how Go handles boolean types, this approach has limitations. In Go, the "zero value" for a boolean is `false`. When merging, the library might struggle to distinguish between a `disabled` field that was explicitly set to `false` in the override file and a `disabled` field that was simply *not present* in the override file (which would also result in a `false` value after initialization). This ambiguity can lead to the override `disabled: false` not reliably enabling the process as intended.
+
+### The Solution: Introducing `is_disabled` (string)
+
+To provide a reliable way to enable or disable processes via overriding configuration files, we have introduced a new configuration option: `is_disabled`.
+
+**Key characteristics of `is_disabled`:**
+
+1. **Type:** It is a **string**, not a boolean.
+2. **Values:** It accepts the string values `"true"` or `"false"`.
+3. **Purpose:** It allows you to explicitly signal your intent to enable or disable a process during configuration merging, overcoming the boolean zero-value ambiguity.
+
+### How to Use `is_disabled`
+
+You can now use `is_disabled` in your override files to reliably control the process state:
+
+**`base.yaml`:**
+
+```yaml
+processes:
+  my_process:
+    command: "echo 'running process'"
+    # Can be disabled using either field in the base file
+    disabled: true
+    # or is_disabled: "true"
+```
+
+**`override.yaml` (to enable the process):**
+
+```yaml
+processes:
+  my_process:
+    # Use is_disabled as a string to reliably enable
+    is_disabled: "false"
+```
+
+**`override.yaml` (to explicitly disable the process, if it wasn't already):**
+
+```yaml
+processes:
+  my_process:
+    # Use is_disabled as a string to reliably disable
+    is_disabled: "true"
+```
+
+Because `"false"` is not the zero value for a string (which is `""`), the merging logic can clearly distinguish between an explicitly set `is_disabled: "false"` and an unset field.
+
+### Relationship Between `disabled` and `is_disabled`
+
+Both `disabled` (boolean) and `is_disabled` (string) can coexist, but `is_disabled` takes precedence:
+
+1. **If `is_disabled` is set** (to either `"true"` or `"false"` in the final merged configuration): Its value determines whether the process is disabled or enabled. The value of the `disabled` field is ignored.
+2. **If `is_disabled` is \*not\* set:** The value of the `disabled` boolean field determines the state. If `disabled` is also not set, the process defaults to being enabled (`disabled: false`).
+
+**Recommendation:**
+
+- For **standard configuration** within a single file or when not dealing with complex override scenarios to *enable* a process, you can continue using the boolean `disabled` field (`disabled: true` or `disabled: false`).
+- When **using override files** specifically to *enable* a process that might be disabled in a base file, use `is_disabled: "false"` in the override file for guaranteed results.
+- You can also use `is_disabled: "true"` in override files if you prefer consistency, although `disabled: true` generally works reliably for disabling.

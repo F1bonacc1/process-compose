@@ -485,3 +485,92 @@ func compareStrings(t *testing.T, expected, actual, scope string) {
 		t.Errorf("Expected %s '%s' to be '%s'", scope, expected, actual)
 	}
 }
+
+func Test_convertStrDisabledToBool(t *testing.T) {
+	type args struct {
+		p *types.Project
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantDisabled bool
+	}{
+		{
+			name: "disabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test": {
+							IsDisabled: "true",
+						},
+					},
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "enabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test": {
+							IsDisabled: "false",
+						},
+					},
+				},
+			},
+			wantDisabled: false,
+		},
+		{
+			name: "undefined",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test": {
+							IsDisabled: "",
+						},
+					},
+				},
+			},
+			wantDisabled: false,
+		},
+		{
+			name: "undefined with disabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test": {
+							IsDisabled: "",
+							Disabled:   true,
+						},
+					},
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "enabled with disabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test": {
+							IsDisabled: "false",
+							Disabled:   true,
+						},
+					},
+				},
+			},
+			wantDisabled: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			convertStrDisabledToBool(tt.args.p)
+			for _, p := range tt.args.p.Processes {
+				if p.Disabled != tt.wantDisabled {
+					t.Errorf("Expected process disabled to be %t", tt.wantDisabled)
+				}
+			}
+		})
+	}
+}
