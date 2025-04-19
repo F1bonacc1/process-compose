@@ -5,8 +5,8 @@ in
 buildGoModule rec {
   pname = "process-compose";
   version = "1.46.0";
-
-  CGO_ENABLED = 0;
+  go = pkgs.go_1_23;
+  env.CGO_ENABLED = 0;
 
   src = lib.cleanSource ./.;
   ldflags = [
