@@ -26,6 +26,9 @@ const (
 
 	// DefaultThemeName represents the default theme
 	DefaultThemeName = "Default"
+
+	// NoNamespace represents no namespace selection
+	NoNamespace = ""
 )
 
 const (
@@ -75,6 +78,7 @@ type Flags struct {
 	IsTuiFullScreen   *bool
 	IsDetached        *bool
 	IsDetachedWithTui *bool
+	Namespace         *string
 	DetachOnSuccess   *bool
 	WaitReady         *bool
 }
@@ -110,6 +114,7 @@ func NewFlags() *Flags {
 		IsDetached:        toPtr(false),
 		IsDetachedWithTui: toPtr(false),
 		IsRawLogOutput:    toPtr(false),
+		Namespace:         toPtr(NoNamespace),
 		DetachOnSuccess:   toPtr(false),
 		WaitReady:         toPtr(false),
 	}

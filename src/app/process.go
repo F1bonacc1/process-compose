@@ -831,10 +831,8 @@ func (p *Process) onLivenessCheckEnd(_, isFatal bool, err string, details interf
 }
 
 func (p *Process) printDetails(details map[string]string, err, source string) {
-	exitCode := 1
-	output := ""
-	exitCode, _ = strconv.Atoi(details["exit_code"])
-	output = details["output"]
+	exitCode, _ := strconv.Atoi(details["exit_code"])
+	output := details["output"]
 	log.Warn().
 		Str("error", err).
 		Int("exit_code", exitCode).
