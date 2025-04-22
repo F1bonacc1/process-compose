@@ -286,12 +286,35 @@ func (p *ProcessState) IsReadyReason() (bool, string) {
 	return true, ""
 }
 
+//go:generate stringer -type=RestartPolicy
+type RestartPolicy int
+
 const (
-	RestartPolicyAlways        = "always"
-	RestartPolicyOnFailure     = "on_failure"
-	RestartPolicyExitOnFailure = "exit_on_failure"
-	RestartPolicyNo            = "no"
+	RestartPolicyNo RestartPolicy = iota
+	RestartPolicyAlways
+	RestartPolicyOnFailure
+	RestartPolicyExitOnFailure
 )
+
+func (p *RestartPolicy) UnmarshalYAML(unmarshal func(any) error) error {
+	var value string
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+	switch value {
+	case "always":
+		*p = RestartPolicyAlways
+	case "on_failure":
+		*p = RestartPolicyOnFailure
+	case "exit_on_failure":
+		*p = RestartPolicyExitOnFailure
+	case "no":
+		*p = RestartPolicyNo
+	default:
+		return fmt.Errorf("Invalid restart policy: %q", value)
+	}
+	return nil
+}
 
 const (
 	ProcessStateDisabled    = "Disabled"
@@ -314,11 +337,11 @@ const (
 )
 
 type RestartPolicyConfig struct {
-	Restart        string `yaml:",omitempty"`
-	BackoffSeconds int    `yaml:"backoff_seconds,omitempty"`
-	MaxRestarts    int    `yaml:"max_restarts,omitempty"`
-	ExitOnEnd      bool   `yaml:"exit_on_end,omitempty"`
-	ExitOnSkipped  bool   `yaml:"exit_on_skipped,omitempty"`
+	Restart        RestartPolicy `yaml:",omitempty"`
+	BackoffSeconds int           `yaml:"backoff_seconds,omitempty"`
+	MaxRestarts    int           `yaml:"max_restarts,omitempty"`
+	ExitOnEnd      bool          `yaml:"exit_on_end,omitempty"`
+	ExitOnSkipped  bool          `yaml:"exit_on_skipped,omitempty"`
 }
 
 type ShutDownParams struct {
@@ -328,27 +351,48 @@ type ShutDownParams struct {
 	ParentOnly      bool   `yaml:"parent_only,omitempty"`
 }
 
+//go:generate stringer -type=ProcessCondition
+type ProcessCondition int
+
 const (
 	// ProcessConditionCompleted is the type for waiting until a process has completed (any exit code).
-	ProcessConditionCompleted = "process_completed"
-
+	ProcessConditionCompleted ProcessCondition = iota
 	// ProcessConditionCompletedSuccessfully is the type for waiting until a process has completed successfully (exit code 0).
-	ProcessConditionCompletedSuccessfully = "process_completed_successfully"
-
+	ProcessConditionCompletedSuccessfully
 	// ProcessConditionHealthy is the type for waiting until a process is healthy.
-	ProcessConditionHealthy = "process_healthy"
-
+	ProcessConditionHealthy
 	// ProcessConditionStarted is the type for waiting until a process has started (default).
-	ProcessConditionStarted = "process_started"
-
+	ProcessConditionStarted
 	// ProcessConditionLogReady is the type for waiting until a process has printed a predefined log line
-	ProcessConditionLogReady = "process_log_ready"
+	ProcessConditionLogReady
 )
+
+func (c *ProcessCondition) UnmarshalYAML(unmarshal func(any) error) error {
+	var value string
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+	switch value {
+	case "process_completed":
+		*c = ProcessConditionCompleted
+	case "process_completed_successfully":
+		*c = ProcessConditionCompletedSuccessfully
+	case "process_healthy":
+		*c = ProcessConditionHealthy
+	case "process_started":
+		*c = ProcessConditionStarted
+	case "process_log_ready":
+		*c = ProcessConditionLogReady
+	default:
+		return fmt.Errorf("Invalid process dependency condition: %q", value)
+	}
+	return nil
+}
 
 type DependsOnConfig map[string]ProcessDependency
 
 type ProcessDependency struct {
-	Condition  string                 `yaml:",omitempty"`
+	Condition  ProcessCondition       `yaml:",omitempty"`
 	Extensions map[string]interface{} `yaml:",inline"`
 }
 

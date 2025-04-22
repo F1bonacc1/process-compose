@@ -51,6 +51,11 @@ func runProjectCmd(args []string) {
 		_ = logFile.Close()
 	}()
 	runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
+	if opts.DryRun {
+		processNames, _ := runner.GetLexicographicProcessNames()
+		fmt.Printf("Validated %d configured processes from %d files.\n", len(processNames), len(opts.FileNames)+len(opts.EnvFileNames))
+		os.Exit(0)
+	}
 	if *pcFlags.IsDetached || *pcFlags.IsDetachedWithTui {
 		//placing it here ensures that if the compose.yaml is invalid, the program will exit immediately
 		runInDetachedMode()
@@ -94,6 +99,7 @@ func init() {
 	rootCmd.Flags().BoolVar(pcFlags.DisableDotEnv, "disable-dotenv", *pcFlags.DisableDotEnv, "disable .env file loading (env: "+config.EnvVarDisableDotEnv+"=1)")
 	rootCmd.Flags().BoolVar(pcFlags.IsTuiFullScreen, "tui-fs", *pcFlags.IsTuiFullScreen, "enable TUI full screen (env: "+config.EnvVarTuiFullScreen+"=1)")
 	rootCmd.Flags().BoolVar(pcFlags.LogsTruncate, "logs-truncate", *pcFlags.LogsTruncate, "truncate process logs buffer on startup")
+	rootCmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "validate the config and exit")
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))

@@ -298,8 +298,7 @@ func (p *Process) isRestartable() bool {
 	if p.isStopped.Swap(false) {
 		return false
 	}
-	if p.procConf.RestartPolicy.Restart == types.RestartPolicyNo ||
-		p.procConf.RestartPolicy.Restart == "" {
+	if p.procConf.RestartPolicy.Restart == types.RestartPolicyNo {
 		return false
 	}
 
