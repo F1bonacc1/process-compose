@@ -27,6 +27,7 @@
           doCheck = true;
           nativeBuildInputs = prev.nativeBuildInputs ++ (with pkgs; [python3]);
         });
+        devShells.default = import ./shell.nix { inherit pkgs; };
       })
     ) // {
       overlays.default = final: prev: {
