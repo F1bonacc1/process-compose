@@ -89,18 +89,14 @@ func toEnvVarSlice(dst reflect.Value, m map[interface{}]interface{}) error {
 
 func merge(opts *LoaderOptions) (*types.Project, error) {
 	base := opts.projects[0]
-	if len(opts.projects) == 1 {
-		return base, nil
-	}
-
 	for i, override := range opts.projects[1:] {
 		if err := mergeProjects(base, override); err != nil {
 			return base, fmt.Errorf("cannot merge projects from %s - %v", opts.FileNames[i], err)
 		}
 	}
 	return base, nil
-
 }
+
 func specialProcessesMerge(dst, src reflect.Value) error {
 	if !dst.IsValid() {
 		return fmt.Errorf("invalid value: %+v", dst)

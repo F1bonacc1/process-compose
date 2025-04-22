@@ -16,6 +16,7 @@ type LoaderOptions struct {
 	admitters        []admitter.Admitter
 	disableDotenv    bool
 	isTuiDisabled    bool
+	DryRun           bool
 }
 
 func (o *LoaderOptions) AddAdmitter(adm ...admitter.Admitter) {

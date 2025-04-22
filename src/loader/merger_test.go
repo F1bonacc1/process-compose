@@ -19,16 +19,16 @@ func getBaseProcess() *types.ProcessConfig {
 			"k2=v2",
 		},
 		RestartPolicy: types.RestartPolicyConfig{
-			Restart:        "no",
+			Restart:        types.RestartPolicyNo,
 			BackoffSeconds: 1,
 			MaxRestarts:    1,
 		},
 		DependsOn: types.DependsOnConfig{
 			"proc1": {
-				Condition: "process_completed",
+				Condition: types.ProcessConditionCompleted,
 			},
 			"proc3": {
-				Condition: "process_completed_successfully",
+				Condition: types.ProcessConditionCompletedSuccessfully,
 			},
 		},
 		LivenessProbe: nil,
@@ -70,16 +70,16 @@ func getOverrideProcess() *types.ProcessConfig {
 			"k4=v4",
 		},
 		RestartPolicy: types.RestartPolicyConfig{
-			Restart:        "always",
+			Restart:        types.RestartPolicyAlways,
 			BackoffSeconds: 2,
 			MaxRestarts:    2,
 		},
 		DependsOn: types.DependsOnConfig{
 			"proc1": {
-				Condition: "process_completed_successfully",
+				Condition: types.ProcessConditionCompletedSuccessfully,
 			},
 			"proc2": {
-				Condition: "process_completed_successfully",
+				Condition: types.ProcessConditionCompletedSuccessfully,
 			},
 		},
 		LivenessProbe: &health.Probe{
@@ -134,19 +134,19 @@ func getMergedProcess() *types.ProcessConfig {
 			"k4=v4",
 		},
 		RestartPolicy: types.RestartPolicyConfig{
-			Restart:        "always",
+			Restart:        types.RestartPolicyAlways,
 			BackoffSeconds: 2,
 			MaxRestarts:    2,
 		},
 		DependsOn: types.DependsOnConfig{
 			"proc1": {
-				Condition: "process_completed_successfully",
+				Condition: types.ProcessConditionCompletedSuccessfully,
 			},
 			"proc2": {
-				Condition: "process_completed_successfully",
+				Condition: types.ProcessConditionCompletedSuccessfully,
 			},
 			"proc3": {
-				Condition: "process_completed_successfully",
+				Condition: types.ProcessConditionCompletedSuccessfully,
 			},
 		},
 		LivenessProbe: &health.Probe{

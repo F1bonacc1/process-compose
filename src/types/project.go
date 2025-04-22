@@ -49,7 +49,6 @@ func (p *Project) GetDependenciesOrderNames() ([]string, error) {
 }
 
 func (p *Project) GetLexicographicProcessNames() ([]string, error) {
-
 	names := []string{}
 	for name := range p.Processes {
 		names = append(names, name)
