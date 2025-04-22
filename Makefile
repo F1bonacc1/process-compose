@@ -6,7 +6,7 @@ GIT_REV    ?= $(shell git rev-parse --short HEAD)
 DATE       ?= $(shell TZ=UTC0 git show --quiet --date='format-local:%Y-%m-%dT%H:%M:%SZ' --format="%cd")
 NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
 PKG = github.com/f1bonacc1/${NAME}
-SHELL := /bin/bash
+SHELL := /usr/bin/env bash
 PROJ_NAME := Process Compose
 DOCS_DIR  := www/docs/cli
 LD_FLAGS := -ldflags="-X ${PKG}/src/config.Version=${VERSION} \
