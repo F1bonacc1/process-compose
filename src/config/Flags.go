@@ -81,6 +81,7 @@ type Flags struct {
 	Namespace         *string
 	DetachOnSuccess   *bool
 	WaitReady         *bool
+	ShortVersion      *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -117,6 +118,7 @@ func NewFlags() *Flags {
 		Namespace:         toPtr(NoNamespace),
 		DetachOnSuccess:   toPtr(false),
 		WaitReady:         toPtr(false),
+		ShortVersion:      toPtr(false),
 	}
 }
 

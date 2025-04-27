@@ -11,6 +11,10 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version and build info",
 	Run: func(cmd *cobra.Command, args []string) {
+		if *pcFlags.ShortVersion {
+			fmt.Println(config.Version)
+			return
+		}
 		printVersion()
 	},
 }
@@ -28,4 +32,5 @@ func printVersion() {
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
+	versionCmd.Flags().BoolVar(pcFlags.ShortVersion, "short", *pcFlags.ShortVersion, "Print only version")
 }
