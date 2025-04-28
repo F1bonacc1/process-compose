@@ -1,0 +1,34 @@
+style:
+  name: 'Catppuccin Frappe'
+  body:
+    fgColor: '#c6d0f5'
+    bgColor: '#303446'
+    secondaryTextColor: '#ca9ee6'
+    tertiaryTextColor: '#ca9ee6'
+    borderColor: '#949cbb'
+  stat_table:
+    keyFgColor: '#ca9ee6'
+    valueFgColor: '#c6d0f5'
+    logoColor: '#ca9ee6'
+  proc_table:
+    fgColor: '#c6d0f5'
+    fgWarning: '#ef9f76'
+    fgPending: '#949cbb'
+    fgCompleted: '#a6d189'
+    fgError: '#e78284'
+    headerFgColor: '#ca9ee6'
+  help:
+    fgColor: '#c6d0f5'
+    keyColor: '#ca9ee6'
+    hlColor: '#51576d'
+    categoryFgColor: '#f4b8e4'
+  dialog:
+    fgColor: '#f4b8e4'
+    bgColor: '#ca9ee6'
+    buttonFgColor: '#232634'
+    buttonBgColor: '#ca9ee6'
+    buttonFocusFgColor: '#232634'
+    buttonFocusBgColor: '#ca9ee6'
+    labelFgColor: '#f2d5cf'
+    fieldFgColor: '#c6d0f5'
+    fieldBgColor: '#626880'

@@ -1,0 +1,40 @@
+style:
+  name: 'Material Dark'
+  body:
+    # Using standard Material Design dark theme colors
+    fgColor: '#FFFFFF'        # White (Primary Text on Dark) - Opacity ~87% conceptually
+    bgColor: '#121212'        # Recommended Dark Theme Background
+    # Using lighter, desaturated primary color for accents on dark
+    secondaryTextColor: '#9FA8DA' # Material Indigo 200
+    tertiaryTextColor: '#9FA8DA'  # Material Indigo 200
+    borderColor: '#424242'     # Material Grey 800 (Subtle border/divider on dark)
+  stat_table:
+    keyFgColor: '#9FA8DA'     # Material Indigo 200
+    valueFgColor: '#E0E0E0'    # Material Grey 200 (Slightly lower emphasis text)
+    logoColor: '#9FA8DA'      # Material Indigo 200
+  proc_table:
+    fgColor: '#E0E0E0'        # Material Grey 200
+    # Lighter status colors for better visibility on dark backgrounds
+    fgWarning: '#FFB74D'      # Material Orange 300
+    fgPending: '#757575'      # Material Grey 600 (Low emphasis/disabled)
+    fgCompleted: '#81C784'    # Material Green 300
+    fgError: '#E57373'        # Material Red 300
+    headerFgColor: '#9FA8DA'  # Material Indigo 200
+  help:
+    fgColor: '#E0E0E0'        # Material Grey 200
+    keyColor: '#9FA8DA'       # Material Indigo 200
+    hlColor: '#424242'        # Material Grey 800 (Highlight Background)
+    # Using lighter accent color
+    categoryFgColor: '#F48FB1' # Material Pink 200
+  dialog:
+    # Material dialogs in dark theme use elevated dark surfaces
+    fgColor: '#FFFFFF'        # White (Primary Text)
+    bgColor: '#303030'        # Material Grey 900 (Elevated Surface)
+    # Buttons use the lighter primary color for text
+    buttonFgColor: '#9FA8DA'    # Material Indigo 200
+    buttonBgColor: '#424242'    # Material Grey 800 (Subtle Button Background)
+    buttonFocusFgColor: '#C5CAE9' # Material Indigo 100 (Lighter for focus)
+    buttonFocusBgColor: '#616161' # Material Grey 700 (Slightly lighter focus BG)
+    labelFgColor: '#9FA8DA'    # Material Indigo 200 (Primary color for labels)
+    fieldFgColor: '#FFFFFF'    # White (Text in fields)
+    fieldBgColor: '#424242'    # Material Grey 800 (Field Background)

@@ -1,0 +1,34 @@
+style:
+  name: 'Catppuccin Macchiato'
+  body:
+    fgColor: '#cad3f5'
+    bgColor: '#24273a'
+    secondaryTextColor: '#c6a0f6'
+    tertiaryTextColor: '#c6a0f6'
+    borderColor: '#939ab7'
+  stat_table:
+    keyFgColor: '#c6a0f6'
+    valueFgColor: '#cad3f5'
+    logoColor: '#c6a0f6'
+  proc_table:
+    fgColor: '#cad3f5'
+    fgWarning: '#f5a97f'
+    fgPending: '#939ab7'
+    fgCompleted: '#a6da95'
+    fgError: '#ed8796'
+    headerFgColor: '#c6a0f6'
+  help:
+    fgColor: '#cad3f5'
+    keyColor: '#c6a0f6'
+    hlColor: '#494d64'
+    categoryFgColor: '#f5bde6'
+  dialog:
+    fgColor: '#f5bde6'
+    bgColor: '#c6a0f6'
+    buttonFgColor: '#181926'
+    buttonBgColor: '#c6a0f6'
+    buttonFocusFgColor: '#181926'
+    buttonFocusBgColor: '#c6a0f6'
+    labelFgColor: '#f4dbd6'
+    fieldFgColor: '#cad3f5'
+    fieldBgColor: '#5b6078'

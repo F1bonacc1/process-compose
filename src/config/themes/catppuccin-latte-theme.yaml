@@ -1,0 +1,34 @@
+style:
+  name: 'Catppuccin Latte'
+  body:
+    fgColor: '#4c4f69'
+    bgColor: '#eff1f5'
+    secondaryTextColor: '#8839ef'
+    tertiaryTextColor: '#8839ef'
+    borderColor: '#7c7f93'
+  stat_table:
+    keyFgColor: '#8839ef'
+    valueFgColor: '#4c4f69'
+    logoColor: '#8839ef'
+  proc_table:
+    fgColor: '#4c4f69'
+    fgWarning: '#fe640b'
+    fgPending: '#7c7f93'
+    fgCompleted: '#40a02b'
+    fgError: '#d20f39'
+    headerFgColor: '#8839ef'
+  help:
+    fgColor: '#4c4f69'
+    keyColor: '#8839ef'
+    hlColor: '#bcc0cc'
+    categoryFgColor: '#ea76cb'
+  dialog:
+    fgColor: '#ea76cb'
+    bgColor: '#8839ef'
+    buttonFgColor: '#dce0e8'
+    buttonBgColor: '#8839ef'
+    buttonFocusFgColor: '#dce0e8'
+    buttonFocusBgColor: '#8839ef'
+    labelFgColor: '#dc8a78'
+    fieldFgColor: '#4c4f69'
+    fieldBgColor: '#acb0be'
