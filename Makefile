@@ -88,7 +88,7 @@ docs: build
 	for f in ${DOCS_DIR}/*.md ; do sed -i 's/${USER}/<user>/g; s|${TMPDIR}|/tmp/|g; s/process-compose-[0-9]\+.sock/process-compose-<pid>.sock/g' $$f ; done
 
 schema:
-	./bin/process-compose schema ./schema.json
+	./bin/process-compose schema ./schemas/process-compose-schema.json
 
 lint: golangci-lint
 	./bin/golangci-lint run --show-stats -c .golangci.yaml
