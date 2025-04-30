@@ -22,7 +22,7 @@ type (
 	Environment   []string
 	EnvCmd        map[string]string
 	ProcessConfig struct {
-		Name              string                 `yaml:",omitempty"`
+		Name              string
 		Disabled          bool                   `yaml:"disabled,omitempty"`
 		IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
 		Command           string                 `yaml:"command,omitempty"`
