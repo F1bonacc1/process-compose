@@ -131,15 +131,23 @@ func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project,
 		log.Fatal().Err(err).Msgf("Failed to read %s", inputFile)
 	}
 
+	dotEnvVars := make(map[string]string)
 	if !opts.disableDotenv {
 		// .env is optional we don't care if it errors
-		_ = godotenv.Load(opts.EnvFileNames...)
+		dotEnvVars, _ = godotenv.Read(opts.EnvFileNames...)
+	}
+	expanderFn := func(name string) string {
+		val, ok := dotEnvVars[name]
+		if ok {
+			return val
+		}
+		return os.Getenv(name)
 	}
 
 	const envEscaped = "##PC_ENV_ESCAPED##"
 	// replace escaped $$ env vars in yaml
 	temp := strings.ReplaceAll(string(yamlFile), "$$", envEscaped)
-	temp = os.ExpandEnv(temp)
+	temp = os.Expand(temp, expanderFn)
 	temp = strings.ReplaceAll(temp, envEscaped, "$")
 
 	project := &types.Project{
@@ -161,6 +169,7 @@ func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project,
 			log.Fatal().Err(err).Msgf("Failed to parse %s", inputFile)
 		}
 	}
+	project.DotEnvVars = dotEnvVars
 
 	log.Info().Msgf("Loaded project from %s", inputFile)
 	return project, nil

@@ -77,6 +77,7 @@ type Process struct {
 	isTuiEnabled        bool
 	stdOutDone          chan struct{}
 	stdErrDone          chan struct{}
+	dotEnvVars          map[string]string
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
@@ -278,6 +279,11 @@ func (p *Process) getProcessEnvironment() []string {
 	env = append(env, os.Environ()...)
 	env = append(env, p.globalEnv...)
 	env = append(env, p.procConf.Environment...)
+	if p.dotEnvVars != nil && !p.procConf.DisableDotEnv {
+		for k, v := range p.dotEnvVars {
+			env = append(env, k+"="+v)
+		}
+	}
 	return env
 }
 

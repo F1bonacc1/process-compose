@@ -26,6 +26,7 @@ type Project struct {
 	EnvCommands         EnvCmd               `yaml:"env_cmds,omitempty"`
 	FileNames           []string
 	EnvFileNames        []string
+	DotEnvVars          map[string]string
 }
 
 type ProcessFunc func(process ProcessConfig) error

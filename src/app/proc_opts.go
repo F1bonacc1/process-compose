@@ -20,6 +20,12 @@ func withGlobalEnv(globalEnv []string) ProcOpts {
 	}
 }
 
+func withDotEnv(dotEnvVars map[string]string) ProcOpts {
+	return func(proc *Process) {
+		proc.dotEnvVars = dotEnvVars
+	}
+}
+
 func withLogger(logger pclog.PcLogger) ProcOpts {
 	return func(proc *Process) {
 		proc.logger = logger

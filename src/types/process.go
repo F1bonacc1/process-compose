@@ -47,6 +47,7 @@ type (
 		IsElevated        bool                   `yaml:"is_elevated,omitempty"`
 		LaunchTimeout     int                    `yaml:"launch_timeout_seconds,omitempty"`
 		IsDisabled        string                 `yaml:"is_disabled,omitempty"`
+		DisableDotEnv     bool                   `yaml:"is_dotenv_disabled,omitempty"`
 		OriginalConfig    string
 		ReplicaNum        int
 		ReplicaName       string

@@ -130,6 +130,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 	process := NewProcess(
 		withTuiOn(p.isTuiOn),
 		withGlobalEnv(p.project.Environment),
+		withDotEnv(p.project.DotEnvVars),
 		withLogger(procLogger),
 		withProcConf(config),
 		withProcState(procState),

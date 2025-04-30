@@ -144,3 +144,7 @@ processes:
 
   bat_config:
     command: "batcat -f process-compose.yaml"
+
+  dot_env_test:
+    command: "echo val from .env: $${FOO}"
+    is_dotenv_disabled: true

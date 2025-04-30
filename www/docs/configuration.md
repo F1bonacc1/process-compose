@@ -58,10 +58,42 @@ process-compose -e .env -e .env.local -e .env.dev
 
 For situations where the you would like to disable the automatic `.env` file loading you might want to use the `--disable-dotenv` flag.
 
+## Disabling Dotenv Environment Variable Injection (`is_dotenv_disabled`)
+
+By default, Process Compose reads variables from specified `.env` files (or a default `.env` file) and injects them into the environment of *all* managed processes. This is often convenient, but can interfere with processes that have their own built-in mechanisms for loading configuration directly from a `.env` file, especially when relying on that mechanism for configuration updates or hot-reloading.
+
+The core issue arises from environment variable precedence: environment variables explicitly set for a process (including those injected by Process Compose from `.env` files) typically override variables loaded by the process itself from its *own* `.env` file reading mechanism (e.g., using libraries like `godotenv`, `python-dotenv`, etc.). This means that if you change a variable in your `.env` file and restart only the *process* within Process Compose, the process might not see the change because the old value, injected by Process Compose when *it* started, takes precedence. A full restart of Process Compose would be required to pick up the changes.
+
+### The `is_dotenv_disabled` Option
+
+To address this, Process Compose provides the `is_dotenv_disabled` option within the process configuration.
+
+When set to `true`, this option instructs Process Compose **not** to inject environment variables sourced from *its* loaded `.env` files into the environment of *that specific* process. The process is then free to read and interpret its specified `.env` file using its own logic, without interference from variables injected by Process Compose's dotenv loading mechanism.
+
+**Syntax:**
+
+```yaml
+processes:
+  <process-name>:
+    command: <your_command>
+    # ... other process options
+    # Set to true to prevent Process Compose from injecting variables
+    # loaded from its .env files into this specific process.
+    is_dotenv_disabled: true # Defaults to false if not specified
+```
+
+### Important Considerations
+
+- `is_dotenv_disabled: true` only affects the injection of variables loaded by Process Compose from `.env` files.
+- It does **not** prevent the injection of variables defined in the top-level `environment:` section or the process-specific `environment:` section. These variables are always passed.
+- Process Compose itself still loads the `.env` files as configured; it simply refrains from passing those specific variables to processes and their health probes marked with `is_dotenv_disabled: true`.
+- Other processes managed by the same Process Compose instance will continue to receive variables from Process Compose's `.env` loading unless they also have `is_dotenv_disabled: true` set.
+
 ## .pc_env file
 
 `.pc_env` file allows you to control Process Compose local, user environment specific settings.  
 Ideally it should contain Process Compose specific environment variables:
+
 ```.env
 PC_DISABLE_TUI=1
 PC_PORT_NUM=8080
