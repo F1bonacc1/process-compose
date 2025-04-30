@@ -21,7 +21,7 @@ type (
 	Environment   []string
 	EnvCmd        map[string]string
 	ProcessConfig struct {
-		Name              string                 `yaml:",omitempty"`
+		Name              string
 		Disabled          bool                   `yaml:"disabled,omitempty"`
 		IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
 		Command           string                 `yaml:"command,omitempty"`
@@ -46,11 +46,11 @@ type (
 		IsTty             bool                   `yaml:"is_tty,omitempty"`
 		IsElevated        bool                   `yaml:"is_elevated,omitempty"`
 		LaunchTimeout     int                    `yaml:"launch_timeout_seconds,omitempty"`
-		OriginalConfig    string                 `yaml:",omitempty"`
-		ReplicaNum        int                    `yaml:",omitempty"`
-		ReplicaName       string                 `yaml:",omitempty"`
-		Executable        string                 `yaml:",omitempty"`
-		Args              []string               `yaml:",omitempty"`
+		OriginalConfig    string
+		ReplicaNum        int
+		ReplicaName       string
+		Executable        string
+		Args              []string
 	}
 )
 

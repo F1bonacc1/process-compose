@@ -24,8 +24,8 @@ type Project struct {
 	IsTuiDisabled       bool                 `yaml:"is_tui_disabled,omitempty"`
 	ExtendsProject      string               `yaml:"extends,omitempty"`
 	EnvCommands         EnvCmd               `yaml:"env_cmds,omitempty"`
-	FileNames           []string             `yaml:"file_names,omitempty"`
-	EnvFileNames        []string             `yaml:"env_file_names,omitempty"`
+	FileNames           []string
+	EnvFileNames        []string
 }
 
 type ProcessFunc func(process ProcessConfig) error
