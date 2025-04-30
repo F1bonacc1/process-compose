@@ -21,7 +21,7 @@ ifeq ($(OS),Windows_NT)
 	RM = cmd /C del /Q /F
 endif
 
-.PHONY: test run testrace docs
+.PHONY: test run testrace docs schema
 
 buildrun: build run
 
@@ -86,6 +86,9 @@ github-workflows:
 docs: build
 	./bin/process-compose docs ${DOCS_DIR}
 	for f in ${DOCS_DIR}/*.md ; do sed -i 's/${USER}/<user>/g; s|${TMPDIR}|/tmp/|g; s/process-compose-[0-9]\+.sock/process-compose-<pid>.sock/g' $$f ; done
+
+schema:
+	./bin/process-compose schema ./schemas/process-compose-schema.json
 
 lint: golangci-lint
 	./bin/golangci-lint run --show-stats -c .golangci.yaml

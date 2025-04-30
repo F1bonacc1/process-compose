@@ -18,10 +18,10 @@ type Project struct {
 	Processes           Processes            `yaml:"processes"`
 	Environment         Environment          `yaml:"environment,omitempty"`
 	ShellConfig         *command.ShellConfig `yaml:"shell,omitempty"`
-	IsStrict            bool                 `yaml:"is_strict"`
-	Vars                Vars                 `yaml:"vars"`
-	DisableEnvExpansion bool                 `yaml:"disable_env_expansion"`
-	IsTuiDisabled       bool                 `yaml:"is_tui_disabled"`
+	IsStrict            bool                 `yaml:"is_strict,omitempty"`
+	Vars                Vars                 `yaml:"vars,omitempty"`
+	DisableEnvExpansion bool                 `yaml:"disable_env_expansion,omitempty"`
+	IsTuiDisabled       bool                 `yaml:"is_tui_disabled,omitempty"`
 	ExtendsProject      string               `yaml:"extends,omitempty"`
 	EnvCommands         EnvCmd               `yaml:"env_cmds,omitempty"`
 	FileNames           []string

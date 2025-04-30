@@ -24,7 +24,7 @@ type (
 		Name              string
 		Disabled          bool                   `yaml:"disabled,omitempty"`
 		IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
-		Command           string                 `yaml:"command"`
+		Command           string                 `yaml:"command,omitempty"`
 		Entrypoint        []string               `yaml:"entrypoint,omitempty"`
 		LogLocation       string                 `yaml:"log_location,omitempty"`
 		LoggerConfig      *LoggerConfig          `yaml:"log_configuration,omitempty"`
@@ -36,16 +36,16 @@ type (
 		ReadyLogLine      string                 `yaml:"ready_log_line,omitempty"`
 		ShutDownParams    ShutDownParams         `yaml:"shutdown,omitempty"`
 		DisableAnsiColors bool                   `yaml:"disable_ansi_colors,omitempty"`
-		WorkingDir        string                 `yaml:"working_dir"`
-		Namespace         string                 `yaml:"namespace"`
-		Replicas          int                    `yaml:"replicas"`
+		WorkingDir        string                 `yaml:"working_dir,omitempty"`
+		Namespace         string                 `yaml:"namespace,omitempty"`
+		Replicas          int                    `yaml:"replicas,omitempty"`
 		Extensions        map[string]interface{} `yaml:",inline"`
 		Description       string                 `yaml:"description,omitempty"`
 		Vars              Vars                   `yaml:"vars,omitempty"`
-		IsForeground      bool                   `yaml:"is_foreground"`
-		IsTty             bool                   `yaml:"is_tty"`
-		IsElevated        bool                   `yaml:"is_elevated"`
-		LaunchTimeout     int                    `yaml:"launch_timeout_seconds"`
+		IsForeground      bool                   `yaml:"is_foreground,omitempty"`
+		IsTty             bool                   `yaml:"is_tty,omitempty"`
+		IsElevated        bool                   `yaml:"is_elevated,omitempty"`
+		LaunchTimeout     int                    `yaml:"launch_timeout_seconds,omitempty"`
 		OriginalConfig    string
 		ReplicaNum        int
 		ReplicaName       string
