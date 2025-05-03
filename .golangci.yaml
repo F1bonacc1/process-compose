@@ -93,7 +93,7 @@ linters:
     - staticcheck
 #    - stylecheck
 #    - tagalign
-    - tenv
+    - usetesting
     - testableexamples
     - testifylint
 #    - testpackage
