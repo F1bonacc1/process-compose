@@ -35,6 +35,7 @@ func init() {
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("keep-tui"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("keep-project"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("shortcuts"))
+	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("logs-truncate"))
 	upCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
 	upCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
 	upCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))

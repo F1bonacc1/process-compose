@@ -1122,3 +1122,77 @@ func TestSystem_TestEnvCmds(t *testing.T) {
 		t.Errorf("Expected log message to be 'live long and prosper', got %s", log[0])
 	}
 }
+
+func TestSystem_TestLogTruncate(t *testing.T) {
+	proc1 := "proc1"
+	shell := command.DefaultShellConfig()
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			proc1: {
+				Name:        proc1,
+				ReplicaName: proc1,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo Live long and prosper"},
+				RestartPolicy: types.RestartPolicyConfig{
+					Restart:        types.RestartPolicyAlways,
+					BackoffSeconds: 1,
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project:      project,
+		truncateLogs: false, //test with off
+	})
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	go func() {
+		err := runner.Run()
+		if err != nil {
+			t.Errorf("Failed to run project: %v", err)
+		}
+	}()
+	time.Sleep(1100 * time.Millisecond)
+	err = runner.ShutDownProject()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	log, err := runner.GetProcessLog(proc1, 2, 2)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if len(log) != 2 {
+		t.Fatalf("Expected 2 log message, got %d", len(log))
+	}
+	runner, err = NewProjectRunner(&ProjectOpts{
+		project:      project,
+		truncateLogs: true, //test with on
+	})
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	go func() {
+		err := runner.Run()
+		if err != nil {
+			t.Errorf("Failed to run project: %v", err)
+		}
+	}()
+	time.Sleep(1100 * time.Millisecond)
+	err = runner.ShutDownProject()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	log, err = runner.GetProcessLog(proc1, 2, 2)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if len(log) != 1 {
+		t.Fatalf("Expected 1 log message, got %d", len(log))
+	}
+}

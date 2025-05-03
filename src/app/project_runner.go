@@ -53,6 +53,7 @@ type ProjectRunner struct {
 	ctxApp            context.Context
 	cancelAppFn       context.CancelFunc
 	disableDotenv     bool
+	truncateLogs      bool
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -139,6 +140,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withPrintLogs(printLogs),
 		withIsMain(isMain),
 		withExtraArgs(extraArgs),
+		withLogsTruncate(p.truncateLogs),
 	)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
@@ -913,6 +915,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		isTuiOn:           opts.isTuiOn,
 		isOrderedShutDown: opts.isOrderedShutDown,
 		disableDotenv:     opts.disableDotenv,
+		truncateLogs:      opts.truncateLogs,
 		projectState: &types.ProjectState{
 			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),

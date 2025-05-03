@@ -11,6 +11,7 @@ type ProjectOpts struct {
 	isTuiOn           bool
 	isOrderedShutDown bool
 	disableDotenv     bool
+	truncateLogs      bool
 }
 
 func (p *ProjectOpts) WithProject(project *types.Project) *ProjectOpts {
@@ -47,6 +48,12 @@ func (p *ProjectOpts) WithOrderedShutDown(isOrderedShutDown bool) *ProjectOpts {
 	return p
 }
 
-func (p *ProjectOpts) WithDotEnvDisabled(disabled bool) {
+func (p *ProjectOpts) WithDotEnvDisabled(disabled bool) *ProjectOpts {
 	p.disableDotenv = disabled
+	return p
+}
+
+func (p *ProjectOpts) WithLogTruncate(truncateLogs bool) *ProjectOpts {
+	p.truncateLogs = truncateLogs
+	return p
 }

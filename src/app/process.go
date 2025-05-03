@@ -78,6 +78,7 @@ type Process struct {
 	stdOutDone          chan struct{}
 	stdErrDone          chan struct{}
 	dotEnvVars          map[string]string
+	truncateLogs        bool
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
@@ -210,6 +211,9 @@ func (p *Process) getProcessStarter() func() error {
 			p.command.AttachIo()
 		} else {
 			p.command.SetCmdArgs()
+			if p.truncateLogs {
+				p.logBuffer.Truncate()
+			}
 			stdout, _ := p.command.StdoutPipe()
 			p.stdOutDone = make(chan struct{})
 			go p.handleOutput(stdout, "stdout", p.handleInfo, p.stdOutDone)
@@ -602,10 +606,10 @@ func (p *Process) getProcResourcesRecursive(proc *puproc.Process) (int64, float6
 func (p *Process) getProcResources(proc *puproc.Process) (int64, float64) {
 	memoryInfo, err := proc.MemoryInfo()
 	if err != nil {
-		log.Err(err).
-			Str("process", p.getName()).
-			Int("pid", p.procState.Pid).
-			Msg("Error retrieving memory stats")
+		//log.Err(err).
+		//	Str("process", p.getName()).
+		//	Int("pid", p.procState.Pid).
+		//	Msg("Error retrieving memory stats")
 		return -1, -1
 	}
 	cpuPercent, err := proc.CPUPercentWithContext(context.Background())

@@ -73,3 +73,9 @@ func withExtraArgs(extraArgs []string) ProcOpts {
 		proc.extraArgs = extraArgs
 	}
 }
+
+func withLogsTruncate(truncateLogs bool) ProcOpts {
+	return func(proc *Process) {
+		proc.truncateLogs = truncateLogs
+	}
+}

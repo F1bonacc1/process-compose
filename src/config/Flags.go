@@ -82,6 +82,7 @@ type Flags struct {
 	DetachOnSuccess   *bool
 	WaitReady         *bool
 	ShortVersion      *bool
+	LogsTruncate      *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -119,6 +120,7 @@ func NewFlags() *Flags {
 		DetachOnSuccess:   toPtr(false),
 		WaitReady:         toPtr(false),
 		ShortVersion:      toPtr(false),
+		LogsTruncate:      toPtr(false),
 	}
 }
 

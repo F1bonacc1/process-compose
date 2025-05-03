@@ -90,3 +90,9 @@ func (b *ProcessLogBuffer) Close() {
 	defer b.mx.Unlock()
 	b.observers = map[string]LogObserver{}
 }
+
+func (b *ProcessLogBuffer) Truncate() {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+	b.buffer = b.buffer[:0]
+}
