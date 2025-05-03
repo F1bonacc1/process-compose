@@ -180,3 +180,7 @@ func (p *PcClient) UpdateProcess(updated *types.ProcessConfig) error {
 func (p *PcClient) ReloadProject() (map[string]string, error) {
 	return p.reloadProject()
 }
+
+func (p *PcClient) TruncateProcessLogs(name string) error {
+	return p.truncateProcessLogs(name)
+}

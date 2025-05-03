@@ -133,6 +133,27 @@ func (api *PcApi) GetProcessLogs(c *gin.Context) {
 }
 
 // @Schemes
+// @Id				TruncateProcessLogs
+// @Description	Truncates the process logs
+// @Tags			Process
+// @Summary		Truncate process logs
+// @Produce		json
+// @Param		name		path		string				true	"Process Name"
+// @Success		200			{object}	map[string]string	"Truncated Process Name"
+// @Failure		400			{object}	map[string]string
+// @Router			/process/logs/{name} [delete]
+func (api *PcApi) TruncateProcessLogs(c *gin.Context) {
+	name := c.Param("name")
+	err := api.project.TruncateProcessLogs(name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"name": name})
+}
+
+// @Schemes
 // @Id				StopProcess
 // @Description	Sends kill signal to the process
 // @Tags			Process

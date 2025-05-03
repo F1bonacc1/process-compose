@@ -142,6 +142,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/process/logs/{name}": {
+            "delete": {
+                "description": "Truncates the process logs",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Truncate process logs",
+                "operationId": "TruncateProcessLogs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Process Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Truncated Process Name",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/process/logs/{name}/{endOffset}/{limit}": {
             "get": {
                 "description": "Retrieves the process logs",
@@ -857,6 +899,9 @@ const docTemplate = `{
                 "disableAnsiColors": {
                     "type": "boolean"
                 },
+                "disableDotEnv": {
+                    "type": "boolean"
+                },
                 "disabled": {
                     "type": "boolean"
                 },
@@ -882,6 +927,9 @@ const docTemplate = `{
                 "isDaemon": {
                     "type": "boolean"
                 },
+                "isDisabled": {
+                    "type": "string"
+                },
                 "isElevated": {
                     "type": "boolean"
                 },
@@ -890,6 +938,9 @@ const docTemplate = `{
                 },
                 "isTty": {
                     "type": "boolean"
+                },
+                "launchTimeout": {
+                    "type": "integer"
                 },
                 "livenessProbe": {
                     "$ref": "#/definitions/health.Probe"
@@ -904,6 +955,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "namespace": {
+                    "type": "string"
+                },
+                "originalConfig": {
                     "type": "string"
                 },
                 "readinessProbe": {
@@ -979,7 +1033,7 @@ const docTemplate = `{
                 "exit_code": {
                     "type": "integer"
                 },
-                "isRunning": {
+                "has_ready_probe": {
                     "type": "boolean"
                 },
                 "is_elevated": {
@@ -987,6 +1041,9 @@ const docTemplate = `{
                 },
                 "is_ready": {
                     "type": "string"
+                },
+                "is_running": {
+                    "type": "boolean"
                 },
                 "mem": {
                     "type": "integer"

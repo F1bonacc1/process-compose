@@ -1,19 +1,15 @@
-## process-compose process logs
+## process-compose process logs truncate
 
-Fetch the logs of a process(es). For multiple processes, separate them with a comma (proc1,proc2)
+Truncate the logs for a running or stopped process
 
 ```
-process-compose process logs [PROCESS] [flags]
+process-compose process logs truncate [PROCESS] [flags]
 ```
 
 ### Options
 
 ```
-  -f, --follow             Follow log output
-  -h, --help               help for logs
-  -N, --namespace string   Logs all the processes in the given namespace
-      --raw-log            If set, don't format the multi process log output to include the process name
-  -n, --tail int           Number of lines to show from the end of the logs (default 9223372036854775807)
+  -h, --help   help for truncate
 ```
 
 ### Options inherited from parent commands
@@ -31,6 +27,5 @@ process-compose process logs [PROCESS] [flags]
 
 ### SEE ALSO
 
-* [process-compose process](process-compose_process.md)	 - Execute operations on the available processes
-* [process-compose process logs truncate](process-compose_process_logs_truncate.md)	 - Truncate the logs for a running or stopped process
+* [process-compose process logs](process-compose_process_logs.md)	 - Fetch the logs of a process(es). For multiple processes, separate them with a comma (proc1,proc2)
 

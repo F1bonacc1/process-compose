@@ -238,6 +238,7 @@ func (pv *pcView) setShortCutsActions() {
 	})
 	pv.shortcuts.setAction(ActionClearLog, func() {
 		pv.logsText.Clear()
+		pv.truncateLog()
 	})
 	pv.shortcuts.setAction(ActionMarkLog, func() {
 		pv.logsText.AddMark()

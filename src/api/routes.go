@@ -31,6 +31,7 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r.POST("/process", handler.UpdateProcess)
 	r.GET("/process/ports/:name", handler.GetProcessPorts)
 	r.GET("/process/logs/:name/:endOffset/:limit", handler.GetProcessLogs)
+	r.DELETE("/process/logs/:name", handler.TruncateProcessLogs)
 	r.PATCH("/process/stop/:name", handler.StopProcess)
 	r.PATCH("/processes/stop", handler.StopProcesses)
 	r.POST("/process/start/:name", handler.StartProcess)

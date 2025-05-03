@@ -42,6 +42,7 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			runProjectCmd([]string{})
 		},
+		DisableAutoGenTag: true,
 	}
 )
 

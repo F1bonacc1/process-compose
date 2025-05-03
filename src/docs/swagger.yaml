@@ -119,6 +119,8 @@ components:
                     type: string
                 disableAnsiColors:
                     type: boolean
+                disableDotEnv:
+                    type: boolean
                 disabled:
                     type: boolean
                 entrypoint:
@@ -136,12 +138,16 @@ components:
                     type: object
                 isDaemon:
                     type: boolean
+                isDisabled:
+                    type: string
                 isElevated:
                     type: boolean
                 isForeground:
                     type: boolean
                 isTty:
                     type: boolean
+                launchTimeout:
+                    type: integer
                 livenessProbe:
                     $ref: '#/components/schemas/health.Probe'
                 logLocation:
@@ -151,6 +157,8 @@ components:
                 name:
                     type: string
                 namespace:
+                    type: string
+                originalConfig:
                     type: string
                 readinessProbe:
                     $ref: '#/components/schemas/health.Probe'
@@ -200,11 +208,13 @@ components:
                     type: number
                 exit_code:
                     type: integer
+                has_ready_probe:
+                    type: boolean
                 is_elevated:
                     type: boolean
                 is_ready:
                     type: string
-                isRunning:
+                is_running:
                     type: boolean
                 mem:
                     type: integer
@@ -406,6 +416,37 @@ paths:
                                 type: object
                     description: Bad Request
             summary: Get process config
+            tags:
+                - Process
+    /process/logs/{name}:
+        delete:
+            description: Truncates the process logs
+            operationId: TruncateProcessLogs
+            parameters:
+                - description: Process Name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Truncated Process Name
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
+            summary: Truncate process logs
             tags:
                 - Process
     /process/logs/{name}/{endOffset}/{limit}:

@@ -2,11 +2,14 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 	"net"
+	"net/http"
 	"os"
 	"sync/atomic"
 )
@@ -88,4 +91,27 @@ func (l *LogClient) readLogs(done chan struct{}, ws *websocket.Conn, follow bool
 			fn(message)
 		}
 	}
+}
+
+func (p *PcClient) truncateProcessLogs(name string) error {
+	url := fmt.Sprintf("http://%s/process/logs/%s", p.address, name)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	var respErr pcError
+	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
+		log.Error().Msgf("failed to truncate process %s logs, response: %v", name, err)
+		return err
+	}
+	return errors.New(respErr.Error)
 }

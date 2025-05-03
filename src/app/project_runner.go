@@ -639,6 +639,15 @@ func (p *ProjectRunner) UnSubscribeLogger(name string, observer pclog.LogObserve
 	return nil
 }
 
+func (p *ProjectRunner) TruncateProcessLogs(name string) error {
+	logs, err := p.getProcessLog(name)
+	if err != nil {
+		return err
+	}
+	logs.Truncate()
+	return nil
+}
+
 func (p *ProjectRunner) ScaleProcess(name string, scale int) error {
 	if scale < 1 {
 		err := fmt.Errorf("cannot scale process %s to a negative or zero value %d", name, scale)

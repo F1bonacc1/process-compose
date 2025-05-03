@@ -119,3 +119,11 @@ func (pv *pcView) getLogTitle(name string) string {
 		return name
 	}
 }
+
+func (pv *pcView) truncateLog() {
+	name := pv.getSelectedProcName()
+	err := pv.project.TruncateProcessLogs(name)
+	if err != nil {
+		log.Err(err).Msgf("failed to truncate process %s logs", name)
+	}
+}
