@@ -25,7 +25,6 @@ require (
 	github.com/swaggo/swag v1.16.4
 	golang.org/x/term v0.31.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

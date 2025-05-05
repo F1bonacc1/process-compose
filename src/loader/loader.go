@@ -6,7 +6,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"slices"
