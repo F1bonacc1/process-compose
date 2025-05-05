@@ -125,7 +125,7 @@ announce:
     # Default: '{{ .ProjectName }} {{ .Tag }} is out! Check it out at {{ .ReleaseURL }}'.
     # Templates: allowed.
     message_template: |
-      **New Release: Process Compose {{.Tag}}**
+      New Release: Process Compose {{.Tag}}
       Process Compose {{.Tag}} is out.
 
       What's new: {{.ReleaseURL}}
