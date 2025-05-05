@@ -5,6 +5,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 	"math"
 	"os"
 	"reflect"
@@ -296,9 +297,9 @@ const (
 	RestartPolicyExitOnFailure
 )
 
-func (p *RestartPolicy) UnmarshalYAML(unmarshal func(any) error) error {
+func (p *RestartPolicy) UnmarshalYAML(node *yaml.Node) error {
 	var value string
-	if err := unmarshal(&value); err != nil {
+	if err := node.Decode(&value); err != nil {
 		return err
 	}
 	switch value {
@@ -367,9 +368,9 @@ const (
 	ProcessConditionLogReady
 )
 
-func (c *ProcessCondition) UnmarshalYAML(unmarshal func(any) error) error {
+func (c *ProcessCondition) UnmarshalYAML(node *yaml.Node) error {
 	var value string
-	if err := unmarshal(&value); err != nil {
+	if err := node.Decode(&value); err != nil {
 		return err
 	}
 	switch value {
