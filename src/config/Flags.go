@@ -47,6 +47,7 @@ const (
 // Flags represents PC configuration flags.
 type Flags struct {
 	RefreshRate       *time.Duration
+	SlowRefreshRate   *time.Duration
 	PortNum           *int
 	Address           *string
 	LogLevel          *string
@@ -89,6 +90,7 @@ type Flags struct {
 func NewFlags() *Flags {
 	return &Flags{
 		RefreshRate:       toPtr(DefaultRefreshRate),
+		SlowRefreshRate:   toPtr(DefaultRefreshRate),
 		IsTuiEnabled:      toPtr(getDisableTuiDefault()),
 		PortNum:           toPtr(getPortDefault()),
 		Address:           toPtr(DefaultAddress),

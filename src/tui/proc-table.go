@@ -41,13 +41,15 @@ func (pv *pcView) fillTableData() {
 	runningProcCount := 0
 	totalMem := int64(0)
 	totalCPU := 0.0
-	states, err := pv.project.GetProcessesState()
-	if err != nil {
-		log.Err(err).Msg("failed to get processes state")
+	pv.procStatesMtx.Lock()
+	states := pv.procStates
+	pv.procStatesMtx.Unlock()
+	if states == nil {
+		log.Error().Msg("failed to get processes state")
 		return
 	}
 	sorter := pv.getTableSorter()
-	err = sortProcessesState(sorter.sortByColumn, sorter.isAsc, states)
+	err := sortProcessesState(sorter.sortByColumn, sorter.isAsc, states)
 	if err != nil {
 		log.Err(err).Msg("failed to sort states")
 		return
@@ -276,6 +278,34 @@ func (pv *pcView) updateTable(ctx context.Context) {
 			pv.appView.QueueUpdateDraw(func() {
 				pv.fillTableData()
 			})
+		}
+	}
+}
+
+func (pv *pcView) updateProcStates(ctx context.Context) {
+	states, err := pv.project.GetProcessesState()
+	if err != nil {
+		log.Err(err).Msg("failed to get processes state")
+	}
+	pv.procStatesMtx.Lock()
+	pv.procStates = states
+	pv.procStatesMtx.Unlock()
+	ticker := time.NewTicker(pv.refreshRate)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debug().Msg("Table monitoring canceled")
+			return
+		case <-ticker.C:
+			states, err = pv.project.GetProcessesState()
+			if err != nil {
+				log.Err(err).Msg("failed to get processes state")
+				continue
+			}
+			pv.procStatesMtx.Lock()
+			pv.procStates = states
+			pv.procStatesMtx.Unlock()
 		}
 	}
 }

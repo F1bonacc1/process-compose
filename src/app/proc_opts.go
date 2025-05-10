@@ -4,6 +4,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"time"
 )
 
 type ProcOpts func(proc *Process)
@@ -77,5 +78,11 @@ func withExtraArgs(extraArgs []string) ProcOpts {
 func withLogsTruncate(truncateLogs bool) ProcOpts {
 	return func(proc *Process) {
 		proc.truncateLogs = truncateLogs
+	}
+}
+
+func withRefRate(refRate time.Duration) ProcOpts {
+	return func(proc *Process) {
+		proc.refRate = refRate
 	}
 }

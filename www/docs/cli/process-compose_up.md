@@ -27,7 +27,7 @@ process-compose up [PROCESS...] [flags]
       --logs-truncate           truncate process logs buffer on startup
   -n, --namespace stringArray   run only specified namespaces (default all)
       --no-deps                 don't start dependent processes
-  -r, --ref-rate duration       TUI refresh rate in seconds or as a Go duration string (e.g. 1s) (default 1)
+  -r, --ref-rate duration       TUI refresh interval in seconds or as a Go duration string (e.g. 1s) (default 1)
   -R, --reverse                 sort in reverse order
       --shortcuts stringArray   paths to shortcut config files to load (env: PC_SHORTCUTS_FILES) (default [/home/<user>/.config/process-compose/shortcuts.yml])
   -S, --sort string             sort column name. legal values (case insensitive): [AGE, CPU, EXIT, HEALTH, MEM, NAME, NAMESPACE, PID, RESTARTS, STATUS] (default "NAME")

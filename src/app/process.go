@@ -79,6 +79,9 @@ type Process struct {
 	stdErrDone          chan struct{}
 	dotEnvVars          map[string]string
 	truncateLogs        bool
+	metricsProc         *puproc.Process
+	lastStatusPoll      time.Time
+	refRate             time.Duration
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
@@ -129,6 +132,10 @@ loop:
 		p.setStartTime(time.Now())
 		p.stateMtx.Lock()
 		p.procState.Pid = p.command.Pid()
+		p.metricsProc, err = puproc.NewProcess(int32(p.procState.Pid))
+		if err != nil {
+			log.Err(err).Msgf("Could not find pid %d with name %s", p.procState.Pid, p.getName())
+		}
 		p.stateMtx.Unlock()
 		log.Info().
 			Str("process", p.getName()).
@@ -543,7 +550,10 @@ func (p *Process) updateProcState() {
 		p.procState.SystemTime = HumanDuration(dur)
 		p.procState.Age = dur
 		p.procState.Name = p.getName()
-		p.procState.Mem, p.procState.CPU = p.getResourceUsage()
+		if time.Since(p.lastStatusPoll) > p.refRate {
+			p.procState.Mem, p.procState.CPU = p.getResourceUsage()
+			p.lastStatusPoll = time.Now()
+		}
 	}
 	p.procState.IsRunning = isRunning
 	p.procState.IsElevated = p.procConf.IsElevated
@@ -567,12 +577,10 @@ func (p *Process) getResourceUsage() (int64, float64) {
 	if p.procConf.IsDaemon {
 		return -1, -1
 	}
-	proc, err := puproc.NewProcess(int32(p.procState.Pid))
-	if err != nil {
-		log.Err(err).Msgf("Could not find pid %d with name %s", p.procState.Pid, p.getName())
+	if p.metricsProc == nil {
 		return -1, -1
 	}
-	totalMem, totalCpu := p.getProcResourcesRecursive(proc)
+	totalMem, totalCpu := p.getProcResourcesRecursive(p.metricsProc)
 
 	return totalMem, totalCpu
 }

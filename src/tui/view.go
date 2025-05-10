@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/config"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/f1bonacc1/process-compose/src/updater"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
@@ -90,6 +91,8 @@ type pcView struct {
 	isReadOnlyMode        bool
 	isExitConfirmDisabled bool
 	detachOnSuccess       bool
+	procStatesMtx         sync.Mutex
+	procStates            *types.ProcessesState
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -548,6 +551,7 @@ func (pv *pcView) resume() {
 	ctxLog, pv.cancelLogFn = context.WithCancel(context.Background())
 	ctxSig, pv.cancelSigFn = context.WithCancel(context.Background())
 
+	go pv.updateProcStates(ctxTbl)
 	go pv.updateTable(ctxTbl)
 	go pv.updateLogs(ctxLog)
 	go setSignal(ctxSig)

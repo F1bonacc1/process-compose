@@ -1,6 +1,9 @@
 package app
 
-import "github.com/f1bonacc1/process-compose/src/types"
+import (
+	"github.com/f1bonacc1/process-compose/src/types"
+	"time"
+)
 
 type ProjectOpts struct {
 	project           *types.Project
@@ -12,6 +15,7 @@ type ProjectOpts struct {
 	isOrderedShutDown bool
 	disableDotenv     bool
 	truncateLogs      bool
+	refRate           time.Duration
 }
 
 func (p *ProjectOpts) WithProject(project *types.Project) *ProjectOpts {
@@ -55,5 +59,10 @@ func (p *ProjectOpts) WithDotEnvDisabled(disabled bool) *ProjectOpts {
 
 func (p *ProjectOpts) WithLogTruncate(truncateLogs bool) *ProjectOpts {
 	p.truncateLogs = truncateLogs
+	return p
+}
+
+func (p *ProjectOpts) WithSlowRefRate(refRate time.Duration) *ProjectOpts {
+	p.refRate = refRate
 	return p
 }
