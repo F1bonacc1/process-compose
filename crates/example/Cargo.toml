@@ -16,4 +16,4 @@ serde_json = { version = "1.0", default-features = false }
 progenitor-client = { version = "0.10", default-features = false, optional = false}
 
 [build-dependencies]
-process-compose-openapi-client = { path = "../openapi-client" }
+process-compose-openapi-client = { path = "../openapi-client", default-features = false, features = ["progenitor", "typify"] }

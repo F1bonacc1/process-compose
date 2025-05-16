@@ -1,4 +1,0 @@
-[workspace]
-members = ["crates/openapi-client"]
-resolver = "2"
-edition = "2021"

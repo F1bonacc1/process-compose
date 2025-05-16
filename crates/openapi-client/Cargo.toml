@@ -7,8 +7,8 @@ edition = "2021"
 include = [
   "src/**",
   "Cargo.toml",
-  "build.rs",
   "../../src/docs/swagger.json",
+  "../../schemas/process-compose-schema.json",
   "../../README.md",
 ]
 
@@ -16,19 +16,19 @@ include = [
 crate-type = ["rlib"]
 
 [dependencies]
-serde_json = { version = "1.0", default-features = false }
-openapiv3 = { version = "2", default-features = false  }
+serde_json = { version = "^1.0", default-features = false }
+openapiv3 = { version = "^2", default-features = false }
 
+progenitor = { version = "^0.10", default-features = false, optional = true }
+prettyplease = { version = "^0.2.24", optional = true }
+syn = { version = "^2.0.80", optional = true }
+schemars = { version = "^0.8.*" }
 
-progenitor = { version = "0.10", default-features = false, optional = false}
-prettyplease = { version = "0.2.25", optional = false}
-syn = { version = "2.0.85", optional = false}
+typify = { version = "^0.4", default-features = false, optional = true }
 
+[features]
+default = ["progenitor", "typify"]
 
-[dev-dependencies]
-reqwest = { version = "0.12", default-features = false, features = [
-  "json",
-  "stream",
-] }
-serde = { version = "1.0", default-features = false }
-tokio = { version = "1.41", features = ["macros"] }
+typify = ["dep:typify", "dep:prettyplease"]
+
+progenitor = ["dep:progenitor", "dep:prettyplease", "dep:syn"]

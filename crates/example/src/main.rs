@@ -1,4 +1,5 @@
-include!(concat!(env!("OUT_DIR"), "/lib.rs"));
+include!(concat!(env!("OUT_DIR"), "/client.rs"));
+include!(concat!(env!("OUT_DIR"), "/config.rs"));
 
 #[tokio::main]
 async fn main() {
@@ -7,4 +8,8 @@ async fn main() {
         let _name = &response.name;
         unreachable!("errors on bad url");
     }
+
+    let _config = crate::Project::builder().processes(Processes(<_>::default()));
+
+    println!("Compiles!")
 }
