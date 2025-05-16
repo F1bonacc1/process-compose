@@ -1,6 +1,6 @@
 [package]
 name = "process-compose-openapi-client"
-version = "1.46.0"
+version = "1.64.1"
 description = "OpenAPI client for Process Compose"
 license = "Apache-2.0"
 edition = "2021"
@@ -16,19 +16,19 @@ include = [
 crate-type = ["rlib"]
 
 [dependencies]
-progenitor-client = { version = "0.9" }
+serde_json = { version = "1.0", default-features = false }
+openapiv3 = { version = "2", default-features = false  }
+
+
+progenitor = { version = "0.10", default-features = false, optional = false}
+prettyplease = { version = "0.2.25", optional = false}
+syn = { version = "2.0.85", optional = false}
+
+
+[dev-dependencies]
 reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "stream",
 ] }
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-serde_json = { version = "1.0", default-features = false }
-
-[dev-dependencies]
+serde = { version = "1.0", default-features = false }
 tokio = { version = "1.41", features = ["macros"] }
-
-[build-dependencies]
-progenitor = { version = "0.9" }
-syn = { version = "2.0.85" }
-prettyplease = { version = "0.2.25" }
-serde_json = { version = "1.0", default-features = false }
