@@ -485,7 +485,7 @@ func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
 		pid:       strconv.Itoa(state.Pid),
 		name:      state.Name,
 		ns:        state.Namespace,
-		status:    state.Status,
+		status:    types.DisplayProcessStatus(state),
 		age:       state.SystemTime,
 		health:    state.Health,
 		mem:       getStrForMem(state.Mem, state.IsRunning),
