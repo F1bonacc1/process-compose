@@ -331,6 +331,21 @@ const (
 	ProcessStateError       = "Error"
 )
 
+// Display a process status for the UI.
+//
+// In particular, this displays "Failed" if the process has completed with a
+// non-zero exit code. This makes it clearer when a process has failed, as
+// opposed to exiting successfully.
+//
+// We can't change the `Status` field to "Failed" directly because that would
+// change the JSON API behavior, but we can change it in the TUI.
+func DisplayProcessStatus(state ProcessState) string {
+	if state.Status == ProcessStateCompleted && state.ExitCode != 0 {
+		return "Failed"
+	}
+	return state.Status
+}
+
 const (
 	ProcessHealthReady    = "Ready"
 	ProcessHealthNotReady = "Not Ready"
