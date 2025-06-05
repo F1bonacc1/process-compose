@@ -1198,3 +1198,122 @@ func TestSystem_TestLogTruncate(t *testing.T) {
 		t.Fatalf("Expected 1 log message, got %d", len(log))
 	}
 }
+
+func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
+	testProcess := "TestProcess"
+	shell := command.DefaultShellConfig()
+
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			testProcess: {
+				Name:        testProcess,
+				ReplicaName: testProcess,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "sleep 2"},
+				RestartPolicy: types.RestartPolicyConfig{
+					Restart: types.RestartPolicyNo,
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project:         project,
+		processesToRun:  []string{},
+		noDeps:          false,
+		mainProcess:     "",
+		mainProcessArgs: []string{},
+		isTuiOn:         false,
+	})
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	// Start the runner
+	go func() {
+		err1 := runner.Run()
+		if err1 != nil {
+			t.Errorf("Runner failed: %s", err1)
+		}
+	}()
+
+	// Wait for initial process to be running
+	for attempts := 0; attempts < 100; attempts++ {
+		state, err := runner.GetProcessState(testProcess)
+		if err == nil && state.Status == types.ProcessStateRunning {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+		if attempts == 99 {
+			t.Fatal("Process failed to start within timeout")
+		}
+	}
+
+	// Test concurrent restarts with synchronization barrier
+	const numConcurrentRestarts = 20
+	results := make(chan error, numConcurrentRestarts)
+	startBarrier := make(chan struct{})
+
+	// Launch multiple concurrent restart operations
+	for i := 0; i < numConcurrentRestarts; i++ {
+		go func() {
+			<-startBarrier // Wait for all goroutines to be ready
+			err := runner.RestartProcess(testProcess)
+			results <- err
+		}()
+	}
+
+	// Signal all goroutines to start simultaneously (maximizes race condition chance)
+	close(startBarrier)
+
+	// Collect all results
+	var restartErrors []error
+	for i := 0; i < numConcurrentRestarts; i++ {
+		err := <-results
+		if err != nil {
+			restartErrors = append(restartErrors, err)
+		}
+	}
+
+	// All restarts should succeed regardless of race condition
+	if len(restartErrors) > 0 {
+		t.Errorf("Expected all restarts to succeed, but got %d errors: %v", len(restartErrors), restartErrors)
+		return
+	}
+
+	// The key test: verify coalescing worked - no restart should be in progress
+	runner.restartMutex.Lock()
+	restartInProgress := runner.restartInProgress[testProcess]
+	hasWaiters := len(runner.restartWaitChannels[testProcess]) > 0
+	runner.restartMutex.Unlock()
+
+	if restartInProgress {
+		t.Error("No restart should be in progress after all requests completed")
+		return
+	}
+
+	if hasWaiters {
+		t.Error("No restart waiters should remain after all requests completed")
+		return
+	}
+
+	// Verify exactly one process is running after all concurrent restarts
+	state, err := runner.GetProcessState(testProcess)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	if state.Status != types.ProcessStateRunning {
+		t.Errorf("Process should be running after restarts, got status: %s", state.Status)
+		return
+	}
+
+	// Clean shutdown
+	err = runner.StopProcess(testProcess)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+}
