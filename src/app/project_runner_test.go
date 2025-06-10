@@ -252,3 +252,43 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 		})
 	}
 }
+
+func TestProjectRunner_GetName(t *testing.T) {
+	type fields struct{ Name string }
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "ShouldBe_project name",
+			fields: fields{Name: "project name"},
+			want:   "project name",
+		},
+		{
+			name: "ShouldBe_app",
+			want: "app",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &ProjectRunner{
+				project: &types.Project{
+					Name: tt.fields.Name,
+				},
+			}
+
+			got, err := p.GetName()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ProjectRunner.GetName() error = %v, wantErr %v", err, nil)
+				return
+			}
+
+			if got != tt.want {
+				t.Errorf("ProjectRunner.GetName() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}

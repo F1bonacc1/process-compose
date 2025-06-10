@@ -13,6 +13,7 @@ import (
 
 var (
 	Version           = "undefined"
+	Name              = "undefined"
 	Commit            = "undefined"
 	Date              = "undefined"
 	CheckForUpdates   = "false"

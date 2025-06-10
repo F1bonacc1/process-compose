@@ -25,6 +25,7 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 
 	r.GET("/live", handler.IsAlive)
 	r.GET("/hostname", handler.GetHostName)
+	r.GET("/name", handler.GetName)
 	r.GET("/processes", handler.GetProcesses)
 	r.GET("/process/:name", handler.GetProcess)
 	r.GET("/process/info/:name", handler.GetProcessInfo)

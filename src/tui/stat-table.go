@@ -14,31 +14,37 @@ import (
 func (pv *pcView) createStatTable() *tview.Table {
 	table := tview.NewTable().SetBorders(false).SetSelectable(false, false)
 
-	table.SetCell(0, 0, tview.NewTableCell("Version:").
+	name := pv.getProjectName()
+	table.SetCell(0, 0, tview.NewTableCell("Name:").
 		SetSelectable(false))
-	table.SetCell(0, 1, tview.NewTableCell(config.Version).
+	table.SetCell(0, 1, tview.NewTableCell(name).
 		SetSelectable(false).SetExpansion(1))
 
-	table.SetCell(1, 0, tview.NewTableCell(pv.getHostNameTitle()).
+	table.SetCell(1, 0, tview.NewTableCell("Version:").
+		SetSelectable(false))
+	table.SetCell(1, 1, tview.NewTableCell(config.Version).
+		SetSelectable(false).SetExpansion(1))
+
+	table.SetCell(2, 0, tview.NewTableCell(pv.getHostNameTitle()).
 		SetSelectable(false))
 	hostname := pv.getHostName()
-	table.SetCell(1, 1, tview.NewTableCell(hostname).
+	table.SetCell(2, 1, tview.NewTableCell(hostname).
 		SetSelectable(false).
 		SetExpansion(1))
 
-	table.SetCell(2, 0, tview.NewTableCell("Processes:").
+	table.SetCell(3, 0, tview.NewTableCell("Processes:").
 		SetSelectable(false))
 	pv.procCountCell = tview.NewTableCell(strconv.Itoa(len(pv.procNames))).
 		SetSelectable(false).
 		SetExpansion(1)
-	table.SetCell(2, 1, pv.procCountCell)
+	table.SetCell(3, 1, pv.procCountCell)
 	pv.procMemCpuCell = tview.NewTableCell("").
 		SetSelectable(false).
 		SetExpansion(1)
-	table.SetCell(2, 2, tview.NewTableCell(""))
-	table.SetCell(3, 0, tview.NewTableCell("RAM | CPU:").
+	table.SetCell(3, 2, tview.NewTableCell(""))
+	table.SetCell(4, 0, tview.NewTableCell("RAM | CPU:").
 		SetSelectable(false))
-	table.SetCell(3, 1, pv.procMemCpuCell)
+	table.SetCell(4, 1, pv.procMemCpuCell)
 	table.SetCell(0, 2, tview.NewTableCell("").
 		SetSelectable(false).
 		SetAlign(tview.AlignCenter).
@@ -78,6 +84,16 @@ func (pv *pcView) getHostNameTitle() string {
 	} else {
 		return "Hostname:"
 	}
+}
+
+func (pv *pcView) getProjectName() string {
+	name, err := pv.project.GetName()
+	if err != nil {
+		log.Err(err).Msg("Unable to retrieve name")
+		return "Unknown"
+	}
+	return name
+
 }
 
 // AttentionMessage shows an attention message in the status table

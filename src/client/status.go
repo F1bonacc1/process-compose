@@ -20,8 +20,11 @@ func (p *PcClient) isAlive() error {
 	return nil
 }
 
-func (p *PcClient) getHostName() (string, error) {
-	url := fmt.Sprintf("http://%s/hostname", p.address)
+func (p *PcClient) getHostName() (string, error) { return p.getAttribute("hostname", "name") }
+func (p *PcClient) getName() (string, error)     { return p.getAttribute("name", "projectName") }
+
+func (p *PcClient) getAttribute(path, name string) (string, error) {
+	url := fmt.Sprintf("http://%s/%s", p.address, path)
 	resp, err := p.client.Get(url)
 	if err != nil {
 		return "", err
@@ -37,5 +40,5 @@ func (p *PcClient) getHostName() (string, error) {
 		log.Err(err).Send()
 		return "", err
 	}
-	return nameMap["name"], nil
+	return nameMap[name], nil
 }

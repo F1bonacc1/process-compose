@@ -14,6 +14,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"os/user"
+	"path"
 	"runtime"
 	"slices"
 	"strings"
@@ -598,6 +599,20 @@ func (p *ProjectRunner) GetHostName() (string, error) {
 	return p.projectState.HostName, nil
 }
 
+func (p *ProjectRunner) GetName() (string, error) {
+	if n := p.project.Name; n != "" {
+		return n, nil
+	}
+
+	name, err := os.Getwd()
+	if err != nil {
+		err = fmt.Errorf("error retrieving current directory name: %w", err)
+		return "", err
+	}
+
+	return path.Base(name), nil
+}
+
 func (p *ProjectRunner) getProcessLog(name string) (*pclog.ProcessLogBuffer, error) {
 	if procLogs, ok := p.processLogs[name]; ok {
 		return procLogs, nil
@@ -934,6 +949,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 			UserName:  username,
 			HostName:  hostname,
 			Version:   config.Version,
+			Name:      config.Name,
 		},
 	}
 
