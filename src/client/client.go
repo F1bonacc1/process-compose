@@ -71,6 +71,10 @@ func (p *PcClient) GetHostName() (string, error) {
 	return p.getHostName()
 }
 
+func (p *PcClient) GetName() (string, error) {
+	return p.getName()
+}
+
 func (p *PcClient) GetLogLength() int {
 	return p.logLength
 }

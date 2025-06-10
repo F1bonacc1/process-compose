@@ -39,3 +39,23 @@ func (p *PcClient) getHostName() (string, error) {
 	}
 	return nameMap["name"], nil
 }
+
+func (p *PcClient) getName() (string, error) {
+	url := fmt.Sprintf("http://%s/name", p.address)
+	resp, err := p.client.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status %s", resp.Status)
+	}
+
+	nameMap := map[string]string{}
+	//Decode the data
+	if err = json.NewDecoder(resp.Body).Decode(&nameMap); err != nil {
+		log.Err(err).Send()
+		return "", err
+	}
+	return nameMap["projectName"], nil
+}

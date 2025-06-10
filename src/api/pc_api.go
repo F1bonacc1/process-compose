@@ -308,6 +308,25 @@ func (api *PcApi) GetHostName(c *gin.Context) {
 }
 
 // @Schemes
+// @Id				GetName
+// @Description	Get process compose project name
+// @Tags			Name
+// @Summary		Get Name
+// @Produce		json
+// @Success		200	{object}	map[string]string	"Name"
+// @Failure		400	{object}	map[string]string
+// @Router			/name [get]
+func (api *PcApi) GetName(c *gin.Context) {
+	name, err := api.project.GetName()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"projectName": name})
+}
+
+// @Schemes
 // @Id				GetProcessPorts
 // @Description	Retrieves process open ports
 // @Tags			Process

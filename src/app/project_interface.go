@@ -11,6 +11,7 @@ type IProject interface {
 	IsRemote() bool
 	ErrorForSecs() int
 	GetHostName() (string, error)
+	GetName() (string, error)
 	GetProjectState(checkMem bool) (*types.ProjectState, error)
 
 	GetLogLength() int
