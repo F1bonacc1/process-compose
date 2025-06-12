@@ -37,6 +37,7 @@ func init() {
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("shortcuts"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("logs-truncate"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("dry-run"))
+	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("bad-metrics"))
 	upCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
 	upCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
 	upCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))

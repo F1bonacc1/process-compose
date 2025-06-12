@@ -42,6 +42,7 @@ const (
 	EnvVarDisableDotEnv  = "PC_DISABLE_DOTENV"
 	EnvVarTuiFullScreen  = "PC_TUI_FULL_SCREEN"
 	EnvVarHideDisabled   = "PC_HIDE_DISABLED_PROC"
+	EnvVarBadMetrics     = "PC_BAD_METRICS"
 )
 
 // Flags represents PC configuration flags.
@@ -84,6 +85,7 @@ type Flags struct {
 	WaitReady         *bool
 	ShortVersion      *bool
 	LogsTruncate      *bool
+	BadMetrics        *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -123,6 +125,7 @@ func NewFlags() *Flags {
 		WaitReady:         toPtr(false),
 		ShortVersion:      toPtr(false),
 		LogsTruncate:      toPtr(false),
+		BadMetrics:        toPtr(getBadMetricsEnvDefault()),
 	}
 }
 

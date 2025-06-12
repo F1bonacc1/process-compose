@@ -55,6 +55,7 @@ type ProjectRunner struct {
 	disableDotenv     bool
 	truncateLogs      bool
 	refRate           time.Duration
+	badMetrics        bool
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -143,6 +144,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withExtraArgs(extraArgs),
 		withLogsTruncate(p.truncateLogs),
 		withRefRate(p.refRate),
+		withBadMetrics(p.badMetrics),
 	)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
@@ -928,6 +930,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		disableDotenv:     opts.disableDotenv,
 		truncateLogs:      opts.truncateLogs,
 		refRate:           opts.refRate,
+		badMetrics:        opts.badMetrics,
 		projectState: &types.ProjectState{
 			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),
