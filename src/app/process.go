@@ -82,6 +82,7 @@ type Process struct {
 	metricsProc         *puproc.Process
 	lastStatusPoll      time.Time
 	refRate             time.Duration
+	badMetrics          bool
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
@@ -580,9 +581,11 @@ func (p *Process) getResourceUsage() (int64, float64) {
 	if p.metricsProc == nil {
 		return -1, -1
 	}
-	totalMem, totalCpu := p.getProcResourcesRecursive(p.metricsProc)
+	if p.badMetrics {
+		return p.getProcResources(p.metricsProc)
+	}
 
-	return totalMem, totalCpu
+	return p.getProcResourcesRecursive(p.metricsProc)
 }
 
 // recursively get the memory and cpu usage of the process and its children

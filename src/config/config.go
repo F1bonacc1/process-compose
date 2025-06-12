@@ -238,3 +238,8 @@ func getHideDisabledDefault() bool {
 	_, found := os.LookupEnv(EnvVarHideDisabled)
 	return found
 }
+
+func getBadMetricsEnvDefault() bool {
+	_, found := os.LookupEnv(EnvVarBadMetrics)
+	return found
+}

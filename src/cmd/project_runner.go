@@ -33,7 +33,8 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 			WithOrderedShutDown(*pcFlags.IsOrderedShutDown).
 			WithNoDeps(noDeps).
 			WithLogTruncate(*pcFlags.LogsTruncate).
-			WithSlowRefRate(*pcFlags.SlowRefreshRate),
+			WithSlowRefRate(*pcFlags.SlowRefreshRate).
+			WithBadMetrics(*pcFlags.BadMetrics),
 	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize the project")

@@ -16,6 +16,7 @@ type ProjectOpts struct {
 	disableDotenv     bool
 	truncateLogs      bool
 	refRate           time.Duration
+	badMetrics        bool
 }
 
 func (p *ProjectOpts) WithProject(project *types.Project) *ProjectOpts {
@@ -64,5 +65,10 @@ func (p *ProjectOpts) WithLogTruncate(truncateLogs bool) *ProjectOpts {
 
 func (p *ProjectOpts) WithSlowRefRate(refRate time.Duration) *ProjectOpts {
 	p.refRate = refRate
+	return p
+}
+
+func (p *ProjectOpts) WithBadMetrics(badMetrics bool) *ProjectOpts {
+	p.badMetrics = badMetrics
 	return p
 }
