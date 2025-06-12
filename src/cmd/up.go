@@ -29,6 +29,7 @@ func init() {
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("config"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("env"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("ref-rate"))
+	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("slow-ref-rate"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("tui"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("hide-disabled"))
 	upCmd.Flags().AddFlag(rootCmd.Flags().Lookup("disable-dotenv"))
