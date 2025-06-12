@@ -30,6 +30,7 @@ process-compose up [PROCESS...] [flags]
   -r, --ref-rate duration       TUI refresh interval in seconds or as a Go duration string (e.g. 1s) (default 1)
   -R, --reverse                 sort in reverse order
       --shortcuts stringArray   paths to shortcut config files to load (env: PC_SHORTCUTS_FILES) (default [/home/<user>/.config/process-compose/shortcuts.yml])
+      --slow-ref-rate duration   Slow(er) refresh interval for resources (CPU, RAM) in seconds or as a Go duration string (e.g. 1s). The value should be higher than --ref-rate (default 1)
   -S, --sort string             sort column name. legal values (case insensitive): [AGE, CPU, EXIT, HEALTH, MEM, NAME, NAMESPACE, PID, RESTARTS, STATUS] (default "NAME")
       --theme string            select process compose theme (default "Default")
   -t, --tui                     enable TUI (disable with -t=false) (env: PC_DISABLE_TUI) (default true)
@@ -50,4 +51,3 @@ process-compose up [PROCESS...] [flags]
 ### SEE ALSO
 
 * [process-compose](process-compose.md)	 - Processes scheduler and orchestrator
-
