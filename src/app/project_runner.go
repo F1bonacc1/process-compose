@@ -32,29 +32,30 @@ func (e *ExitError) Error() string {
 }
 
 type ProjectRunner struct {
-	procConfMutex     sync.Mutex
-	project           *types.Project
-	logsMutex         sync.Mutex
-	processLogs       map[string]*pclog.ProcessLogBuffer
-	statesMutex       sync.Mutex
-	processStates     map[string]*types.ProcessState
-	runProcMutex      sync.Mutex
-	runningProcesses  map[string]*Process
-	doneProcMutex     sync.Mutex
-	doneProcesses     map[string]*Process
-	logger            pclog.PcLogger
-	waitGroup         sync.WaitGroup
-	exitCode          int
-	projectState      *types.ProjectState
-	mainProcess       string
-	mainProcessArgs   []string
-	isTuiOn           bool
-	isOrderedShutDown bool
-	ctxApp            context.Context
-	cancelAppFn       context.CancelFunc
-	disableDotenv     bool
-	truncateLogs      bool
-	refRate           time.Duration
+	procConfMutex        sync.Mutex
+	project              *types.Project
+	logsMutex            sync.Mutex
+	processLogs          map[string]*pclog.ProcessLogBuffer
+	statesMutex          sync.Mutex
+	processStates        map[string]*types.ProcessState
+	runProcMutex         sync.Mutex
+	runningProcesses     map[string]*Process
+	doneProcMutex        sync.Mutex
+	doneProcesses        map[string]*Process
+	logger               pclog.PcLogger
+	waitGroup            sync.WaitGroup
+	exitCode             int
+	projectState         *types.ProjectState
+	mainProcess          string
+	mainProcessArgs      []string
+	isTuiOn              bool
+	isOrderedShutDown    bool
+	ctxApp               context.Context
+	cancelAppFn          context.CancelFunc
+	disableDotenv        bool
+	truncateLogs         bool
+	refRate              time.Duration
+	withRecursiveMetrics bool
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -143,6 +144,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withExtraArgs(extraArgs),
 		withLogsTruncate(p.truncateLogs),
 		withRefRate(p.refRate),
+		withRecursiveMetrics(p.withRecursiveMetrics),
 	)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
@@ -920,14 +922,15 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		username = current.Username
 	}
 	runner := &ProjectRunner{
-		project:           opts.project,
-		mainProcess:       opts.mainProcess,
-		mainProcessArgs:   opts.mainProcessArgs,
-		isTuiOn:           opts.isTuiOn,
-		isOrderedShutDown: opts.isOrderedShutDown,
-		disableDotenv:     opts.disableDotenv,
-		truncateLogs:      opts.truncateLogs,
-		refRate:           opts.refRate,
+		project:              opts.project,
+		mainProcess:          opts.mainProcess,
+		mainProcessArgs:      opts.mainProcessArgs,
+		isTuiOn:              opts.isTuiOn,
+		isOrderedShutDown:    opts.isOrderedShutDown,
+		disableDotenv:        opts.disableDotenv,
+		truncateLogs:         opts.truncateLogs,
+		refRate:              opts.refRate,
+		withRecursiveMetrics: opts.withRecursiveMetrics,
 		projectState: &types.ProjectState{
 			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),

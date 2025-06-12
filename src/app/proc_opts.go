@@ -86,3 +86,9 @@ func withRefRate(refRate time.Duration) ProcOpts {
 		proc.refRate = refRate
 	}
 }
+
+func withRecursiveMetrics(withRecursiveMetrics bool) ProcOpts {
+	return func(proc *Process) {
+		proc.withRecursiveMetrics = withRecursiveMetrics
+	}
+}

@@ -100,6 +100,7 @@ func init() {
 	rootCmd.Flags().BoolVar(pcFlags.DisableDotEnv, "disable-dotenv", *pcFlags.DisableDotEnv, "disable .env file loading (env: "+config.EnvVarDisableDotEnv+"=1)")
 	rootCmd.Flags().BoolVar(pcFlags.IsTuiFullScreen, "tui-fs", *pcFlags.IsTuiFullScreen, "enable TUI full screen (env: "+config.EnvVarTuiFullScreen+"=1)")
 	rootCmd.Flags().BoolVar(pcFlags.LogsTruncate, "logs-truncate", *pcFlags.LogsTruncate, "truncate process logs buffer on startup")
+	rootCmd.Flags().BoolVar(pcFlags.WithRecursiveMetrics, "recursive-metrics", *pcFlags.WithRecursiveMetrics, "collect metrics recursively (env: "+config.EnvVarWithRecursiveMetrics+")")
 	rootCmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "validate the config and exit")
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
