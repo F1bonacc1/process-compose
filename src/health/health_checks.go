@@ -3,6 +3,7 @@ package health
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"sync/atomic"
 	"time"
 
@@ -104,14 +105,26 @@ func (p *Prober) addProber(factory func() (health.ICheckable, error)) error {
 }
 
 func (p *Prober) getHttpChecker() (health.ICheckable, error) {
-	url, err := p.probe.HttpGet.getUrl()
+	httpGet := p.probe.HttpGet
+	url, err := httpGet.getUrl()
 	if err != nil {
 		return nil, err
 	}
-	checker, err := checkers.NewHTTP(&checkers.HTTPConfig{
-		URL:     url,
-		Timeout: time.Duration(p.probe.TimeoutSeconds) * time.Second,
-	})
+
+	config := &checkers.HTTPConfig{
+		URL:        url,
+		Timeout:    time.Duration(p.probe.TimeoutSeconds) * time.Second,
+		StatusCode: httpGet.StatusCode,
+	}
+
+	if len(httpGet.Headers) > 0 {
+		config.Headers = http.Header{}
+		for k, v := range httpGet.Headers {
+			config.Headers.Set(k, v)
+		}
+	}
+
+	checker, err := checkers.NewHTTP(config)
 	if err != nil {
 		return nil, err
 	}

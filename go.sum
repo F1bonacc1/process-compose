@@ -40,8 +40,8 @@ github.com/ebitengine/purego v0.8.4 h1:CF7LEKg5FFOsASUj0+QwaXf8Ht6TlFxg09+S9wz0o
 github.com/ebitengine/purego v0.8.4/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f h1:8KqHyOl+UXnjMWHRdwqvvaapPWH8Nxf69jg5DLh2FAE=
 github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f/go.mod h1:4FvlEkhBa/BJMEuMGVlocGYDJAvO7FwhJhHH9MY6vaM=
-github.com/f1bonacc1/go-health/v2 v2.1.4 h1:dnxNmyzIO5tGuL0ywXw1gXhBLWQnnhy6lBZvbPbEiYc=
-github.com/f1bonacc1/go-health/v2 v2.1.4/go.mod h1:FVZ3LZI4p+/XmkUQo9xAyvJaIoSVnr2iiq9AtFCXSc0=
+github.com/f1bonacc1/go-health/v2 v2.1.5-0.20250716071924-704bdc47a43a h1:wflXER53KUDJvukg+zeyLpq1EQHt776kEEEvOZ4Upfw=
+github.com/f1bonacc1/go-health/v2 v2.1.5-0.20250716071924-704bdc47a43a/go.mod h1:FVZ3LZI4p+/XmkUQo9xAyvJaIoSVnr2iiq9AtFCXSc0=
 github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7 h1:CNJScrucGEDyOro3AJabLI7Vvb0XbvGiwwB3eC/LTd8=
 github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7/go.mod h1:jtAfVaU/2cu1+wdSRPWE2c1N2qeAA3K4RH9pYgqwets=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=

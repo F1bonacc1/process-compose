@@ -14,6 +14,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/gdamore/tcell/v2 v2.8.1
 	github.com/gin-gonic/gin v1.10.0
+	github.com/google/go-cmp v0.7.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/invopop/jsonschema v0.13.0
 	github.com/joho/godotenv v1.5.1
@@ -28,7 +29,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2 v2.1.4
+replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2 v2.1.5-0.20250716071924-704bdc47a43a
 
 replace github.com/cakturk/go-netstat => github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7
 
