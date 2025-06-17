@@ -25,6 +25,21 @@ func TestProber_getHttpChecker(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name:   "Happy path: default http probe",
+			fields: fields{Probe: Probe{HttpGet: &HttpProbe{}}},
+			want: &checkers.HTTP{Config: &checkers.HTTPConfig{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "127.0.0.1",
+					Path:   "/",
+				},
+				Method:     http.MethodGet,
+				StatusCode: 200,
+				Client:     &http.Client{Timeout: time.Second},
+				Timeout:    time.Second,
+			}},
+		},
+		{
 			name: "Happy path: include headers in http probe",
 			fields: fields{
 				Name:  "http",
@@ -46,19 +61,24 @@ func TestProber_getHttpChecker(t *testing.T) {
 			},
 		},
 		{
-			name:   "Happy path: no headers in http probe",
-			fields: fields{Probe: Probe{HttpGet: &HttpProbe{}}},
-			want: &checkers.HTTP{Config: &checkers.HTTPConfig{
-				URL: &url.URL{
-					Scheme: "http",
-					Host:   "127.0.0.1",
-					Path:   "/",
+			name: "Happy path: include status in http probe",
+			fields: fields{
+				Name:  "http",
+				Probe: Probe{HttpGet: &HttpProbe{StatusCode: 204}},
+			},
+			want: &checkers.HTTP{
+				Config: &checkers.HTTPConfig{
+					URL: &url.URL{
+						Scheme: "http",
+						Host:   "127.0.0.1",
+						Path:   "/",
+					},
+					Method:     http.MethodGet,
+					StatusCode: 204,
+					Client:     &http.Client{Timeout: time.Second},
+					Timeout:    time.Second,
 				},
-				Method:     http.MethodGet,
-				StatusCode: 200,
-				Client:     &http.Client{Timeout: time.Second},
-				Timeout:    time.Second,
-			}},
+			},
 		},
 	}
 
