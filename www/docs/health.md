@@ -60,6 +60,8 @@ Each probe type (`liveness_probe` or `readiness_probe`) can be configured to use
    - `scheme`: Scheme to use for connecting to the host (HTTP or HTTPS). Defaults to HTTP.
    - `path`: Path to access on the HTTP server. Defaults to /.
    - `port`: Number of port to access the process. The number must be in the range 1 to 65535.
+   - `headers`: Optional headers to send.
+   - `status_code`: Optional. Defaults to 200.
 
 ## Configure Probes
 

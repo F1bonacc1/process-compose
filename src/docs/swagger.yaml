@@ -9,6 +9,10 @@ components:
             type: object
         health.HttpProbe:
             properties:
+                headers:
+                    additionalProperties:
+                        type: string
+                    type: object
                 host:
                     type: string
                 numPort:
@@ -19,6 +23,8 @@ components:
                     type: string
                 scheme:
                     type: string
+                statusCode:
+                    type: integer
             type: object
         health.Probe:
             properties:

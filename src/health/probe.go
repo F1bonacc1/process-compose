@@ -2,6 +2,7 @@ package health
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -23,11 +24,13 @@ type ExecProbe struct {
 }
 
 type HttpProbe struct {
-	Host    string `yaml:"host,omitempty"`
-	Path    string `yaml:"path,omitempty"`
-	Scheme  string `yaml:"scheme,omitempty"`
-	Port    string `yaml:"port,omitempty"`
-	NumPort int    `yaml:"num_port,omitempty"`
+	Host       string            `yaml:"host,omitempty"`
+	Path       string            `yaml:"path,omitempty"`
+	Scheme     string            `yaml:"scheme,omitempty"`
+	Port       string            `yaml:"port,omitempty"`
+	NumPort    int               `yaml:"num_port,omitempty"`
+	Headers    map[string]string `yaml:"headers,omitempty"`
+	StatusCode int               `yaml:"status_code,omitempty"`
 }
 
 func (h *HttpProbe) getUrl() (*url.URL, error) {
@@ -81,5 +84,8 @@ func (p *HttpProbe) validateAndSetHttpDefaults() {
 	if p.NumPort < 1 || p.NumPort > 65535 {
 		// if undefined or wrong value - will be treated as undefined
 		p.NumPort = 0
+	}
+	if p.StatusCode < 1 || p.StatusCode >= 400 {
+		p.StatusCode = http.StatusOK
 	}
 }

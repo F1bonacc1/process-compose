@@ -739,6 +739,12 @@ const docTemplate = `{
         "health.HttpProbe": {
             "type": "object",
             "properties": {
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "host": {
                     "type": "string"
                 },
@@ -753,6 +759,9 @@ const docTemplate = `{
                 },
                 "scheme": {
                     "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
                 }
             }
         },
