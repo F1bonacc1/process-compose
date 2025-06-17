@@ -40,8 +40,6 @@ github.com/ebitengine/purego v0.8.4 h1:CF7LEKg5FFOsASUj0+QwaXf8Ht6TlFxg09+S9wz0o
 github.com/ebitengine/purego v0.8.4/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f h1:8KqHyOl+UXnjMWHRdwqvvaapPWH8Nxf69jg5DLh2FAE=
 github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f/go.mod h1:4FvlEkhBa/BJMEuMGVlocGYDJAvO7FwhJhHH9MY6vaM=
-github.com/f1bonacc1/go-health/v2 v2.1.4 h1:dnxNmyzIO5tGuL0ywXw1gXhBLWQnnhy6lBZvbPbEiYc=
-github.com/f1bonacc1/go-health/v2 v2.1.4/go.mod h1:FVZ3LZI4p+/XmkUQo9xAyvJaIoSVnr2iiq9AtFCXSc0=
 github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7 h1:CNJScrucGEDyOro3AJabLI7Vvb0XbvGiwwB3eC/LTd8=
 github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7/go.mod h1:jtAfVaU/2cu1+wdSRPWE2c1N2qeAA3K4RH9pYgqwets=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
@@ -98,6 +96,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/invopop/jsonschema v0.13.0 h1:KvpoAJWEjR3uD9Kbm2HWJmqsEaHt8lBUpd0qHcIi21E=
 github.com/invopop/jsonschema v0.13.0/go.mod h1:ffZ5Km5SWWRAIN6wbDXItl95euhFz2uON45H2qjYt+0=
+github.com/jcmuller/go-health/v2 v2.0.0-20250616135815-56b1ae072de9 h1:Xy48eSgrMXArB0B4pd2PDCn1MwB+gUmvwMKZKq7A1Kw=
+github.com/jcmuller/go-health/v2 v2.0.0-20250616135815-56b1ae072de9/go.mod h1:FVZ3LZI4p+/XmkUQo9xAyvJaIoSVnr2iiq9AtFCXSc0=
 github.com/jezek/xgb v1.1.1 h1:bE/r8ZZtSv7l9gk6nU0mYx51aXrvnyb44892TwSaqS4=
 github.com/jezek/xgb v1.1.1/go.mod h1:nrhwO0FX/enq75I7Y7G8iN1ubpSGZEiA3v9e9GyRFlk=
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
