@@ -2,6 +2,7 @@ package health
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -23,11 +24,12 @@ type ExecProbe struct {
 }
 
 type HttpProbe struct {
-	Host    string `yaml:"host,omitempty"`
-	Path    string `yaml:"path,omitempty"`
-	Scheme  string `yaml:"scheme,omitempty"`
-	Port    string `yaml:"port,omitempty"`
-	NumPort int    `yaml:"num_port,omitempty"`
+	Host    string      `yaml:"host,omitempty"`
+	Path    string      `yaml:"path,omitempty"`
+	Scheme  string      `yaml:"scheme,omitempty"`
+	Port    string      `yaml:"port,omitempty"`
+	NumPort int         `yaml:"num_port,omitempty"`
+	Headers http.Header `yaml:"headers,omitempty"`
 }
 
 func (h *HttpProbe) getUrl() (*url.URL, error) {

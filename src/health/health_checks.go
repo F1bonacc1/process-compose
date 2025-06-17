@@ -111,6 +111,7 @@ func (p *Prober) getHttpChecker() (health.ICheckable, error) {
 	checker, err := checkers.NewHTTP(&checkers.HTTPConfig{
 		URL:     url,
 		Timeout: time.Duration(p.probe.TimeoutSeconds) * time.Second,
+		Headers: p.probe.HttpGet.Headers,
 	})
 	if err != nil {
 		return nil, err
