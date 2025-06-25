@@ -8,6 +8,7 @@ require (
 	github.com/adrg/xdg v0.5.3
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/creack/pty v1.1.24
+	github.com/drone/envsubst v1.0.3
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
 	github.com/fatih/color v1.18.0
 	github.com/gdamore/tcell/v2 v2.8.1
