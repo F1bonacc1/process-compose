@@ -49,11 +49,11 @@ type (
 		LaunchTimeout     int                    `yaml:"launch_timeout_seconds,omitempty"`
 		IsDisabled        string                 `yaml:"is_disabled,omitempty"`
 		DisableDotEnv     bool                   `yaml:"is_dotenv_disabled,omitempty"`
-		OriginalConfig    string
-		ReplicaNum        int
-		ReplicaName       string
-		Executable        string
-		Args              []string
+		OriginalConfig    string                 `yaml:"original_config,omitempty"`
+		ReplicaNum        int                    `yaml:"replica_num,omitempty"`
+		ReplicaName       string                 `yaml:"replica_name,omitempty"`
+		Executable        string                 `yaml:"executable,omitempty"`
+		Args              []string               `yaml:"args,omitempty"`
 	}
 )
 
