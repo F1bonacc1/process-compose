@@ -1,10 +1,12 @@
 package app
 
 import (
-	"github.com/f1bonacc1/process-compose/src/types"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/f1bonacc1/process-compose/src/templater"
+	"github.com/f1bonacc1/process-compose/src/types"
 )
 
 func TestProject_GetDependenciesOrderNames(t *testing.T) {
@@ -291,5 +293,54 @@ func TestProjectRunner_GetProjectName(t *testing.T) {
 				t.Errorf("ProjectRunner.GetProjectName() = %s, want %s", got, tt.want)
 			}
 		})
+func TestProjectRunner_EnvironmentExpansion(t *testing.T) {
+	testProcess := types.ProcessConfig{
+		Vars: map[string]interface{}{
+			"PROCESS_VAR": "process_value",
+		},
+		Name:    "test-process",
+		Command: "echo hello",
+		Environment: []string{
+			"LOCAL_VAR={{.GLOBAL_VAR}}",
+			"PROCESS_VAR={{.PROCESS_VAR}}",
+			"ANOTHER_VAR=fixed_value",
+		},
+	}
+	p := &types.Project{
+		Vars: map[string]interface{}{
+			"GLOBAL_VAR": "global_value",
+		},
+		Processes: map[string]types.ProcessConfig{
+			"test-process": testProcess,
+		},
+	}
+
+	tpl := templater.New(p.Vars)
+	for name, proc := range p.Processes {
+		tpl.RenderProcess(&proc)
+		p.Processes[name] = proc
+	}
+
+	expectedEnv := map[string]string{
+		"LOCAL_VAR":   "global_value",
+		"PROCESS_VAR": "process_value",
+		"ANOTHER_VAR": "fixed_value",
+	}
+
+	actualEnv := make(map[string]string)
+	for _, envVar := range testProcess.Environment {
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) == 2 {
+			actualEnv[parts[0]] = parts[1]
+		}
+	}
+
+	// Assert environment variables are correctly expanded
+	for key, expectedValue := range expectedEnv {
+		if actualValue, ok := actualEnv[key]; !ok {
+			t.Errorf("Expected environment variable %s not found", key)
+		} else if actualValue != expectedValue {
+			t.Errorf("Environment variable %s: expected %s, got %s", key, expectedValue, actualValue)
+		}
 	}
 }
