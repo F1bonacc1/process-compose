@@ -33,6 +33,11 @@ func (t *Templater) RenderProcess(proc *types.ProcessConfig) {
 	proc.WorkingDir = t.RenderWithExtraVars(proc.WorkingDir, proc.Vars)
 	proc.LogLocation = t.RenderWithExtraVars(proc.LogLocation, proc.Vars)
 	proc.Description = t.RenderWithExtraVars(proc.Description, proc.Vars)
+
+	for i, envVar := range proc.Environment {
+		proc.Environment[i] = t.RenderWithExtraVars(envVar, proc.Vars)
+	}
+
 	t.renderProbe(proc.ReadinessProbe, proc)
 	t.renderProbe(proc.LivenessProbe, proc)
 }
