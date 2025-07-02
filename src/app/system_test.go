@@ -495,7 +495,7 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
-		want := 3
+		want := 4
 		if len(states.States) != want {
 			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
 		}
@@ -529,7 +529,7 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 				order = append(order, line)
 			}
 		}
-		wantOrder := []string{"C: exit", "B: exit", "A: exit"}
+		wantOrder := []string{"B: exit", "D: exit", "C: exit", "A: exit"}
 		if !slices.Equal(order, wantOrder) {
 			t.Errorf("content = %v, want %v", order, wantOrder)
 			return
