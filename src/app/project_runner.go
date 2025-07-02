@@ -481,9 +481,9 @@ func (p *ProjectRunner) runningProcessesReverseDependencies() map[string]map[str
 			if runningProc, ok := p.runningProcesses[k]; ok {
 				if _, ok := reverseDependencies[runningProc.getName()]; !ok {
 					dep := make(map[string]*Process)
-					dep[process.getName()] = process
 					reverseDependencies[runningProc.getName()] = dep
 				}
+                reverseDependencies[runningProc.getName()][process.getName()] = process
 			} else {
 				continue
 			}

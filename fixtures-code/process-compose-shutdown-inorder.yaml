@@ -16,8 +16,11 @@ processes:
       echo "B: starting"
       sleep 3
     depends_on:
-      procA:
+      procC:
         condition: process_started
+      procD:
+        condition: process_started
+
 
   procC:
     command: |
@@ -25,5 +28,14 @@ processes:
       echo "C: starting"
       sleep 3
     depends_on:
-      procB:
+      procA:
+        condition: process_started
+
+  procD:
+    command: |
+      trap 'echo "D: exit"' SIGTERM
+      echo "D: starting"
+      sleep 3
+    depends_on:
+      procA:
         condition: process_started
