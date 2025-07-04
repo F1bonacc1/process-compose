@@ -399,6 +399,9 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 		if p.isOneOfStates(types.ProcessStatePending) {
 			p.onProcessEnd(types.ProcessStateTerminating)
 		}
+		if cancelReadinessFuncs {
+			p.readyLogCancelFn(fmt.Errorf("process completed, cannot produce log lines"))
+		}
 		return nil
 	}
 	p.setState(types.ProcessStateTerminating)
