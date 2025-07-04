@@ -87,7 +87,7 @@ func init() {
 	rootCmd.Flags().BoolVar(pcFlags.KeepTuiOn, "keep-tui", *pcFlags.KeepTuiOn, "keep TUI running even after all processes exit")
 	rootCmd.Flags().BoolVar(pcFlags.KeepProjectOn, "keep-project", *pcFlags.KeepProjectOn, "keep the project running even after all processes exit")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.NoServer, "no-server", *pcFlags.NoServer, "disable HTTP server (env: "+config.EnvVarNameNoServer+")")
-	rootCmd.PersistentFlags().BoolVar(pcFlags.IsOrderedShutDown, "ordered-shutdown", *pcFlags.IsOrderedShutDown, "shut down processes in reverse dependency order")
+	rootCmd.PersistentFlags().BoolVar(pcFlags.IsOrderedShutdown, "ordered-shutdown", *pcFlags.IsOrderedShutdown, "shut down processes in reverse dependency order")
 	rootCmd.Flags().BoolVarP(pcFlags.HideDisabled, "hide-disabled", "d", *pcFlags.HideDisabled, "hide disabled processes (env: "+config.EnvVarHideDisabled+")")
 	rootCmd.Flags().VarP(refreshRateFlag{pcFlags.RefreshRate}, "ref-rate", "r", "TUI refresh interval in seconds or as a Go duration string (e.g. 1s)")
 	rootCmd.Flags().Var(refreshRateFlag{pcFlags.SlowRefreshRate}, "slow-ref-rate", "Slow(er) refresh interval for resources (CPU, RAM) in seconds or as a Go duration string (e.g. 1s). The value should be higher than --ref-rate")

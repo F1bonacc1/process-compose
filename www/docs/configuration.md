@@ -502,6 +502,13 @@ processes:
 * To re-enter password mode, select the process again.
 * The entered password will be applied to all elevated processes in pending status.
 
+#### Ordered Shutdown
+```yaml
+ordered_shutdown: true
+```
+Shut down processes in reverse dependency order.
+> :bulb: ordered-shutdown can be passed as a command-line parameter when starting process-compose (see [CLI](/cli/process-compose/)), set permanently in `process-compose.yaml` (see this section), or by setting the environment variable `PC_ORDERED_SHUTDOWN`.
+
 
 #### Multiline Command Support
 Process Compose respects all the multiline `YAML` [specification](https://yaml-multiline.info/) variations. 

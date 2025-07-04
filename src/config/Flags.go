@@ -32,16 +32,17 @@ const (
 )
 
 const (
-	EnvVarNamePort       = "PC_PORT_NUM"
-	EnvVarNameTui        = "PC_DISABLE_TUI"
-	EnvVarNameConfig     = "PC_CONFIG_FILES"
-	EnvVarNameShortcuts  = "PC_SHORTCUTS_FILES"
-	EnvVarNameNoServer   = "PC_NO_SERVER"
-	EnvVarUnixSocketPath = "PC_SOCKET_PATH"
-	EnvVarReadOnlyMode   = "PC_READ_ONLY"
-	EnvVarDisableDotEnv  = "PC_DISABLE_DOTENV"
-	EnvVarTuiFullScreen  = "PC_TUI_FULL_SCREEN"
-	EnvVarHideDisabled   = "PC_HIDE_DISABLED_PROC"
+	EnvVarNamePort            = "PC_PORT_NUM"
+	EnvVarNameTui             = "PC_DISABLE_TUI"
+	EnvVarNameConfig          = "PC_CONFIG_FILES"
+	EnvVarNameShortcuts       = "PC_SHORTCUTS_FILES"
+	EnvVarNameNoServer        = "PC_NO_SERVER"
+	EnvVarUnixSocketPath      = "PC_SOCKET_PATH"
+	EnvVarReadOnlyMode        = "PC_READ_ONLY"
+	EnvVarDisableDotEnv       = "PC_DISABLE_DOTENV"
+	EnvVarTuiFullScreen       = "PC_TUI_FULL_SCREEN"
+	EnvVarHideDisabled        = "PC_HIDE_DISABLED_PROC"
+	EnvVarNameOrderedShutdown = "PC_ORDERED_SHUTDOWN"
 )
 
 // Flags represents PC configuration flags.
@@ -67,7 +68,7 @@ type Flags struct {
 	NoServer          *bool
 	KeepTuiOn         *bool
 	KeepProjectOn     *bool
-	IsOrderedShutDown *bool
+	IsOrderedShutdown *bool
 	PcTheme           *string
 	PcThemeChanged    bool
 	ShortcutPaths     *[]string
@@ -106,7 +107,7 @@ func NewFlags() *Flags {
 		NoServer:          toPtr(getNoServerDefault()),
 		KeepTuiOn:         toPtr(false),
 		KeepProjectOn:     toPtr(false),
-		IsOrderedShutDown: toPtr(false),
+		IsOrderedShutdown: toPtr(getOrderedShutdownDefault()),
 		PcTheme:           toPtr(DefaultThemeName),
 		ShortcutPaths:     toPtr(GetShortCutsPaths(nil)),
 		UnixSocketPath:    toPtr(""),

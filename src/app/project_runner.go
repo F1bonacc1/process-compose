@@ -49,7 +49,7 @@ type ProjectRunner struct {
 	mainProcess       string
 	mainProcessArgs   []string
 	isTuiOn           bool
-	isOrderedShutDown bool
+	isOrderedShutdown bool
 	ctxApp            context.Context
 	cancelAppFn       context.CancelFunc
 	disableDotenv     bool
@@ -521,7 +521,7 @@ func (p *ProjectRunner) shutDownInOrder(wg *sync.WaitGroup, shutdownOrder []*Pro
 
 func (p *ProjectRunner) shutDownAndWait(shutdownOrder []*Process) {
 	wg := sync.WaitGroup{}
-	if p.isOrderedShutDown {
+	if p.isOrderedShutdown {
 		p.shutDownInOrder(&wg, shutdownOrder)
 	} else {
 		for _, proc := range shutdownOrder {
@@ -546,7 +546,7 @@ func (p *ProjectRunner) ShutDownProject() error {
 	defer p.runProcMutex.Unlock()
 
 	shutdownOrder := []*Process{}
-	if p.isOrderedShutDown {
+	if p.isOrderedShutdown {
 		err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
 			if runningProc, ok := p.runningProcesses[process.ReplicaName]; ok {
 				shutdownOrder = append(shutdownOrder, runningProc)
@@ -924,7 +924,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		mainProcess:       opts.mainProcess,
 		mainProcessArgs:   opts.mainProcessArgs,
 		isTuiOn:           opts.isTuiOn,
-		isOrderedShutDown: opts.isOrderedShutDown,
+		isOrderedShutdown: opts.isOrderedShutdown,
 		disableDotenv:     opts.disableDotenv,
 		truncateLogs:      opts.truncateLogs,
 		refRate:           opts.refRate,

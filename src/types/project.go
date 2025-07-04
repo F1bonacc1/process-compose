@@ -24,6 +24,7 @@ type Project struct {
 	IsTuiDisabled       bool                 `yaml:"is_tui_disabled,omitempty"`
 	ExtendsProject      string               `yaml:"extends,omitempty"`
 	EnvCommands         EnvCmd               `yaml:"env_cmds,omitempty"`
+	IsOrderedShutdown   bool                 `yaml:"ordered_shutdown,omitempty"`
 	FileNames           []string
 	EnvFileNames        []string
 	DotEnvVars          map[string]string

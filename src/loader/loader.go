@@ -47,6 +47,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	mergedProject.FileNames = opts.FileNames
 	mergedProject.EnvFileNames = opts.EnvFileNames
 	mergedProject.IsTuiDisabled = opts.isTuiDisabled || mergedProject.IsTuiDisabled
+	mergedProject.IsOrderedShutdown = opts.isOrderedShutdown || mergedProject.IsOrderedShutdown
 	// If DryRun is set to validate the config, then force IsStrict to true:
 	mergedProject.IsStrict = opts.DryRun || mergedProject.IsStrict
 
