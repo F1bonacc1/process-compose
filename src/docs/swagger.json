@@ -366,14 +366,14 @@
                         },
                         "type": "array"
                     },
-                    "hostName": {
-                        "type": "string"
-                    },
                     "memoryState": {
                         "$ref": "#/components/schemas/types.MemoryState"
                     },
                     "processNum": {
                         "type": "integer"
+                    },
+                    "projectName": {
+                        "type": "string"
                     },
                     "runningProcessNum": {
                         "type": "integer"
@@ -454,44 +454,6 @@
     },
     "openapi": "3.0.3",
     "paths": {
-        "/hostname": {
-            "get": {
-                "description": "Get process compose hostname",
-                "operationId": "GetHostName",
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "Hostname"
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "Bad Request"
-                    }
-                },
-                "summary": "Get Hostname",
-                "tags": [
-                    "Hostname"
-                ]
-            }
-        },
         "/live": {
             "get": {
                 "description": "Check if server is responding",
@@ -1204,6 +1166,44 @@
                 "summary": "Reload project",
                 "tags": [
                     "Project"
+                ]
+            }
+        },
+        "/project/name": {
+            "get": {
+                "description": "Get process compose project name",
+                "operationId": "GetProjectName",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "ProjectName"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Get Project Name",
+                "tags": [
+                    "ProjectName"
                 ]
             }
         },

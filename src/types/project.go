@@ -10,6 +10,7 @@ type Vars map[string]any
 
 type Project struct {
 	Version             string               `yaml:"version"`
+	Name                string               `yaml:"name,omitempty"`
 	LogLocation         string               `yaml:"log_location,omitempty"`
 	LogLevel            string               `yaml:"log_level,omitempty"`
 	LogLength           int                  `yaml:"log_length,omitempty"`

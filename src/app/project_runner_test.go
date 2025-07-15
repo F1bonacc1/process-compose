@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -248,6 +249,46 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 			}
 			if !found && !tt.wantErr {
 				t.Errorf("Project.GetDependenciesOrderNames() = %v, want one of %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProjectRunner_GetProjectName(t *testing.T) {
+	type fields struct{ Name string }
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "ShouldContain_project name",
+			fields: fields{Name: "project name"},
+			want:   "project name",
+		},
+		{
+			name: "ShouldContain_app",
+			want: "app",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &ProjectRunner{
+				project: &types.Project{
+					Name: tt.fields.Name,
+				},
+			}
+
+			got, err := p.GetProjectName()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ProjectRunner.GetProjectName() error = %v, wantErr %v", err, nil)
+				return
+			}
+
+			if !strings.Contains(got, tt.want) {
+				t.Errorf("ProjectRunner.GetProjectName() = %s, want %s", got, tt.want)
 			}
 		})
 	}

@@ -289,22 +289,22 @@ func (api *PcApi) IsAlive(c *gin.Context) {
 }
 
 // @Schemes
-// @Id				GetHostName
-// @Description	Get process compose hostname
-// @Tags			Hostname
-// @Summary		Get Hostname
+// @Id				GetProjectName
+// @Description	Get process compose project name
+// @Tags			ProjectName
+// @Summary		Get Project Name
 // @Produce		json
-// @Success		200	{object}	map[string]string	"Hostname"
+// @Success		200	{object}	map[string]string	"ProjectName"
 // @Failure		400	{object}	map[string]string
-// @Router			/hostname [get]
-func (api *PcApi) GetHostName(c *gin.Context) {
-	name, err := api.project.GetHostName()
+// @Router			/project/name [get]
+func (api *PcApi) GetProjectName(c *gin.Context) {
+	name, err := api.project.GetProjectName()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"name": name})
+	c.JSON(http.StatusOK, gin.H{"projectName": name})
 }
 
 // @Schemes
