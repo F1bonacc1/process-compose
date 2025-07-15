@@ -878,6 +878,23 @@ const docTemplate = `{
                 }
             }
         },
+        "types.ProcessCondition": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-varnames": [
+                "ProcessConditionCompleted",
+                "ProcessConditionCompletedSuccessfully",
+                "ProcessConditionHealthy",
+                "ProcessConditionStarted",
+                "ProcessConditionLogReady"
+            ]
+        },
         "types.ProcessConfig": {
             "type": "object",
             "properties": {
@@ -993,7 +1010,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "condition": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.ProcessCondition"
                 },
                 "extensions": {
                     "type": "object",
@@ -1117,6 +1134,21 @@ const docTemplate = `{
                 }
             }
         },
+        "types.RestartPolicy": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "RestartPolicyNo",
+                "RestartPolicyAlways",
+                "RestartPolicyOnFailure",
+                "RestartPolicyExitOnFailure"
+            ]
+        },
         "types.RestartPolicyConfig": {
             "type": "object",
             "properties": {
@@ -1133,7 +1165,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "restart": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.RestartPolicy"
                 }
             }
         },
