@@ -14,6 +14,7 @@ process-compose [flags]
   -D, --detached                 run process-compose in detached mode
       --detached-with-tui        run process-compose in detached mode with TUI
       --disable-dotenv           disable .env file loading (env: PC_DISABLE_DOTENV=1)
+      --dry-run                  validate the config and exit
   -e, --env stringArray          path to env files to load (default [.env])
   -h, --help                     help for process-compose
   -d, --hide-disabled            hide disabled processes (env: PC_HIDE_DISABLED_PROC)
@@ -28,7 +29,7 @@ process-compose [flags]
       --recursive-metrics        collect metrics recursively (env: PC_RECURSIVE_METRICS)
   -r, --ref-rate duration        TUI refresh interval in seconds or as a Go duration string (e.g. 1s) (default 1)
   -R, --reverse                  sort in reverse order
-      --shortcuts stringArray    paths to shortcut config files to load (env: PC_SHORTCUTS_FILES) (default [/home/<user>/.config/process-compose/shortcuts.yml])
+      --shortcuts stringArray    paths to shortcut config files to load (env: PC_SHORTCUTS_FILES)
       --slow-ref-rate duration   Slow(er) refresh interval for resources (CPU, RAM) in seconds or as a Go duration string (e.g. 1s). The value should be higher than --ref-rate (default 1)
   -S, --sort string              sort column name. legal values (case insensitive): [AGE, CPU, EXIT, HEALTH, MEM, NAME, NAMESPACE, PID, RESTARTS, STATUS] (default "NAME")
       --theme string             select process compose theme (default "Default")
