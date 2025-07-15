@@ -14,6 +14,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"os/user"
+    "path"
 	"runtime"
 	"slices"
 	"strings"
@@ -596,8 +597,23 @@ func (p *ProjectRunner) ErrorForSecs() int {
 	return 0
 }
 
-func (p *ProjectRunner) GetHostName() (string, error) {
-	return p.projectState.HostName, nil
+func (p *ProjectRunner) GetProjectName() (string, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Err(err).Msg("Failed get hostname")
+		hostname = "unknown"
+	}
+
+	name := p.project.Name
+	if name == "" {
+		name, err = os.Getwd()
+		if err != nil {
+			log.Err(err).Msg("Failed get CWD")
+			name = "unknown"
+		}
+	}
+
+	return fmt.Sprintf("%s/%s", hostname, path.Base(name)), nil
 }
 
 func (p *ProjectRunner) getProcessLog(name string) (*pclog.ProcessLogBuffer, error) {
@@ -908,12 +924,6 @@ func bToMb(b uint64) uint64 {
 }
 
 func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Err(err).Msg("Failed get hostname")
-		hostname = "unknown"
-	}
 	current, err := user.Current()
 	username := "unknown-user"
 	if err != nil {
@@ -935,9 +945,15 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),
 			UserName:  username,
-			HostName:  hostname,
 			Version:   config.Version,
 		},
+	}
+
+	name, err := runner.GetProjectName()
+	if err != nil {
+		log.Err(err).Msg("Failed get project name")
+	} else {
+		runner.projectState.ProjectName = name
 	}
 
 	if opts.noDeps {

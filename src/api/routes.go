@@ -24,7 +24,6 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	})
 
 	r.GET("/live", handler.IsAlive)
-	r.GET("/hostname", handler.GetHostName)
 	r.GET("/processes", handler.GetProcesses)
 	r.GET("/process/:name", handler.GetProcess)
 	r.GET("/process/info/:name", handler.GetProcessInfo)
@@ -39,6 +38,7 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r.POST("/project/stop", handler.ShutDownProject)
 	r.POST("/project", handler.UpdateProject)
 	r.POST("/project/configuration", handler.ReloadProject)
+	r.GET("/project/name", handler.GetProjectName)
 	r.GET("/project/state", handler.GetProjectState)
 	r.PATCH("/process/scale/:name/:scale", handler.ScaleProcess)
 

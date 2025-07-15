@@ -67,8 +67,8 @@ func (p *PcClient) IsRemote() bool {
 	return true
 }
 
-func (p *PcClient) GetHostName() (string, error) {
-	return p.getHostName()
+func (p *PcClient) GetProjectName() (string, error) {
+	return p.getProjectName()
 }
 
 func (p *PcClient) GetLogLength() int {

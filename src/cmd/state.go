@@ -35,7 +35,7 @@ func printState(state *types.ProjectState) {
 	green := col.SprintFunc()
 
 	longestKey := len("Running Processes")
-	printStateLine("Hostname", state.HostName, longestKey, green)
+	printStateLine("Project", state.ProjectName, longestKey, green)
 	printStateLine("User", state.UserName, longestKey, green)
 	printStateLine("Version", state.Version, longestKey, green)
 	printStateLine("Up Time", state.UpTime.Round(time.Second).String(), longestKey, green)
