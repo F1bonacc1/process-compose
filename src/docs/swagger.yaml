@@ -105,6 +105,20 @@ components:
                 totalAllocated:
                     type: integer
             type: object
+        types.ProcessCondition:
+            enum:
+                - 0
+                - 1
+                - 2
+                - 3
+                - 4
+            type: integer
+            x-enum-varnames:
+                - ProcessConditionCompleted
+                - ProcessConditionCompletedSuccessfully
+                - ProcessConditionHealthy
+                - ProcessConditionStarted
+                - ProcessConditionLogReady
         types.ProcessConfig:
             properties:
                 args:
@@ -182,7 +196,7 @@ components:
         types.ProcessDependency:
             properties:
                 condition:
-                    type: string
+                    $ref: '#/components/schemas/types.ProcessCondition'
                 extensions:
                     additionalProperties: true
                     type: object
@@ -263,6 +277,18 @@ components:
                 version:
                     type: string
             type: object
+        types.RestartPolicy:
+            enum:
+                - 0
+                - 1
+                - 2
+                - 3
+            type: integer
+            x-enum-varnames:
+                - RestartPolicyNo
+                - RestartPolicyAlways
+                - RestartPolicyOnFailure
+                - RestartPolicyExitOnFailure
         types.RestartPolicyConfig:
             properties:
                 backoffSeconds:
@@ -274,7 +300,7 @@ components:
                 maxRestarts:
                     type: integer
                 restart:
-                    type: string
+                    $ref: '#/components/schemas/types.RestartPolicy'
             type: object
         types.ShutDownParams:
             properties:
