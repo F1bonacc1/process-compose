@@ -403,9 +403,9 @@ func (pv *pcView) getIconForState(state types.ProcessState) (string, tcell.Color
 		if state.ExitCode == 0 {
 			return "●", pv.styles.ProcTable().FgCompleted.Color()
 		}
-		return "❌", pv.styles.ProcTable().FgError.Color()
+		return "✘", pv.styles.ProcTable().FgError.Color()
 	case types.ProcessStateError:
-		return "❌", pv.styles.ProcTable().FgError.Color()
+		return "✘", pv.styles.ProcTable().FgError.Color()
 	case types.ProcessStateDisabled,
 		types.ProcessStateForeground:
 		return "◯", pv.styles.ProcTable().FgPending.Color()
