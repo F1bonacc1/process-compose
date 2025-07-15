@@ -6,6 +6,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/tui"
+	"github.com/f1bonacc1/process-compose/src/util"
 	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
@@ -68,6 +69,7 @@ func setSignal(signalHandler func()) {
 }
 
 func runHeadless(project *app.ProjectRunner) error {
+	util.SetProjectNameAsTerminalTitle(project)
 	setSignal(func() {
 		_ = project.ShutDownProject()
 	})
