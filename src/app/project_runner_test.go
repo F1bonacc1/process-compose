@@ -146,7 +146,6 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 				},
 			},
 			want: [][]string{
-
 				{"Process2-0", "Process2-1", "Process1"},
 				{"Process2-1", "Process2-0", "Process1"},
 			},
@@ -293,6 +292,9 @@ func TestProjectRunner_GetProjectName(t *testing.T) {
 				t.Errorf("ProjectRunner.GetProjectName() = %s, want %s", got, tt.want)
 			}
 		})
+	}
+}
+
 func TestProjectRunner_EnvironmentExpansion(t *testing.T) {
 	testProcess := types.ProcessConfig{
 		Vars: map[string]interface{}{

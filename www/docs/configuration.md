@@ -226,6 +226,7 @@ Variables in Process Compose rely on [Go template engine](https://pkg.go.dev/tex
 * `processes.process.working_dir`
 * `processes.process.log_location`
 * `processes.process.description`
+* `processes.process.environment` values.
 * For `readiness_probe`and `liveness_probe`:
   * `processes.process.<probe>.exec.command`
   * `processes.process.<probe>.http_get.host`
@@ -243,9 +244,12 @@ processes:
       OK: SUCCESS
       PRE: 2
       POST: 8
+      BASH: "/bin/bash"
 
     command: "sleep {{.PRE}} && echo {{.OK}} && sleep {{.POST}}"
     log_location: {{.LOG_LOCATION}}
+    environment:
+      - 'SHELL={{.BASH}}'
     readiness_probe:
       exec:
         command: "grep -q {{.OK}} {{.LOG_LOCATION}}"
