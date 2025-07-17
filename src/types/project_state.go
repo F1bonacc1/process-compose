@@ -9,8 +9,8 @@ type ProjectState struct {
 	ProcessNum        int           `json:"processNum"`
 	RunningProcessNum int           `json:"runningProcessNum"`
 	UserName          string        `json:"userName"`
-	HostName          string        `json:"hostName"`
 	Version           string        `json:"version"`
+	ProjectName       string        `json:"projectName"`
 	MemoryState       *MemoryState  `json:"memoryState,omitempty"`
 }
 

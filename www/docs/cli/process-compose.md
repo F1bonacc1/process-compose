@@ -26,6 +26,7 @@ process-compose [flags]
       --ordered-shutdown         shut down processes in reverse dependency order
   -p, --port int                 port number (env: PC_PORT_NUM) (default 8080)
       --read-only                enable read-only mode (env: PC_READ_ONLY)
+      --recursive-metrics        collect metrics recursively (env: PC_RECURSIVE_METRICS)
   -r, --ref-rate duration        TUI refresh interval in seconds or as a Go duration string (e.g. 1s) (default 1)
   -R, --reverse                  sort in reverse order
       --shortcuts stringArray    paths to shortcut config files to load (env: PC_SHORTCUTS_FILES)

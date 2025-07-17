@@ -19,10 +19,9 @@ func (pv *pcView) createStatTable() *tview.Table {
 	table.SetCell(0, 1, tview.NewTableCell(config.Version).
 		SetSelectable(false).SetExpansion(1))
 
-	table.SetCell(1, 0, tview.NewTableCell(pv.getHostNameTitle()).
+	table.SetCell(1, 0, tview.NewTableCell("Project:").
 		SetSelectable(false))
-	hostname := pv.getHostName()
-	table.SetCell(1, 1, tview.NewTableCell(hostname).
+	table.SetCell(1, 1, tview.NewTableCell(pv.getProjectName()).
 		SetSelectable(false).
 		SetExpansion(1))
 
@@ -63,21 +62,14 @@ func (pv *pcView) getPcTitle() string {
 	}
 }
 
-func (pv *pcView) getHostName() string {
-	name, err := pv.project.GetHostName()
+func (pv *pcView) getProjectName() string {
+	name, err := pv.project.GetProjectName()
 	if err != nil {
-		log.Err(err).Msg("Unable to retrieve hostname")
+		log.Err(err).Msg("Unable to retrieve name")
 		return "Unknown"
 	}
-	return name
-}
 
-func (pv *pcView) getHostNameTitle() string {
-	if pv.project.IsRemote() {
-		return "Server Name:"
-	} else {
-		return "Hostname:"
-	}
+	return name
 }
 
 // AttentionMessage shows an attention message in the status table

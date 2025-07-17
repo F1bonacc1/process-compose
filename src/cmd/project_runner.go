@@ -6,6 +6,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/tui"
+	"github.com/f1bonacc1/process-compose/src/util"
 	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
@@ -35,7 +36,8 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 			WithOrderedShutdown(*pcFlags.IsOrderedShutdown).
 			WithNoDeps(noDeps).
 			WithLogTruncate(*pcFlags.LogsTruncate).
-			WithSlowRefRate(*pcFlags.SlowRefreshRate),
+			WithSlowRefRate(*pcFlags.SlowRefreshRate).
+			WithRecursiveMetrics(*pcFlags.WithRecursiveMetrics),
 	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize the project")
@@ -69,6 +71,7 @@ func setSignal(signalHandler func()) {
 }
 
 func runHeadless(project *app.ProjectRunner) error {
+	util.SetProjectNameAsTerminalTitle(project)
 	setSignal(func() {
 		_ = project.ShutDownProject()
 	})

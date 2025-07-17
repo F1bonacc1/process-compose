@@ -49,11 +49,11 @@ type (
 		LaunchTimeout     int                    `yaml:"launch_timeout_seconds,omitempty"`
 		IsDisabled        string                 `yaml:"is_disabled,omitempty"`
 		DisableDotEnv     bool                   `yaml:"is_dotenv_disabled,omitempty"`
-		OriginalConfig    string
-		ReplicaNum        int
-		ReplicaName       string
-		Executable        string
-		Args              []string
+		OriginalConfig    string                 `yaml:"original_config,omitempty"`
+		ReplicaNum        int                    `yaml:"replica_num,omitempty"`
+		ReplicaName       string                 `yaml:"replica_name,omitempty"`
+		Executable        string                 `yaml:"executable,omitempty"`
+		Args              []string               `yaml:"args,omitempty"`
 	}
 )
 
@@ -330,6 +330,21 @@ const (
 	ProcessStateSkipped     = "Skipped"
 	ProcessStateError       = "Error"
 )
+
+// Display a process status for the UI.
+//
+// In particular, this displays "Failed" if the process has completed with a
+// non-zero exit code. This makes it clearer when a process has failed, as
+// opposed to exiting successfully.
+//
+// We can't change the `Status` field to "Failed" directly because that would
+// change the JSON API behavior, but we can change it in the TUI.
+func DisplayProcessStatus(state ProcessState) string {
+	if state.Status == ProcessStateCompleted && state.ExitCode != 0 {
+		return "Failed"
+	}
+	return state.Status
+}
 
 const (
 	ProcessHealthReady    = "Ready"

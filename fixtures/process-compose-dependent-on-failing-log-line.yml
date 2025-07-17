@@ -1,0 +1,14 @@
+log_level: debug
+processes:
+  failer:
+    description: Halts and catches fire
+    command: "exit 1"
+    ready_log_line: "ready to accept connections"
+    availability:
+      restart: "exit_on_failure"
+  oblivious:
+    description: Tries to do setup after "failer" is ready (it will never be)
+    command: "echo All good"
+    depends_on:
+      failer:
+        condition: process_log_ready

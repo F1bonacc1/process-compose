@@ -243,3 +243,8 @@ func getHideDisabledDefault() bool {
 	_, found := os.LookupEnv(EnvVarHideDisabled)
 	return found
 }
+
+func getWithRecursiveMetricsEnvDefault() bool {
+	_, found := os.LookupEnv(EnvVarWithRecursiveMetrics)
+	return found
+}

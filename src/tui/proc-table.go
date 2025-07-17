@@ -403,9 +403,9 @@ func (pv *pcView) getIconForState(state types.ProcessState) (string, tcell.Color
 		if state.ExitCode == 0 {
 			return "●", pv.styles.ProcTable().FgCompleted.Color()
 		}
-		return "●", pv.styles.ProcTable().FgError.Color()
+		return "✘", pv.styles.ProcTable().FgError.Color()
 	case types.ProcessStateError:
-		return "●", pv.styles.ProcTable().FgError.Color()
+		return "✘", pv.styles.ProcTable().FgError.Color()
 	case types.ProcessStateDisabled,
 		types.ProcessStateForeground:
 		return "◯", pv.styles.ProcTable().FgPending.Color()
@@ -481,11 +481,11 @@ func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
 	return tableRowValues{
 		icon:      icon,
 		iconColor: color,
-		fgColor:   pv.styles.ProcTable().FgColor.Color(),
+		fgColor:   color,
 		pid:       strconv.Itoa(state.Pid),
 		name:      state.Name,
 		ns:        state.Namespace,
-		status:    state.Status,
+		status:    types.DisplayProcessStatus(state),
 		age:       state.SystemTime,
 		health:    state.Health,
 		mem:       getStrForMem(state.Mem, state.IsRunning),

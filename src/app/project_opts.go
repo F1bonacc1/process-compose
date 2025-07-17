@@ -6,16 +6,17 @@ import (
 )
 
 type ProjectOpts struct {
-	project           *types.Project
-	processesToRun    []string
-	noDeps            bool
-	mainProcess       string
-	mainProcessArgs   []string
-	isTuiOn           bool
-	isOrderedShutdown bool
-	disableDotenv     bool
-	truncateLogs      bool
-	refRate           time.Duration
+	project              *types.Project
+	processesToRun       []string
+	noDeps               bool
+	mainProcess          string
+	mainProcessArgs      []string
+	isTuiOn              bool
+	isOrderedShutdown    bool
+	disableDotenv        bool
+	truncateLogs         bool
+	refRate              time.Duration
+	withRecursiveMetrics bool
 }
 
 func (p *ProjectOpts) WithProject(project *types.Project) *ProjectOpts {
@@ -64,5 +65,10 @@ func (p *ProjectOpts) WithLogTruncate(truncateLogs bool) *ProjectOpts {
 
 func (p *ProjectOpts) WithSlowRefRate(refRate time.Duration) *ProjectOpts {
 	p.refRate = refRate
+	return p
+}
+
+func (p *ProjectOpts) WithRecursiveMetrics(withRecursiveMetrics bool) *ProjectOpts {
+	p.withRecursiveMetrics = withRecursiveMetrics
 	return p
 }

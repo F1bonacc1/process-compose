@@ -14,6 +14,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"os/user"
+    "path"
 	"runtime"
 	"slices"
 	"strings"
@@ -32,29 +33,30 @@ func (e *ExitError) Error() string {
 }
 
 type ProjectRunner struct {
-	procConfMutex     sync.Mutex
-	project           *types.Project
-	logsMutex         sync.Mutex
-	processLogs       map[string]*pclog.ProcessLogBuffer
-	statesMutex       sync.Mutex
-	processStates     map[string]*types.ProcessState
-	runProcMutex      sync.Mutex
-	runningProcesses  map[string]*Process
-	doneProcMutex     sync.Mutex
-	doneProcesses     map[string]*Process
-	logger            pclog.PcLogger
-	waitGroup         sync.WaitGroup
-	exitCode          int
-	projectState      *types.ProjectState
-	mainProcess       string
-	mainProcessArgs   []string
-	isTuiOn           bool
-	isOrderedShutdown bool
-	ctxApp            context.Context
-	cancelAppFn       context.CancelFunc
-	disableDotenv     bool
-	truncateLogs      bool
-	refRate           time.Duration
+	procConfMutex        sync.Mutex
+	project              *types.Project
+	logsMutex            sync.Mutex
+	processLogs          map[string]*pclog.ProcessLogBuffer
+	statesMutex          sync.Mutex
+	processStates        map[string]*types.ProcessState
+	runProcMutex         sync.Mutex
+	runningProcesses     map[string]*Process
+	doneProcMutex        sync.Mutex
+	doneProcesses        map[string]*Process
+	logger               pclog.PcLogger
+	waitGroup            sync.WaitGroup
+	exitCode             int
+	projectState         *types.ProjectState
+	mainProcess          string
+	mainProcessArgs      []string
+	isTuiOn              bool
+	isOrderedShutdown    bool
+	ctxApp               context.Context
+	cancelAppFn          context.CancelFunc
+	disableDotenv        bool
+	truncateLogs         bool
+	refRate              time.Duration
+	withRecursiveMetrics bool
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -143,6 +145,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withExtraArgs(extraArgs),
 		withLogsTruncate(p.truncateLogs),
 		withRefRate(p.refRate),
+		withRecursiveMetrics(p.withRecursiveMetrics),
 	)
 	p.addRunningProcess(process)
 	p.waitGroup.Add(1)
@@ -594,8 +597,23 @@ func (p *ProjectRunner) ErrorForSecs() int {
 	return 0
 }
 
-func (p *ProjectRunner) GetHostName() (string, error) {
-	return p.projectState.HostName, nil
+func (p *ProjectRunner) GetProjectName() (string, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Err(err).Msg("Failed get hostname")
+		hostname = "unknown"
+	}
+
+	name := p.project.Name
+	if name == "" {
+		name, err = os.Getwd()
+		if err != nil {
+			log.Err(err).Msg("Failed get CWD")
+			name = "unknown"
+		}
+	}
+
+	return fmt.Sprintf("%s/%s", hostname, path.Base(name)), nil
 }
 
 func (p *ProjectRunner) getProcessLog(name string) (*pclog.ProcessLogBuffer, error) {
@@ -906,12 +924,6 @@ func bToMb(b uint64) uint64 {
 }
 
 func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Err(err).Msg("Failed get hostname")
-		hostname = "unknown"
-	}
 	current, err := user.Current()
 	username := "unknown-user"
 	if err != nil {
@@ -920,21 +932,28 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		username = current.Username
 	}
 	runner := &ProjectRunner{
-		project:           opts.project,
-		mainProcess:       opts.mainProcess,
-		mainProcessArgs:   opts.mainProcessArgs,
-		isTuiOn:           opts.isTuiOn,
-		isOrderedShutdown: opts.isOrderedShutdown,
-		disableDotenv:     opts.disableDotenv,
-		truncateLogs:      opts.truncateLogs,
-		refRate:           opts.refRate,
+		project:              opts.project,
+		mainProcess:          opts.mainProcess,
+		mainProcessArgs:      opts.mainProcessArgs,
+		isTuiOn:              opts.isTuiOn,
+		isOrderedShutdown:    opts.isOrderedShutdown,
+		disableDotenv:        opts.disableDotenv,
+		truncateLogs:         opts.truncateLogs,
+		refRate:              opts.refRate,
+		withRecursiveMetrics: opts.withRecursiveMetrics,
 		projectState: &types.ProjectState{
 			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),
 			UserName:  username,
-			HostName:  hostname,
 			Version:   config.Version,
 		},
+	}
+
+	name, err := runner.GetProjectName()
+	if err != nil {
+		log.Err(err).Msg("Failed get project name")
+	} else {
+		runner.projectState.ProjectName = name
 	}
 
 	if opts.noDeps {

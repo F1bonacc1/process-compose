@@ -10,6 +10,7 @@ type Vars map[string]any
 
 type Project struct {
 	Version             string               `yaml:"version"`
+	Name                string               `yaml:"name,omitempty"`
 	LogLocation         string               `yaml:"log_location,omitempty"`
 	LogLevel            string               `yaml:"log_level,omitempty"`
 	LogLength           int                  `yaml:"log_length,omitempty"`
@@ -25,9 +26,9 @@ type Project struct {
 	ExtendsProject      string               `yaml:"extends,omitempty"`
 	EnvCommands         EnvCmd               `yaml:"env_cmds,omitempty"`
 	IsOrderedShutdown   bool                 `yaml:"ordered_shutdown,omitempty"`
-	FileNames           []string
-	EnvFileNames        []string
-	DotEnvVars          map[string]string
+	FileNames           []string             `yaml:"file_names,omitempty"`
+	EnvFileNames        []string             `yaml:"env_file_names,omitempty"`
+	DotEnvVars          map[string]string    `yaml:"dot_env_vars,omitempty"`
 }
 
 type ProcessFunc func(process ProcessConfig) error

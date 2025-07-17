@@ -36,52 +36,53 @@ const (
 
 type Process struct {
 	sync.Mutex
-	globalEnv           []string
-	confMtx             sync.Mutex
-	procConf            *types.ProcessConfig
-	procState           *types.ProcessState
-	stateMtx            sync.Mutex
-	procCond            sync.Cond
-	procStartedChan     chan struct{}
-	procStateChan       chan string
-	procReadyCtx        context.Context
-	readyCancelFn       context.CancelFunc
-	procLogReadyCtx     context.Context
-	readyLogCancelFn    context.CancelCauseFunc
-	procRunCtx          context.Context
-	runCancelFn         context.CancelFunc
-	waitForPassCtx      context.Context
-	waitForPassCancelFn context.CancelFunc
-	mtxStopFn           sync.Mutex
-	waitForStoppedCtx   context.Context
-	waitForStoppedFn    context.CancelFunc
-	procColor           func(a ...interface{}) string
-	noColor             func(a ...interface{}) string
-	redColor            func(a ...interface{}) string
-	logBuffer           *pclog.ProcessLogBuffer
-	logger              pclog.PcLogger
-	command             command.Commander
-	started             bool
-	done                bool
-	timeMutex           sync.Mutex
-	startTime           time.Time
-	liveProber          *health.Prober
-	readyProber         *health.Prober
-	shellConfig         command.ShellConfig
-	printLogs           bool
-	isMain              bool
-	extraArgs           []string
-	isStopped           atomic.Bool
-	stdin               io.WriteCloser
-	passProvided        bool
-	isTuiEnabled        bool
-	stdOutDone          chan struct{}
-	stdErrDone          chan struct{}
-	dotEnvVars          map[string]string
-	truncateLogs        bool
-	metricsProc         *puproc.Process
-	lastStatusPoll      time.Time
-	refRate             time.Duration
+	globalEnv            []string
+	confMtx              sync.Mutex
+	procConf             *types.ProcessConfig
+	procState            *types.ProcessState
+	stateMtx             sync.Mutex
+	procCond             sync.Cond
+	procStartedChan      chan struct{}
+	procStateChan        chan string
+	procReadyCtx         context.Context
+	readyCancelFn        context.CancelFunc
+	procLogReadyCtx      context.Context
+	readyLogCancelFn     context.CancelCauseFunc
+	procRunCtx           context.Context
+	runCancelFn          context.CancelFunc
+	waitForPassCtx       context.Context
+	waitForPassCancelFn  context.CancelFunc
+	mtxStopFn            sync.Mutex
+	waitForStoppedCtx    context.Context
+	waitForStoppedFn     context.CancelFunc
+	procColor            func(a ...interface{}) string
+	noColor              func(a ...interface{}) string
+	redColor             func(a ...interface{}) string
+	logBuffer            *pclog.ProcessLogBuffer
+	logger               pclog.PcLogger
+	command              command.Commander
+	started              bool
+	done                 bool
+	timeMutex            sync.Mutex
+	startTime            time.Time
+	liveProber           *health.Prober
+	readyProber          *health.Prober
+	shellConfig          command.ShellConfig
+	printLogs            bool
+	isMain               bool
+	extraArgs            []string
+	isStopped            atomic.Bool
+	stdin                io.WriteCloser
+	passProvided         bool
+	isTuiEnabled         bool
+	stdOutDone           chan struct{}
+	stdErrDone           chan struct{}
+	dotEnvVars           map[string]string
+	truncateLogs         bool
+	metricsProc          *puproc.Process
+	lastStatusPoll       time.Time
+	refRate              time.Duration
+	withRecursiveMetrics bool
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
@@ -398,6 +399,9 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 		if p.isOneOfStates(types.ProcessStatePending) {
 			p.onProcessEnd(types.ProcessStateTerminating)
 		}
+		if cancelReadinessFuncs {
+			p.readyLogCancelFn(fmt.Errorf("process completed, cannot produce log lines"))
+		}
 		return nil
 	}
 	p.setState(types.ProcessStateTerminating)
@@ -580,9 +584,11 @@ func (p *Process) getResourceUsage() (int64, float64) {
 	if p.metricsProc == nil {
 		return -1, -1
 	}
-	totalMem, totalCpu := p.getProcResourcesRecursive(p.metricsProc)
+	if p.withRecursiveMetrics {
+		return p.getProcResourcesRecursive(p.metricsProc)
+	}
 
-	return totalMem, totalCpu
+	return p.getProcResources(p.metricsProc)
 }
 
 // recursively get the memory and cpu usage of the process and its children

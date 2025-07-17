@@ -14,6 +14,12 @@
             },
             "health.HttpProbe": {
                 "properties": {
+                    "headers": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object"
+                    },
                     "host": {
                         "type": "string"
                     },
@@ -28,6 +34,9 @@
                     },
                     "scheme": {
                         "type": "string"
+                    },
+                    "statusCode": {
+                        "type": "integer"
                     }
                 },
                 "type": "object"
@@ -154,6 +163,23 @@
                 },
                 "type": "object"
             },
+            "types.ProcessCondition": {
+                "enum": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4
+                ],
+                "type": "integer",
+                "x-enum-varnames": [
+                    "ProcessConditionCompleted",
+                    "ProcessConditionCompletedSuccessfully",
+                    "ProcessConditionHealthy",
+                    "ProcessConditionStarted",
+                    "ProcessConditionLogReady"
+                ]
+            },
             "types.ProcessConfig": {
                 "properties": {
                     "args": {
@@ -268,7 +294,7 @@
             "types.ProcessDependency": {
                 "properties": {
                     "condition": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/types.ProcessCondition"
                     },
                     "extensions": {
                         "additionalProperties": true,
@@ -366,14 +392,14 @@
                         },
                         "type": "array"
                     },
-                    "hostName": {
-                        "type": "string"
-                    },
                     "memoryState": {
                         "$ref": "#/components/schemas/types.MemoryState"
                     },
                     "processNum": {
                         "type": "integer"
+                    },
+                    "projectName": {
+                        "type": "string"
                     },
                     "runningProcessNum": {
                         "type": "integer"
@@ -393,6 +419,21 @@
                 },
                 "type": "object"
             },
+            "types.RestartPolicy": {
+                "enum": [
+                    0,
+                    1,
+                    2,
+                    3
+                ],
+                "type": "integer",
+                "x-enum-varnames": [
+                    "RestartPolicyNo",
+                    "RestartPolicyAlways",
+                    "RestartPolicyOnFailure",
+                    "RestartPolicyExitOnFailure"
+                ]
+            },
             "types.RestartPolicyConfig": {
                 "properties": {
                     "backoffSeconds": {
@@ -408,7 +449,7 @@
                         "type": "integer"
                     },
                     "restart": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/types.RestartPolicy"
                     }
                 },
                 "type": "object"
@@ -454,44 +495,6 @@
     },
     "openapi": "3.0.3",
     "paths": {
-        "/hostname": {
-            "get": {
-                "description": "Get process compose hostname",
-                "operationId": "GetHostName",
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "Hostname"
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "Bad Request"
-                    }
-                },
-                "summary": "Get Hostname",
-                "tags": [
-                    "Hostname"
-                ]
-            }
-        },
         "/live": {
             "get": {
                 "description": "Check if server is responding",
@@ -1204,6 +1207,44 @@
                 "summary": "Reload project",
                 "tags": [
                     "Project"
+                ]
+            }
+        },
+        "/project/name": {
+            "get": {
+                "description": "Get process compose project name",
+                "operationId": "GetProjectName",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "ProjectName"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Get Project Name",
+                "tags": [
+                    "ProjectName"
                 ]
             }
         },

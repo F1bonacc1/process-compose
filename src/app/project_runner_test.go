@@ -1,9 +1,12 @@
 package app
 
 import (
-	"github.com/f1bonacc1/process-compose/src/types"
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/f1bonacc1/process-compose/src/templater"
+	"github.com/f1bonacc1/process-compose/src/types"
 )
 
 func TestProject_GetDependenciesOrderNames(t *testing.T) {
@@ -143,7 +146,6 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 				},
 			},
 			want: [][]string{
-
 				{"Process2-0", "Process2-1", "Process1"},
 				{"Process2-1", "Process2-0", "Process1"},
 			},
@@ -250,5 +252,97 @@ func TestProject_GetDependenciesOrderNames(t *testing.T) {
 				t.Errorf("Project.GetDependenciesOrderNames() = %v, want one of %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestProjectRunner_GetProjectName(t *testing.T) {
+	type fields struct{ Name string }
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "ShouldContain_project name",
+			fields: fields{Name: "project name"},
+			want:   "project name",
+		},
+		{
+			name: "ShouldContain_app",
+			want: "app",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &ProjectRunner{
+				project: &types.Project{
+					Name: tt.fields.Name,
+				},
+			}
+
+			got, err := p.GetProjectName()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ProjectRunner.GetProjectName() error = %v, wantErr %v", err, nil)
+				return
+			}
+
+			if !strings.Contains(got, tt.want) {
+				t.Errorf("ProjectRunner.GetProjectName() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProjectRunner_EnvironmentExpansion(t *testing.T) {
+	testProcess := types.ProcessConfig{
+		Vars: map[string]interface{}{
+			"PROCESS_VAR": "process_value",
+		},
+		Name:    "test-process",
+		Command: "echo hello",
+		Environment: []string{
+			"LOCAL_VAR={{.GLOBAL_VAR}}",
+			"PROCESS_VAR={{.PROCESS_VAR}}",
+			"ANOTHER_VAR=fixed_value",
+		},
+	}
+	p := &types.Project{
+		Vars: map[string]interface{}{
+			"GLOBAL_VAR": "global_value",
+		},
+		Processes: map[string]types.ProcessConfig{
+			"test-process": testProcess,
+		},
+	}
+
+	tpl := templater.New(p.Vars)
+	for name, proc := range p.Processes {
+		tpl.RenderProcess(&proc)
+		p.Processes[name] = proc
+	}
+
+	expectedEnv := map[string]string{
+		"LOCAL_VAR":   "global_value",
+		"PROCESS_VAR": "process_value",
+		"ANOTHER_VAR": "fixed_value",
+	}
+
+	actualEnv := make(map[string]string)
+	for _, envVar := range testProcess.Environment {
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) == 2 {
+			actualEnv[parts[0]] = parts[1]
+		}
+	}
+
+	// Assert environment variables are correctly expanded
+	for key, expectedValue := range expectedEnv {
+		if actualValue, ok := actualEnv[key]; !ok {
+			t.Errorf("Expected environment variable %s not found", key)
+		} else if actualValue != expectedValue {
+			t.Errorf("Environment variable %s: expected %s, got %s", key, expectedValue, actualValue)
+		}
 	}
 }

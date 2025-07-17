@@ -22,39 +22,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/hostname": {
-            "get": {
-                "description": "Get process compose hostname",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Hostname"
-                ],
-                "summary": "Get Hostname",
-                "operationId": "GetHostName",
-                "responses": {
-                    "200": {
-                        "description": "Hostname",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/live": {
             "get": {
                 "description": "Check if server is responding",
@@ -669,6 +636,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/project/name": {
+            "get": {
+                "description": "Get process compose project name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProjectName"
+                ],
+                "summary": "Get Project Name",
+                "operationId": "GetProjectName",
+                "responses": {
+                    "200": {
+                        "description": "ProjectName",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/project/state": {
             "get": {
                 "description": "Retrieves project state information",
@@ -739,6 +739,12 @@ const docTemplate = `{
         "health.HttpProbe": {
             "type": "object",
             "properties": {
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "host": {
                     "type": "string"
                 },
@@ -753,6 +759,9 @@ const docTemplate = `{
                 },
                 "scheme": {
                     "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
                 }
             }
         },
@@ -878,6 +887,23 @@ const docTemplate = `{
                 }
             }
         },
+        "types.ProcessCondition": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-varnames": [
+                "ProcessConditionCompleted",
+                "ProcessConditionCompletedSuccessfully",
+                "ProcessConditionHealthy",
+                "ProcessConditionStarted",
+                "ProcessConditionLogReady"
+            ]
+        },
         "types.ProcessConfig": {
             "type": "object",
             "properties": {
@@ -993,7 +1019,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "condition": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.ProcessCondition"
                 },
                 "extensions": {
                     "type": "object",
@@ -1091,14 +1117,14 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "hostName": {
-                    "type": "string"
-                },
                 "memoryState": {
                     "$ref": "#/definitions/types.MemoryState"
                 },
                 "processNum": {
                     "type": "integer"
+                },
+                "projectName": {
+                    "type": "string"
                 },
                 "runningProcessNum": {
                     "type": "integer"
@@ -1117,6 +1143,21 @@ const docTemplate = `{
                 }
             }
         },
+        "types.RestartPolicy": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "RestartPolicyNo",
+                "RestartPolicyAlways",
+                "RestartPolicyOnFailure",
+                "RestartPolicyExitOnFailure"
+            ]
+        },
         "types.RestartPolicyConfig": {
             "type": "object",
             "properties": {
@@ -1133,7 +1174,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "restart": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.RestartPolicy"
                 }
             }
         },

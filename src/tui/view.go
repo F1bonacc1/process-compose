@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/f1bonacc1/process-compose/src/util"
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/rivo/tview"
 )
@@ -141,6 +142,7 @@ func newPcView(project app.IProject) *pcView {
 	pv.appView.SetRoot(pv.pages, true).EnableMouse(true).SetInputCapture(pv.onAppKey)
 	pv.recreateHelpDialog()
 	pv.loadThemes()
+	util.SetProjectNameAsTerminalTitle(pv.project)
 
 	if len(pv.procNames) > 0 {
 		name := pv.procNames[0]
@@ -513,12 +515,14 @@ func (pv *pcView) startMonitoring() {
 		isErrorDetected := false
 		for {
 			if err := pcClient.IsAlive(); err != nil {
+				util.SetTerminalTitle("unknown")
 				pv.handleConnectivityError()
 				isErrorDetected = true
 			} else {
 				if isErrorDetected {
 					isErrorDetected = false
 					pv.hideAttentionMessage()
+					util.SetProjectNameAsTerminalTitle(pv.project)
 				}
 			}
 			time.Sleep(time.Second)
