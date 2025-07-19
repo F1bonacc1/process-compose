@@ -222,9 +222,9 @@ func TestSystem_TestComposeScale(t *testing.T) {
 		}
 
 		//scale to 10
-		err = runner.ScaleProcess("process1-0", 10)
-		if err != nil {
-			t.Error(err.Error())
+		errScale := runner.ScaleProcess("process1-0", 10)
+		if errScale != nil {
+			t.Error(errScale.Error())
 			return
 		}
 		states, err = runner.GetProcessesState()
@@ -282,14 +282,18 @@ func TestSystem_TestComposeScale(t *testing.T) {
 			t.Error(err.Error())
 			return
 		}
-		states, err = runner.GetProcessesState()
+		statesNum := 0
+		err = runner.getProcessesStateData(func(_ *types.ProcessState) {
+			statesNum++
+		})
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
+
 		want = 7
-		if len(states.States) != want {
-			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
+		if statesNum != want {
+			t.Errorf("len(states.States) = %d, want %d", statesNum, want)
 		}
 
 		//wrong process name
@@ -1239,10 +1243,13 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 		}
 	}()
 
-	// Wait for initial process to be running
-	for attempts := 0; attempts < 100; attempts++ {
-		state, err := runner.GetProcessState(testProcess)
-		if err == nil && state.Status == types.ProcessStateRunning {
+	// Wait for the initial process to be running
+	for attempts := range 100 {
+		isRunning := false
+		err := runner.getProcessStateData(testProcess, func(state *types.ProcessState) {
+			isRunning = state.Status == types.ProcessStateRunning
+		})
+		if isRunning && err == nil {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -1257,7 +1264,7 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 	startBarrier := make(chan struct{})
 
 	// Launch multiple concurrent restart operations
-	for i := 0; i < numConcurrentRestarts; i++ {
+	for range numConcurrentRestarts {
 		go func() {
 			<-startBarrier // Wait for all goroutines to be ready
 			err := runner.RestartProcess(testProcess)
@@ -1270,7 +1277,7 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 
 	// Collect all results
 	var restartErrors []error
-	for i := 0; i < numConcurrentRestarts; i++ {
+	for range numConcurrentRestarts {
 		err := <-results
 		if err != nil {
 			restartErrors = append(restartErrors, err)
@@ -1285,14 +1292,8 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 
 	// The key test: verify coalescing worked - no restart should be in progress
 	runner.restartMutex.Lock()
-	restartInProgress := runner.restartInProgress[testProcess]
-	hasWaiters := len(runner.restartWaitChannels[testProcess]) > 0
+	hasWaiters := len(runner.restartCalls) > 0
 	runner.restartMutex.Unlock()
-
-	if restartInProgress {
-		t.Error("No restart should be in progress after all requests completed")
-		return
-	}
 
 	if hasWaiters {
 		t.Error("No restart waiters should remain after all requests completed")

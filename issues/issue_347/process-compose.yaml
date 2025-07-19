@@ -1,0 +1,7 @@
+version: "0.5"
+
+processes:
+  test1:
+    command: sleep 1000
+  test2:
+    command: sleep 1000

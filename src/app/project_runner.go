@@ -33,33 +33,39 @@ func (e *ExitError) Error() string {
 }
 
 type ProjectRunner struct {
-	procConfMutex       sync.Mutex
-	project             *types.Project
-	logsMutex           sync.Mutex
-	processLogs         map[string]*pclog.ProcessLogBuffer
-	statesMutex         sync.Mutex
-	processStates       map[string]*types.ProcessState
-	runProcMutex        sync.Mutex
-	runningProcesses    map[string]*Process
-	doneProcMutex       sync.Mutex
-	doneProcesses       map[string]*Process
-	restartMutex        sync.Mutex
-	restartInProgress   map[string]bool
-	restartWaitChannels map[string][]chan error
-	logger              pclog.PcLogger
-	waitGroup           sync.WaitGroup
-	exitCode            int
-	projectState        *types.ProjectState
-	mainProcess         string
-	mainProcessArgs     []string
-	isTuiOn             bool
-	isOrderedShutdown   bool
-	ctxApp              context.Context
-	cancelAppFn         context.CancelFunc
-	disableDotenv       bool
-	truncateLogs        bool
-	refRate             time.Duration
+	procConfMutex     sync.Mutex
+	project           *types.Project
+	logsMutex         sync.Mutex
+	processLogs       map[string]*pclog.ProcessLogBuffer
+	statesMutex       sync.Mutex
+	processStates     map[string]*types.ProcessState
+	runProcMutex      sync.Mutex
+	runningProcesses  map[string]*Process
+	doneProcMutex     sync.Mutex
+	doneProcesses     map[string]*Process
+	restartMutex      sync.Mutex
+	restartCalls      map[string]*RestartCall
+	logger            pclog.PcLogger
+	waitGroupMutex    sync.Mutex
+	waitGroup         sync.WaitGroup
+	exitCode          int
+	projectState      *types.ProjectState
+	mainProcess       string
+	mainProcessArgs   []string
+	isTuiOn           bool
+	isOrderedShutdown bool
+	ctxApp            context.Context
+	cancelAppFn       context.CancelFunc
+	disableDotenv     bool
+	truncateLogs      bool
+	refRate           time.Duration
     withRecursiveMetrics bool
+}
+
+// RestartCall represents an in-flight restart operation
+type RestartCall struct {
+	wg  sync.WaitGroup
+	err error
 }
 
 func (p *ProjectRunner) GetLexicographicProcessNames() ([]string, error) {
@@ -107,7 +113,9 @@ func (p *ProjectRunner) Run() error {
 		newConf := proc
 		p.runProcess(&newConf)
 	}
+	p.waitGroupMutex.Lock()
 	p.waitGroup.Wait()
+	p.waitGroupMutex.Unlock()
 	log.Info().Msg("Project completed")
 	if p.exitCode != 0 {
 		err = &ExitError{p.exitCode}
@@ -152,7 +160,9 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withRecursiveMetrics(p.withRecursiveMetrics),
 	)
 	p.addRunningProcess(process)
+	p.waitGroupMutex.Lock()
 	p.waitGroup.Add(1)
+	p.waitGroupMutex.Unlock()
 	go func(proc *Process) {
 		defer p.removeRunningProcess(proc)
 		defer p.waitGroup.Done()
@@ -238,8 +248,7 @@ func (p *ProjectRunner) initProcessLogs() {
 }
 
 func (p *ProjectRunner) initRestartCoalescing() {
-	p.restartInProgress = make(map[string]bool)
-	p.restartWaitChannels = make(map[string][]chan error)
+	p.restartCalls = make(map[string]*RestartCall)
 }
 
 func (p *ProjectRunner) initProcessLog(name string) {
@@ -403,37 +412,33 @@ func (p *ProjectRunner) StopProcesses(names []string) (map[string]string, error)
 }
 
 func (p *ProjectRunner) RestartProcess(name string) error {
-	// Check if restart is already in progress for this process
 	p.restartMutex.Lock()
-	if p.restartInProgress[name] {
-		// Restart already in progress, wait for it to complete (coalescing)
-		waitChan := make(chan error, 1)
-		p.restartWaitChannels[name] = append(p.restartWaitChannels[name], waitChan)
-		p.restartMutex.Unlock()
 
-		log.Debug().Msgf("Restart already in progress for %s, waiting for completion", name)
-		return <-waitChan
+	// Check if restart is already in progress
+	if call, exists := p.restartCalls[name]; exists {
+		// Join the existing restart operation
+		p.restartMutex.Unlock()
+		call.wg.Wait()
+		return call.err
 	}
 
-	// Mark restart as in progress
-	p.restartInProgress[name] = true
+	// Create new restart operation
+	call := &RestartCall{}
+	call.wg.Add(1)
+	p.restartCalls[name] = call
 	p.restartMutex.Unlock()
 
-	// Perform the actual restart
+	// Perform the restart
 	err := p.doRestart(name)
 
-	// Notify all waiting restart requests
-	p.restartMutex.Lock()
-	waiters := p.restartWaitChannels[name]
-	p.restartWaitChannels[name] = nil
-	p.restartInProgress[name] = false
-	p.restartMutex.Unlock()
+	// Complete the operation and notify waiters
+	call.err = err
+	call.wg.Done()
 
-	// Send result to all waiting goroutines
-	for _, waitChan := range waiters {
-		waitChan <- err
-		close(waitChan)
-	}
+	// Clean up
+	p.restartMutex.Lock()
+	delete(p.restartCalls, name)
+	p.restartMutex.Unlock()
 
 	return err
 }
