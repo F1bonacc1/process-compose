@@ -205,7 +205,7 @@ func TestSystem_TestComposeScale(t *testing.T) {
 			return
 		}
 		go func() {
-			err = runner.Run()
+			err := runner.Run()
 			if err != nil {
 				t.Error(err.Error())
 			}
@@ -222,9 +222,9 @@ func TestSystem_TestComposeScale(t *testing.T) {
 		}
 
 		//scale to 10
-		errScale := runner.ScaleProcess("process1-0", 10)
-		if errScale != nil {
-			t.Error(errScale.Error())
+		err = runner.ScaleProcess("process1-0", 10)
+		if err != nil {
+			t.Error(err.Error())
 			return
 		}
 		states, err = runner.GetProcessesState()
@@ -533,7 +533,7 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 				order = append(order, line)
 			}
 		}
-        //the order if first D or C exits is not defined
+		//the order if first D or C exits is not defined
 		wantOrder1 := []string{"B: exit", "D: exit", "C: exit", "A: exit"}
 		wantOrder2 := []string{"B: exit", "C: exit", "D: exit", "A: exit"}
 		if !(slices.Equal(order, wantOrder1) || slices.Equal(order, wantOrder2)) {
