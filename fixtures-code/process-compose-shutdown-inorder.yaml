@@ -2,6 +2,7 @@ version: "0.5"
 
 log_level: debug
 log_length: 1000
+ordered_shutdown: true
 
 processes:
   procA:

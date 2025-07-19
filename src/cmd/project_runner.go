@@ -16,12 +16,14 @@ import (
 func getProjectRunner(process []string, noDeps bool, mainProcess string, mainProcessArgs []string) *app.ProjectRunner {
 	opts.DisableDotenv(*pcFlags.DisableDotEnv)
 	opts.WithTuiDisabled(!*pcFlags.IsTuiEnabled)
+	opts.WithOrderedShutdown(*pcFlags.IsOrderedShutdown)
 
 	project, err := loader.Load(opts)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load project")
 	}
 	*pcFlags.IsTuiEnabled = !project.IsTuiDisabled
+	*pcFlags.IsOrderedShutdown = project.IsOrderedShutdown
 
 	prjOpts := app.ProjectOpts{}
 
@@ -31,7 +33,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 			WithMainProcessArgs(mainProcessArgs).
 			WithProject(project).
 			WithProcessesToRun(process).
-			WithOrderedShutDown(*pcFlags.IsOrderedShutDown).
+			WithOrderedShutdown(*pcFlags.IsOrderedShutdown).
 			WithNoDeps(noDeps).
 			WithLogTruncate(*pcFlags.LogsTruncate).
 			WithSlowRefRate(*pcFlags.SlowRefreshRate).

@@ -24,6 +24,7 @@ func TestProject_WithProcesses(t *testing.T) {
 		ExtendsProject      string
 		FileNames           []string
 		EnvFileNames        []string
+		IsOrderedShutdown   bool
 	}
 	type args struct {
 		names []string
@@ -161,6 +162,7 @@ func TestProject_WithProcesses(t *testing.T) {
 				ExtendsProject:      tt.fields.ExtendsProject,
 				FileNames:           tt.fields.FileNames,
 				EnvFileNames:        tt.fields.EnvFileNames,
+				IsOrderedShutdown:   tt.fields.IsOrderedShutdown,
 			}
 			if err := p.WithProcesses(tt.args.names, tt.args.fn); (err != nil) != tt.wantErr {
 				t.Errorf("WithProcesses() error = %v, wantErr %v", err, tt.wantErr)

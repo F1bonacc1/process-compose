@@ -66,6 +66,11 @@ func getDisableTuiDefault() bool {
 	return !found || val == "" || strings.ToLower(val) == "false"
 }
 
+func getOrderedShutdownDefault() bool {
+	_, found := os.LookupEnv(EnvVarNameOrderedShutdown)
+	return found
+}
+
 func getNoServerDefault() bool {
 	_, found := os.LookupEnv(EnvVarNameNoServer)
 	return found

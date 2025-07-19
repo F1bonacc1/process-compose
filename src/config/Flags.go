@@ -42,6 +42,7 @@ const (
 	EnvVarDisableDotEnv        = "PC_DISABLE_DOTENV"
 	EnvVarTuiFullScreen        = "PC_TUI_FULL_SCREEN"
 	EnvVarHideDisabled         = "PC_HIDE_DISABLED_PROC"
+	EnvVarNameOrderedShutdown  = "PC_ORDERED_SHUTDOWN"
 	EnvVarWithRecursiveMetrics = "PC_RECURSIVE_METRICS"
 )
 
@@ -68,7 +69,7 @@ type Flags struct {
 	NoServer             *bool
 	KeepTuiOn            *bool
 	KeepProjectOn        *bool
-	IsOrderedShutDown    *bool
+	IsOrderedShutdown    *bool
 	PcTheme              *string
 	PcThemeChanged       bool
 	ShortcutPaths        *[]string
@@ -108,7 +109,7 @@ func NewFlags() *Flags {
 		NoServer:             toPtr(getNoServerDefault()),
 		KeepTuiOn:            toPtr(false),
 		KeepProjectOn:        toPtr(false),
-		IsOrderedShutDown:    toPtr(false),
+		IsOrderedShutdown:    toPtr(getOrderedShutdownDefault()),
 		PcTheme:              toPtr(DefaultThemeName),
 		ShortcutPaths:        toPtr(GetShortCutsPaths(nil)),
 		UnixSocketPath:       toPtr(""),

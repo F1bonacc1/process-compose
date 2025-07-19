@@ -12,7 +12,7 @@ type ProjectOpts struct {
 	mainProcess          string
 	mainProcessArgs      []string
 	isTuiOn              bool
-	isOrderedShutDown    bool
+	isOrderedShutdown    bool
 	disableDotenv        bool
 	truncateLogs         bool
 	refRate              time.Duration
@@ -48,8 +48,8 @@ func (p *ProjectOpts) WithIsTuiOn(isTuiOn bool) *ProjectOpts {
 	return p
 }
 
-func (p *ProjectOpts) WithOrderedShutDown(isOrderedShutDown bool) *ProjectOpts {
-	p.isOrderedShutDown = isOrderedShutDown
+func (p *ProjectOpts) WithOrderedShutdown(isOrderedShutdown bool) *ProjectOpts {
+	p.isOrderedShutdown = isOrderedShutdown
 	return p
 }
 

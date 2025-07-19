@@ -454,7 +454,7 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			project:           project,
 			processesToRun:    []string{},
 			mainProcessArgs:   []string{},
-			isOrderedShutDown: true,
+			isOrderedShutdown: project.IsOrderedShutdown,
 		})
 		if err != nil {
 			t.Error(err.Error())
