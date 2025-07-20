@@ -3,6 +3,7 @@ package loader
 import (
 	"errors"
 	"fmt"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
@@ -50,6 +51,11 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	mergedProject.IsOrderedShutdown = opts.isOrderedShutdown || mergedProject.IsOrderedShutdown
 	// If DryRun is set to validate the config, then force IsStrict to true:
 	mergedProject.IsStrict = opts.DryRun || mergedProject.IsStrict
+
+	// Override log level if given in env
+	if envLevel, set := os.LookupEnv(config.LogLevelEnvVarName); set {
+		mergedProject.LogLevel = envLevel
+	}
 
 	apply(mergedProject,
 		setDefaultShell,
