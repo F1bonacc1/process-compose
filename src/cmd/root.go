@@ -160,7 +160,9 @@ func setupLogger() *os.File {
 		log.Logger = zerolog.New(writer).With().Timestamp().Logger()
 	}
 	zerolog.TimeFieldFormat = time.RFC3339Nano
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
 	return file
 }
 
