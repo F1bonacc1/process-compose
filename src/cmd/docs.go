@@ -40,7 +40,7 @@ var schemaCmd = &cobra.Command{
             AllowAdditionalProperties: true,
         }
         schema := reflector.Reflect(&types.Project{})
-        data, err := json.Marshal(schema)
+        data, err := json.MarshalIndent(schema, "", "  ")
         if err != nil {
 			log.Fatal().Err(err).Msg("Failed to marshal schema")
         }
