@@ -26,9 +26,15 @@ schemars = { version = "^0.8.*" }
 
 typify = { version = "^0.4", default-features = false, optional = true }
 
+process-wrap = { version = "^8", default-features = false, optional = true}
+
+cgp = { version = "^0.4", default-features = false, optional = true }
+
 [features]
-default = ["progenitor", "typify"]
+default = ["progenitor", "typify", "process-wrap"]
 
 typify = ["dep:typify", "dep:prettyplease"]
 
 progenitor = ["dep:progenitor", "dep:prettyplease", "dep:syn"]
+
+process-wrap = ["dep:process-wrap", "dep:cgp"]
