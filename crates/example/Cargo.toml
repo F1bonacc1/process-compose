@@ -13,7 +13,11 @@ serde = { version = "1.0", default-features = false, features = ["derive"]}
 tokio = { version = "1.41", features = ["macros", "rt-multi-thread"] }
 serde_json = { version = "1.0", default-features = false }
 
-progenitor-client = { version = "0.10", default-features = false, optional = false}
+progenitor-client = { version = "0.11", default-features = false, optional = false}
+
+# Use the local client crate for CLI flags and exec
+process-compose-client = { path = "../client", default-features = false, features = ["cli"] }
+process-wrap = { version = "9.0", default-features = false, features = ["tokio1", ]}
 
 [build-dependencies]
 process-compose-client = { path = "../client", default-features = false, features = ["progenitor", "typify"] }
