@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/types"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"sort"
+
+	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/rs/zerolog/log"
 )
 
 func (p *PcClient) GetProcessesName() ([]string, error) {
@@ -54,6 +55,10 @@ func (p *PcClient) getProcessState(name string) (*types.ProcessState, error) {
 		if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
 			log.Err(err).Msg("failed to decode err update process")
 			return nil, err
+		}
+
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, types.ErrProcessNotFound
 		}
 		return nil, errors.New(respErr.Error)
 	}

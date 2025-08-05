@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -420,3 +421,5 @@ const (
 	ProcessUpdateAdded   = "added"
 	ProcessUpdateError   = "error"
 )
+
+var ErrProcessNotFound = errors.New("process not found")
