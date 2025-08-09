@@ -28,7 +28,7 @@ buildrun: build run
 setup:
 	go mod download
 
-ci: setup build testrace
+ci: setup build testrace lint build-nix
 
 swag: swag2op ## Generate docs from swagger attributes in the code
 	./bin/swag2op init --dir src --output src/docs -g api/pc_api.go --openapiOutputDir src/docs --parseDependency --parseInternal
@@ -41,6 +41,9 @@ build-nix:
 
 nixver:
 	sed -i 's/version = ".*"/version = "${NUMVER}"/' default.nix
+
+nix-update-hash:
+	./scripts/update-vendor-hash.sh
 
 build-pi:
 	GOOS=linux GOARCH=arm go build ${LD_FLAGS} -o bin/${NAME}-linux-arm  ./src
