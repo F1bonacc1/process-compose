@@ -28,13 +28,14 @@ var (
 )
 
 const (
-	pcConfigEnv       = "PROC_COMP_CONFIG"
-	LogPathEnvVarName = "PC_LOG_FILE"
-	LogFileFlags      = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
-	LogFileMode       = os.FileMode(0600)
-	themeFileName     = "theme.yaml"
-	settingsFileName  = "settings.yaml"
-	configHome        = "process-compose"
+	pcConfigEnv        = "PROC_COMP_CONFIG"
+	LogPathEnvVarName  = "PC_LOG_FILE"
+	LogLevelEnvVarName = "PC_LOG_LEVEL"
+	LogFileFlags       = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
+	LogFileMode        = os.FileMode(0600)
+	themeFileName      = "theme.yaml"
+	settingsFileName   = "settings.yaml"
+	configHome         = "process-compose"
 )
 
 var (
@@ -120,7 +121,7 @@ func getProcConfigDir() string {
 	}
 	xdgPcHome, err := xdg.SearchConfigFile(configHome)
 	if err != nil {
-		log.Warn().Err(err).Msg("Path not found for process compose config home")
+		log.Debug().Err(err).Msg("Path not found for process compose config home")
 	}
 	return xdgPcHome
 }
