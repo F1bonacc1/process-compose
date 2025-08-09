@@ -5,6 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"os/user"
+	"path"
+	"runtime"
+	"slices"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/health"
@@ -12,14 +21,6 @@ import (
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
-	"os"
-	"os/user"
-    "path"
-	"runtime"
-	"slices"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -33,33 +34,33 @@ func (e *ExitError) Error() string {
 }
 
 type ProjectRunner struct {
-	procConfMutex     sync.Mutex
-	project           *types.Project
-	logsMutex         sync.Mutex
-	processLogs       map[string]*pclog.ProcessLogBuffer
-	statesMutex       sync.Mutex
-	processStates     map[string]*types.ProcessState
-	runProcMutex      sync.Mutex
-	runningProcesses  map[string]*Process
-	doneProcMutex     sync.Mutex
-	doneProcesses     map[string]*Process
-	restartMutex      sync.Mutex
-	restartCalls      map[string]*RestartCall
-	logger            pclog.PcLogger
-	waitGroupMutex    sync.Mutex
-	waitGroup         sync.WaitGroup
-	exitCode          int
-	projectState      *types.ProjectState
-	mainProcess       string
-	mainProcessArgs   []string
-	isTuiOn           bool
-	isOrderedShutdown bool
-	ctxApp            context.Context
-	cancelAppFn       context.CancelFunc
-	disableDotenv     bool
-	truncateLogs      bool
-	refRate           time.Duration
-    withRecursiveMetrics bool
+	procConfMutex    sync.Mutex
+	project          *types.Project
+	logsMutex        sync.Mutex
+	processLogs      map[string]*pclog.ProcessLogBuffer
+	statesMutex      sync.Mutex
+	processStates    map[string]*types.ProcessState
+	runProcMutex     sync.Mutex
+	runningProcesses map[string]*Process
+	doneProcMutex    sync.Mutex
+	doneProcesses    map[string]*Process
+	restartMutex     sync.Mutex
+	restartCalls     map[string]*RestartCall
+	logger           pclog.PcLogger
+	//waitGroup            sync.WaitGroup
+	exitCode             int
+	projectState         *types.ProjectState
+	mainProcess          string
+	mainProcessArgs      []string
+	isTuiOn              bool
+	isOrderedShutdown    bool
+	ctxApp               context.Context
+	cancelAppFn          context.CancelFunc
+	disableDotenv        bool
+	truncateLogs         bool
+	refRate              time.Duration
+	withRecursiveMetrics bool
+	procCompleteChannel  chan int
 }
 
 // RestartCall represents an in-flight restart operation
@@ -113,9 +114,13 @@ func (p *ProjectRunner) Run() error {
 		newConf := proc
 		p.runProcess(&newConf)
 	}
-	p.waitGroupMutex.Lock()
-	p.waitGroup.Wait()
-	p.waitGroupMutex.Unlock()
+	for {
+		runProcCount := <-p.procCompleteChannel
+		log.Debug().Msgf("Remaining processes: %d", runProcCount)
+		if runProcCount == 0 {
+			break
+		}
+	}
 	log.Info().Msg("Project completed")
 	if p.exitCode != 0 {
 		err = &ExitError{p.exitCode}
@@ -160,12 +165,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withRecursiveMetrics(p.withRecursiveMetrics),
 	)
 	p.addRunningProcess(process)
-	p.waitGroupMutex.Lock()
-	p.waitGroup.Add(1)
-	p.waitGroupMutex.Unlock()
 	go func(proc *Process) {
-		defer p.removeRunningProcess(proc)
-		defer p.waitGroup.Done()
 		if err = p.waitIfNeeded(proc.procConf); err != nil {
 			log.Error().Msgf("Error: %s", err.Error())
 			log.Error().Msgf("Error: process %s won't run", proc.getName())
@@ -176,6 +176,8 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 			p.addDoneProcess(proc)
 			p.onProcessEnd(exitCode, proc.procConf)
 		}
+		count := p.removeRunningProcess(proc)
+		p.procCompleteChannel <- count
 	}(process)
 }
 
@@ -351,10 +353,12 @@ func (p *ProjectRunner) getDoneOrRunningProcess(name string) *Process {
 	return p.getRunningProcess(name)
 }
 
-func (p *ProjectRunner) removeRunningProcess(process *Process) {
+func (p *ProjectRunner) removeRunningProcess(process *Process) int {
 	p.runProcMutex.Lock()
 	delete(p.runningProcesses, process.getName())
+	runProcCount := len(p.runningProcesses)
 	p.runProcMutex.Unlock()
+	return runProcCount
 }
 
 func (p *ProjectRunner) StartProcess(name string) error {
@@ -533,7 +537,7 @@ func (p *ProjectRunner) runningProcessesReverseDependencies() map[string]map[str
 					dep := make(map[string]*Process)
 					reverseDependencies[runningProc.getName()] = dep
 				}
-                reverseDependencies[runningProc.getName()][process.getName()] = process
+				reverseDependencies[runningProc.getName()][process.getName()] = process
 			} else {
 				continue
 			}
@@ -997,6 +1001,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 			UserName:  username,
 			Version:   config.Version,
 		},
+		procCompleteChannel: make(chan int, 128),
 	}
 
 	name, err := runner.GetProjectName()
