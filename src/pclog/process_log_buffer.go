@@ -9,10 +9,11 @@ const (
 )
 
 type ProcessLogBuffer struct {
+	mxBuf     sync.Mutex
 	buffer    []string
 	size      int
+	mxObs     sync.Mutex
 	observers map[string]LogObserver
-	mx        sync.Mutex
 }
 
 func NewLogBuffer(size int) *ProcessLogBuffer {
@@ -24,12 +25,14 @@ func NewLogBuffer(size int) *ProcessLogBuffer {
 }
 
 func (b *ProcessLogBuffer) Write(message string) {
-	b.mx.Lock()
-	defer b.mx.Unlock()
+	b.mxBuf.Lock()
 	b.buffer = append(b.buffer, message)
 	if len(b.buffer) > b.size+slack {
-		b.buffer = b.buffer[slack:]
+        b.buffer = b.buffer[slack:]
 	}
+    b.mxBuf.Unlock()
+    b.mxObs.Lock()
+    defer b.mxObs.Unlock()
 	for _, observer := range b.observers {
 		_, _ = observer.WriteString(message)
 	}
@@ -37,6 +40,8 @@ func (b *ProcessLogBuffer) Write(message string) {
 }
 
 func (b *ProcessLogBuffer) GetLogRange(offsetFromEnd, limit int) []string {
+    b.mxBuf.Lock()
+    defer b.mxBuf.Unlock()
 	if len(b.buffer) == 0 {
 		return []string{}
 	}
@@ -67,32 +72,32 @@ func (b *ProcessLogBuffer) GetLogLength() int {
 }
 
 func (b *ProcessLogBuffer) GetLogsAndSubscribe(observer LogObserver) {
-	b.mx.Lock()
-	defer b.mx.Unlock()
+	b.mxObs.Lock()
+	defer b.mxObs.Unlock()
 	observer.SetLines(b.GetLogRange(observer.GetTailLength(), 0))
 	b.observers[observer.GetUniqueID()] = observer
 }
 
 func (b *ProcessLogBuffer) Subscribe(observer LogObserver) {
-	b.mx.Lock()
-	defer b.mx.Unlock()
+	b.mxObs.Lock()
+	defer b.mxObs.Unlock()
 	b.observers[observer.GetUniqueID()] = observer
 }
 
 func (b *ProcessLogBuffer) UnSubscribe(observer LogObserver) {
-	b.mx.Lock()
-	defer b.mx.Unlock()
+	b.mxObs.Lock()
+	defer b.mxObs.Unlock()
 	delete(b.observers, observer.GetUniqueID())
 }
 
 func (b *ProcessLogBuffer) Close() {
-	b.mx.Lock()
-	defer b.mx.Unlock()
+	b.mxObs.Lock()
+	defer b.mxObs.Unlock()
 	b.observers = map[string]LogObserver{}
 }
 
 func (b *ProcessLogBuffer) Truncate() {
-	b.mx.Lock()
-	defer b.mx.Unlock()
+	b.mxBuf.Lock()
+	defer b.mxBuf.Unlock()
 	b.buffer = b.buffer[:0]
 }

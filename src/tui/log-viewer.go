@@ -3,18 +3,26 @@ package tui
 import (
 	"bytes"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/pclog"
-	"github.com/rivo/tview"
 	"io"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/f1bonacc1/process-compose/src/pclog"
+	"github.com/rivo/tview"
 )
 
 var (
 	regionPattern = regexp.MustCompile(`\["([a-zA-Z0-9_,;: \-\.]*)"\]`)
+	// ANSI escape sequence patterns
+	// Clear entire screen sequences
+	clearScreenPattern = regexp.MustCompile(`\x1b\[2J|\x1bc|\x1b\[H\x1b\[2J`)
 )
+
+type truncator interface {
+	truncateLog()
+}
 
 type LogView struct {
 	tview.TextView
@@ -28,6 +36,7 @@ type LogView struct {
 	searchTerm             string
 	searchIndex            int
 	totalSearchCount       int
+	truncator              truncator
 }
 
 func NewLogView(maxLines int) *LogView {
@@ -51,6 +60,13 @@ func NewLogView(maxLines int) *LogView {
 
 func (l *LogView) WriteString(line string) (n int, err error) {
 	if l.useAnsi {
+		// Check for clear screen sequences
+		if clearScreenPattern.MatchString(line) {
+			l.Clear()
+			l.truncator.truncateLog()
+			// Remove the clear sequence and process remaining text
+			line = clearScreenPattern.ReplaceAllString(line, "")
+		}
 		return l.buffer.WriteString(tview.Escape(line + "\n"))
 	}
 	if strings.Contains(strings.ToLower(line), "error") {
@@ -185,3 +201,8 @@ func (l *LogView) AddMark() {
 	mark := strings.Repeat("-", w)
 	fmt.Fprintf(l.buffer, "%s\n", mark)
 }
+
+func (l *LogView) setTruncator(t truncator) {
+	l.truncator = t
+}
+

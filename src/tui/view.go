@@ -3,12 +3,6 @@ package tui
 import (
 	"context"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/client"
-	"github.com/f1bonacc1/process-compose/src/config"
-	"github.com/f1bonacc1/process-compose/src/types"
-	"github.com/f1bonacc1/process-compose/src/updater"
-	"github.com/gdamore/tcell/v2"
-	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
 	"regexp"
@@ -17,8 +11,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/f1bonacc1/process-compose/src/util"
+	"github.com/f1bonacc1/process-compose/src/client"
+	"github.com/f1bonacc1/process-compose/src/config"
+	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/f1bonacc1/process-compose/src/updater"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
+
 	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/util"
 	"github.com/rivo/tview"
 )
 
@@ -143,6 +144,7 @@ func newPcView(project app.IProject) *pcView {
 	pv.recreateHelpDialog()
 	pv.loadThemes()
 	util.SetProjectNameAsTerminalTitle(pv.project)
+	pv.logsText.setTruncator(pv)
 
 	if len(pv.procNames) > 0 {
 		name := pv.procNames[0]

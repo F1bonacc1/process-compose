@@ -1,0 +1,17 @@
+version: "0.5"
+processes:
+  pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+  clear:
+    command: ./test-clear.sh
+#    is_tty: true
+  progress:
+    command: ./test-progress.sh
+    #is_tty: true
+  spinner:
+    command: ./test-spinner.sh
+    #is_tty: true
+  all-sequences:
+    command: ./test-all-sequences.sh
+    #is_tty: true
