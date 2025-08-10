@@ -2,11 +2,15 @@ package loader
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
-	"path/filepath"
 )
 
 type mutatorFunc func(p *types.Project)
@@ -140,6 +144,23 @@ func convertStrDisabledToBool(p *types.Project) {
 		if proc.IsDisabled == "false" {
 			proc.Disabled = false
 		} else if proc.IsDisabled == "true" {
+			proc.Disabled = true
+		}
+		p.Processes[name] = proc
+	}
+}
+
+func disableProcsInEnv(p *types.Project) {
+	procsToDisable := os.Getenv(config.EnvVarDisabledProcs)
+	if procsToDisable == "" {
+		return
+	}
+	disabledProcs := make(map[string]bool)
+	for name := range strings.SplitSeq(procsToDisable, ",") {
+		disabledProcs[name] = true
+	}
+	for name, proc := range p.Processes {
+		if _, found := disabledProcs[name]; found {
 			proc.Disabled = true
 		}
 		p.Processes[name] = proc

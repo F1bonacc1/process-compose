@@ -2,10 +2,13 @@ package loader
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/types"
-	"testing"
 )
 
 func Test_assignDefaultProcessValues(t *testing.T) {
@@ -566,6 +569,80 @@ func Test_convertStrDisabledToBool(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			convertStrDisabledToBool(tt.args.p)
+			for _, p := range tt.args.p.Processes {
+				if p.Disabled != tt.wantDisabled {
+					t.Errorf("Expected process disabled to be %t", tt.wantDisabled)
+				}
+			}
+		})
+	}
+}
+func Test_convertEnvToDisabled(t *testing.T) {
+	os.Setenv(config.EnvVarDisabledProcs, "test1,test2")
+	type args struct {
+		p *types.Project
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantDisabled bool
+	}{
+		{
+			name: "disabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test": {
+							Disabled: true,
+						},
+					},
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "enabled",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test": {
+							Disabled: false,
+						},
+					},
+				},
+			},
+			wantDisabled: false,
+		},
+		{
+			name: "disabled with env1",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test1": {
+							Disabled: false,
+						},
+					},
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "disabled with env2",
+			args: args{
+				p: &types.Project{
+					Processes: types.Processes{
+						"test2": {
+							Disabled: false,
+						},
+					},
+				},
+			},
+			wantDisabled: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			disableProcsInEnv(tt.args.p)
 			for _, p := range tt.args.p.Processes {
 				if p.Disabled != tt.wantDisabled {
 					t.Errorf("Expected process disabled to be %t", tt.wantDisabled)
