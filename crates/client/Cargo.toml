@@ -19,16 +19,22 @@ crate-type = ["rlib"]
 serde_json = { version = "^1.0", default-features = false }
 openapiv3 = { version = "^2", default-features = false }
 
-progenitor = { version = "^0.10", default-features = false, optional = true }
+progenitor = { version = "^0.11", default-features = false, optional = true }
 prettyplease = { version = "^0.2.24", optional = true }
 syn = { version = "^2.0.80", optional = true }
-schemars = { version = "^0.8.*" }
+schemars = { version = "^0.8.*" } # update to 1.0 blocked by typify
 
 typify = { version = "^0.4", default-features = false, optional = true }
 
+process-wrap = { version = "^8", default-features = false, optional = true}
+
+cgp = { version = "^0.4", default-features = false, optional = true }
+
 [features]
-default = ["progenitor", "typify"]
+default = ["progenitor", "typify", "process-wrap"]
 
 typify = ["dep:typify", "dep:prettyplease"]
 
 progenitor = ["dep:progenitor", "dep:prettyplease", "dep:syn"]
+
+process-wrap = ["dep:process-wrap", "dep:cgp"]
