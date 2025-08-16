@@ -3,10 +3,11 @@ package tui
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/f1bonacc1/glippy"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
-	"time"
 )
 
 func (pv *pcView) toggleLogSelection() {
@@ -63,6 +64,7 @@ func (pv *pcView) followLog(name string) {
 	}
 	pv.logsText.useAnsi = !config.DisableAnsiColors
 	if err = pv.project.GetLogsAndSubscribe(name, pv.logsText); err != nil {
+		pv.attentionMessage(fmt.Sprintf("Couldn't subscribe to the process logs: %s", err.Error()), 5*time.Second)
 		return
 	}
 	pv.logsText.ScrollToEnd()

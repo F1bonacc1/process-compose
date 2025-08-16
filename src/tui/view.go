@@ -95,6 +95,8 @@ type pcView struct {
 	detachOnSuccess       bool
 	procStatesMtx         sync.Mutex
 	procStates            *types.ProcessesState
+	attentionMessages     chan attentionMessage
+	attentionCancel       context.CancelFunc
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -122,9 +124,10 @@ func newPcView(project app.IProject) *pcView {
 		selectedNs:  AllNS,
 
 		// configuration
-		shortcuts: newShortCuts(),
-		themes:    config.NewThemes(),
-		settings:  config.NewSettings(),
+		shortcuts:         newShortCuts(),
+		themes:            config.NewThemes(),
+		settings:          config.NewSettings(),
+		attentionMessages: make(chan attentionMessage, 10),
 	}
 	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
@@ -151,6 +154,7 @@ func newPcView(project app.IProject) *pcView {
 		pv.logsText.SetTitle(name)
 		pv.followLog(name)
 	}
+	go pv.startAttentionsMessageRoutine()
 	//pv.dumpStyles()
 	return pv
 }

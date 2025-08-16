@@ -3,13 +3,19 @@ package tui
 import (
 	"context"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/config"
-	"github.com/rivo/tview"
-	"github.com/rs/zerolog/log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/config"
+	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
+
+type attentionMessage struct {
+	text     string
+	duration time.Duration
+}
 
 func (pv *pcView) createStatTable() *tview.Table {
 	table := tview.NewTable().SetBorders(false).SetSelectable(false, false)
@@ -72,25 +78,46 @@ func (pv *pcView) getProjectName() string {
 	return name
 }
 
-// AttentionMessage shows an attention message in the status table
+// attentionMessage shows an attention message in the status table
 // It will disappear after the specified duration.
 // duration == 0 will not hide the message
 func (pv *pcView) attentionMessage(message string, duration time.Duration) {
-	go func() {
-		pv.appView.QueueUpdateDraw(func() {
-			pv.statTable.SetCell(0, 2, tview.NewTableCell(message).
-				SetSelectable(false).
-				SetAlign(tview.AlignCenter).
-				SetExpansion(0).
-				SetTextColor(tview.Styles.ContrastSecondaryTextColor).
-				SetBackgroundColor(tview.Styles.MoreContrastBackgroundColor))
-		})
-		if duration == 0 {
+    pv.attentionMessages <- attentionMessage{
+        text:     message,
+        duration: duration,
+    }
+}
+
+func (pv *pcView) startAttentionsMessageRoutine() {
+    for {
+		select {
+		case msg := <-pv.attentionMessages:
+            if pv.attentionCancel != nil {
+                pv.attentionCancel()
+            }
+            ctx, cancel := context.WithTimeout(pv.ctxApp, msg.duration)
+            pv.attentionCancel = cancel
+			go pv.showAttentionMessage(ctx, msg.text, msg.duration)
+		case <-pv.ctxApp.Done():
 			return
 		}
-		time.Sleep(duration)
-		pv.hideAttentionMessage()
-	}()
+	}
+}
+
+func (pv *pcView) showAttentionMessage(ctx context.Context, message string, duration time.Duration) {
+	pv.appView.QueueUpdateDraw(func() {
+		pv.statTable.SetCell(0, 2, tview.NewTableCell(message).
+			SetSelectable(false).
+			SetAlign(tview.AlignCenter).
+			SetExpansion(0).
+			SetTextColor(tview.Styles.ContrastSecondaryTextColor).
+			SetBackgroundColor(tview.Styles.MoreContrastBackgroundColor))
+	})
+	if duration == 0 {
+		return
+	}
+	<-ctx.Done()
+	pv.hideAttentionMessage()
 }
 
 func (pv *pcView) showAutoProgress(ctx context.Context, duration time.Duration) {
