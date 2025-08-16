@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/api"
-	"github.com/gorilla/websocket"
-	"github.com/rs/zerolog/log"
 	"net"
 	"net/http"
 	"os"
 	"sync/atomic"
+
+	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 type LogClient struct {
@@ -21,7 +22,6 @@ type LogClient struct {
 	socketPath       string
 	address          string
 	PrintProcessName bool
-	printLogFn       func(api.LogMessage)
 }
 
 func NewLogClient(address, socketPath string) *LogClient {
@@ -48,7 +48,7 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, fn fun
 
 	if err != nil {
 		log.Error().Msgf("failed to dial to %s error: %v", url, err)
-		return done, err
+		return done, fmt.Errorf("failed to connect to %s: %w", l.address, err)
 	}
 	//defer l.ws.Close()
 	done = make(chan struct{})
@@ -61,6 +61,9 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, fn fun
 // CloseChannel Cleanly close the connection by sending a close message and then
 // waiting (with timeout) for the server to close the connection.
 func (l *LogClient) CloseChannel() error {
+	if l.ws == nil {
+		return nil
+	}
 	err := l.ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "write close:", err)
