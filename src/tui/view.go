@@ -97,6 +97,7 @@ type pcView struct {
 	procStates            *types.ProcessesState
 	attentionMessages     chan attentionMessage
 	attentionCancel       context.CancelFunc
+	errTuiStartup         error
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -413,7 +414,11 @@ func (pv *pcView) handleShutDown() {
 		_ = pv.project.ShutDownProject()
 	}
 	pv.stopFollowLog()
-	pv.appView.Stop()
+	if pv.errTuiStartup == nil {
+		pv.appView.Stop()
+	} else {
+		log.Fatal().Err(pv.errTuiStartup).Msg("TUI startup error")
+	}
 	pv.cancelAppFn()
 }
 
@@ -598,6 +603,7 @@ func RunTUIAsync(project app.IProject, options ...Option) {
 	go func() {
 		if err := pcv.appView.Run(); err != nil {
 			log.Error().Err(err).Msgf("TUI stopped")
+			pcv.errTuiStartup = err
 			pcv.handleShutDown()
 		}
 	}()
@@ -607,6 +613,7 @@ func RunTUI(project app.IProject, options ...Option) {
 	setupTui(project, options...)
 	if err := pcv.appView.Run(); err != nil {
 		log.Error().Err(err).Msgf("TUI stopped")
+		pcv.errTuiStartup = err
 		pcv.handleShutDown()
 	}
 }
