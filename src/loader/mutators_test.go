@@ -2,7 +2,6 @@ package loader
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/f1bonacc1/process-compose/src/command"
@@ -578,7 +577,7 @@ func Test_convertStrDisabledToBool(t *testing.T) {
 	}
 }
 func Test_convertEnvToDisabled(t *testing.T) {
-	os.Setenv(config.EnvVarDisabledProcs, "test1,test2")
+	t.Setenv(config.EnvVarDisabledProcs, "test1,test2")
 	type args struct {
 		p *types.Project
 	}
