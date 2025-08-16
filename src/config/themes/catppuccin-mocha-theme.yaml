@@ -25,6 +25,7 @@ style:
   dialog:
     fgColor: '#f5c2e7'
     bgColor: '#cba6f7'
+    attentionBgColor: red
     buttonFgColor: '#11111b'
     buttonBgColor: '#cba6f7'
     buttonFocusFgColor: '#11111b'

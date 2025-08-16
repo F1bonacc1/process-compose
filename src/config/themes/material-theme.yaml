@@ -30,6 +30,7 @@ style:
     # Material dialogs in dark theme use elevated dark surfaces
     fgColor: '#FFFFFF'        # White (Primary Text)
     bgColor: '#303030'        # Material Grey 900 (Elevated Surface)
+    attentionBgColor: red
     # Buttons use the lighter primary color for text
     buttonFgColor: '#9FA8DA'    # Material Indigo 200
     buttonBgColor: '#424242'    # Material Grey 800 (Subtle Button Background)
