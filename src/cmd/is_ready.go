@@ -11,6 +11,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	// default const polling inteval
+	defaultPollingInterval = 1 * time.Second
+)
+
 // `projectIsReadyCmd` represents the `project is-ready` command
 var projectIsReadyCmd = &cobra.Command{
 	Use:   "is-ready",
@@ -26,7 +31,7 @@ var projectIsReadyCmd = &cobra.Command{
 					break
 				}
 				log.Warn().Msgf("%s", notReady.Error())
-				time.Sleep(1 * time.Second)
+				time.Sleep(defaultPollingInterval)
 			}
 
 			elapsed := time.Since(start)
@@ -91,24 +96,42 @@ var processIsReadyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		processName := args[0]
 		client := getClient()
-
 		if *pcFlags.WaitReady {
+			processInProject := false
 			start := time.Now()
 			for {
-				notReady := checkProcessReady(client, processName)
-				if notReady == nil {
-					break
+				if !processInProject {
+					processesNames, err := client.GetProcessesName()
+					if err != nil {
+						log.Info().Msgf("%s", err.Error())
+					} else {
+						for _, name := range processesNames {
+							if name == processName {
+								processInProject = true
+							}
+						}
+						if !processInProject {
+							log.Fatal().Err(fmt.Errorf("Process '%s' not found in the project. Available processes: %s", processName, strings.Join(processesNames, ", "))).Send()
+						}
+					}
 				}
-				log.Info().Msgf("%s", notReady.Error())
-				time.Sleep(*pcFlags.SlowRefreshRate)
+
+				if processInProject {
+					err := checkProcessReady(client, processName)
+					if err == nil {
+						break
+					}
+					log.Info().Msgf("%s", err.Error())
+				}
+				time.Sleep(defaultPollingInterval)
 			}
 
 			elapsed := time.Since(start)
 			log.Info().Msgf("Process '%s' is ready after waiting for %s", processName, elapsed.Round(10*time.Millisecond))
 		} else {
-			notReady := checkProcessReady(client, processName)
-			if notReady != nil {
-				log.Fatal().Err(notReady).Send()
+			err := checkProcessReady(client, processName)
+			if err != nil {
+				log.Fatal().Err(err).Send()
 			}
 		}
 	},
@@ -118,9 +141,6 @@ func checkProcessReady(client *client.PcClient, processName string) error {
 	state, err := client.GetProcessState(processName)
 	if err != nil {
 		return err
-	}
-	if state == nil {
-		return fmt.Errorf("Process '%s' not found", processName)
 	}
 
 	isReady, reason := state.IsReadyReason()
