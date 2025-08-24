@@ -436,7 +436,7 @@ func (p *Process) forceKillOnTimeout() error {
 		return nil
 	case errors.Is(err, context.DeadlineExceeded):
 		log.Debug().Msgf("process failed to shut down within %d seconds, sending %d", p.procConf.ShutDownParams.ShutDownTimeout, syscall.SIGKILL)
-		return p.command.Stop(int(syscall.SIGKILL), p.procConf.ShutDownParams.ParentOnly)
+		return p.command.Stop(int(syscall.SIGKILL), false)
 	default:
 		log.Error().Err(err).Msgf("terminating %s with timeout %d failed", p.getName(), p.procConf.ShutDownParams.ShutDownTimeout)
 		return err
