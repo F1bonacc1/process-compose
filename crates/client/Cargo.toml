@@ -26,9 +26,11 @@ schemars = { version = "^0.8.*" } # update to 1.0 blocked by typify
 
 typify = { version = "^0.4", default-features = false, optional = true }
 
-process-wrap = { version = "^8", default-features = false, optional = true}
+process-wrap = { version = "9.0", default-features = false, optional = true}
 
-cgp = { version = "^0.4", default-features = false, optional = true }
+cgp = { version = "^0.4.2", default-features = false, optional = true }
+
+clap = {version = "4.5", default-features = false, features = ["derive"], optional = true}
 
 [features]
 default = ["progenitor", "typify", "process-wrap"]
@@ -37,4 +39,4 @@ typify = ["dep:typify", "dep:prettyplease"]
 
 progenitor = ["dep:progenitor", "dep:prettyplease", "dep:syn"]
 
-process-wrap = ["dep:process-wrap", "dep:cgp"]
+process-wrap = ["dep:process-wrap", "dep:cgp", "dep:clap"]

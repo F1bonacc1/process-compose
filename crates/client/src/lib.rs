@@ -1,8 +1,10 @@
 //! provides generator to use in build.rs, with default `progenitor` provider
-#[cfg(feature = "process-wrap]")]
-pub mod cli;
+
 use openapiv3::OpenAPI;
 use std::sync::OnceLock;
+
+#[cfg(feature = "process-wrap")]
+pub mod cli;
 
 /// Raw OpenAPI spec string
 pub const OPENAPI_JSON_STRING: &str = include_str!("../../../src/docs/swagger.json");

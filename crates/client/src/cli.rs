@@ -1,10 +1,11 @@
-//! For flags.go, generate rust code. Only commands to start process compose and get its handle to manage.
+//! Keep in sync with `flags.go``. Only commands to start process compose and get its handle to manage.
 
 use std::path::PathBuf;
 
 /// Process Compose startup flags
 #[derive(Debug, Default, Clone)]
 pub struct ProcessComposeFlags {
+    
     /// Config file path (-f, --config)
     pub config: Option<PathBuf>,
     
