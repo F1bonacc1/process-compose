@@ -119,7 +119,19 @@ func (p *PcClient) StopProcess(name string) error {
 }
 
 func (p *PcClient) StopProcesses(names []string) (map[string]string, error) {
-	return p.stopProcesses(names)
+    return p.stopProcesses(names)
+}
+
+func (p *PcClient) StopNamespace(name string) (map[string]string, error) {
+    return p.stopNamespace(name)
+}
+
+func (p *PcClient) EnableNamespace(name string) (map[string]string, error) {
+    return p.enableNamespace(name)
+}
+
+func (p *PcClient) DisableNamespace(name string) (map[string]string, error) {
+    return p.disableNamespace(name)
 }
 
 func (p *PcClient) StartProcess(name string) error {
