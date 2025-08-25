@@ -2,6 +2,21 @@
 
 use std::path::PathBuf;
 
+const (
+	EnvVarNamePort             = "PC_PORT_NUM"
+	EnvVarNameTui              = "PC_DISABLE_TUI"
+	EnvVarNameConfig           = "PC_CONFIG_FILES"
+	EnvVarNameShortcuts        = "PC_SHORTCUTS_FILES"
+	EnvVarNameNoServer         = "PC_NO_SERVER"
+	EnvVarUnixSocketPath       = "PC_SOCKET_PATH"
+	EnvVarReadOnlyMode         = "PC_READ_ONLY"
+	EnvVarDisableDotEnv        = "PC_DISABLE_DOTENV"
+	EnvVarTuiFullScreen        = "PC_TUI_FULL_SCREEN"
+	EnvVarHideDisabled         = "PC_HIDE_DISABLED_PROC"
+	EnvVarNameOrderedShutdown  = "PC_ORDERED_SHUTDOWN"
+	EnvVarWithRecursiveMetrics = "PC_RECURSIVE_METRICS"
+)
+
 /// Process Compose startup flags
 #[derive(Debug, Default, Clone)]
 pub struct ProcessComposeFlags {
