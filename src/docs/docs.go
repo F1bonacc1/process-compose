@@ -43,6 +43,111 @@ const docTemplate = `{
                 }
             }
         },
+        "/namespace": {
+            "post": {
+                "description": "Merge processes from a partial config; all must share the same namespace",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Post config fragment with processes (single namespace)",
+                "operationId": "PostNamespace",
+                "parameters": [
+                    {
+                        "description": "Processes, all in the same namespace",
+                        "name": "processes",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Processes"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Process -\u003e status (added)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Process -\u003e status with failures",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all processes from current config in the given namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Delete namespace processes",
+                "operationId": "DeleteNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Process -\u003e status (removed)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Process -\u003e status with failures",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/namespace/disable/{name}": {
             "patch": {
                 "description": "Disables all processes in the given namespace",
@@ -1336,6 +1441,12 @@ const docTemplate = `{
                 "system_time": {
                     "type": "string"
                 }
+            }
+        },
+        "types.Processes": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/types.ProcessConfig"
             }
         },
         "types.ProcessesState": {

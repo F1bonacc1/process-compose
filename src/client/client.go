@@ -194,5 +194,14 @@ func (p *PcClient) ReloadProject() (map[string]string, error) {
 }
 
 func (p *PcClient) TruncateProcessLogs(name string) error {
-	return p.truncateProcessLogs(name)
+    return p.truncateProcessLogs(name)
+}
+
+// New methods to satisfy app.IProject
+func (p *PcClient) AddNamespace(processes *types.Processes) (map[string]string, error) {
+    return p.addNamespace(processes)
+}
+
+func (p *PcClient) RemoveNamespace(namespace string) (map[string]string, error) {
+    return p.removeNamespace(namespace)
 }
