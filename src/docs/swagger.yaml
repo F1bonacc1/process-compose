@@ -1,5 +1,27 @@
 components:
     schemas:
+        api.LogsResponse:
+            properties:
+                logs:
+                    items:
+                        type: string
+                    type: array
+            type: object
+        api.NameResponse:
+            properties:
+                name:
+                    type: string
+            type: object
+        api.ProjectNameResponse:
+            properties:
+                projectName:
+                    type: string
+            type: object
+        api.StatusResponse:
+            properties:
+                status:
+                    type: string
+            type: object
         health.ExecProbe:
             properties:
                 command:
@@ -342,7 +364,11 @@ paths:
             operationId: IsAlive
             responses:
                 "200":
-                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.StatusResponse'
+                    description: Alive Status
             summary: Liveness Check
             tags:
                 - Liveness
@@ -442,9 +468,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
+                                $ref: '#/components/schemas/api.NameResponse'
                     description: Truncated Process Name
                 "400":
                     content:
@@ -485,11 +509,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties:
-                                    items:
-                                        type: string
-                                    type: array
-                                type: object
+                                $ref: '#/components/schemas/api.LogsResponse'
                     description: Process Logs
                 "400":
                     content:
@@ -547,9 +567,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
+                                $ref: '#/components/schemas/api.NameResponse'
                     description: Restarted Process Name
                 "400":
                     content:
@@ -584,9 +602,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
+                                $ref: '#/components/schemas/api.NameResponse'
                     description: Scaled Process Name
                 "400":
                     content:
@@ -615,9 +631,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
+                                $ref: '#/components/schemas/api.NameResponse'
                     description: Started Process Name
                 "400":
                     content:
@@ -646,9 +660,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
+                                $ref: '#/components/schemas/api.NameResponse'
                     description: Stopped Process Name
                 "400":
                     content:
@@ -798,10 +810,8 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
-                    description: ProjectName
+                                $ref: '#/components/schemas/api.ProjectNameResponse'
+                    description: Project Name
                 "400":
                     content:
                         application/json:
@@ -844,9 +854,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
+                                $ref: '#/components/schemas/api.StatusResponse'
                     description: Stopped Server
             summary: Stops all the processes and the server
             tags:

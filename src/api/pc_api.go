@@ -107,7 +107,7 @@ func (api *PcApi) GetProcesses(c *gin.Context) {
 // @Param			name		path		string				true	"Process Name"
 // @Param			endOffset	path		int					true	"Offset from the end of the log"
 // @Param			limit		path		int					true	"Limit of lines to get (0 will get all the lines till the end)"
-// @Success		200			{object}	map[string][]string	"Process Logs"
+// @Success		200			{object}	api.LogsResponse	"Process Logs"
 // @Failure		400			{object}	map[string]string
 // @Router			/process/logs/{name}/{endOffset}/{limit} [get]
 func (api *PcApi) GetProcessLogs(c *gin.Context) {
@@ -140,7 +140,7 @@ func (api *PcApi) GetProcessLogs(c *gin.Context) {
 // @Summary		Truncate process logs
 // @Produce		json
 // @Param		name		path		string				true	"Process Name"
-// @Success		200			{object}	map[string]string	"Truncated Process Name"
+// @Success		200			{object}	api.NameResponse	"Truncated Process Name"
 // @Failure		400			{object}	map[string]string
 // @Router			/process/logs/{name} [delete]
 func (api *PcApi) TruncateProcessLogs(c *gin.Context) {
@@ -161,7 +161,7 @@ func (api *PcApi) TruncateProcessLogs(c *gin.Context) {
 // @Summary		Stop a process
 // @Produce		json
 // @Param			name	path		string				true	"Process Name"
-// @Success		200		{object}	map[string]string	"Stopped Process Name"
+// @Success		200		{object}	api.NameResponse	"Stopped Process Name"
 // @Failure		400		{object}	map[string]string
 // @Router			/process/stop/{name} [patch]
 func (api *PcApi) StopProcess(c *gin.Context) {
@@ -215,7 +215,7 @@ func (api *PcApi) StopProcesses(c *gin.Context) {
 // @Summary		Start a process
 // @Produce		json
 // @Param			name	path		string				true	"Process Name"
-// @Success		200		{object}	map[string]string	"Started Process Name"
+// @Success		200		{object}	api.NameResponse	"Started Process Name"
 // @Failure		400		{object}	map[string]string
 // @Router			/process/start/{name} [post]
 func (api *PcApi) StartProcess(c *gin.Context) {
@@ -236,7 +236,7 @@ func (api *PcApi) StartProcess(c *gin.Context) {
 // @Summary		Restart a process
 // @Produce		json
 // @Param			name	path		string				true	"Process Name"
-// @Success		200		{object}	map[string]string	"Restarted Process Name"
+// @Success		200		{object}	api.NameResponse	"Restarted Process Name"
 // @Failure		400		{object}	map[string]string
 // @Router			/process/restart/{name} [post]
 func (api *PcApi) RestartProcess(c *gin.Context) {
@@ -258,7 +258,7 @@ func (api *PcApi) RestartProcess(c *gin.Context) {
 // @Produce		json
 // @Param			name	path		string				true	"Process Name"
 // @Param			scale	path		int					true	"New amount of process replicas"
-// @Success		200		{object}	map[string]string	"Scaled Process Name"
+// @Success		200		{object}	api.NameResponse	"Scaled Process Name"
 // @Failure		400		{object}	map[string]string
 // @Router			/process/scale/{name}/{scale} [patch]
 func (api *PcApi) ScaleProcess(c *gin.Context) {
@@ -283,7 +283,7 @@ func (api *PcApi) ScaleProcess(c *gin.Context) {
 // @Tags			Liveness
 // @Summary		Liveness Check
 // @Produce		json
-// @Success		200
+// @Success		200	{object}	api.StatusResponse	"Alive Status"
 // @Router			/live [get]
 func (api *PcApi) IsAlive(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "alive"})
@@ -295,7 +295,7 @@ func (api *PcApi) IsAlive(c *gin.Context) {
 // @Tags			ProjectName
 // @Summary		Get Project Name
 // @Produce		json
-// @Success		200	{object}	map[string]string	"ProjectName"
+// @Success		200	{object}	api.ProjectNameResponse	"Project Name"
 // @Failure		400	{object}	map[string]string
 // @Router			/project/name [get]
 func (api *PcApi) GetProjectName(c *gin.Context) {
@@ -336,7 +336,7 @@ func (api *PcApi) GetProcessPorts(c *gin.Context) {
 // @Tags			Project
 // @Summary		Stops all the processes and the server
 // @Produce		json
-// @Success		200	{object}	map[string]string	"Stopped Server"
+// @Success		200	{object}	api.StatusResponse	"Stopped Server"
 // @Router			/project/stop [post]
 func (api *PcApi) ShutDownProject(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "stopped"})
