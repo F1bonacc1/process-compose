@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/f1bonacc1/process-compose/src/types"
 	"net/http"
 	"strconv"
 	"sync"
+
+	"github.com/f1bonacc1/process-compose/src/types"
 
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/gin-gonic/gin"
@@ -372,7 +373,7 @@ func (api *PcApi) UpdateProject(c *gin.Context) {
 
 // @Schemes
 // @Id				UpdateProcess
-// @Description	Update porcess
+// @Description	Update process
 // @Tags			Process
 // @Summary		Updates process configuration
 // @Produce		json
