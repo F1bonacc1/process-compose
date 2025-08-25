@@ -348,7 +348,7 @@ paths:
                 - Liveness
     /process:
         post:
-            description: Update porcess
+            description: Update process
             operationId: UpdateProcess
             responses:
                 "200":

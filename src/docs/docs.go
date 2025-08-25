@@ -42,7 +42,7 @@ const docTemplate = `{
         },
         "/process": {
             "post": {
-                "description": "Update porcess",
+                "description": "Update process",
                 "produces": [
                     "application/json"
                 ],

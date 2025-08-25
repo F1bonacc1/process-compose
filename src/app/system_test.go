@@ -170,8 +170,8 @@ func TestSystem_TestComposeCircular(t *testing.T) {
 		_, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture1},
 		})
-		if err == nil {
-			t.Error("should fail on cirlcular dependency")
+			if err == nil {
+				t.Error("should fail on circular dependency")
 			return
 		}
 
