@@ -35,7 +35,10 @@ const docTemplate = `{
                 "operationId": "IsAlive",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Alive Status",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusResponse"
+                        }
                     }
                 }
             }
@@ -133,10 +136,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Truncated Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -189,13 +189,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Process Logs",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/api.LogsResponse"
                         }
                     },
                     "400": {
@@ -273,10 +267,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Restarted Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -322,10 +313,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Scaled Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -364,10 +352,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Started Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -406,10 +391,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Stopped Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -649,12 +631,9 @@ const docTemplate = `{
                 "operationId": "GetProjectName",
                 "responses": {
                     "200": {
-                        "description": "ProjectName",
+                        "description": "Project Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ProjectNameResponse"
                         }
                     },
                     "400": {
@@ -714,10 +693,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Stopped Server",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.StatusResponse"
                         }
                     }
                 }
@@ -725,6 +701,41 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.LogsResponse": {
+            "type": "object",
+            "properties": {
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.NameResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ProjectNameResponse": {
+            "type": "object",
+            "properties": {
+                "projectName": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.StatusResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "health.ExecProbe": {
             "type": "object",
             "properties": {
