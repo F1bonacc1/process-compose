@@ -360,7 +360,7 @@ info:
         name: Apache 2.0
         url: http://www.apache.org/licenses/LICENSE-2.0.html
     title: Process Compose API
-    version: "1.0"
+    version: "1.73"
 openapi: 3.0.3
 paths:
     /live:
@@ -377,6 +377,131 @@ paths:
             summary: Liveness Check
             tags:
                 - Liveness
+    /namespace/disable/{name}:
+        patch:
+            description: Disables all processes in the given namespace
+            operationId: DisableNamespace
+            parameters:
+                - description: Namespace Name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Process -> status
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Process -> status
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
+            summary: Disable all processes in a namespace
+            tags:
+                - Namespace
+    /namespace/enable/{name}:
+        patch:
+            description: Enables all processes in the given namespace
+            operationId: EnableNamespace
+            parameters:
+                - description: Namespace Name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Process -> status
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Process -> status
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
+            summary: Enable all processes in a namespace
+            tags:
+                - Namespace
+    /namespace/stop/{name}:
+        patch:
+            description: Sends kill signal to all processes in the given namespace
+            operationId: StopNamespace
+            parameters:
+                - description: Namespace Name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Stopped All Processes in Namespace
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Stopped Part of Processes in Namespace
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Failed to stop some processes, they may have some dependants
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: No proccesses in namespace
+            summary: Stop all processes in a namespace
+            tags:
+                - Namespace
     /process:
         post:
             description: Update process

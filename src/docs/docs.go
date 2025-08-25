@@ -43,6 +43,168 @@ const docTemplate = `{
                 }
             }
         },
+        "/namespace/disable/{name}": {
+            "patch": {
+                "description": "Disables all processes in the given namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Disable all processes in a namespace",
+                "operationId": "DisableNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Process -\u003e status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Process -\u003e status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/namespace/enable/{name}": {
+            "patch": {
+                "description": "Enables all processes in the given namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Enable all processes in a namespace",
+                "operationId": "EnableNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Process -\u003e status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Process -\u003e status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/namespace/stop/{name}": {
+            "patch": {
+                "description": "Sends kill signal to all processes in the given namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Stop all processes in a namespace",
+                "operationId": "StopNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stopped All Processes in Namespace",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Stopped Part of Processes in Namespace",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to stop some processes, they may have some dependants",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No proccesses in namespace",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/process": {
             "post": {
                 "description": "Update process",

@@ -12,7 +12,7 @@ import (
 )
 
 //	@title			Process Compose API
-//	@version		1.0
+//	@version		1.73
 //	@description	This is a sample Process Compose server.
 
 //	@contact.name	Process Compose Discord Channel
