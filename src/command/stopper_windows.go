@@ -14,10 +14,10 @@ func (c *CmdWrapper) Stop(sig int, parentOnly bool) error {
 		Msg("Stop Windows process.")
 
 	if parentOnly {
-		kill := exec.Command("TASKKILL", "/F", "/PID", strconv.Itoa(c.Pid()))
+		kill := exec.Command("C:\Windows\System32\taskkill.exe", "/F", "/PID", strconv.Itoa(c.Pid()))
 		return kill.Run()
 	}
-	kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(c.Pid()))
+	kill := exec.Command("C:\Windows\System32\taskkill.exe", "/T", "/F", "/PID", strconv.Itoa(c.Pid()))
 	return kill.Run()
 }
 
