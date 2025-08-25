@@ -3,7 +3,7 @@
 use openapiv3::OpenAPI;
 use std::sync::OnceLock;
 
-#[cfg(feature = "process-wrap")]
+#[cfg(feature = "cli")]
 pub mod cli;
 
 /// Raw OpenAPI spec string
