@@ -1,8 +1,4 @@
-//! Raw semantically and logically unsafe (as Go is) port of Go code.
 //! Keep in sync with `flags.go`. 
-//! Only commands to start process compose and get its handle to manage.
-//! AI agents do it well.
-
 use std::path::PathBuf;
 use std::time::Duration;
 
