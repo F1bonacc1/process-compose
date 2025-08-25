@@ -1,12 +1,13 @@
 package api
 
 import (
+	"net/http"
+	"net/url"
+
 	_ "github.com/f1bonacc1/process-compose/src/docs"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"net/http"
-	"net/url"
 )
 
 // InitRoutes initialize routing information
@@ -33,6 +34,9 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r.DELETE("/process/logs/:name", handler.TruncateProcessLogs)
 	r.PATCH("/process/stop/:name", handler.StopProcess)
 	r.PATCH("/processes/stop", handler.StopProcesses)
+	r.PATCH("/namespace/stop/:name", handler.StopNamespace)
+	r.PATCH("/namespace/disable/:name", handler.DisableNamespace)
+	r.PATCH("/namespace/enable/:name", handler.EnableNamespace)
 	r.POST("/process/start/:name", handler.StartProcess)
 	r.POST("/process/restart/:name", handler.RestartProcess)
 	r.POST("/project/stop", handler.ShutDownProject)
