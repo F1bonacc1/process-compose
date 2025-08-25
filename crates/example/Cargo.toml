@@ -13,7 +13,7 @@ serde = { version = "1.0", default-features = false, features = ["derive"]}
 tokio = { version = "1.41", features = ["macros", "rt-multi-thread"] }
 serde_json = { version = "1.0", default-features = false }
 
-progenitor-client = { version = "0.10", default-features = false, optional = false}
+progenitor-client = { version = "0.11", default-features = false, optional = false}
 
 [build-dependencies]
 process-compose-client = { path = "../client", default-features = false, features = ["progenitor", "typify"] }

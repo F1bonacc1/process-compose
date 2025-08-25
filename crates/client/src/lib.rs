@@ -1,6 +1,10 @@
 //! provides generator to use in build.rs, with default `progenitor` provider
+
 use openapiv3::OpenAPI;
 use std::sync::OnceLock;
+
+#[cfg(feature = "cli")]
+pub mod cli;
 
 /// Raw OpenAPI spec string
 pub const OPENAPI_JSON_STRING: &str = include_str!("../../../src/docs/swagger.json");

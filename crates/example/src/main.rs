@@ -1,4 +1,5 @@
 // includes generated code
+#![allow(renamed_and_removed_lints)]
 include!(concat!(env!("OUT_DIR"), "/client.rs"));
 include!(concat!(env!("OUT_DIR"), "/config.rs"));
 
