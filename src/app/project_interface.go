@@ -23,6 +23,10 @@ type IProject interface {
 	GetProcessState(name string) (*types.ProcessState, error)
 	GetProcessesState() (*types.ProcessesState, error)
 	StopProcess(name string) error
+	// Alwasy returns non nil(so possibly empty) map.
+	// Value in map is `ok` on success, else on error to stop specific process.
+	// Iterates all processes (best effort).
+	// If all proceses were stopped, error is nil.
 	StopProcesses(names []string) (map[string]string, error)
 	StartProcess(name string) error
 	RestartProcess(name string) error
