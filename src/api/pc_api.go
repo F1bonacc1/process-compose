@@ -351,6 +351,70 @@ func (api *PcApi) EnableNamespace(c *gin.Context) {
 }
 
 // @Schemes
+// @Id				PostNamespace
+// @Description	Merge processes from a partial config; all must share the same namespace
+// @Tags			Namespace
+// @Summary		Post config fragment with processes (single namespace)
+// @Accept		json
+// @Produce		json
+// @Param			processes	body	types.Processes	true	"Processes, all in the same namespace"
+// @Success		200		{object}	map[string]string	"Process -> status (added)"
+// @Success		207		{object}	map[string]string	"Process -> status with failures"
+// @Failure		400		{object}	map[string]string
+// @Router			/namespace [post]
+func (api *PcApi) PostNamespace(c *gin.Context) {
+	var processes types.Processes
+	if err := c.ShouldBindJSON(&processes); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if len(processes) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no processes provided"})
+		return
+	}
+	// validation of single namespace is performed in AddNamespace
+	status, err := api.project.AddNamespace(&processes)
+	if err != nil {
+		if len(status) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusMultiStatus, status)
+		}
+		return
+	}
+	c.JSON(http.StatusOK, status)
+}
+
+// @Schemes
+// @Id				DeleteNamespace
+// @Description	Delete all processes from current config in the given namespace
+// @Tags			Namespace
+// @Summary		Delete namespace processes
+// @Produce		json
+// @Param			name	query	string	true	"Namespace Name"
+// @Success		200		{object}	map[string]string	"Process -> status (removed)"
+// @Success		207		{object}	map[string]string	"Process -> status with failures"
+// @Failure		400		{object}	map[string]string
+// @Router			/namespace [delete]
+func (api *PcApi) DeleteNamespace(c *gin.Context) {
+	ns := c.Query("name")
+	if ns == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing namespace name"})
+		return
+	}
+	status, err := api.project.RemoveNamespace(ns)
+	if err != nil {
+		if len(status) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusMultiStatus, status)
+		}
+		return
+	}
+	c.JSON(http.StatusOK, status)
+}
+
+// @Schemes
 // @Id				StartProcess
 // @Description	Starts the process if the state is not 'running' or 'pending'
 // @Tags			Process

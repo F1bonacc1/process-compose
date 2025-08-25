@@ -280,6 +280,10 @@ components:
                 system_time:
                     type: string
             type: object
+        types.Processes:
+            additionalProperties:
+                $ref: '#/components/schemas/types.ProcessConfig'
+            type: object
         types.ProcessesState:
             properties:
                 data:
@@ -377,6 +381,84 @@ paths:
             summary: Liveness Check
             tags:
                 - Liveness
+    /namespace:
+        delete:
+            description: Delete all processes from current config in the given namespace
+            operationId: DeleteNamespace
+            parameters:
+                - description: Namespace Name
+                  in: query
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Process -> status (removed)
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Process -> status with failures
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
+            summary: Delete namespace processes
+            tags:
+                - Namespace
+        post:
+            description: Merge processes from a partial config; all must share the same namespace
+            operationId: PostNamespace
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/types.Processes'
+                description: Processes, all in the same namespace
+                required: true
+                x-originalParamName: processes
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Process -> status (added)
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Process -> status with failures
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Bad Request
+            summary: Post config fragment with processes (single namespace)
+            tags:
+                - Namespace
     /namespace/disable/{name}:
         patch:
             description: Disables all processes in the given namespace

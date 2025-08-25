@@ -1139,6 +1139,74 @@ func (p *ProjectRunner) UpdateProcess(updated *types.ProcessConfig) error {
 	return nil
 }
 
+// AddNamespace adds processes that all belong to the same namespace.
+// If the namespace already exists in the current project, an error is returned.
+func (p *ProjectRunner) AddNamespace(processes *types.Processes) (map[string]string, error) {
+    status := make(map[string]string)
+    if processes == nil || len(*processes) == 0 {
+        return status, fmt.Errorf("no processes provided")
+    }
+
+    // Determine namespace from first process and validate uniformity
+    ns := ""
+    for _, pr := range *processes {
+        if ns == "" {
+            ns = pr.Namespace
+        } else if pr.Namespace != ns {
+            return status, fmt.Errorf("all processes must be in the same namespace")
+        }
+    }
+    // Check if namespace already exists
+    for _, exist := range p.project.Processes {
+        if exist.Namespace == ns {
+            return status, fmt.Errorf("namespace %s already exists", ns)
+        }
+    }
+
+    // Render, assign, and add all processes
+    tpl := templater.New(p.project.Vars)
+    for name, pr := range *processes {
+        if pr.Name == "" {
+            pr.Name = name
+        }
+        if pr.Namespace == "" {
+            pr.Namespace = ns
+        }
+        pr.ReplicaName = pr.CalculateReplicaName()
+        validateProbes(pr.LivenessProbe)
+        validateProbes(pr.ReadinessProbe)
+        tpl.RenderProcess(&pr)
+        pr.AssignProcessExecutableAndArgs(p.project.ShellConfig, p.project.GetElevatedShellArg())
+        p.addProcessAndRun(pr)
+        status[pr.ReplicaName] = types.ProcessUpdateAdded
+    }
+    return status, nil
+}
+
+// RemoveNamespace deletes all processes belonging to the given namespace.
+func (p *ProjectRunner) RemoveNamespace(namespace string) (map[string]string, error) {
+    removed := make(map[string]string)
+    var errs []error
+    names := make([]string, 0)
+
+    // Collect names first to avoid mutating during iteration
+    for name, proc := range p.project.Processes {
+        if proc.Namespace == namespace {
+            names = append(names, name)
+        }
+    }
+
+    for _, name := range names {
+        if err := p.removeProcess(name); err != nil {
+            removed[name] = err.Error()
+            errs = append(errs, err)
+        } else {
+            removed[name] = types.ProcessUpdateRemoved
+        }
+    }
+    return removed, errors.Join(errs...)
+}
+
 func (p *ProjectRunner) prepareEnvCmds() {
 	for env, cmd := range p.project.EnvCommands {
 		output, err := runCmd(cmd)
