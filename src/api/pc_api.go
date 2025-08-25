@@ -209,6 +209,152 @@ func (api *PcApi) StopProcesses(c *gin.Context) {
 }
 
 // @Schemes
+// @Id				StopNamespace
+// @Description	Sends kill signal to all processes in the given namespace
+// @Tags			Namespace
+// @Summary		Stop all processes in a namespace
+// @Produce		json
+// @Param			name	path		string				true	"Namespace Name"
+// @Success		200		{object}	map[string]string	"Stopped Processes Names"
+// @Success		207		{object}	map[string]string	"Stopped Processes Names"
+// @Failure		400		{object}	map[string]string
+// @Router			/namespace/stop/{name} [patch]
+func (api *PcApi) StopNamespace(c *gin.Context) {
+    ns := c.Param("name")
+    states, err := api.project.GetProcessesState()
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+    names := make([]string, 0)
+    for _, st := range states.States {
+        if st.Namespace == ns {
+            names = append(names, st.Name)
+        }
+    }
+    if len(names) == 0 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "no processes in namespace: " + ns})
+        return
+    }
+    stopped, err := api.project.StopProcesses(names)
+    if err != nil {
+        if len(stopped) == 0 {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        } else {
+            c.JSON(http.StatusMultiStatus, stopped)
+        }
+        return
+    }
+    c.JSON(http.StatusOK, stopped)
+}
+
+// @Schemes
+// @Id				DisableNamespace
+// @Description	Disables all processes in the given namespace
+// @Tags			Namespace
+// @Summary		Disable all processes in a namespace
+// @Produce		json
+// @Param			name	path		string				true	"Namespace Name"
+// @Success		200		{object}	map[string]string	"Process -> status"
+// @Success		207		{object}	map[string]string	"Process -> status"
+// @Failure		400		{object}	map[string]string
+// @Router			/namespace/disable/{name} [patch]
+func (api *PcApi) DisableNamespace(c *gin.Context) {
+    ns := c.Param("name")
+    states, err := api.project.GetProcessesState()
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+    names := make([]string, 0)
+    for _, st := range states.States {
+        if st.Namespace == ns {
+            names = append(names, st.Name)
+        }
+    }
+    if len(names) == 0 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "no processes in namespace: " + ns})
+        return
+    }
+
+    results := make(map[string]string)
+    failures := 0
+    for _, name := range names {
+        cfg, err := api.project.GetProcessInfo(name)
+        if err != nil {
+            results[name] = err.Error()
+            failures++
+            continue
+        }
+        cfg.Disabled = true
+        if err := api.project.UpdateProcess(cfg); err != nil {
+            results[name] = err.Error()
+            failures++
+        } else {
+            results[name] = "ok"
+        }
+    }
+    if failures > 0 {
+        c.JSON(http.StatusMultiStatus, results)
+        return
+    }
+    c.JSON(http.StatusOK, results)
+}
+
+// @Schemes
+// @Id				EnableNamespace
+// @Description	Enables all processes in the given namespace
+// @Tags			Namespace
+// @Summary		Enable all processes in a namespace
+// @Produce		json
+// @Param			name	path		string				true	"Namespace Name"
+// @Success		200		{object}	map[string]string	"Process -> status"
+// @Success		207		{object}	map[string]string	"Process -> status"
+// @Failure		400		{object}	map[string]string
+// @Router			/namespace/enable/{name} [patch]
+func (api *PcApi) EnableNamespace(c *gin.Context) {
+    ns := c.Param("name")
+    states, err := api.project.GetProcessesState()
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+    names := make([]string, 0)
+    for _, st := range states.States {
+        if st.Namespace == ns {
+            names = append(names, st.Name)
+        }
+    }
+    if len(names) == 0 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "no processes in namespace: " + ns})
+        return
+    }
+
+    results := make(map[string]string)
+    failures := 0
+    for _, name := range names {
+        cfg, err := api.project.GetProcessInfo(name)
+        if err != nil {
+            results[name] = err.Error()
+            failures++
+            continue
+        }
+        cfg.Disabled = false
+        if err := api.project.UpdateProcess(cfg); err != nil {
+            results[name] = err.Error()
+            failures++
+        } else {
+            results[name] = "ok"
+        }
+    }
+    if failures > 0 {
+        c.JSON(http.StatusMultiStatus, results)
+        return
+    }
+    c.JSON(http.StatusOK, results)
+}
+
+// @Schemes
 // @Id				StartProcess
 // @Description	Starts the process if the state is not 'running' or 'pending'
 // @Tags			Process
