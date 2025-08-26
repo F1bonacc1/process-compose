@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/api"
-	"github.com/f1bonacc1/process-compose/src/pclog"
-	"github.com/f1bonacc1/process-compose/src/types"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/f1bonacc1/process-compose/src/pclog"
+	"github.com/f1bonacc1/process-compose/src/types"
 )
 
 var (
@@ -119,19 +120,7 @@ func (p *PcClient) StopProcess(name string) error {
 }
 
 func (p *PcClient) StopProcesses(names []string) (map[string]string, error) {
-    return p.stopProcesses(names)
-}
-
-func (p *PcClient) StopNamespace(name string) (map[string]string, error) {
-    return p.stopNamespace(name)
-}
-
-func (p *PcClient) EnableNamespace(name string) (map[string]string, error) {
-    return p.enableNamespace(name)
-}
-
-func (p *PcClient) DisableNamespace(name string) (map[string]string, error) {
-    return p.disableNamespace(name)
+	return p.stopProcesses(names)
 }
 
 func (p *PcClient) StartProcess(name string) error {
@@ -194,14 +183,5 @@ func (p *PcClient) ReloadProject() (map[string]string, error) {
 }
 
 func (p *PcClient) TruncateProcessLogs(name string) error {
-    return p.truncateProcessLogs(name)
-}
-
-// New methods to satisfy app.IProject
-func (p *PcClient) AddNamespace(processes *types.Processes) (map[string]string, error) {
-    return p.addNamespace(processes)
-}
-
-func (p *PcClient) RemoveNamespace(namespace string) (map[string]string, error) {
-    return p.removeNamespace(namespace)
+	return p.truncateProcessLogs(name)
 }

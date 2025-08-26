@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
 func (p *PcClient) stopProcess(name string) error {
@@ -64,31 +65,4 @@ func (p *PcClient) stopProcesses(names []string) (map[string]string, error) {
 		return nil, err
 	}
 	return nil, errors.New(respErr.Error)
-}
-
-func (p *PcClient) stopNamespace(name string) (map[string]string, error) {
-    url := fmt.Sprintf("http://%s/namespace/stop/%s", p.address, name)
-    req, err := http.NewRequest(http.MethodPatch, url, nil)
-    if err != nil {
-        return nil, err
-    }
-    resp, err := p.client.Do(req)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-    if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusMultiStatus {
-        stopped := map[string]string{}
-        if err = json.NewDecoder(resp.Body).Decode(&stopped); err != nil {
-            log.Err(err).Msgf("failed to decode stop namespace %s response", name)
-            return stopped, err
-        }
-        return stopped, nil
-    }
-    var respErr pcError
-    if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-        log.Err(err).Msgf("failed to decode err stop namespace %s", name)
-        return nil, err
-    }
-    return nil, errors.New(respErr.Error)
 }
