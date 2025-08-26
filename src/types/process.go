@@ -2,15 +2,16 @@ package types
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/command"
-	"github.com/f1bonacc1/process-compose/src/health"
-	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v3"
 	"math"
 	"os"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/health"
+	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 )
 
 const DefaultNamespace = "default"
@@ -405,6 +406,7 @@ func (c *ProcessCondition) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
+// Where key is process name.
 type DependsOnConfig map[string]ProcessDependency
 
 type ProcessDependency struct {
