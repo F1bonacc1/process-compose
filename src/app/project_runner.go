@@ -1157,7 +1157,6 @@ func (p *ProjectRunner) UpdateNamespace(processes *types.Processes) (map[string]
 
 	var errs []error
 	for _, process := range *processes {
-		process := process
 		if err := p.UpdateProcess(&process); err != nil {
 			status[process.ReplicaName] = err.Error()
 			errs = append(errs, err)

@@ -45,7 +45,7 @@ const docTemplate = `{
         },
         "/namespace": {
             "post": {
-                "description": "Merge processes from a partial config; all must share the same namespace",
+                "description": "Merge processes from a partial config; all must share the same namespace/",
                 "consumes": [
                     "application/json"
                 ],
@@ -56,10 +56,10 @@ const docTemplate = `{
                     "Namespace"
                 ],
                 "summary": "Post config fragment with processes (single namespace)",
-                "operationId": "PostNamespace",
+                "operationId": "UpdateNamespace",
                 "parameters": [
                     {
-                        "description": "Processes, all in the same namespace",
+                        "description": "One or more processes, all in the same namespace",
                         "name": "processes",
                         "in": "body",
                         "required": true,
@@ -70,16 +70,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process -\u003e status (added)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "207": {
-                        "description": "Process -\u003e status with failures",
+                        "description": "All updated",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -88,7 +79,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Some processes failed to be updated. Returns error if all failed, else returns success and failures map",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -119,16 +110,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process -\u003e status (removed)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "207": {
-                        "description": "Process -\u003e status with failures",
+                        "description": "All processes removed, may be zero if non existent",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -137,7 +119,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Some processes failed to be removed, can happen if some have dependants or removed concurrently",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -179,7 +161,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Some processes in namespace failed to be disabled",
+                        "description": "Some processes in namespace failed to be disabled, can happen if several opposite updates to same namespace are happening",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
