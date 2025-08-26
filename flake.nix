@@ -3,7 +3,7 @@
     "Process Compose is like docker-compose, but for orchestrating a suite of processes, not containers.";
 
   # Nixpkgs / NixOS version to use.
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/master";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/release-25.05";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }:
