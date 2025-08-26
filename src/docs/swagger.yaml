@@ -1,5 +1,10 @@
 components:
     schemas:
+        api.ErrorResponse:
+            properties:
+                error:
+                    type: string
+            type: object
         api.LogsResponse:
             properties:
                 logs:
@@ -520,6 +525,40 @@ paths:
                                 type: object
                     description: Bad Request
             summary: Get process logs
+            tags:
+                - Process
+    /process/logs/ws:
+        get:
+            description: Upgrades HTTP to WebSocket and streams JSON log messages. Each message is api.LogMessage.
+            operationId: LogsStream
+            parameters:
+                - description: Comma-separated process names to stream
+                  in: query
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+                - description: Offset from the end of the log
+                  in: query
+                  name: offset
+                  required: true
+                  schema:
+                    type: integer
+                - description: If true, continue streaming new lines
+                  in: query
+                  name: follow
+                  schema:
+                    type: boolean
+            responses:
+                "101":
+                    description: Switching Protocols
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ErrorResponse'
+                    description: Bad Request
+            summary: Stream process logs over WebSocket
             tags:
                 - Process
     /process/ports/{name}:
