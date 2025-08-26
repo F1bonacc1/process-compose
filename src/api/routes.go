@@ -1,12 +1,13 @@
 package api
 
 import (
+	"net/http"
+	"net/url"
+
 	_ "github.com/f1bonacc1/process-compose/src/docs"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"net/http"
-	"net/url"
 )
 
 // InitRoutes initialize routing information
@@ -41,8 +42,6 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r.GET("/project/name", handler.GetProjectName)
 	r.GET("/project/state", handler.GetProjectState)
 	r.PATCH("/process/scale/:name/:scale", handler.ScaleProcess)
-
-	//websocket
 	r.GET("/process/logs/ws", handler.HandleLogsStream)
 
 	return r

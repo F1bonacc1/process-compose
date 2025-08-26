@@ -112,6 +112,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/process/logs/ws": {
+            "get": {
+                "description": "Upgrades HTTP to WebSocket and streams JSON log messages. Each message is api.LogMessage.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Stream process logs over WebSocket",
+                "operationId": "LogsStream",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Comma-separated process names to stream",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset from the end of the log",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "If true, continue streaming new lines",
+                        "name": "follow",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/process/logs/{name}": {
             "delete": {
                 "description": "Truncates the process logs",
@@ -701,6 +747,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "api.LogsResponse": {
             "type": "object",
             "properties": {

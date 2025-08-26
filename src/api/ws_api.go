@@ -2,23 +2,36 @@ package api
 
 import (
 	"errors"
-	"github.com/f1bonacc1/process-compose/src/app"
-	"github.com/f1bonacc1/process-compose/src/pclog"
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
-	"github.com/rs/zerolog/log"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/pclog"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 var upgrader = websocket.Upgrader{}
 
+// @Schemes
+// @Id                    LogsStream
+// @Summary               Stream process logs over WebSocket
+// @Description           Upgrades HTTP to WebSocket and streams JSON log messages. Each message is api.LogMessage.
+// @Tags                  Process
+// @Produce               json
+// @Param                 name   query   string true  "Comma-separated process names to stream"
+// @Param                 offset query   int    true  "Offset from the end of the log"
+// @Param                 follow query   bool   false "If true, continue streaming new lines"
+// @Success               101 "Switching Protocols"
+// @Failure               400 {object} api.ErrorResponse
+// @Router                /process/logs/ws [get]
 func (api *PcApi) HandleLogsStream(c *gin.Context) {
-	procNamesStr := c.Query("name")
-	procNames := strings.Split(procNamesStr, ",")
+	processNamesStr := c.Query("name")
+	processNames := strings.Split(processNamesStr, ",")
 	follow := c.Query("follow") == "true"
 	endOffset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
@@ -35,7 +48,7 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 	if follow {
 		go handleIncoming(ws, done)
 	}
-	for _, procName := range procNames {
+	for _, processName := range processNames {
 		logChan := make(chan LogMessage, 256)
 		chanCloseMtx := &sync.Mutex{}
 		isChannelClosed := false
@@ -44,7 +57,7 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 				for _, message := range messages {
 					msg := LogMessage{
 						Message:     message,
-						ProcessName: procName,
+						ProcessName: processName,
 					}
 					logChan <- msg
 				}
@@ -58,7 +71,7 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 			func(message string) (n int, err error) {
 				msg := LogMessage{
 					Message:     message,
-					ProcessName: procName,
+					ProcessName: processName,
 				}
 				chanCloseMtx.Lock()
 				defer chanCloseMtx.Unlock()
@@ -69,9 +82,9 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 				return len(message), nil
 			},
 			endOffset)
-		go api.handleLog(ws, procName, connector, logChan, done)
+		go api.handleLog(ws, processName, connector, logChan, done)
 
-		err = api.project.GetLogsAndSubscribe(procName, connector)
+		err = api.project.GetLogsAndSubscribe(processName, connector)
 		if err != nil {
 			log.Err(err).Msg("Failed to subscribe to logger")
 			return
