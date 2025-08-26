@@ -185,3 +185,11 @@ func (p *PcClient) ReloadProject() (map[string]string, error) {
 func (p *PcClient) TruncateProcessLogs(name string) error {
 	return p.truncateProcessLogs(name)
 }
+
+func (p *PcClient) UpdateNamespace(processes *types.Processes) (map[string]string, error) {
+	return nil, errors.New("update namespace not implemented for PC client")
+}
+
+func (p *PcClient) RemoveNamespace(name string) (map[string]string, error) {
+	return nil, errors.New("remove namespace not implemented for PC client")
+}

@@ -593,20 +593,7 @@
                                 }
                             }
                         },
-                        "description": "Process -\u003e status (removed)"
-                    },
-                    "207": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "Process -\u003e status with failures"
+                        "description": "All processes removed, may be zero if non existent"
                     },
                     "400": {
                         "content": {
@@ -619,7 +606,7 @@
                                 }
                             }
                         },
-                        "description": "Bad Request"
+                        "description": "Some processes failed to be removed, can happen if some have dependants or removed concurrently"
                     }
                 },
                 "summary": "Delete namespace processes",
@@ -628,8 +615,8 @@
                 ]
             },
             "post": {
-                "description": "Merge processes from a partial config; all must share the same namespace",
-                "operationId": "PostNamespace",
+                "description": "Merge processes from a partial config; all must share the same namespace/",
+                "operationId": "UpdateNamespace",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -638,7 +625,7 @@
                             }
                         }
                     },
-                    "description": "Processes, all in the same namespace",
+                    "description": "One or more processes, all in the same namespace",
                     "required": true,
                     "x-originalParamName": "processes"
                 },
@@ -654,20 +641,7 @@
                                 }
                             }
                         },
-                        "description": "Process -\u003e status (added)"
-                    },
-                    "207": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "Process -\u003e status with failures"
+                        "description": "All updated"
                     },
                     "400": {
                         "content": {
@@ -680,7 +654,7 @@
                                 }
                             }
                         },
-                        "description": "Bad Request"
+                        "description": "Some processes failed to be updated. Returns error if all failed, else returns success and failures map"
                     }
                 },
                 "summary": "Post config fragment with processes (single namespace)",
@@ -729,7 +703,7 @@
                                 }
                             }
                         },
-                        "description": "Some processes in namespace failed to be disabled"
+                        "description": "Some processes in namespace failed to be disabled, can happen if several opposite updates to same namespace are happening"
                     },
                     "404": {
                         "content": {
