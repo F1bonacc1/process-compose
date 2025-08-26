@@ -252,7 +252,7 @@ func (api *PcApi) StopNamespace(c *gin.Context) {
 // @Produce		json
 // @Param			name	path		string				true	"Namespace Name"
 // @Success		200		{object}	map[string]string	"All processes in namespace disabled"
-// @Success		400		{object}	map[string]string	"Some processes in namespace failed to be disabled"
+// @Success		400		{object}	map[string]string	"Some processes in namespace failed to be disabled, can happen if several opposite updates to same namespace are happening"
 // @Failure		404		{object}	map[string]string "No processes in namespace"
 // @Router			/namespace/disable/{name} [patch]
 func (api *PcApi) DisableNamespace(c *gin.Context) {
@@ -304,15 +304,15 @@ func (api *PcApi) DisableNamespace(c *gin.Context) {
 // @Summary		Enable all processes in a namespace
 // @Produce		json
 // @Param			name	path		string				true	"Namespace Name"
-// @Success		200		{object}	map[string]string	"Process -> status"
-// @Success		207		{object}	map[string]string	"Process -> status"
-// @Failure		400		{object}	map[string]string
+// @Success		200		{object}	map[string]string	"All processes in namespace enabled"
+// @Success		400		{object}	map[string]string	"Some processes in namespace failed to be enabled"
+// @Failure		404		{object}	map[string]string	"No processes in namespace"
 // @Router			/namespace/enable/{name} [patch]
 func (api *PcApi) EnableNamespace(c *gin.Context) {
 	ns := c.Param("name")
 	states, err := api.project.GetProcessesState()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	names := make([]string, 0)
@@ -322,7 +322,7 @@ func (api *PcApi) EnableNamespace(c *gin.Context) {
 		}
 	}
 	if len(names) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no processes in namespace: " + ns})
+		c.JSON(http.StatusNotFound, gin.H{"error": "no processes in namespace: " + ns})
 		return
 	}
 
@@ -344,25 +344,24 @@ func (api *PcApi) EnableNamespace(c *gin.Context) {
 		}
 	}
 	if failures > 0 {
-		c.JSON(http.StatusMultiStatus, results)
+		c.JSON(http.StatusBadRequest, results)
 		return
 	}
 	c.JSON(http.StatusOK, results)
 }
 
 // @Schemes
-// @Id				PostNamespace
-// @Description	Merge processes from a partial config; all must share the same namespace
+// @Id				UpdateNamespace
+// @Description	Merge processes from a partial config; all must share the same namespace/
 // @Tags			Namespace
 // @Summary		Post config fragment with processes (single namespace)
 // @Accept		json
 // @Produce		json
-// @Param			processes	body	types.Processes	true	"Processes, all in the same namespace"
-// @Success		200		{object}	map[string]string	"Process -> status (added)"
-// @Success		207		{object}	map[string]string	"Process -> status with failures"
-// @Failure		400		{object}	map[string]string
+// @Param			processes	body	types.Processes	true	"One or more processes, all in the same namespace"
+// @Success		200		{object}	map[string]string	"All updated"
+// @Failure		400		{object}	map[string]string  "Some processes failed to be updated. Returns error if all failed, else returns success and failures map"
 // @Router			/namespace [post]
-func (api *PcApi) PostNamespace(c *gin.Context) {
+func (api *PcApi) UpdateNamespace(c *gin.Context) {
 	var processes types.Processes
 	if err := c.ShouldBindJSON(&processes); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -372,13 +371,13 @@ func (api *PcApi) PostNamespace(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no processes provided"})
 		return
 	}
-	// validation of single namespace is performed in AddNamespace
-	status, err := api.project.AddNamespace(&processes)
+
+	status, err := api.project.UpdateNamespace(&processes)
 	if err != nil {
 		if len(status) == 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		} else {
-			c.JSON(http.StatusMultiStatus, status)
+			c.JSON(http.StatusBadRequest, status)
 		}
 		return
 	}
@@ -392,22 +391,21 @@ func (api *PcApi) PostNamespace(c *gin.Context) {
 // @Summary		Delete namespace processes
 // @Produce		json
 // @Param			name	query	string	true	"Namespace Name"
-// @Success		200		{object}	map[string]string	"Process -> status (removed)"
-// @Success		207		{object}	map[string]string	"Process -> status with failures"
-// @Failure		400		{object}	map[string]string
+// @Success		200		{object}	map[string]string	"All processes removed, may be zero if non existent"
+// @Failure		400		{object}	map[string]string "Some processes failed to be removed, can happen if some have dependants or removed concurrently"
 // @Router			/namespace [delete]
 func (api *PcApi) DeleteNamespace(c *gin.Context) {
-	ns := c.Query("name")
-	if ns == "" {
+	name := c.Query("name")
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "missing namespace name"})
 		return
 	}
-	status, err := api.project.RemoveNamespace(ns)
+	status, err := api.project.RemoveNamespace(name)
 	if err != nil {
 		if len(status) == 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		} else {
-			c.JSON(http.StatusMultiStatus, status)
+			c.JSON(http.StatusBadRequest, status)
 		}
 		return
 	}
