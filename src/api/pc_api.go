@@ -251,47 +251,47 @@ func (api *PcApi) StopNamespace(c *gin.Context) {
 // @Summary		Disable all processes in a namespace
 // @Produce		json
 // @Param			name	path		string				true	"Namespace Name"
-// @Success		200		{object}	map[string]string	"Process -> status"
-// @Success		207		{object}	map[string]string	"Process -> status"
-// @Failure		400		{object}	map[string]string
+// @Success		200		{object}	map[string]string	"All processes in namespace disabled"
+// @Success		400		{object}	map[string]string	"Some processes in namespace failed to be disabled"
+// @Failure		404		{object}	map[string]string "No processes in namespace"
 // @Router			/namespace/disable/{name} [patch]
 func (api *PcApi) DisableNamespace(c *gin.Context) {
-	ns := c.Param("name")
+	name := c.Param("name")
 	states, err := api.project.GetProcessesState()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	names := make([]string, 0)
-	for _, st := range states.States {
-		if st.Namespace == ns {
-			names = append(names, st.Name)
+	for _, state := range states.States {
+		if state.Namespace == name {
+			names = append(names, state.Name)
 		}
 	}
 	if len(names) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no processes in namespace: " + ns})
+		c.JSON(http.StatusNotFound, gin.H{"error": "no processes in namespace: " + name})
 		return
 	}
 
 	results := make(map[string]string)
 	failures := 0
-	for _, name := range names {
-		cfg, err := api.project.GetProcessInfo(name)
+	for _, processName := range names {
+		cfg, err := api.project.GetProcessInfo(processName)
 		if err != nil {
-			results[name] = err.Error()
+			results[processName] = err.Error()
 			failures++
 			continue
 		}
 		cfg.Disabled = true
 		if err := api.project.UpdateProcess(cfg); err != nil {
-			results[name] = err.Error()
+			results[processName] = err.Error()
 			failures++
 		} else {
-			results[name] = "ok"
+			results[processName] = "ok"
 		}
 	}
 	if failures > 0 {
-		c.JSON(http.StatusMultiStatus, results)
+		c.JSON(http.StatusBadRequest, results)
 		return
 	}
 	c.JSON(http.StatusOK, results)
