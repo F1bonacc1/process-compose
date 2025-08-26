@@ -170,16 +170,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process -\u003e status",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "207": {
-                        "description": "Process -\u003e status",
+                        "description": "All processes in namespace disabled",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -188,7 +179,16 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Some processes in namespace failed to be disabled",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No processes in namespace",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -221,16 +221,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Process -\u003e status",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "207": {
-                        "description": "Process -\u003e status",
+                        "description": "All processes in namespace enabled",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -239,7 +230,16 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Some processes in namespace failed to be enabled",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No processes in namespace",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {

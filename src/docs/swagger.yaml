@@ -478,15 +478,7 @@ paths:
                                 additionalProperties:
                                     type: string
                                 type: object
-                    description: Process -> status
-                "207":
-                    content:
-                        application/json:
-                            schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
-                    description: Process -> status
+                    description: All processes in namespace disabled
                 "400":
                     content:
                         application/json:
@@ -494,7 +486,15 @@ paths:
                                 additionalProperties:
                                     type: string
                                 type: object
-                    description: Bad Request
+                    description: Some processes in namespace failed to be disabled
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: No processes in namespace
             summary: Disable all processes in a namespace
             tags:
                 - Namespace
@@ -517,15 +517,7 @@ paths:
                                 additionalProperties:
                                     type: string
                                 type: object
-                    description: Process -> status
-                "207":
-                    content:
-                        application/json:
-                            schema:
-                                additionalProperties:
-                                    type: string
-                                type: object
-                    description: Process -> status
+                    description: All processes in namespace enabled
                 "400":
                     content:
                         application/json:
@@ -533,7 +525,15 @@ paths:
                                 additionalProperties:
                                     type: string
                                 type: object
-                    description: Bad Request
+                    description: Some processes in namespace failed to be enabled
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: No processes in namespace
             summary: Enable all processes in a namespace
             tags:
                 - Namespace

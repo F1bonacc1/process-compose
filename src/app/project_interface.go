@@ -23,7 +23,7 @@ type IProject interface {
 	GetProcessState(name string) (*types.ProcessState, error)
 	GetProcessesState() (*types.ProcessesState, error)
 	StopProcess(name string) error
-	// Alwasy returns non nil(so possibly empty) map.
+	// Always returns non nil(so possibly empty) map.
 	// Value in map is `ok` on success, else on error to stop specific process.
 	// Iterates all processes (best effort).
 	// If all proceses were stopped, error is nil.
@@ -39,9 +39,9 @@ type IProject interface {
 	TruncateProcessLogs(name string) error
 	// Updates project config.
 	// All processes must have same namespace.
-	// Namespace already exists, error is returned.
-	AddNamespace(processes *types.Processes) (map[string]string, error)
-	// Updates project config.
-	// If namespace does not exist, error is returned.
+	// Rest works as `UpdateProcess` for each process.
+	UpdateNamespace(processes *types.Processes) (map[string]string, error)
+	// Updates project config by removing processes.
+	// If namespace does not exist, success returned.
 	RemoveNamespace(name string) (map[string]string, error)
 }
