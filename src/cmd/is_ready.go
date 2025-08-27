@@ -91,32 +91,42 @@ func checkProjectReady(client *client.PcClient) error {
 // processIsReadyCmd represents the `process is-ready` command
 var processIsReadyCmd = &cobra.Command{
 	Use:   "is-ready [PROCESS_NAME]",
-	Short: "Check if a specific process is ready (or wait for it to be ready)",
+	Short: "Check if a specific process is ready (or wait for it to be ready).",
+	Long:  "Check if a specific process is ready (or wait for it to be ready). If process does not exist or disabled, an error is returned. If process was removed or disabled after check started, it will not be detected.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		processName := args[0]
 		client := getClient()
 		if *pcFlags.WaitReady {
-			processInProject := false
+			processCanBeReady := false
 			start := time.Now()
 			for {
-				if !processInProject {
+				if !processCanBeReady {
 					processesNames, err := client.GetProcessesName()
 					if err != nil {
 						log.Info().Msgf("%s", err.Error())
 					} else {
 						for _, name := range processesNames {
 							if name == processName {
-								processInProject = true
+								config, err := client.GetProcessInfo(name)
+								if err != nil {
+									log.Fatal().Err(fmt.Errorf("Failed to get process info for '%s': %v", name, err)).Send()
+								}
+
+								if config.Disabled {
+									log.Fatal().Err(fmt.Errorf("Process '%s' is disabled", processName)).Send()
+								}
+
+								processCanBeReady = true
 							}
 						}
-						if !processInProject {
+						if !processCanBeReady {
 							log.Fatal().Err(fmt.Errorf("Process '%s' not found in the project. Available processes: %s", processName, strings.Join(processesNames, ", "))).Send()
 						}
 					}
 				}
 
-				if processInProject {
+				if processCanBeReady {
 					err := checkProcessReady(client, processName)
 					if err == nil {
 						break
