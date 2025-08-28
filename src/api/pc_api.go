@@ -351,17 +351,17 @@ func (api *PcApi) EnableNamespace(c *gin.Context) {
 }
 
 // @Schemes
-// @Id				UpdateNamespace
-// @Description	Merge processes from a partial config; all must share the same namespace/
-// @Tags			Namespace
-// @Summary		Post config fragment with processes (single namespace)
+// @Id				UpdateProcesses
+// @Description	Merge processes from a partial config.
+// @Tags			Project
+// @Summary		Post config fragment with processes.
 // @Accept		json
 // @Produce		json
-// @Param			processes	body	types.Processes	true	"One or more processes, all in the same namespace"
+// @Param			processes	body	types.Processes	true	"One or more processes, possibly in different namespaces"
 // @Success		200		{object}	map[string]string	"All updated"
 // @Failure		400		{object}	map[string]string  "Some processes failed to be updated. Returns error if all failed, else returns success and failures map"
 // @Router			/namespace [post]
-func (api *PcApi) UpdateNamespace(c *gin.Context) {
+func (api *PcApi) UpdateProcesses(c *gin.Context) {
 	var processes types.Processes
 	if err := c.ShouldBindJSON(&processes); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -372,7 +372,7 @@ func (api *PcApi) UpdateNamespace(c *gin.Context) {
 		return
 	}
 
-	status, err := api.project.UpdateNamespace(&processes)
+	status, err := api.project.UpdateProcesses(&processes)
 	if err != nil {
 		if len(status) == 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

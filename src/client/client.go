@@ -1,7 +1,9 @@
 package client
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -12,6 +14,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -186,8 +189,38 @@ func (p *PcClient) TruncateProcessLogs(name string) error {
 	return p.truncateProcessLogs(name)
 }
 
-func (p *PcClient) UpdateNamespace(processes *types.Processes) (map[string]string, error) {
-	return nil, errors.New("update namespace not implemented for PC client")
+func (p *PcClient) UpdateProcesses(processes *types.Processes) (map[string]string, error) {
+	url := fmt.Sprintf("http://%s/processes", p.address)
+	jsonData, err := json.Marshal(processes)
+	if err != nil {
+		log.Err(err).Msg("failed to marshal processes")
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+	resp, err := p.client.Do(req)
+	if err != nil {
+		log.Err(err).Msg("failed to update processes")
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		status := map[string]string{}
+		if err = json.NewDecoder(resp.Body).Decode(&status); err != nil {
+			log.Err(err).Msg("failed to decode updated processes")
+			return status, err
+		}
+		log.Info().Msgf("status: %v", status)
+		return status, nil
+	}
+	var respErr pcError
+	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
+		log.Err(err).Msg("failed to decode err update processes")
+		return nil, err
+	}
+	return nil, errors.New(respErr.Error)
 }
 
 func (p *PcClient) RemoveNamespace(name string) (map[string]string, error) {

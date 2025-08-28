@@ -45,7 +45,7 @@ const docTemplate = `{
         },
         "/namespace": {
             "post": {
-                "description": "Merge processes from a partial config; all must share the same namespace/",
+                "description": "Merge processes from a partial config; processes may belong to different namespaces",
                 "consumes": [
                     "application/json"
                 ],
@@ -55,11 +55,11 @@ const docTemplate = `{
                 "tags": [
                     "Namespace"
                 ],
-                "summary": "Post config fragment with processes (single namespace)",
-                "operationId": "UpdateNamespace",
+                "summary": "Post config fragment with processes (multiple namespaces allowed)",
+                "operationId": "UpdateProcesses",
                 "parameters": [
                     {
-                        "description": "One or more processes, all in the same namespace",
+                        "description": "One or more processes, possibly in different namespaces",
                         "name": "processes",
                         "in": "body",
                         "required": true,

@@ -37,7 +37,7 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r.PATCH("/namespace/stop/:name", handler.StopNamespace)
 	r.PATCH("/namespace/disable/:name", handler.DisableNamespace)
 	r.PATCH("/namespace/enable/:name", handler.EnableNamespace)
-	r.PUT("/namespace", handler.UpdateNamespace)
+	r.PUT("/processes", handler.UpdateProcesses)
 	r.DELETE("/namespace", handler.DeleteNamespace)
 	r.POST("/process/start/:name", handler.StartProcess)
 	r.POST("/process/restart/:name", handler.RestartProcess)
