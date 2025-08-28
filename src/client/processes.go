@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/types"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"sort"
+
+	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/rs/zerolog/log"
 )
 
 func (p *PcClient) GetProcessesName() ([]string, error) {
@@ -42,30 +43,34 @@ func (p *PcClient) GetRemoteProcessesState() (*types.ProcessesState, error) {
 	return &sResp, nil
 }
 
-func (p *PcClient) getProcessState(name string) (*types.ProcessState, error) {
+func (p *PcClient) getProcessState(name string) (*types.ProcessState, bool, error) {
 	url := fmt.Sprintf("http://%s/process/%s", p.address, name)
 	resp, err := p.client.Get(url)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		var respErr pcError
 		if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
 			log.Err(err).Msg("failed to decode err update process")
-			return nil, err
+			return nil, false, err
 		}
-		return nil, errors.New(respErr.Error)
+
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, true, errors.New(respErr.Error)
+		}
+		return nil, false, errors.New(respErr.Error)
 	}
 	//Create a variable of the same type as our model
 	var sResp types.ProcessState
 
 	//Decode the data
 	if err := json.NewDecoder(resp.Body).Decode(&sResp); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return &sResp, nil
+	return &sResp, false, nil
 }
 
 func (p *PcClient) getProcessInfo(name string) (*types.ProcessConfig, error) {

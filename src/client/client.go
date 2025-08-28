@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/api"
-	"github.com/f1bonacc1/process-compose/src/pclog"
-	"github.com/f1bonacc1/process-compose/src/types"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/f1bonacc1/process-compose/src/pclog"
+	"github.com/f1bonacc1/process-compose/src/types"
 )
 
 var (
@@ -105,9 +106,9 @@ func (p *PcClient) GetProcessPorts(name string) (*types.ProcessPorts, error) {
 	return p.getProcessPorts(name)
 }
 
-func (p *PcClient) GetProcessState(name string) (*types.ProcessState, error) {
-	state, err := p.getProcessState(name)
-	return state, err
+func (p *PcClient) GetProcessState(name string) (*types.ProcessState, bool, error) {
+	state, doesNotExist, err := p.getProcessState(name)
+	return state, doesNotExist, err
 }
 
 func (p *PcClient) GetProcessesState() (*types.ProcessesState, error) {
