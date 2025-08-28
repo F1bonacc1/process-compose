@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"sync"
@@ -222,24 +223,19 @@ func (api *PcApi) StopProcesses(c *gin.Context) {
 // @Router			/namespace/stop/{name} [patch]
 func (api *PcApi) StopNamespace(c *gin.Context) {
 	ns := c.Param("name")
-	states, err := api.project.GetProcessesState()
+
+	stopped, err := api.project.StopNamespace(ns)
 	if err != nil {
+		if errors.Is(err, app.ErrNamespaceNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no processes in namespace: " + ns})
+			return
+		}
+		if len(stopped) > 0 {
+			c.JSON(http.StatusBadRequest, stopped)
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-	processNames := make([]string, 0)
-	for _, state := range states.States {
-		if state.Namespace == ns {
-			processNames = append(processNames, state.Name)
-		}
-	}
-	if len(processNames) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no processes in namespace: " + ns})
-		return
-	}
-	stopped, err := api.project.StopProcesses(processNames)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, stopped)
 	}
 	c.JSON(http.StatusOK, stopped)
 }
@@ -257,41 +253,17 @@ func (api *PcApi) StopNamespace(c *gin.Context) {
 // @Router			/namespace/disable/{name} [patch]
 func (api *PcApi) DisableNamespace(c *gin.Context) {
 	name := c.Param("name")
-	states, err := api.project.GetProcessesState()
+	results, err := api.project.DisableNamespace(name)
 	if err != nil {
+		if errors.Is(err, app.ErrNamespaceNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no processes in namespace: " + name})
+			return
+		}
+		if len(results) > 0 {
+			c.JSON(http.StatusBadRequest, results)
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	names := make([]string, 0)
-	for _, state := range states.States {
-		if state.Namespace == name {
-			names = append(names, state.Name)
-		}
-	}
-	if len(names) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no processes in namespace: " + name})
-		return
-	}
-
-	results := make(map[string]string)
-	failures := 0
-	for _, processName := range names {
-		cfg, err := api.project.GetProcessInfo(processName)
-		if err != nil {
-			results[processName] = err.Error()
-			failures++
-			continue
-		}
-		cfg.Disabled = true
-		if err := api.project.UpdateProcess(cfg); err != nil {
-			results[processName] = err.Error()
-			failures++
-		} else {
-			results[processName] = "ok"
-		}
-	}
-	if failures > 0 {
-		c.JSON(http.StatusBadRequest, results)
 		return
 	}
 	c.JSON(http.StatusOK, results)
@@ -310,41 +282,17 @@ func (api *PcApi) DisableNamespace(c *gin.Context) {
 // @Router			/namespace/enable/{name} [patch]
 func (api *PcApi) EnableNamespace(c *gin.Context) {
 	ns := c.Param("name")
-	states, err := api.project.GetProcessesState()
+	results, err := api.project.EnableNamespace(ns)
 	if err != nil {
+		if errors.Is(err, app.ErrNamespaceNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no processes in namespace: " + ns})
+			return
+		}
+		if len(results) > 0 {
+			c.JSON(http.StatusBadRequest, results)
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	names := make([]string, 0)
-	for _, st := range states.States {
-		if st.Namespace == ns {
-			names = append(names, st.Name)
-		}
-	}
-	if len(names) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no processes in namespace: " + ns})
-		return
-	}
-
-	results := make(map[string]string)
-	failures := 0
-	for _, name := range names {
-		cfg, err := api.project.GetProcessInfo(name)
-		if err != nil {
-			results[name] = err.Error()
-			failures++
-			continue
-		}
-		cfg.Disabled = false
-		if err := api.project.UpdateProcess(cfg); err != nil {
-			results[name] = err.Error()
-			failures++
-		} else {
-			results[name] = "ok"
-		}
-	}
-	if failures > 0 {
-		c.JSON(http.StatusBadRequest, results)
 		return
 	}
 	c.JSON(http.StatusOK, results)
