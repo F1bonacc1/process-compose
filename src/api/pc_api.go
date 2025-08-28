@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/f1bonacc1/process-compose/src/types"
 	"net/http"
 	"strconv"
 	"sync"
+
+	"github.com/f1bonacc1/process-compose/src/types"
 
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/gin-gonic/gin"
@@ -47,7 +48,12 @@ func NewPcApi(project app.IProject) *PcApi {
 func (api *PcApi) GetProcess(c *gin.Context) {
 	name := c.Param("name")
 
-	state, err := api.project.GetProcessState(name)
+	state, doesNotExist, err := api.project.GetProcessState(name)
+	if doesNotExist {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

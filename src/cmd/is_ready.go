@@ -98,48 +98,23 @@ var processIsReadyCmd = &cobra.Command{
 		processName := args[0]
 		client := getClient()
 		if *pcFlags.WaitReady {
-			processCanBeReady := false
 			start := time.Now()
 			for {
-				if !processCanBeReady {
-					processesNames, err := client.GetProcessesName()
-					if err != nil {
-						log.Info().Msgf("%s", err.Error())
-					} else {
-						for _, name := range processesNames {
-							if name == processName {
-								config, err := client.GetProcessInfo(name)
-								if err != nil {
-									log.Fatal().Err(fmt.Errorf("Failed to get process info for '%s': %v", name, err)).Send()
-								}
-
-								if config.Disabled {
-									log.Fatal().Err(fmt.Errorf("Process '%s' is disabled", processName)).Send()
-								}
-
-								processCanBeReady = true
-							}
-						}
-						if !processCanBeReady {
-							log.Fatal().Err(fmt.Errorf("Process '%s' not found in the project. Available processes: %s", processName, strings.Join(processesNames, ", "))).Send()
-						}
-					}
+				cannotBeReady, err := checkProcessReady(client, processName)
+				if cannotBeReady {
+					log.Fatal().Err(err).Send()
 				}
-
-				if processCanBeReady {
-					err := checkProcessReady(client, processName)
-					if err == nil {
-						break
-					}
-					log.Info().Msgf("%s", err.Error())
+				if err == nil {
+					break
 				}
+				log.Info().Msgf("%s", err.Error())
 				time.Sleep(defaultPollingInterval)
 			}
 
 			elapsed := time.Since(start)
 			log.Info().Msgf("Process '%s' is ready after waiting for %s", processName, elapsed.Round(10*time.Millisecond))
 		} else {
-			err := checkProcessReady(client, processName)
+			_, err := checkProcessReady(client, processName)
 			if err != nil {
 				log.Fatal().Err(err).Send()
 			}
@@ -147,10 +122,22 @@ var processIsReadyCmd = &cobra.Command{
 	},
 }
 
-func checkProcessReady(client *client.PcClient, processName string) error {
-	state, err := client.GetProcessState(processName)
+// Return true if process cannot be ready (does not exist in configuration, disabled).
+// If true error not nil.
+func checkProcessReady(client *client.PcClient, processName string) (bool, error) {
+	state, doesNotExist, err := client.GetProcessState(processName)
+
 	if err != nil {
-		return err
+		if doesNotExist {
+			return true, err
+		}
+
+		return false, err
+	}
+
+	err = state.CannotBeReady()
+	if err != nil {
+		return true, err
 	}
 
 	isReady, reason := state.IsReadyReason()
@@ -159,11 +146,11 @@ func checkProcessReady(client *client.PcClient, processName string) error {
 			State:  *state,
 			Reason: reason,
 		}
-		return fmt.Errorf("Process '%s' is not ready: %s", processName, stateReason.String())
+		return false, fmt.Errorf("Process '%s' is not ready: %s", processName, stateReason.String())
 	}
 
 	log.Info().Msgf("Process '%s' is ready", processName)
-	return nil
+	return false, nil
 }
 
 func init() {

@@ -13,7 +13,7 @@ var getCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		state, err := getClient().GetProcessState(name)
+        state, _, err := getClient().GetProcessState(name)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to get process state")
 		}

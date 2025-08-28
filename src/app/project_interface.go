@@ -20,7 +20,8 @@ type IProject interface {
 
 	GetLexicographicProcessNames() ([]string, error)
 	GetProcessInfo(name string) (*types.ProcessConfig, error)
-	GetProcessState(name string) (*types.ProcessState, error)
+	// Returns true if the process configuration does not exist. Error is not nil if process does not exist.
+	GetProcessState(name string) (*types.ProcessState, bool, error)
 	GetProcessesState() (*types.ProcessesState, error)
 	StopProcess(name string) error
 	StopProcesses(names []string) (map[string]string, error)

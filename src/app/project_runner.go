@@ -139,7 +139,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		log.Error().Msgf("Error: Can't get log: %s using empty buffer", err.Error())
 		procLog = pclog.NewLogBuffer(0)
 	}
-	procState, _ := p.GetProcessState(config.ReplicaName)
+	procState, _, _ := p.GetProcessState(config.ReplicaName)
 	isMain := config.Name == p.mainProcess
 	hasMain := p.mainProcess != ""
 	printLogs := !hasMain && !p.isTuiOn
@@ -257,19 +257,30 @@ func (p *ProjectRunner) initProcessLog(name string) {
 	p.processLogs[name] = pclog.NewLogBuffer(p.project.LogLength)
 }
 
-func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error) {
+func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, bool, error) {
 	proc := p.getRunningProcess(name)
 	if proc != nil {
-		return proc.getState(), nil
+		return proc.getState(), false, nil
 	} else {
 		p.statesMutex.Lock()
 		defer p.statesMutex.Unlock()
+		p.procConfMutex.Lock()
+		defer p.procConfMutex.Unlock()
+		// config and state stored and modified not under same mutex,
+		// so state may not (yet, briefly) exist, but config does
+		config, ok := p.project.Processes[name]
+		if !ok {
+			return nil, true, fmt.Errorf("no such process in project: %s", name)
+		}
 		state, ok := p.processStates[name]
 		if !ok {
+			if config.Disabled {
+				return nil, true, fmt.Errorf("process %s is disabled", name)
+			}
 			log.Error().Msgf("Error: process %s doesn't exist", name)
-			return nil, fmt.Errorf("can't get state of process %s: no such process", name)
+			return nil, false, fmt.Errorf("can't get state of process %s: no such process", name)
 		}
-		return state, nil
+		return state, false, nil
 	}
 }
 
@@ -296,7 +307,7 @@ func (p *ProjectRunner) GetProcessesState() (*types.ProcessesState, error) {
 		States: make([]types.ProcessState, 0),
 	}
 	for name := range p.project.Processes {
-		state, err := p.GetProcessState(name)
+		state, _, err := p.GetProcessState(name)
 		if err != nil {
 			return nil, err
 		}
@@ -827,7 +838,7 @@ func (p *ProjectRunner) renameProcess(name string, newName string) {
 	if logs != nil {
 		p.processLogs[newName] = logs
 	}
-	state, err := p.GetProcessState(name)
+	state, _, err := p.GetProcessState(name)
 	if err == nil {
 		p.statesMutex.Lock()
 		defer p.statesMutex.Unlock()
@@ -945,7 +956,7 @@ func (p *ProjectRunner) GetDependenciesOrderNames() ([]string, error) {
 func (p *ProjectRunner) GetProjectState(checkMem bool) (*types.ProjectState, error) {
 	runningProcesses := 0
 	for name := range p.project.Processes {
-		state, err := p.GetProcessState(name)
+		state, _, err := p.GetProcessState(name)
 		if err != nil {
 			return nil, err
 		}

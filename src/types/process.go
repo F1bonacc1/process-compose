@@ -2,15 +2,16 @@ package types
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/command"
-	"github.com/f1bonacc1/process-compose/src/health"
-	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v3"
 	"math"
 	"os"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/health"
+	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 )
 
 const DefaultNamespace = "default"
@@ -285,6 +286,15 @@ func (p *ProcessState) IsReadyReason() (bool, string) {
 		return false, fmt.Sprintf("failed with exit code %d", p.ExitCode)
 	}
 	return true, ""
+}
+
+// Cannot become ready without intervention.
+func (p *ProcessState) CannotBeReady() error {
+	if p.Status == ProcessStateDisabled {
+		return fmt.Errorf("process %s is disabled", p.Name)
+	}
+
+	return nil
 }
 
 //go:generate stringer -type=RestartPolicy
