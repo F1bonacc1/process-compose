@@ -244,15 +244,15 @@
           "type": "array"
         }
       },
-      "type": "object",
-      "required": [
-        "name"
-      ]
+      "type": "object"
     },
     "ProcessDependency": {
       "properties": {
         "condition": {
-          "type": "integer"
+          "oneOf": [
+            { "type": "integer", "enum": [0, 1, 2, 3] },
+            { "type": "string", "enum": ["process_started", "process_healthy", "process_completed", "process_completed_successfully"] }
+          ]
         }
       },
       "type": "object"
@@ -337,15 +337,17 @@
       },
       "type": "object",
       "required": [
-        "version",
         "processes"
       ]
     },
     "RestartPolicyConfig": {
       "properties": {
         "restart": {
-          "type": "integer"
-        },
+          "oneOf": [
+            { "type": "integer", "enum": [0, 1, 2, 3] },
+            { "type": "string", "enum": ["no", "always", "on_failure", "exit_on_failure"] }
+          ]
+        },  
         "backoff_seconds": {
           "type": "integer"
         },
