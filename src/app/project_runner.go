@@ -1140,15 +1140,15 @@ func (p *ProjectRunner) UpdateProcess(updated *types.ProcessConfig) error {
 }
 
 func (p *ProjectRunner) UpdateProcesses(processes *types.Processes) (map[string]string, error) {
-    status := make(map[string]string)
-    if processes == nil || len(*processes) == 0 {
-        return status, fmt.Errorf("no processes provided")
-    }
+	status := make(map[string]string)
+	if processes == nil || len(*processes) == 0 {
+		return status, fmt.Errorf("no processes provided")
+	}
 
-    var errs []error
-    for _, process := range *processes {
-        if err := p.UpdateProcess(&process); err != nil {
-            status[process.ReplicaName] = err.Error()
+	var errs []error
+	for _, process := range *processes {
+		if err := p.UpdateProcess(&process); err != nil {
+			status[process.ReplicaName] = err.Error()
 			errs = append(errs, err)
 			continue
 		}
@@ -1158,7 +1158,109 @@ func (p *ProjectRunner) UpdateProcesses(processes *types.Processes) (map[string]
 	if len(errs) == len(*processes) {
 		return nil, errors.Join(errs...)
 	}
-    return status, nil
+	return status, nil
+}
+
+// StopNamespace stops all processes in a given namespace.
+// Returns map of process name -> result ("ok" or error).
+// If namespace contains no processes, returns ErrNamespaceNotFound.
+func (p *ProjectRunner) StopNamespace(namespace string) (map[string]string, error) {
+	states, err := p.GetProcessesState()
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0)
+	for _, state := range states.States {
+		if state.Namespace == namespace {
+			names = append(names, state.Name)
+		}
+	}
+	if len(names) == 0 {
+		return nil, ErrNamespaceNotFound
+	}
+
+	return p.StopProcesses(names)
+}
+
+// DisableNamespace sets Disabled=true for all processes in the namespace.
+// Returns per-process results map and error if any failures occurred.
+func (p *ProjectRunner) DisableNamespace(namespace string) (map[string]string, error) {
+	states, err := p.GetProcessesState()
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0)
+	for _, st := range states.States {
+		if st.Namespace == namespace {
+			names = append(names, st.Name)
+		}
+	}
+	if len(names) == 0 {
+		return nil, ErrNamespaceNotFound
+	}
+
+	results := make(map[string]string)
+	failures := 0
+	for _, name := range names {
+		cfg, err := p.GetProcessInfo(name)
+		if err != nil {
+			results[name] = err.Error()
+			failures++
+			continue
+		}
+		cfg.Disabled = true
+		if err := p.UpdateProcess(cfg); err != nil {
+			results[name] = err.Error()
+			failures++
+		} else {
+			results[name] = "ok"
+		}
+	}
+	if failures > 0 {
+		return results, errors.New("failed to disable some processes")
+	}
+	return results, nil
+}
+
+// EnableNamespace sets Disabled=false for all processes in the namespace.
+// Returns per-process results map and error if any failures occurred.
+func (p *ProjectRunner) EnableNamespace(namespace string) (map[string]string, error) {
+	states, err := p.GetProcessesState()
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0)
+	for _, st := range states.States {
+		if st.Namespace == namespace {
+			names = append(names, st.Name)
+		}
+	}
+	if len(names) == 0 {
+		return nil, ErrNamespaceNotFound
+	}
+
+	results := make(map[string]string)
+	failures := 0
+	for _, name := range names {
+		cfg, err := p.GetProcessInfo(name)
+		if err != nil {
+			results[name] = err.Error()
+			failures++
+			continue
+		}
+		cfg.Disabled = false
+		if err := p.UpdateProcess(cfg); err != nil {
+			results[name] = err.Error()
+			failures++
+		} else {
+			results[name] = "ok"
+		}
+	}
+	if failures > 0 {
+		return results, errors.New("failed to enable some processes")
+	}
+	return results, nil
 }
 
 func (p *ProjectRunner) RemoveNamespace(namespace string) (map[string]string, error) {
