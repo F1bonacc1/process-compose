@@ -37,10 +37,10 @@ type IProject interface {
 	UpdateProcess(updated *types.ProcessConfig) error
 	ReloadProject() (map[string]string, error)
 	TruncateProcessLogs(name string) error
-	// Updates project config.
-	// All processes must have same namespace.
-	// Rest works as `UpdateProcess` for each process.
-	UpdateNamespace(processes *types.Processes) (map[string]string, error)
+    // Updates project config for provided processes.
+    // Processes may belong to different namespaces.
+    // Works as `UpdateProcess` for each process.
+    UpdateProcesses(processes *types.Processes) (map[string]string, error)
 	// Updates project config by removing processes.
 	// If namespace does not exist, success returned.
 	RemoveNamespace(name string) (map[string]string, error)

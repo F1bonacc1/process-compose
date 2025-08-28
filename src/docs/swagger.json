@@ -614,9 +614,9 @@
                     "Namespace"
                 ]
             },
-            "post": {
-                "description": "Merge processes from a partial config; all must share the same namespace/",
-                "operationId": "UpdateNamespace",
+  "post": {
+    "description": "Merge processes from a partial config; processes may belong to different namespaces",
+    "operationId": "UpdateProcesses",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -625,7 +625,7 @@
                             }
                         }
                     },
-                    "description": "One or more processes, all in the same namespace",
+      "description": "One or more processes, possibly in different namespaces",
                     "required": true,
                     "x-originalParamName": "processes"
                 },
@@ -657,7 +657,7 @@
                         "description": "Some processes failed to be updated. Returns error if all failed, else returns success and failures map"
                     }
                 },
-                "summary": "Post config fragment with processes (single namespace)",
+    "summary": "Post config fragment with processes (multiple namespaces allowed)",
                 "tags": [
                     "Namespace"
                 ]

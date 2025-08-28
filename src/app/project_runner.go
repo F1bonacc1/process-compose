@@ -1139,26 +1139,16 @@ func (p *ProjectRunner) UpdateProcess(updated *types.ProcessConfig) error {
 	return nil
 }
 
-func (p *ProjectRunner) UpdateNamespace(processes *types.Processes) (map[string]string, error) {
-	status := make(map[string]string)
-	if processes == nil || len(*processes) == 0 {
-		return status, fmt.Errorf("no processes provided")
-	}
+func (p *ProjectRunner) UpdateProcesses(processes *types.Processes) (map[string]string, error) {
+    status := make(map[string]string)
+    if processes == nil || len(*processes) == 0 {
+        return status, fmt.Errorf("no processes provided")
+    }
 
-	// Ensure all processes belong to the same namespace
-	ns := ""
-	for _, proc := range *processes {
-		if ns == "" {
-			ns = proc.Namespace
-		} else if proc.Namespace != ns {
-			return status, fmt.Errorf("all processes must be in the same namespace")
-		}
-	}
-
-	var errs []error
-	for _, process := range *processes {
-		if err := p.UpdateProcess(&process); err != nil {
-			status[process.ReplicaName] = err.Error()
+    var errs []error
+    for _, process := range *processes {
+        if err := p.UpdateProcess(&process); err != nil {
+            status[process.ReplicaName] = err.Error()
 			errs = append(errs, err)
 			continue
 		}
@@ -1168,7 +1158,7 @@ func (p *ProjectRunner) UpdateNamespace(processes *types.Processes) (map[string]
 	if len(errs) == len(*processes) {
 		return nil, errors.Join(errs...)
 	}
-	return status, nil
+    return status, nil
 }
 
 func (p *ProjectRunner) RemoveNamespace(namespace string) (map[string]string, error) {
