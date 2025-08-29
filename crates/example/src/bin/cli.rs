@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = project_path.join("process-compose.yaml");
     let override_path = project_path.join("process-compose.override.yaml");
     let up = ProcessComposeFlagsUp::builder()
-        .config(vec![path.clone(), override_path.clone()])        
+        .config(vec![path.clone(), override_path.clone()])
         .tui(true)
         .build();
     let flags = ProcessComposeFlags::builder()
