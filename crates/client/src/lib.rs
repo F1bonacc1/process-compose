@@ -39,11 +39,55 @@ pub fn typify_pretty(maybe_config: Option<typify::TypeSpace>) -> String {
     prettyplease::unparse(&syn::parse2::<syn::File>(type_space.to_stream()).unwrap())
 }
 
-/// Use this to get strongly typed HTTP client
+/// Use this to get strongly typed HTTP client.
+/// Does not support multitype returns(none in Process Compose yet)
+/// nor upgrades (101 Switching Protocols).
 #[cfg(feature = "progenitor")]
 pub fn progenitor_pretty(maybe_config: Option<progenitor::Generator>) -> String {
     let mut generator = maybe_config.unwrap_or_default();
-    let tokens = generator.generate_tokens(openapi()).unwrap();
+    let mut openapi = openapi().clone();
+    {
+        use openapiv3::{PathItem, ReferenceOr};
+        let paths_map = &mut openapi.paths.paths;
+        paths_map.retain(|_, item| {
+            let ReferenceOr::Item(PathItem {
+                get,
+                put,
+                post,
+                delete,
+                options,
+                head,
+                patch,
+                trace,
+                ..
+            }) = item
+            else {
+                return true;
+            };
+
+            let has_101 = [
+                get.as_ref(),
+                put.as_ref(),
+                post.as_ref(),
+                delete.as_ref(),
+                options.as_ref(),
+                head.as_ref(),
+                patch.as_ref(),
+                trace.as_ref(),
+            ]
+            .into_iter()
+            .flatten()
+            .any(|op| {
+                op.responses
+                    .responses
+                    .iter()
+                    .any(|(status, _)| matches!(status, openapiv3::StatusCode::Code(101)))
+            });
+            !has_101
+        });
+    }
+
+    let tokens = generator.generate_tokens(&openapi).unwrap();
     let ast = syn::parse2(tokens).unwrap();
     prettyplease::unparse(&ast)
 }
