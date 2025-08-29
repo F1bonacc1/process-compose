@@ -249,9 +249,13 @@
     "ProcessDependency": {
       "properties": {
         "condition": {
-          "oneOf": [
-            { "type": "integer", "enum": [0, 1, 2, 3] },
-            { "type": "string", "enum": ["process_started", "process_healthy", "process_completed", "process_completed_successfully"] }
+          "type": "string",
+          "enum": [
+            "process_started",
+            "process_healthy",
+            "process_completed",
+            "process_completed_successfully",
+            "process_log_ready"
           ]
         }
       },
@@ -343,11 +347,14 @@
     "RestartPolicyConfig": {
       "properties": {
         "restart": {
-          "oneOf": [
-            { "type": "integer", "enum": [0, 1, 2, 3] },
-            { "type": "string", "enum": ["no", "always", "on_failure", "exit_on_failure"] }
+          "type": "string",
+          "enum": [
+            "always",
+            "on_failure",
+            "exit_on_failure",
+            "no"
           ]
-        },  
+        },
         "backoff_seconds": {
           "type": "integer"
         },

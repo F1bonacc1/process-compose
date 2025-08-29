@@ -23,7 +23,7 @@ type (
 	Environment   []string
 	EnvCmd        map[string]string
 	ProcessConfig struct {
-		Name              string
+		Name              string                 `yaml:",omitempty"`
 		Disabled          bool                   `yaml:"disabled,omitempty"`
 		IsDaemon          bool                   `yaml:"is_daemon,omitempty"`
 		Command           string                 `yaml:"command,omitempty"`
@@ -354,7 +354,7 @@ const (
 )
 
 type RestartPolicyConfig struct {
-	Restart        RestartPolicy `yaml:",omitempty"`
+	Restart        RestartPolicy `yaml:",omitempty" jsonschema:"type=string,enum=always,enum=on_failure,enum=exit_on_failure,enum=no"`
 	BackoffSeconds int           `yaml:"backoff_seconds,omitempty"`
 	MaxRestarts    int           `yaml:"max_restarts,omitempty"`
 	ExitOnEnd      bool          `yaml:"exit_on_end,omitempty"`
@@ -410,7 +410,7 @@ func (c *ProcessCondition) UnmarshalYAML(node *yaml.Node) error {
 type DependsOnConfig map[string]ProcessDependency
 
 type ProcessDependency struct {
-	Condition  ProcessCondition       `yaml:",omitempty"`
+	Condition  ProcessCondition       `yaml:",omitempty" jsonschema:"type=string,enum=process_started,enum=process_healthy,enum=process_completed,enum=process_completed_successfully,enum=process_log_ready"`
 	Extensions map[string]interface{} `yaml:",inline"`
 }
 

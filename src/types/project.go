@@ -2,14 +2,15 @@ package types
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/command"
 	"sort"
+
+	"github.com/f1bonacc1/process-compose/src/command"
 )
 
 type Vars map[string]any
 
 type Project struct {
-	Version             string               `yaml:"version"`
+	Version             string               `yaml:",omitempty"`
 	Name                string               `yaml:"name,omitempty"`
 	LogLocation         string               `yaml:"log_location,omitempty"`
 	LogLevel            string               `yaml:"log_level,omitempty"`
