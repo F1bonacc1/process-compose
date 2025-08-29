@@ -2,6 +2,10 @@
 
 ## Environment Variables
 
+### Variable Expansion
+
+Process Compose uses [envsubst](https://github.com/drone/envsubst) for advanced environment variable expansion, supporting functions like `${VAR^^}` (convert to uppercase), `${HOST%:8000}` (remove suffix), `${VAR/old/new}` (pattern replacement), and more - see [supported functions](https://github.com/drone/envsubst?tab=readme-ov-file#supported-functions).
+
 ### Local (Per Process)
 
 ```yaml
