@@ -16,8 +16,10 @@ include = [
 crate-type = ["rlib"]
 
 [dependencies]
+serde = { version = "^1.0", default-features = false, features = ["derive"], optional = true}
 serde_json = { version = "^1.0", default-features = false }
 openapiv3 = { version = "^2", default-features = false }
+url = { version = "^2.5", default-features = false, optional = true }
 
 progenitor = { version = "^0.11", default-features = false, optional = true }
 prettyplease = { version = "^0.2.24", optional = true }
@@ -34,10 +36,12 @@ bon = { version = "3.7", default-features = false, optional = true}
 struct_field_names = { version = "0.2", default-features = false, optional = true}
 
 [features]
-default = ["progenitor", "typify", "cli"]
+default = []
 
 typify = ["dep:typify", "dep:prettyplease"]
 
 progenitor = ["dep:progenitor", "dep:prettyplease", "dep:syn"]
 
 cli = ["dep:process-wrap", "dep:bon", "dep:clap", "dep:struct_field_names"]
+
+ws = ["dep:url", "dep:serde"]

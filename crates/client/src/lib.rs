@@ -91,3 +91,32 @@ pub fn progenitor_pretty(maybe_config: Option<progenitor::Generator>) -> String 
     let ast = syn::parse2(tokens).unwrap();
     prettyplease::unparse(&ast)
 }
+
+#[cfg(feature = "ws")]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct LogMessage {
+    pub process_name: String,
+    pub message: String,
+}
+
+/// Returns URL parts without scheme and host.
+/// Output is (path, query_string).
+/// Process names are joined with comma, so proces name with comman will add 2 processes.
+#[cfg(feature = "ws")]
+pub fn process_logs_ws<ProcessName: AsRef<str>>(
+    process_names: &[ProcessName],
+    offset: usize,
+    follow: bool,
+) -> (&'static str, String) {
+    let names = process_names
+        .iter()
+        .map(|s| s.as_ref())
+        .collect::<Vec<_>>()
+        .join(",");
+    let mut query = url::form_urlencoded::Serializer::new(String::new());
+    query.append_pair("name", &names);
+    query.append_pair("offset", &offset.to_string());
+    query.append_pair("follow", if follow { "true" } else { "false" });
+
+    ("/process/logs/ws", query.finish())
+}
