@@ -288,6 +288,15 @@ func (p *ProcessState) IsReadyReason() (bool, string) {
 	return true, ""
 }
 
+// Cannot become ready without intervention.
+func (p *ProcessState) CannotBeReady() error {
+	if p.Status == ProcessStateDisabled {
+		return fmt.Errorf("process %s is disabled", p.Name)
+	}
+
+	return nil
+}
+
 //go:generate stringer -type=RestartPolicy
 type RestartPolicy int
 

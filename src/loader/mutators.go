@@ -2,11 +2,12 @@ package loader
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
-	"path/filepath"
 )
 
 type mutatorFunc func(p *types.Project)
@@ -137,9 +138,10 @@ func renderTemplates(p *types.Project) error {
 
 func convertStrDisabledToBool(p *types.Project) {
 	for name, proc := range p.Processes {
-		if proc.IsDisabled == "false" {
+		switch proc.IsDisabled {
+		case "false":
 			proc.Disabled = false
-		} else if proc.IsDisabled == "true" {
+		case "true":
 			proc.Disabled = true
 		}
 		p.Processes[name] = proc
