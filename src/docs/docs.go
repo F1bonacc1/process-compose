@@ -46,6 +46,9 @@ const docTemplate = `{
         "/process": {
             "post": {
                 "description": "Update process",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -54,6 +57,17 @@ const docTemplate = `{
                 ],
                 "summary": "Updates process configuration",
                 "operationId": "UpdateProcess",
+                "parameters": [
+                    {
+                        "description": "Process configuration to update",
+                        "name": "process",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.ProcessConfig"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Updated Process Config",

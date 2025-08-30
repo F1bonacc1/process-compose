@@ -376,7 +376,8 @@ func (api *PcApi) UpdateProject(c *gin.Context) {
 // @Description	Update process
 // @Tags			Process
 // @Summary		Updates process configuration
-// @Produce		json
+// @Accept			json
+// @Param			process	body	types.ProcessConfig	true	"Process configuration to update"
 // @Success		200	{object}	types.ProcessConfig	"Updated Process Config"
 // @Failure		400	{object}	map[string]string
 // @Router			/process [post]
