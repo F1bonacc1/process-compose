@@ -564,6 +564,18 @@
             "post": {
                 "description": "Update process",
                 "operationId": "UpdateProcess",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/types.ProcessConfig"
+                            }
+                        }
+                    },
+                    "description": "Process configuration to update",
+                    "required": true,
+                    "x-originalParamName": "process"
+                },
                 "responses": {
                     "200": {
                         "content": {
