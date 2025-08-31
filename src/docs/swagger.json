@@ -614,9 +614,9 @@
                     "Namespace"
                 ]
             },
-  "post": {
-    "description": "Merge processes from a partial config; processes may belong to different namespaces",
-    "operationId": "UpdateProcesses",
+            "post": {
+                "description": "Merge processes from a partial config.",
+                "operationId": "UpdateProcesses",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -625,7 +625,7 @@
                             }
                         }
                     },
-      "description": "One or more processes, possibly in different namespaces",
+                    "description": "One or more processes, possibly in different namespaces",
                     "required": true,
                     "x-originalParamName": "processes"
                 },
@@ -657,9 +657,9 @@
                         "description": "Some processes failed to be updated. Returns error if all failed, else returns success and failures map"
                     }
                 },
-    "summary": "Post config fragment with processes (multiple namespaces allowed)",
+                "summary": "Post config fragment with processes.",
                 "tags": [
-                    "Namespace"
+                    "Project"
                 ]
             }
         },

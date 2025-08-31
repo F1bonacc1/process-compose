@@ -413,7 +413,7 @@ paths:
             tags:
                 - Namespace
         post:
-            description: Merge processes from a partial config; processes may belong to different namespaces
+            description: Merge processes from a partial config.
             operationId: UpdateProcesses
             requestBody:
                 content:
@@ -440,9 +440,9 @@ paths:
                                     type: string
                                 type: object
                     description: Some processes failed to be updated. Returns error if all failed, else returns success and failures map
-            summary: Post config fragment with processes (multiple namespaces allowed)
+            summary: Post config fragment with processes.
             tags:
-                - Namespace
+                - Project
     /namespace/disable/{name}:
         patch:
             description: Disables all processes in the given namespace
