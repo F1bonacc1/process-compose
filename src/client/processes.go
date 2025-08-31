@@ -43,34 +43,34 @@ func (p *PcClient) GetRemoteProcessesState() (*types.ProcessesState, error) {
 	return &sResp, nil
 }
 
-func (p *PcClient) getProcessState(name string) (*types.ProcessState, bool, error) {
+func (p *PcClient) getProcessState(name string) (*types.ProcessState, error) {
 	url := fmt.Sprintf("http://%s/process/%s", p.address, name)
 	resp, err := p.client.Get(url)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		var respErr pcError
 		if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
 			log.Err(err).Msg("failed to decode err update process")
-			return nil, false, err
+			return nil, err
 		}
 
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, true, errors.New(respErr.Error)
+			return nil, types.NewPcError(types.ErrorCodeProcessNotFound, errors.New(respErr.Error))
 		}
-		return nil, false, errors.New(respErr.Error)
+		return nil, errors.New(respErr.Error)
 	}
 	//Create a variable of the same type as our model
 	var sResp types.ProcessState
 
 	//Decode the data
 	if err := json.NewDecoder(resp.Body).Decode(&sResp); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	return &sResp, false, nil
+	return &sResp, nil
 }
 
 func (p *PcClient) getProcessInfo(name string) (*types.ProcessConfig, error) {

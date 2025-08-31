@@ -429,3 +429,27 @@ const (
 	ProcessUpdateAdded   = "added"
 	ProcessUpdateError   = "error"
 )
+
+//go:generate stringer -type=ErrorCode
+type ErrorCode int
+
+const (
+	ErrorCodeAny ErrorCode = iota
+	ErrorCodeProcessNotFound
+)
+
+type PcError struct {
+	Inner error
+	Code  ErrorCode
+}
+
+func (e *PcError) Error() string {
+	return e.Inner.Error()
+}
+
+func NewPcError(code ErrorCode, message error) *PcError {
+	return &PcError{
+		Inner: message,
+		Code:  code,
+	}
+}

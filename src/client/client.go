@@ -106,9 +106,9 @@ func (p *PcClient) GetProcessPorts(name string) (*types.ProcessPorts, error) {
 	return p.getProcessPorts(name)
 }
 
-func (p *PcClient) GetProcessState(name string) (*types.ProcessState, bool, error) {
-	state, doesNotExist, err := p.getProcessState(name)
-	return state, doesNotExist, err
+func (p *PcClient) GetProcessState(name string) (*types.ProcessState, error) {
+	state, err := p.getProcessState(name)
+	return state, err
 }
 
 func (p *PcClient) GetProcessesState() (*types.ProcessesState, error) {

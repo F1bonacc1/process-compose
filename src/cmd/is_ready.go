@@ -125,13 +125,12 @@ var processIsReadyCmd = &cobra.Command{
 // Return true if process cannot be ready (does not exist in configuration, disabled).
 // If true error not nil.
 func checkProcessReady(client *client.PcClient, processName string) (bool, error) {
-	state, doesNotExist, err := client.GetProcessState(processName)
+	state, err := client.GetProcessState(processName)
 
 	if err != nil {
-		if doesNotExist {
+		if pcErr, ok := err.(*types.PcError); ok && pcErr.Code == types.ErrorCodeProcessNotFound {
 			return true, err
 		}
-
 		return false, err
 	}
 

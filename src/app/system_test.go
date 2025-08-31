@@ -2,9 +2,6 @@ package app
 
 import (
 	"bufio"
-	"github.com/f1bonacc1/process-compose/src/command"
-	"github.com/f1bonacc1/process-compose/src/loader"
-	"github.com/f1bonacc1/process-compose/src/types"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,6 +10,10 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/loader"
+	"github.com/f1bonacc1/process-compose/src/types"
 )
 
 func getFixtures() []string {
@@ -170,8 +171,8 @@ func TestSystem_TestComposeCircular(t *testing.T) {
 		_, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture1},
 		})
-			if err == nil {
-				t.Error("should fail on circular dependency")
+		if err == nil {
+			t.Error("should fail on circular dependency")
 			return
 		}
 
@@ -584,7 +585,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 		}
 	}()
 	time.Sleep(100 * time.Millisecond)
-    state, _, err := runner.GetProcessState(restarting)
+	state, err := runner.GetProcessState(restarting)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -600,7 +601,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 	}
 
 	time.Sleep(100 * time.Millisecond)
-    state, _, err = runner.GetProcessState(restarting)
+	state, _, err = runner.GetProcessState(restarting)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -609,7 +610,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 		t.Errorf("process %s want %s got %s", restarting, types.ProcessStateCompleted, state.Status)
 		return
 	}
-    state, _, err = runner.GetProcessState(notRestarting)
+	state, _, err = runner.GetProcessState(notRestarting)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -625,7 +626,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 	}
 
 	time.Sleep(100 * time.Millisecond)
-    state, _, err = runner.GetProcessState(notRestarting)
+	state, _, err = runner.GetProcessState(notRestarting)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -1301,7 +1302,7 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 	}
 
 	// Verify exactly one process is running after all concurrent restarts
-    state, _, err := runner.GetProcessState(testProcess)
+	state, _, err := runner.GetProcessState(testProcess)
 	if err != nil {
 		t.Error(err.Error())
 		return
