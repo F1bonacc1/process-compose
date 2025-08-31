@@ -48,16 +48,15 @@ func NewPcApi(project app.IProject) *PcApi {
 func (api *PcApi) GetProcess(c *gin.Context) {
 	name := c.Param("name")
 
-	state, doesNotExist, err := api.project.GetProcessState(name)
-	if doesNotExist {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+    state, err := api.project.GetProcessState(name)
+    if err != nil {
+        if pcErr, ok := err.(*types.PcError); ok && pcErr.Code == types.ErrorCodeProcessNotFound {
+            c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
 	c.JSON(http.StatusOK, state)
 }

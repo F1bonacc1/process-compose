@@ -601,7 +601,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 	}
 
 	time.Sleep(100 * time.Millisecond)
-	state, _, err = runner.GetProcessState(restarting)
+	state, err = runner.GetProcessState(restarting)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -610,7 +610,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 		t.Errorf("process %s want %s got %s", restarting, types.ProcessStateCompleted, state.Status)
 		return
 	}
-	state, _, err = runner.GetProcessState(notRestarting)
+	state, err = runner.GetProcessState(notRestarting)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -626,7 +626,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 	}
 
 	time.Sleep(100 * time.Millisecond)
-	state, _, err = runner.GetProcessState(notRestarting)
+	state, err = runner.GetProcessState(notRestarting)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -1302,7 +1302,7 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 	}
 
 	// Verify exactly one process is running after all concurrent restarts
-	state, _, err := runner.GetProcessState(testProcess)
+	state, err := runner.GetProcessState(testProcess)
 	if err != nil {
 		t.Error(err.Error())
 		return

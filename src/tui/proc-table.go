@@ -192,7 +192,7 @@ func (pv *pcView) getSelectedProcState() (*types.ProcessState, error) {
     if len(name) == 0 {
         return nil, errors.New("no process selected")
     }
-    state, _, err := pv.project.GetProcessState(name)
+    state, err := pv.project.GetProcessState(name)
     return state, err
 }
 
