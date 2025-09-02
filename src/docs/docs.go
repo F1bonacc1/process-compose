@@ -43,13 +43,259 @@ const docTemplate = `{
                 }
             }
         },
-        "/process": {
+        "/namespace": {
             "post": {
-                "description": "Update process",
+                "description": "Merge processes from a partial config.",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Post config fragment with processes.",
+                "operationId": "UpdateProcesses",
+                "parameters": [
+                    {
+                        "description": "One or more processes, possibly in different namespaces",
+                        "name": "processes",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Processes"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All updated",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Some processes failed to be updated. Returns error if all failed, else returns success and failures map",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all processes from current config in the given namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Delete namespace processes",
+                "operationId": "DeleteNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All processes removed, may be zero if non existent",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Some processes failed to be removed, can happen if some have dependants or removed concurrently",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/namespace/disable/{name}": {
+            "patch": {
+                "description": "Disables all processes in the given namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Disable all processes in a namespace",
+                "operationId": "DisableNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All processes in namespace disabled",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Some processes in namespace failed to be disabled, can happen if several opposite updates to same namespace are happening",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No processes in namespace",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/namespace/enable/{name}": {
+            "patch": {
+                "description": "Enables all processes in the given namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Enable all processes in a namespace",
+                "operationId": "EnableNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All processes in namespace enabled",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Some processes in namespace failed to be enabled",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No processes in namespace",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/namespace/stop/{name}": {
+            "patch": {
+                "description": "Sends kill signal to all processes in the given namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Stop all processes in a namespace",
+                "operationId": "StopNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stopped All Processes in Namespace",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Stopped Part of Processes in Namespace",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to stop some processes, they may have some dependants",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No proccesses in namespace",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/process": {
+            "post": {
+                "description": "Update process",
+                "consumes": [
                     "application/json"
                 ],
                 "tags": [
@@ -1176,6 +1422,12 @@ const docTemplate = `{
                 }
             }
         },
+        "types.Processes": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/types.ProcessConfig"
+            }
+        },
         "types.ProcessesState": {
             "type": "object",
             "properties": {
@@ -1286,7 +1538,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "1.73",
 	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{},

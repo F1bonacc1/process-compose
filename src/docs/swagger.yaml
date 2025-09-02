@@ -280,6 +280,10 @@ components:
                 system_time:
                     type: string
             type: object
+        types.Processes:
+            additionalProperties:
+                $ref: '#/components/schemas/types.ProcessConfig'
+            type: object
         types.ProcessesState:
             properties:
                 data:
@@ -360,7 +364,7 @@ info:
         name: Apache 2.0
         url: http://www.apache.org/licenses/LICENSE-2.0.html
     title: Process Compose API
-    version: "1.0"
+    version: "1.73"
 openapi: 3.0.3
 paths:
     /live:
@@ -377,6 +381,193 @@ paths:
             summary: Liveness Check
             tags:
                 - Liveness
+    /namespace:
+        delete:
+            description: Delete all processes from current config in the given namespace
+            operationId: DeleteNamespace
+            parameters:
+                - description: Namespace Name
+                  in: query
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: All processes removed, may be zero if non existent
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Some processes failed to be removed, can happen if some have dependants or removed concurrently
+            summary: Delete namespace processes
+            tags:
+                - Namespace
+        post:
+            description: Merge processes from a partial config.
+            operationId: UpdateProcesses
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/types.Processes'
+                description: One or more processes, possibly in different namespaces
+                required: true
+                x-originalParamName: processes
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: All updated
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Some processes failed to be updated. Returns error if all failed, else returns success and failures map
+            summary: Post config fragment with processes.
+            tags:
+                - Project
+    /namespace/disable/{name}:
+        patch:
+            description: Disables all processes in the given namespace
+            operationId: DisableNamespace
+            parameters:
+                - description: Namespace Name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: All processes in namespace disabled
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Some processes in namespace failed to be disabled, can happen if several opposite updates to same namespace are happening
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: No processes in namespace
+            summary: Disable all processes in a namespace
+            tags:
+                - Namespace
+    /namespace/enable/{name}:
+        patch:
+            description: Enables all processes in the given namespace
+            operationId: EnableNamespace
+            parameters:
+                - description: Namespace Name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: All processes in namespace enabled
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Some processes in namespace failed to be enabled
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: No processes in namespace
+            summary: Enable all processes in a namespace
+            tags:
+                - Namespace
+    /namespace/stop/{name}:
+        patch:
+            description: Sends kill signal to all processes in the given namespace
+            operationId: StopNamespace
+            parameters:
+                - description: Namespace Name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Stopped All Processes in Namespace
+                "207":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Stopped Part of Processes in Namespace
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: Failed to stop some processes, they may have some dependants
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                    description: No proccesses in namespace
+            summary: Stop all processes in a namespace
+            tags:
+                - Namespace
     /process:
         post:
             description: Update process
