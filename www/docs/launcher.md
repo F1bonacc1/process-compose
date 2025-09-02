@@ -6,7 +6,7 @@
 processes:
   process1:
   	description: This process will sleep for 2 seconds
-    command: "sleep 3"
+    command: "sleep 2"
   process2:
   	description: This process will sleep for 3 seconds
     command: "sleep 3"
