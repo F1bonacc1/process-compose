@@ -28,11 +28,11 @@ func (b *ProcessLogBuffer) Write(message string) {
 	b.mxBuf.Lock()
 	b.buffer = append(b.buffer, message)
 	if len(b.buffer) > b.size+slack {
-        b.buffer = b.buffer[slack:]
+		b.buffer = b.buffer[slack:]
 	}
-    b.mxBuf.Unlock()
-    b.mxObs.Lock()
-    defer b.mxObs.Unlock()
+	b.mxBuf.Unlock()
+	b.mxObs.Lock()
+	defer b.mxObs.Unlock()
 	for _, observer := range b.observers {
 		_, _ = observer.WriteString(message)
 	}
@@ -40,8 +40,8 @@ func (b *ProcessLogBuffer) Write(message string) {
 }
 
 func (b *ProcessLogBuffer) GetLogRange(offsetFromEnd, limit int) []string {
-    b.mxBuf.Lock()
-    defer b.mxBuf.Unlock()
+	b.mxBuf.Lock()
+	defer b.mxBuf.Unlock()
 	if len(b.buffer) == 0 {
 		return []string{}
 	}

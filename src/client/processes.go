@@ -58,7 +58,7 @@ func (p *PcClient) getProcessState(name string) (*types.ProcessState, error) {
 		}
 
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, types.NewPcError(types.ErrorCodeProcessNotFound, errors.New(respErr.Error))
+			return nil, types.ErrProcessNotFound
 		}
 		return nil, errors.New(respErr.Error)
 	}

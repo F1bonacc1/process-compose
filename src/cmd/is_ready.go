@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -128,13 +129,15 @@ func checkProcessReady(client *client.PcClient, processName string) (bool, error
 	state, err := client.GetProcessState(processName)
 
 	if err != nil {
-		if pcErr, ok := err.(*types.PcError); ok && pcErr.Code == types.ErrorCodeProcessNotFound {
+		if errors.Is(err, types.ErrProcessNotFound) {
 			return true, err
 		}
 		return false, err
 	}
 
-	err = state.CannotBeReady()
+	if state.CannotBeReady() {
+		return true, nil
+	}
 	if err != nil {
 		return true, err
 	}

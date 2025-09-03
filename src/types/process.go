@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -288,13 +289,8 @@ func (p *ProcessState) IsReadyReason() (bool, string) {
 	return true, ""
 }
 
-// Cannot become ready without intervention.
-func (p *ProcessState) CannotBeReady() error {
-	if p.Status == ProcessStateDisabled {
-		return fmt.Errorf("process %s is disabled", p.Name)
-	}
-
-	return nil
+func (p *ProcessState) CannotBeReady() bool {
+	return p.Status == ProcessStateDisabled
 }
 
 //go:generate stringer -type=RestartPolicy
@@ -430,26 +426,4 @@ const (
 	ProcessUpdateError   = "error"
 )
 
-//go:generate stringer -type=ErrorCode
-type ErrorCode int
-
-const (
-	ErrorCodeAny ErrorCode = iota
-	ErrorCodeProcessNotFound
-)
-
-type PcError struct {
-	Inner error
-	Code  ErrorCode
-}
-
-func (e *PcError) Error() string {
-	return e.Inner.Error()
-}
-
-func NewPcError(code ErrorCode, message error) *PcError {
-	return &PcError{
-		Inner: message,
-		Code:  code,
-	}
-}
+var ErrProcessNotFound = errors.New("process not found")

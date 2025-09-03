@@ -188,12 +188,11 @@ func (pv *pcView) isPassModeNeeded(state *types.ProcessState) bool {
 }
 
 func (pv *pcView) getSelectedProcState() (*types.ProcessState, error) {
-    name := pv.getSelectedProcName()
-    if len(name) == 0 {
-        return nil, errors.New("no process selected")
-    }
-    state, err := pv.project.GetProcessState(name)
-    return state, err
+	name := pv.getSelectedProcName()
+	if len(name) == 0 {
+		return nil, errors.New("no process selected")
+	}
+	return pv.project.GetProcessState(name)
 }
 
 func (pv *pcView) createProcTable() *tview.Table {
