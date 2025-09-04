@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"sync"
@@ -50,6 +51,10 @@ func (api *PcApi) GetProcess(c *gin.Context) {
 
 	state, err := api.project.GetProcessState(name)
 	if err != nil {
+		if errors.Is(err, types.ErrProcessNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
