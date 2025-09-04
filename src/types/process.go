@@ -289,10 +289,6 @@ func (p *ProcessState) IsReadyReason() (bool, string) {
 	return true, ""
 }
 
-func (p *ProcessState) CannotBeReady() bool {
-	return p.Status == ProcessStateDisabled
-}
-
 //go:generate stringer -type=RestartPolicy
 type RestartPolicy int
 
