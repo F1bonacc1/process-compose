@@ -16,4 +16,6 @@ jobs:
             toolchain: stable
             override: true
       - name: Rust build
-        run: cd crates/client && cargo build --release
+        run: |
+          cargo build --release --all-features
+          cargo clippy --release --all-features
