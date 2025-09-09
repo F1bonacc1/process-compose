@@ -49,7 +49,7 @@ pub fn progenitor_pretty(maybe_config: Option<progenitor::Generator>) -> String 
         let mut settings = progenitor::GenerationSettings::default();
         #[cfg(feature = "builder")]
         settings.with_interface(progenitor::InterfaceStyle::Builder);
-        progenitor::Generator::new(&settings)        
+        progenitor::Generator::new(&settings)
     });
     let mut openapi = openapi().clone();
     {
