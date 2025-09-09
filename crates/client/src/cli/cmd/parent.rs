@@ -5,7 +5,8 @@ use crate::cli::cmd::flags::env;
 use crate::cli::cmd::flags::DEFAULT_PORT_NUM;
 use crate::cli::cmd::up::ProcessComposeFlagsUp;
 /// Process Compose startup flags
-#[derive(Debug, Clone, Parser, struct_field_names::StructFieldNames, bon::Builder)]
+#[derive(Debug, Clone, Parser, struct_field_names::StructFieldNames)]
+#[cfg_attr(feature = "builder", derive(bon::Builder))]
 pub struct ProcessComposeFlags {
     /// Specify the log file path (env: PC_LOG_FILE)
     /// Default "/tmp/process-compose-<user>.log"
@@ -14,22 +15,22 @@ pub struct ProcessComposeFlags {
 
     /// Disable HTTP server (env: PC_NO_SERVER)
     #[arg(long = "no-server", env = env::NO_SERVER)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub no_server: bool,
 
     /// Shut down processes in reverse dependency order (env: PC_ORDERED_SHUTDOWN)
     #[arg(long = "ordered-shutdown", env = env::ORDERED_SHUTDOWN)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub ordered_shutdown: bool,
 
     /// Port number (env: PC_PORT_NUM)
     #[arg(long = "port", env = env::PORT_NUM, default_value_t = DEFAULT_PORT_NUM)]
-    #[builder(default = DEFAULT_PORT_NUM)]
+    #[cfg_attr(feature = "builder", builder(default = DEFAULT_PORT_NUM))]
     pub port: u16,
 
     /// Enable read-only mode (env: PC_READ_ONLY)
     #[arg(long = "read-only", env = env::READ_ONLY)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub read_only: bool,
 
     /// Path to unix socket (env: PC_SOCKET_PATH)
@@ -39,7 +40,7 @@ pub struct ProcessComposeFlags {
 
     /// Use unix domain sockets instead of TCP
     #[arg(long = "use-uds", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub use_uds: bool,
 
     #[command(subcommand)]

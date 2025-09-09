@@ -44,7 +44,13 @@ pub fn typify_pretty(maybe_config: Option<typify::TypeSpace>) -> String {
 /// nor upgrades (101 Switching Protocols).
 #[cfg(feature = "progenitor")]
 pub fn progenitor_pretty(maybe_config: Option<progenitor::Generator>) -> String {
-    let mut generator = maybe_config.unwrap_or_default();
+    let mut generator = maybe_config.unwrap_or_else(|| {
+        #[allow(unused_mut)]
+        let mut settings = progenitor::GenerationSettings::default();
+        #[cfg(feature = "builder")]
+        settings.with_interface(progenitor::InterfaceStyle::Builder);
+        progenitor::Generator::new(&settings)        
+    });
     let mut openapi = openapi().clone();
     {
         use openapiv3::{PathItem, ReferenceOr};

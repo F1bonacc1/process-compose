@@ -42,6 +42,8 @@ typify = ["dep:typify", "dep:prettyplease"]
 
 progenitor = ["dep:progenitor", "dep:prettyplease", "dep:syn"]
 
-cli = ["dep:process-wrap", "dep:bon", "dep:clap", "dep:struct_field_names"]
+cli = ["dep:process-wrap", "dep:clap", "dep:struct_field_names"]
 
 ws = ["dep:url", "dep:serde"]
+
+builder = ["dep:bon"]
