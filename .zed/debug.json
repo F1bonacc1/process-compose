@@ -1,0 +1,23 @@
+// Project-local debug tasks
+//
+// For more documentation on how to configure debug tasks,
+// see: https://zed.dev/docs/debugger
+[
+  {
+    "label": "Go (Delve)",
+    "adapter": "Delve",
+    "program": "$ZED_FILE",
+    "request": "launch",
+    "mode": "debug"
+  },
+  {
+    "label": "Run program compose",
+    "adapter": "Delve",
+    "request": "launch",
+    "mode": "debug",
+    // For Delve, the program can be a package name
+    "program": "./src",
+    "args": ["recipe", "pull", "-o", "/tmp", "nats-cluster"]
+    // "buildFlags": [],
+  }
+]
