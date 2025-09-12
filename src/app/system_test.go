@@ -2,9 +2,8 @@ package app
 
 import (
 	"bufio"
-	"github.com/f1bonacc1/process-compose/src/command"
-	"github.com/f1bonacc1/process-compose/src/loader"
-	"github.com/f1bonacc1/process-compose/src/types"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,6 +12,10 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/loader"
+	"github.com/f1bonacc1/process-compose/src/types"
 )
 
 func getFixtures() []string {
@@ -170,8 +173,8 @@ func TestSystem_TestComposeCircular(t *testing.T) {
 		_, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture1},
 		})
-			if err == nil {
-				t.Error("should fail on circular dependency")
+		if err == nil {
+			t.Error("should fail on circular dependency")
 			return
 		}
 
@@ -688,6 +691,57 @@ func TestSystem_TestReadyLine(t *testing.T) {
 		t.Errorf("process %s is %s want %s", proc2, state, types.ProcessStateRunning)
 		return
 	}
+}
+
+func TestSystem_TestReadyLineWithSkipped(t *testing.T) {
+	proc1 := "proc1"
+	proc2 := "proc2"
+	shell := command.DefaultShellConfig()
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			proc1: {
+				Name:         proc1,
+				ReplicaName:  proc1,
+				Executable:   shell.ShellCommand,
+				Args:         []string{shell.ShellArgument, "echo I will fail && exit 1"},
+				ReadyLogLine: "ready",
+			},
+			proc2: {
+				Name:        proc2,
+				ReplicaName: proc2,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "sleep 2"},
+				DependsOn: map[string]types.ProcessDependency{
+					proc1: {
+						Condition: types.ProcessConditionLogReady,
+					},
+				},
+				RestartPolicy: types.RestartPolicyConfig{
+					ExitOnSkipped: true,
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project: project,
+	})
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	err = runner.Run()
+	if err == nil {
+		t.Error(fmt.Errorf("should fail"))
+	}
+	var exitErr *ExitError
+	if errors.As(err, &exitErr) {
+		if exitErr.Code != 1 {
+			t.Error(fmt.Errorf("should fail with exit code 1"))
+		}
+	}
+
 }
 
 func TestUpdateProject(t *testing.T) {

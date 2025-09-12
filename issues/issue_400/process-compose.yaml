@@ -1,0 +1,15 @@
+version: "0.5"
+is_strict: true
+
+processes:
+  failing_process:
+    command: echo "This will fail" && exit 1
+    ready_log_line: This will never appear
+
+  dependent_process:
+    command: echo "This should be skipped but gets stuck in pending"
+    depends_on:
+      failing_process:
+        condition: process_log_ready
+    availability:
+      exit_on_skipped: true

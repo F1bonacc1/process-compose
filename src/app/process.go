@@ -400,7 +400,7 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 			p.onProcessEnd(types.ProcessStateTerminating)
 		}
 		if cancelReadinessFuncs {
-			p.readyLogCancelFn(fmt.Errorf("process completed, cannot produce log lines"))
+			p.cancelReadyLogFunc(fmt.Errorf("process %s completed, cannot produce log lines", p.getName()))
 		}
 		return nil
 	}
@@ -410,7 +410,7 @@ func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
 		if p.readyProber != nil {
 			p.readyCancelFn()
 		}
-		p.readyLogCancelFn(fmt.Errorf("process %s was shut down", p.getName()))
+		p.cancelReadyLogFunc(fmt.Errorf("process %s was shut down", p.getName()))
 	}
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
 		return p.doConfiguredStop(p.procConf.ShutDownParams)
@@ -497,6 +497,7 @@ func (p *Process) onProcessEnd(state string) {
 		p.waitForStoppedFn = nil
 	}
 	p.mtxStopFn.Unlock()
+	p.cancelReadyLogFunc(fmt.Errorf("process %s completed", p.getName()))
 	p.stopProbes()
 	if p.readyProber != nil {
 		p.readyCancelFn()
@@ -670,7 +671,7 @@ func (p *Process) handleOutput(pipe io.ReadCloser, output string, handler func(m
 		}
 		if p.procConf.ReadyLogLine != "" && p.procState.Health == types.ProcessHealthUnknown && strings.Contains(line, p.procConf.ReadyLogLine) {
 			p.procState.Health = types.ProcessHealthReady
-			p.readyLogCancelFn(nil)
+			p.cancelReadyLogFunc(nil)
 		}
 		p.checkElevatedProcOutput(line)
 		handler(strings.TrimSuffix(line, "\n"))
@@ -968,5 +969,14 @@ func isWrongPasswordEntered(output string) bool {
 		return strings.Contains(output, "Sorry, try again")
 	} else {
 		return strings.Contains(output, "The user name or password is incorrect")
+	}
+}
+
+func (p *Process) cancelReadyLogFunc(err error) {
+	p.mtxStopFn.Lock()
+	defer p.mtxStopFn.Unlock()
+	if p.readyLogCancelFn != nil {
+		p.readyLogCancelFn(err)
+		p.readyLogCancelFn = nil
 	}
 }
