@@ -2,13 +2,14 @@ package config
 
 import (
 	"fmt"
-	"github.com/adrg/xdg"
-	"github.com/rs/zerolog/log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/adrg/xdg"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -33,9 +34,11 @@ const (
 	LogLevelEnvVarName = "PC_LOG_LEVEL"
 	LogFileFlags       = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
 	LogFileMode        = os.FileMode(0600)
+	RecipeFileMode     = os.FileMode(0644)
 	themeFileName      = "theme.yaml"
 	settingsFileName   = "settings.yaml"
 	configHome         = "process-compose"
+	recipesPath        = "recipes"
 )
 
 var (
@@ -178,6 +181,15 @@ func GetSettingsPath() string {
 	}
 	settingsPath := filepath.Join(pcHome, settingsFileName)
 	return settingsPath
+}
+
+func GetRecipesDir() string {
+	pcHome := getProcConfigDir()
+	if pcHome == "" {
+		return ""
+	}
+	recipesDir := filepath.Join(pcHome, recipesPath)
+	return recipesDir
 }
 
 func getUser() string {

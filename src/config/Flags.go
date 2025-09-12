@@ -36,6 +36,7 @@ const (
 	EnvVarNameTui              = "PC_DISABLE_TUI"
 	EnvVarNameConfig           = "PC_CONFIG_FILES"
 	EnvVarNameShortcuts        = "PC_SHORTCUTS_FILES"
+	EnvVarNameRecipes          = "PC_RECIPE_FILES"
 	EnvVarNameNoServer         = "PC_NO_SERVER"
 	EnvVarUnixSocketPath       = "PC_SOCKET_PATH"
 	EnvVarReadOnlyMode         = "PC_READ_ONLY"

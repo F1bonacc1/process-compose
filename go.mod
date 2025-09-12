@@ -6,6 +6,7 @@ require (
 	dario.cat/mergo v1.0.2
 	github.com/InVisionApp/go-health/v2 v2.1.4
 	github.com/adrg/xdg v0.5.3
+	github.com/alecthomas/chroma/v2 v2.20.0
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/creack/pty v1.1.24
 	github.com/f1bonacc1/glippy v0.0.0-20230614190937-e7ca07f99f6f
@@ -40,6 +41,7 @@ require (
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
+	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect

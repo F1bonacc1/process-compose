@@ -29,7 +29,7 @@ process-compose [flags]
       --recursive-metrics        collect metrics recursively (env: PC_RECURSIVE_METRICS)
   -r, --ref-rate duration        TUI refresh interval in seconds or as a Go duration string (e.g. 1s) (default 1)
   -R, --reverse                  sort in reverse order
-      --shortcuts stringArray    paths to shortcut config files to load (env: PC_SHORTCUTS_FILES)
+      --shortcuts stringArray    paths to shortcut config files to load (env: PC_SHORTCUTS_FILES) (default [/home/<user>/.config/process-compose/shortcuts.yml])
       --slow-ref-rate duration   Slow(er) refresh interval for resources (CPU, RAM) in seconds or as a Go duration string (e.g. 1s). The value should be higher than --ref-rate (default 1)
   -S, --sort string              sort column name. legal values (case insensitive): [AGE, CPU, EXIT, HEALTH, MEM, NAME, NAMESPACE, PID, RESTARTS, STATUS] (default "NAME")
       --theme string             select process compose theme (default "Default")
@@ -48,6 +48,7 @@ process-compose [flags]
 * [process-compose list](process-compose_list.md)	 - List available processes
 * [process-compose process](process-compose_process.md)	 - Execute operations on the available processes
 * [process-compose project](process-compose_project.md)	 - Execute operations on a running Process Compose project
+* [process-compose recipe](process-compose_recipe.md)	 - Manage process-compose recipes
 * [process-compose run](process-compose_run.md)	 - Run PROCESS in the foreground, and its dependencies in the background
 * [process-compose up](process-compose_up.md)	 - Run process compose project
 * [process-compose version](process-compose_version.md)	 - Print version and build info
