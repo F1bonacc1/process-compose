@@ -35,14 +35,20 @@ const docTemplate = `{
                 "operationId": "IsAlive",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Alive Status",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusResponse"
+                        }
                     }
                 }
             }
         },
         "/process": {
             "post": {
-                "description": "Update porcess",
+                "description": "Update process",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -51,6 +57,17 @@ const docTemplate = `{
                 ],
                 "summary": "Updates process configuration",
                 "operationId": "UpdateProcess",
+                "parameters": [
+                    {
+                        "description": "Process configuration to update",
+                        "name": "process",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.ProcessConfig"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Updated Process Config",
@@ -109,6 +126,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/process/logs/ws": {
+            "get": {
+                "description": "Upgrades HTTP to WebSocket and streams JSON log messages. Each message is api.LogMessage.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Stream process logs over WebSocket",
+                "operationId": "LogsStream",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Comma-separated process names to stream",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset from the end of the log",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "If true, continue streaming new lines",
+                        "name": "follow",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/process/logs/{name}": {
             "delete": {
                 "description": "Truncates the process logs",
@@ -133,10 +196,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Truncated Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -189,13 +249,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Process Logs",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/api.LogsResponse"
                         }
                     },
                     "400": {
@@ -273,10 +327,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Restarted Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -322,10 +373,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Scaled Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -364,10 +412,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Started Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -406,10 +451,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Stopped Process Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.NameResponse"
                         }
                     },
                     "400": {
@@ -649,12 +691,9 @@ const docTemplate = `{
                 "operationId": "GetProjectName",
                 "responses": {
                     "200": {
-                        "description": "ProjectName",
+                        "description": "Project Name",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ProjectNameResponse"
                         }
                     },
                     "400": {
@@ -714,10 +753,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Stopped Server",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.StatusResponse"
                         }
                     }
                 }
@@ -725,6 +761,49 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.LogsResponse": {
+            "type": "object",
+            "properties": {
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.NameResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ProjectNameResponse": {
+            "type": "object",
+            "properties": {
+                "projectName": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.StatusResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "health.ExecProbe": {
             "type": "object",
             "properties": {

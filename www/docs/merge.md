@@ -1,4 +1,4 @@
-Using multiple `process-compose` files lets you to customize a `process-compose` application for different environments or different workflows.
+Using multiple `process-compose` files lets you customize a `process-compose` application for different environments or different workflows.
 
 ### Understanding multiple Compose files
 

@@ -3,15 +3,17 @@ package loader
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+
+	"github.com/drone/envsubst"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
-	"os"
-	"path/filepath"
-	"slices"
-	"strings"
 )
 
 const (
@@ -157,7 +159,11 @@ func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project,
 	const envEscaped = "##PC_ENV_ESCAPED##"
 	// replace escaped $$ env vars in yaml
 	temp := strings.ReplaceAll(string(yamlFile), "$$", envEscaped)
-	temp = os.Expand(temp, expanderFn)
+	temp, err = envsubst.Eval(temp, expanderFn)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Failed to parse %s, environment substitution errored.", inputFile)
+		return nil, err
+	}
 	temp = strings.ReplaceAll(temp, envEscaped, "$")
 
 	project := &types.Project{

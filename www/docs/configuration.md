@@ -2,6 +2,10 @@
 
 ## Environment Variables
 
+### Variable Expansion
+
+Process Compose uses [envsubst](https://github.com/drone/envsubst) for advanced environment variable expansion, supporting functions like `${VAR^^}` (convert to uppercase), `${HOST%:8000}` (remove suffix), `${VAR/old/new}` (pattern replacement), and more - see [supported functions](https://github.com/drone/envsubst?tab=readme-ov-file#supported-functions).
+
 ### Local (Per Process)
 
 ```yaml
@@ -447,7 +451,7 @@ processes:
     namespace: debug # if not defined 'default' namespace is automatically assigned to each process
 ```
 
-Note: By default `process-compose` will start process from all the configured namespaces. To start a sub set of the configured namespaces (`ns1`, `ns2`, `ns3`):
+Note: By default `process-compose` will start processes from all the configured namespaces. To start a subset of the configured namespaces (`ns1`, `ns2`, `ns3`):
 
 ```shell
 process-compose -n ns1 -n ns3
@@ -457,7 +461,7 @@ process-compose -n ns1 -n ns3
 ## Misc
 
 #### Strict Configuration Validation
-To avoid minor `proces-compose.yaml` configuration errors and typos it is recommended to enable `is_strict` flag:
+To avoid minor `process-compose.yaml` configuration errors and typos it is recommended to enable `is_strict` flag:
 
 ```yaml hl_lines="2 5"
 version: "0.5"
