@@ -1,18 +1,27 @@
-// includes generated code
-#![allow(renamed_and_removed_lints)]
-include!(concat!(env!("OUT_DIR"), "/client.rs"));
-include!(concat!(env!("OUT_DIR"), "/config.rs"));
+use crate::openapi::builder::GetProcessInfo;
+
+#[expect(mismatched_lifetime_syntaxes)]
+pub mod openapi {
+    include!(concat!(env!("OUT_DIR"), "/client.rs"));
+}
+
+#[expect(clippy::derivable_impls)]
+#[expect(clippy::clone_on_copy)]
+pub mod config {
+    include!(concat!(env!("OUT_DIR"), "/config.rs"));
+}
 
 #[tokio::main]
 async fn main() {
     // we just compile it to check for compile errors
-    let client = crate::Client::new("locahost:8080");
-    if let Ok(response) = client.get_process_info("process-compose").await {
+    let client = crate::openapi::Client::new("locahost:8080");
+    if let Ok(response) = GetProcessInfo::new(&client).name("process-compose").send().await {
         let _name = &response.name;
         unreachable!("errors on bad url");
     }
 
-    let _config = crate::Project::builder().processes(Processes(<_>::default()));
+    let _config =
+        crate::config::Project::builder().processes(crate::config::Processes(<_>::default()));
 
     println!("Compiles!")
 }
