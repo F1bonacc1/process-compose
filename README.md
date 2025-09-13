@@ -49,6 +49,9 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 - Run Multiple Replicas of a Process
 - Run a Foreground Process 
 - Themes Support
+- On the fly Process configuration edit
+- On the fly Project update
+- [Recipes](https://github.com/F1bonacc1/process-compose-recipes) Management
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 
@@ -71,6 +74,8 @@ It is heavily inspired by [docker-compose](https://github.com/docker/compose), b
 3. Commit your changes (git commit -am 'Add some feature')
 4. Push to the branch (git push origin my-new-feature)
 5. Create new Pull Request
+
+See the [Contributing](https://f1bonacc1.github.io/process-compose/contributing/) page for more details.
 
 English is not my native language, so PRs correcting grammar or spelling are welcome and appreciated.
 

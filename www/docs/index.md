@@ -30,7 +30,7 @@ Check the [Documentation](launcher.md) for more advanced use cases.
 - Process recovery policies
 - Manual process [re]start
 - Processes arguments `bash` or `zsh` style (or define your own shell)
-- Per process and global environment variables
+- Per process and global environment variables using [envsubst](https://github.com/drone/envsubst)
 - Per process or global (single file) logs
 - Health checks (liveness and readiness)
 - Terminal User Interface (TUI) or CLI modes
@@ -46,3 +46,4 @@ Check the [Documentation](launcher.md) for more advanced use cases.
 - Themes Support
 - On the fly Process configuration edit
 - On the fly Project update
+- [Recipes](https://github.com/F1bonacc1/process-compose-recipes) Management

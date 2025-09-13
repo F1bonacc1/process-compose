@@ -4,25 +4,34 @@ Process Compose is written in Go.
 ### Prerequisites:
 
 - [Make](https://www.gnu.org/software/make/)
-- [Go 1.22+](https://go.dev/doc/install)
+- [Go 1.24+](https://go.dev/doc/install)
+- [Nix](https://nix.dev/install-nix.html) - Optional, but recommended
 
 ### Clone Process Compose:
 
-```
+```shell
 git clone git@github.com:F1bonacc1/process-compose.git
 ```
 
 `cd` into the directory and install the dependencies:
 
-```
+```shell
 go mod tidy
 ```
 
 You should then be able to build the binary:
 
-```
+```shell
 make build
 ```
+
+In case new packages were added (or updated), new nix vendor hash needs to be recalculated:
+
+```shell
+make nix-update-hash
+```
+
+:bulb: This step requires Nix to be installed.
 
 ## Test your change
 
@@ -30,7 +39,7 @@ You can create a branch for your changes and try to build from the source as you
 
 When you are satisfied with the changes, we suggest you run:
 
-```
+```shell
 make ci
 ```
 
