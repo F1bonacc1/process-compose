@@ -600,8 +600,6 @@ func (p *ProjectRunner) shutDownAndWait(shutdownOrder []*Process) {
 
 func (p *ProjectRunner) ShutDownProject() error {
 	p.runProcMutex.Lock()
-	defer p.runProcMutex.Unlock()
-
 	shutdownOrder := []*Process{}
 	if p.isOrderedShutdown {
 		err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
@@ -619,6 +617,7 @@ func (p *ProjectRunner) ShutDownProject() error {
 			shutdownOrder = append(shutdownOrder, proc)
 		}
 	}
+	p.runProcMutex.Unlock()
 
 	var nameOrder []string
 	for _, v := range shutdownOrder {
@@ -1150,6 +1149,7 @@ func (p *ProjectRunner) prepareEnvCmds() {
 			p.project.Environment = make(types.Environment, 0)
 		}
 		p.project.Environment = append(p.project.Environment, fmt.Sprintf("%s=%s", env, output))
+		log.Debug().Msgf("Env variable %s set to %s", env, output)
 	}
 }
 
