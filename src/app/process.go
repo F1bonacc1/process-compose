@@ -383,16 +383,18 @@ func (p *Process) shutDownNoRestart() error {
 
 // perform graceful process shutdown if defined in configuration
 func (p *Process) shutDown() error {
-	return p.stopProcess(true)
+	return p.stopProcess(false, true)
 }
 
 // internal stop for graceful shutdown in case of readiness probe failure
 func (p *Process) internalStop() error {
-	return p.stopProcess(false)
+	return p.stopProcess(true, false)
 }
 
-func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
-	p.runCancelFn()
+func (p *Process) stopProcess(keepAlive, cancelReadinessFuncs bool) error {
+	if !keepAlive {
+		p.runCancelFn()
+	}
 	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.getStatusName())
 		// prevent pending process from running
@@ -846,6 +848,7 @@ func (p *Process) stopProbes() {
 func (p *Process) onLivenessCheckEnd(_, isFatal bool, err string, details interface{}) {
 	if isFatal {
 		p.logBuffer.Write("Error: liveness check fail - " + err)
+		_ = p.internalStop()
 		p.notifyDaemonStopped()
 		rcMap, ok := details.(map[string]string)
 		if ok {
