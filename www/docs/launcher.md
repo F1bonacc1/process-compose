@@ -255,7 +255,7 @@ processes:
     command: "go test ./..."
     depends_on:
       sanitycheck:
-        condition: process_completed_successfuly
+        condition: process_completed_successfully
 ```
 
 ## Terminate Process Compose once given process ends
