@@ -1,6 +1,6 @@
 use crate::openapi::builder::GetProcessInfo;
 
-#[expect(mismatched_lifetime_syntaxes)]
+#[allow(mismatched_lifetime_syntaxes)] // seems some rust version detection prevents consistent linting for expect
 pub mod openapi {
     include!(concat!(env!("OUT_DIR"), "/client.rs"));
 }
