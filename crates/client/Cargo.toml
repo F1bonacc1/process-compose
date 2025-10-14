@@ -18,7 +18,7 @@ crate-type = ["rlib"]
 [dependencies]
 serde = { version = "^1.0", default-features = false, features = ["derive"], optional = true}
 serde_json = { version = "^1.0", default-features = false }
-openapiv3 = { version = "^2", default-features = false }
+openapiv3 = { version = "^2.2", default-features = false }
 url = { version = "^2.5", default-features = false, optional = true }
 
 progenitor = { version = "^0.11", default-features = false, optional = true }
@@ -26,13 +26,13 @@ prettyplease = { version = "^0.2.24", optional = true }
 syn = { version = "^2.0.80", optional = true }
 schemars = { version = "^0.8.*" } # update to 1.0 blocked by typify
 
-typify = { version = "^0.4", default-features = false, optional = true }
+typify = { version = "^0.5", default-features = false, optional = true }
 
 process-wrap = { version = "9.0", default-features = false, optional = true, features = ["tokio1", "kill-on-drop", ]}
 
 
 clap = {version = "4.5", default-features = false, features = ["derive", "std", "env", "help", "usage", "error-context", "suggestions"], optional = true}
-bon = { version = "3.7", default-features = false, optional = true}
+bon = { version = "3.8", default-features = false, optional = true}
 struct_field_names = { version = "0.2", default-features = false, optional = true}
 
 [features]
