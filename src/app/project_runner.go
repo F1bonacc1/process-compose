@@ -1138,6 +1138,127 @@ func (p *ProjectRunner) UpdateProcess(updated *types.ProcessConfig) error {
 	return nil
 }
 
+func (p *ProjectRunner) UpdateProcesses(processes *types.Processes) (map[string]string, error) {
+	status := make(map[string]string)
+	if processes == nil || len(*processes) == 0 {
+		return status, fmt.Errorf("no processes provided")
+	}
+
+	var errs []error
+	for _, process := range *processes {
+		if err := p.UpdateProcess(&process); err != nil {
+			status[process.ReplicaName] = err.Error()
+			errs = append(errs, err)
+			continue
+		}
+		status[process.ReplicaName] = "ok"
+	}
+
+	if len(errs) == len(*processes) {
+		return nil, errors.Join(errs...)
+	}
+	return status, nil
+}
+
+// StopNamespace stops all processes in a given namespace.
+// Returns map of process name -> result ("ok" or error).
+// If namespace contains no processes, returns ErrNamespaceNotFound.
+func (p *ProjectRunner) StopNamespace(namespace string) (map[string]string, error) {
+    names, err := p.getProcessNamesInNamespace(namespace)
+    if err != nil {
+        return nil, err
+    }
+    return p.StopProcesses(names)
+}
+
+// DisableNamespace sets Disabled=true for all processes in the namespace.
+// Returns per-process results map and error if any failures occurred.
+func (p *ProjectRunner) DisableNamespace(namespace string) (map[string]string, error) {
+    return p.updateNamespaceDisabled(namespace, true, "failed to disable some processes")
+}
+
+// EnableNamespace sets Disabled=false for all processes in the namespace.
+// Returns per-process results map and error if any failures occurred.
+func (p *ProjectRunner) EnableNamespace(namespace string) (map[string]string, error) {
+    return p.updateNamespaceDisabled(namespace, false, "failed to enable some processes")
+}
+
+// getProcessNamesInNamespace returns all process names in the given namespace
+// or ErrNamespaceNotFound if none exist.
+func (p *ProjectRunner) getProcessNamesInNamespace(namespace string) ([]string, error) {
+    states, err := p.GetProcessesState()
+    if err != nil {
+        return nil, err
+    }
+    names := make([]string, 0)
+    for _, st := range states.States {
+        if st.Namespace == namespace {
+            names = append(names, st.Name)
+        }
+    }
+    if len(names) == 0 {
+        return nil, ErrNamespaceNotFound
+    }
+    return names, nil
+}
+
+// updateNamespaceDisabled applies the Disabled flag value to all processes
+// within a namespace and returns per-process results and a partial failure error when needed.
+func (p *ProjectRunner) updateNamespaceDisabled(namespace string, disabled bool, partialMsg string) (map[string]string, error) {
+    names, err := p.getProcessNamesInNamespace(namespace)
+    if err != nil {
+        return nil, err
+    }
+    results := make(map[string]string)
+    failures := 0
+    for _, name := range names {
+        cfg, err := p.GetProcessInfo(name)
+        if err != nil {
+            results[name] = err.Error()
+            failures++
+            continue
+        }
+        cfg.Disabled = disabled
+        if err := p.UpdateProcess(cfg); err != nil {
+            results[name] = err.Error()
+            failures++
+        } else {
+            results[name] = "ok"
+        }
+    }
+    if failures > 0 {
+        return results, errors.New(partialMsg)
+    }
+    return results, nil
+}
+
+func (p *ProjectRunner) RemoveNamespace(namespace string) (map[string]string, error) {
+	removed := make(map[string]string)
+	var errs []error
+	names := make([]string, 0)
+
+	for name, proc := range p.project.Processes {
+		if proc.Namespace == namespace {
+			names = append(names, name)
+		}
+	}
+
+	for _, name := range names {
+		if err := p.removeProcess(name); err != nil {
+			removed[name] = err.Error()
+			errs = append(errs, err)
+		} else {
+			removed[name] = types.ProcessUpdateRemoved
+		}
+	}
+
+	if len(errs) == len(names) {
+		return nil, errors.Join(errs...)
+	}
+
+	return removed, errors.Join(errs...)
+}
+
 func (p *ProjectRunner) prepareEnvCmds() {
 	for env, cmd := range p.project.EnvCommands {
 		output, err := runCmd(cmd)
