@@ -540,7 +540,7 @@
             "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         },
         "title": "Process Compose API",
-        "version": "1.73"
+        "version": "1.75.2"
     },
     "openapi": "3.0.3",
     "paths": {

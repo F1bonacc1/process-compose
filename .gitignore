@@ -18,6 +18,3 @@ www/.cache
 
 Cargo.lock
 target
-
-.gomodcache
-.gocache
