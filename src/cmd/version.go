@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/spf13/cobra"
 )
@@ -27,10 +28,10 @@ func printVersion() {
 	fmt.Printf(format, "Date (UTC):", config.Date)
 	fmt.Printf(format, "License:", config.License)
 	fmt.Printf(format, "Discord:", config.Discord)
-	fmt.Println("\nWritten by Eugene Berger")
+	fmt.Printf(format, "Author:", config.Author)
 }
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().BoolVar(pcFlags.ShortVersion, "short", *pcFlags.ShortVersion, "Print only version")
+	versionCmd.Flags().BoolVarP(pcFlags.ShortVersion, "short", "s", *pcFlags.ShortVersion, "Print only version")
 }

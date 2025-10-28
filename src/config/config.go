@@ -19,6 +19,7 @@ var (
 	CheckForUpdates   = "false"
 	License           = "Apache-2.0"
 	Discord           = "https://discord.gg/S4xgmRSHdC"
+	Author            = "Eugene Berger"
 	ProjectName       = "Process Compose 🔥"
 	RemoteProjectName = "Process Compose ⚡"
 
