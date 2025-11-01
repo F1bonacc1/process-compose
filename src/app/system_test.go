@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/loader"
+	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
 )
 
@@ -1371,4 +1373,48 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+}
+
+func TestReadinessProbeRestart(t *testing.T) {
+	proc := &types.ProcessConfig{
+		Name:    "test",
+		Command: "sleep 10",
+		RestartPolicy: types.RestartPolicyConfig{
+			Restart:        types.RestartPolicyOnFailure,
+			MaxRestarts:    2,
+			BackoffSeconds: 1,
+		},
+		ReadinessProbe: &health.Probe{
+			Exec: &health.ExecProbe{
+				Command: "cat /unexisting",
+			},
+			FailureThreshold: 1,
+			PeriodSeconds:    1,
+			InitialDelay:     1,
+		},
+	}
+	proc.AssignProcessExecutableAndArgs(command.DefaultShellConfig(), "")
+
+	p := NewProcess(
+		withProcConf(proc),
+		withLogger(pclog.NewNilLogger()),
+		withProcState(&types.ProcessState{}),
+		withProcLog(pclog.NewLogBuffer(100)),
+	)
+
+	go func() {
+		_ = p.run()
+	}()
+
+	time.Sleep(4 * time.Second)
+	restarts := 0
+	p.getStateData(func(state *types.ProcessState) {
+		restarts = state.Restarts
+	})
+	if restarts != 2 {
+		t.Errorf("Expected 2 restart, got %d", restarts)
+		return
+	}
+	_ = p.shutDown()
+	p.waitForCompletion()
 }

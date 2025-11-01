@@ -1,0 +1,18 @@
+is_tui_disabled: true
+processes:
+  my-process:
+    availability:
+      restart: always
+    command: while true; do echo hi && sleep 1; done
+    log_location: ./my-process.log
+    readiness_probe:
+      exec:
+        command: false
+      failure_threshold: 2
+      initial_delay_seconds: 1
+      period_seconds: 1
+      success_threshold: 1
+      timeout_seconds: 1
+shell:
+  shell_argument: -c
+  shell_command: "bash"

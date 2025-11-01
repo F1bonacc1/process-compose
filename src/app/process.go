@@ -164,7 +164,9 @@ loop:
 			break
 		}
 		p.setState(types.ProcessStateRestarting)
+		p.stateMtx.Lock()
 		p.procState.Restarts += 1
+		p.stateMtx.Unlock()
 		log.Info().Msgf("Restarting %s in %v second(s)... Restarts: %d",
 			p.getName(), p.getBackoff().Seconds(), p.procState.Restarts)
 
@@ -391,22 +393,24 @@ func (p *Process) internalStop() error {
 	return p.stopProcess(false)
 }
 
-func (p *Process) stopProcess(cancelReadinessFuncs bool) error {
-	p.runCancelFn()
+func (p *Process) stopProcess(withNoRestart bool) error {
+	if withNoRestart {
+		p.runCancelFn()
+	}
 	if !p.isRunning() {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.getStatusName())
 		// prevent pending process from running
 		if p.isOneOfStates(types.ProcessStatePending) {
 			p.onProcessEnd(types.ProcessStateTerminating)
 		}
-		if cancelReadinessFuncs {
+		if withNoRestart {
 			p.cancelReadyLogFunc(fmt.Errorf("process %s completed, cannot produce log lines", p.getName()))
 		}
 		return nil
 	}
 	p.setState(types.ProcessStateTerminating)
 	p.stopProbes()
-	if cancelReadinessFuncs {
+	if withNoRestart {
 		if p.readyProber != nil {
 			p.readyCancelFn()
 		}
@@ -867,19 +871,23 @@ func (p *Process) printDetails(details map[string]string, err, source string) {
 }
 
 func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string, details interface{}) {
+	procHealth := types.ProcessHealthUnknown
+	p.getStateData(func(state *types.ProcessState) {
+		procHealth = state.Health
+	})
 	if isFatal {
-		p.procState.Health = types.ProcessHealthNotReady
+		procHealth = types.ProcessHealthNotReady
 		p.logBuffer.Write("Error: readiness check fail - " + err)
 		_ = p.internalStop()
 	} else if isOk {
-		p.procState.Health = types.ProcessHealthReady
+		procHealth = types.ProcessHealthReady
 		p.readyCancelFn()
 	} else {
-		p.procState.Health = types.ProcessHealthNotReady
+		procHealth = types.ProcessHealthNotReady
 	}
 
 	//log exec error if not healthy and output is not empty
-	if p.procState.Health == types.ProcessHealthNotReady {
+	if procHealth == types.ProcessHealthNotReady {
 		rcMap, ok := details.(map[string]string)
 		if ok {
 			p.printDetails(rcMap, err, "readiness")
