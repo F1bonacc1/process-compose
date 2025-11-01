@@ -2,11 +2,12 @@ package config
 
 import (
 	"errors"
-	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path"
 	"slices"
+
+	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -99,7 +100,7 @@ func (t *Themes) SelectStyles(name string) {
 		t.activeStyles.Update()
 		t.fireStylesChanged()
 	} else {
-		log.Error().Msgf("Theme %s not found", name)
+		log.Fatal().Msgf("Theme %s not found", name)
 	}
 }
 
