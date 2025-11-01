@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -65,7 +66,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		cloneReplicas,
 		copyWorkingDirToProbes,
 		convertStrDisabledToBool,
-        disableProcsInEnv,
+		disableProcsInEnv,
 	)
 	err = applyWithErr(mergedProject,
 		renderTemplates,
@@ -176,6 +177,16 @@ func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project,
 		}
 		log.Fatal().Err(err).Msgf("Failed to parse %s", inputFile)
 	}
+	if project.IsStrict {
+		log.Warn().Msg("Strict mode is enabled")
+		err = unmarshalStrict([]byte(temp), project)
+		if err != nil {
+			if opts.IsInternalLoader {
+				return nil, err
+			}
+			log.Fatal().Err(err).Msgf("Failed to parse %s", inputFile)
+		}
+	}
 	if project.DisableEnvExpansion {
 		err = yaml.Unmarshal(yamlFile, project)
 		if err != nil {
@@ -189,6 +200,12 @@ func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project,
 
 	log.Info().Msgf("Loaded project from %s", inputFile)
 	return project, nil
+}
+
+func unmarshalStrict(data []byte, v interface{}) error {
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+	return dec.Decode(v)
 }
 
 func findFiles(names []string, pwd string) []string {
