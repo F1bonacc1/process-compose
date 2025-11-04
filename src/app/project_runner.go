@@ -528,8 +528,8 @@ func (p *ProjectRunner) SetProcessPassword(name, pass string) error {
 func (p *ProjectRunner) runningProcessesReverseDependencies() map[string]map[string]*Process {
 	reverseDependencies := make(map[string]map[string]*Process)
 
-	// `p.runProcMutex` lock is assumed to have been acquired when calling
-	// this function. It is currently called by `ShutDownProject()`.
+	p.runProcMutex.Lock()
+	defer p.runProcMutex.Unlock()
 	for _, process := range p.runningProcesses {
 		for k := range process.procConf.DependsOn {
 			if runningProc, ok := p.runningProcesses[k]; ok {
