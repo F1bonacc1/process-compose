@@ -1,0 +1,39 @@
+disable_env_expansion: true
+log_location: ./.data/pc.logs
+processes:
+  mongodb:
+    availability:
+      restart: on_failure
+    command: |
+      set -ueo pipefail
+      mkdir -p './.data/mongodb'
+
+      ulimit -n 100000
+      exec mongod --port 27017 --dbpath ./.data/mongodb --bind_ip 127.0.0.1 --replSet rs0
+
+    namespace: mongo.mongodb
+    readiness_probe:
+      exec:
+        command: mongosh --port 27017 --eval 'db.adminCommand("ping")'
+      failure_threshold: 20
+      initial_delay_seconds: 5
+      period_seconds: 5
+      success_threshold: 1
+      timeout_seconds: 4
+  mongodb-rs-init:
+    command: mongosh --port 27017 --eval 'rs.initiate()'
+    depends_on:
+      mongodb:
+        condition: process_healthy
+    namespace: mongo.mongodb
+  tests:
+    availability:
+      exit_on_end: true
+    command: echo test start; sleep 4; echo test end
+    depends_on:
+      mongodb-rs-init:
+        condition: process_completed_successfully
+    namespace: default
+shell:
+  shell_argument: -c
+  shell_command: bash

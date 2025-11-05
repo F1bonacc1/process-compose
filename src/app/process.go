@@ -871,20 +871,21 @@ func (p *Process) printDetails(details map[string]string, err, source string) {
 }
 
 func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string, details interface{}) {
+	if isFatal {
+		p.setProcHealth(types.ProcessHealthNotReady)
+		p.logBuffer.Write("Error: readiness check fail - " + err)
+		_ = p.internalStop()
+	} else if isOk {
+		p.setProcHealth(types.ProcessHealthReady)
+		p.readyCancelFn()
+	} else {
+		p.setProcHealth(types.ProcessHealthNotReady)
+	}
+
 	procHealth := types.ProcessHealthUnknown
 	p.getStateData(func(state *types.ProcessState) {
 		procHealth = state.Health
 	})
-	if isFatal {
-		procHealth = types.ProcessHealthNotReady
-		p.logBuffer.Write("Error: readiness check fail - " + err)
-		_ = p.internalStop()
-	} else if isOk {
-		procHealth = types.ProcessHealthReady
-		p.readyCancelFn()
-	} else {
-		procHealth = types.ProcessHealthNotReady
-	}
 
 	//log exec error if not healthy and output is not empty
 	if procHealth == types.ProcessHealthNotReady {
@@ -943,6 +944,12 @@ func (p *Process) setExitCode(code int) {
 	defer p.confMtx.Unlock()
 	p.confMtx.Lock()
 	p.procState.ExitCode = code
+}
+
+func (p *Process) setProcHealth(health string) {
+	defer p.confMtx.Unlock()
+	p.confMtx.Lock()
+	p.procState.Health = health
 }
 
 // set elevated process password
