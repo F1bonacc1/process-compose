@@ -225,8 +225,7 @@ func isClient() bool {
 }
 
 func IsLogSelectionOn() bool {
-	_, found := os.LookupEnv("WAYLAND_DISPLAY")
-	return !found
+	return true
 }
 
 func GetUnixSocketPath() string {

@@ -104,6 +104,7 @@ func (pv *pcView) createLogSelectionTextArea() {
 			err := glippy.Set(text)
 			if err != nil {
 				log.Err(err).Msg("failed to set clipboard")
+                pv.attentionMessage(fmt.Sprintf("Failed to copy to clipboard: %s", err.Error()), 5*time.Second)
 			}
 			pv.logsTextArea.Select(start, start)
 		case tcell.KeyEsc:
