@@ -291,13 +291,22 @@ func (p *Process) getProcessEnvironment() []string {
 		EnvReplicaNum + "=" + strconv.Itoa(p.procConf.ReplicaNum),
 	}
 	env = append(env, os.Environ()...)
-	env = append(env, p.globalEnv...)
-	env = append(env, p.procConf.Environment...)
+
+	// .env variables MUST come BEFORE YAML configurations
+	// so that explicit YAML configs can override .env defaults
+	// Precedence order (lowest to highest):
+	// 1. System environment (os.Environ)
+	// 2. .env file variables
+	// 3. Global YAML environment section
+	// 4. Local process YAML environment section (highest)
 	if p.dotEnvVars != nil && !p.procConf.DisableDotEnv {
 		for k, v := range p.dotEnvVars {
 			env = append(env, k+"="+v)
 		}
 	}
+
+	env = append(env, p.globalEnv...)
+	env = append(env, p.procConf.Environment...)
 	return env
 }
 
