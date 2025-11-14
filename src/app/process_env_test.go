@@ -34,6 +34,15 @@ func Test_getProcessEnvironment_Precedence(t *testing.T) {
 			expectedValue: "from_dotenv",
 		},
 		{
+			name:          "TestEnvPrecedence_SystemVsDotenv - system env should override .env when no YAML config",
+			globalEnv:     []string{},
+			procEnv:       []string{},
+			dotEnvVars:    map[string]string{"TEST_SYSTEM_VAR": "from_dotenv"},
+			disableDotEnv: false,
+			expectedKey:   "TEST_SYSTEM_VAR",
+			expectedValue: "from_system_env",
+		},
+		{
 			name:          "TestEnvPrecedence_DotenvVsGlobal - global YAML should override .env",
 			globalEnv:     []string{"TEST_VAR=from_global_yaml"},
 			procEnv:       []string{},
