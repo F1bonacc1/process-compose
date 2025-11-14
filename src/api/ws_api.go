@@ -49,6 +49,9 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 		go handleIncoming(ws, done)
 	}
 	for _, processName := range processNames {
+		if processName == "" {
+			continue
+		}
 		logChan := make(chan LogMessage, 256)
 		chanCloseMtx := &sync.Mutex{}
 		isChannelClosed := false

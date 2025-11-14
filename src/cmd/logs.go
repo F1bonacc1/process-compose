@@ -3,15 +3,16 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
+	"os/signal"
+	"strings"
+	"time"
+
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"os"
-	"os/signal"
-	"strings"
-	"time"
 )
 
 // logsCmd represents the logs command
@@ -33,7 +34,10 @@ var logsCmd = &cobra.Command{
 			name = args[0]
 		}
 		if *pcFlags.Namespace != "" {
-			processes := strings.Split(name, ",")
+			processes := []string{}
+			if name != "" {
+				processes = strings.Split(name, ",")
+			}
 			states, err := getClient().GetRemoteProcessesState()
 			if err != nil {
 				log.Fatal().Err(err).Msg("failed to list processes")
