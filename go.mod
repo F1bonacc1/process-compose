@@ -6,13 +6,13 @@ toolchain go1.24.2
 
 require (
 	dario.cat/mergo v1.0.2
-	github.com/InVisionApp/go-health/v2 v2.1.4
 	github.com/adrg/xdg v0.5.3
 	github.com/alecthomas/chroma/v2 v2.20.0
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/creack/pty v1.1.24
 	github.com/drone/envsubst v1.0.3
 	github.com/f1bonacc1/glippy v1.1.0
+	github.com/f1bonacc1/go-health/v2 v2.1.6
 	github.com/fatih/color v1.18.0
 	github.com/gdamore/tcell/v2 v2.9.0
 	github.com/gin-gonic/gin v1.10.1
@@ -31,7 +31,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2 v2.1.5-0.20250716071924-704bdc47a43a
+// replace github.com/InVisionApp/go-health/v2 => github.com/f1bonacc1/go-health/v2 v2.1.5-0.20250716071924-704bdc47a43a
 
 replace github.com/cakturk/go-netstat => github.com/f1bonacc1/netstat v0.0.0-20230714090734-adb3fa07cab7
 
