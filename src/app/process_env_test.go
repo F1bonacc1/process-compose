@@ -1,7 +1,6 @@
 package app
 
 import (
-	"os"
 	"strings"
 	"testing"
 
@@ -92,8 +91,7 @@ func Test_getProcessEnvironment_Precedence(t *testing.T) {
 	}
 
 	// Set a system environment variable for the last test
-	os.Setenv("TEST_SYSTEM_VAR", "from_system_env")
-	defer os.Unsetenv("TEST_SYSTEM_VAR")
+	t.Setenv("TEST_SYSTEM_VAR", "from_system_env")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -142,8 +140,7 @@ func Test_getProcessEnvironment_Precedence(t *testing.T) {
 // with all four sources (system, .env, global, local)
 func Test_getProcessEnvironment_CompleteChain(t *testing.T) {
 	// Set up system environment
-	os.Setenv("CHAIN_VAR", "from_system_env")
-	defer os.Unsetenv("CHAIN_VAR")
+	t.Setenv("CHAIN_VAR", "from_system_env")
 
 	p := &Process{
 		globalEnv: []string{"CHAIN_VAR=from_global_yaml"},
