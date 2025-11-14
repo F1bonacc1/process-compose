@@ -9,8 +9,8 @@ import (
 
 // Test_getProcessEnvironment_Precedence tests the environment variable precedence order.
 // The correct order (lowest to highest) should be:
-// 1. System environment (os.Environ)
-// 2. .env file variables
+// 1. .env file variables
+// 2. System environment (os.Environ)
 // 3. Global YAML environment section
 // 4. Local process YAML environment section (highest)
 func Test_getProcessEnvironment_Precedence(t *testing.T) {
