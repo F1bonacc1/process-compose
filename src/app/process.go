@@ -15,7 +15,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cakturk/go-netstat/netstat"
+	"github.com/f1bonacc1/netstat/netstat"
 	"github.com/f1bonacc1/process-compose/src/types"
 
 	"github.com/f1bonacc1/process-compose/src/command"
