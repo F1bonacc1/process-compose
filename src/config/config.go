@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -63,6 +64,22 @@ func GetLogFilePath() string {
 		userName = "-" + userName
 	}
 	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose%s%s.log", userName, mode()))
+}
+
+func GetLogLevel() zerolog.Level {
+	val, found := os.LookupEnv(LogLevelEnvVarName)
+	if !found {
+		return zerolog.InfoLevel
+	}
+	if val != "" {
+		lvl, err := zerolog.ParseLevel(val)
+		if err != nil {
+			log.Warn().Msgf("Unknown log level %s defaulting to %s", val, zerolog.InfoLevel.String())
+		} else {
+			return lvl
+		}
+	}
+	return zerolog.InfoLevel
 }
 
 func getDisableTuiDefault() bool {
