@@ -51,4 +51,3 @@ func (o *LoaderOptions) WithTuiDisabled(disabled bool) {
 func (o *LoaderOptions) WithOrderedShutdown(enabled bool) {
 	o.isOrderedShutdown = enabled
 }
-

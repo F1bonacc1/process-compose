@@ -267,7 +267,7 @@ func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error
 		state, ok := p.processStates[name]
 		if !ok {
 			log.Error().Msgf("Error: process %s doesn't exist", name)
-			return nil, fmt.Errorf("can't get state of process %s: no such process", name)
+			return nil, fmt.Errorf("can't get state of process %s: %w", name, types.ErrProcessNotFound)
 		}
 		return state, nil
 	}

@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"strings"
-	"time"
 )
 
 // `isReadyCmd` represents the `project is-ready` command
