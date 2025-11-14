@@ -28,43 +28,49 @@ func (b *ProcessLogBuffer) Write(message string) {
 	b.mxBuf.Lock()
 	b.buffer = append(b.buffer, message)
 	if len(b.buffer) > b.size+slack {
-        b.buffer = b.buffer[slack:]
+		b.buffer = b.buffer[slack:]
 	}
-    b.mxBuf.Unlock()
-    b.mxObs.Lock()
-    defer b.mxObs.Unlock()
+	b.mxBuf.Unlock()
+	b.mxObs.Lock()
+	defer b.mxObs.Unlock()
 	for _, observer := range b.observers {
 		_, _ = observer.WriteString(message)
 	}
 
 }
 
-func (b *ProcessLogBuffer) GetLogRange(offsetFromEnd, limit int) []string {
-    b.mxBuf.Lock()
-    defer b.mxBuf.Unlock()
+func (b *ProcessLogBuffer) GetLogRange(endOffset, limit int) []string {
+	b.mxBuf.Lock()
+	defer b.mxBuf.Unlock()
+
 	if len(b.buffer) == 0 {
 		return []string{}
 	}
-	if offsetFromEnd < 0 {
-		offsetFromEnd = 0
-	}
-	if offsetFromEnd > len(b.buffer) {
-		offsetFromEnd = len(b.buffer)
+
+	if endOffset < 0 {
+		endOffset = 0
 	}
 
-	if limit < 1 {
-		limit = 0
+	if endOffset > len(b.buffer) {
+		endOffset = len(b.buffer)
 	}
-	if limit > len(b.buffer) {
-		limit = len(b.buffer)
+
+	endIndex := len(b.buffer) - endOffset
+	if endIndex < 0 {
+		endIndex = 0
 	}
-	if offsetFromEnd+limit > len(b.buffer) {
-		limit = len(b.buffer) - offsetFromEnd
+
+	if limit <= 0 {
+		// return all available lines up to endIndex
+		return b.buffer[:endIndex]
 	}
-	if limit == 0 {
-		return b.buffer[len(b.buffer)-offsetFromEnd:]
+
+	startIndex := endIndex - limit
+	if startIndex < 0 {
+		startIndex = 0
 	}
-	return b.buffer[len(b.buffer)-offsetFromEnd : offsetFromEnd+limit]
+
+	return b.buffer[startIndex:endIndex]
 }
 
 func (b *ProcessLogBuffer) GetLogLength() int {
@@ -74,7 +80,7 @@ func (b *ProcessLogBuffer) GetLogLength() int {
 func (b *ProcessLogBuffer) GetLogsAndSubscribe(observer LogObserver) {
 	b.mxObs.Lock()
 	defer b.mxObs.Unlock()
-	observer.SetLines(b.GetLogRange(observer.GetTailLength(), 0))
+	observer.SetLines(b.GetLogRange(0, observer.GetTailLength()))
 	b.observers[observer.GetUniqueID()] = observer
 }
 

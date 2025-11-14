@@ -1172,7 +1172,7 @@ func TestSystem_TestEnvCmds(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	log, err := runner.GetProcessLog(proc1, 1, 1)
+	log, err := runner.GetProcessLog(proc1, 0, 1)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -1222,7 +1222,7 @@ func TestSystem_TestLogTruncate(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	log, err := runner.GetProcessLog(proc1, 2, 2)
+	log, err := runner.GetProcessLog(proc1, 0, 2)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -1249,7 +1249,7 @@ func TestSystem_TestLogTruncate(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	log, err = runner.GetProcessLog(proc1, 2, 2)
+	log, err = runner.GetProcessLog(proc1, 0, 2)
 	if err != nil {
 		t.Error(err.Error())
 		return
