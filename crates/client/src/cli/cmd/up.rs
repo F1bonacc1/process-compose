@@ -5,88 +5,92 @@ use std::path::PathBuf;
 use crate::cli::cmd::flags::env;
 use crate::cli::cmd::flags::{DEFAULT_REFRESH_RATE, DEFAULT_SORT_COLUMN, DEFAULT_THEME_NAME};
 
-#[derive(Debug, Clone, Parser, struct_field_names::StructFieldNames, bon::Builder)]
+#[derive(Debug, Clone, Parser, struct_field_names::StructFieldNames)]
+#[cfg_attr(feature = "builder", derive(bon::Builder))]
 pub struct ProcessComposeFlagsUp {
     /// Path to config files to load (env: PC_CONFIG_FILES)
     #[arg(long = "config", env = env::CONFIG_FILES)]
-    #[builder(default = Vec::new())]
+    #[cfg_attr(feature = "builder", builder(default = Vec::new()))]
     pub config: Vec<PathBuf>,
 
     /// Detach the TUI after successful startup (requires --detached-with-tui)
     #[arg(long = "detach-on-success", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub detach_on_success: bool,
 
     /// Run in detached mode
     #[cfg(unix)]
     #[arg(long = "detached", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub detached: bool,
 
     /// Run in detached mode with TUI
     #[cfg(unix)]
     #[arg(long = "detached-with-tui", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub detached_with_tui: bool,
 
     /// Disable .env file loading (env: PC_DISABLE_DOTENV=1)
     #[arg(long = "disable-dotenv", env = env::DISABLE_DOTENV, default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub disable_dotenv: bool,
 
     /// Validate the config and exit
     #[arg(long = "dry-run", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub dry_run: bool,
 
     /// Path to env files to load (default .env)
     #[arg(long = "env", default_value = ".env")]
-    #[builder(default = vec![PathBuf::from(".env")])]
+    #[cfg_attr(feature = "builder", builder(default = vec![PathBuf::from(".env")]))]
     pub env_files: Vec<PathBuf>,
 
     /// Hide disabled processes (env: PC_HIDE_DISABLED_PROC)
     #[arg(long = "hide-disabled", env = env::HIDE_DISABLED_PROC, default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub hide_disabled: bool,
 
     /// Keep the project running even after all processes exit
     #[arg(long = "keep-project", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub keep_project: bool,
 
     /// Truncate process logs buffer on startup
     #[arg(long = "logs-truncate", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub logs_truncate: bool,
 
     /// Run only specified namespaces (default: all)
     #[arg(long = "namespace")]
-    #[builder(default = Vec::new())]
+    #[cfg_attr(feature = "builder", builder(default = Vec::new()))]
     pub namespaces: Vec<String>,
 
     /// Do not start dependent processes
     #[arg(long = "no-deps", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub no_deps: bool,
 
     /// Collect metrics recursively (env: PC_RECURSIVE_METRICS)
     #[arg(long = "recursive-metrics", env = env::RECURSIVE_METRICS, default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub recursive_metrics: bool,
 
     /// TUI refresh interval in seconds
     #[arg(long = "ref-rate", default_value_t = DEFAULT_REFRESH_RATE.as_secs().try_into().unwrap())]
-    #[builder(default = NonZero::new(DEFAULT_REFRESH_RATE.as_secs()).unwrap())]
+    #[cfg_attr(
+        feature = "builder",
+        builder(default = NonZero::new(DEFAULT_REFRESH_RATE.as_secs()).unwrap())
+    )]
     pub refresh_rate: NonZero<u64>,
 
     /// Sort in reverse order
     #[arg(long = "reverse", default_value_t = false)]
-    #[builder(default = false)]
+    #[cfg_attr(feature = "builder", builder(default = false))]
     pub reverse: bool,
 
     /// Paths to shortcut config files to load (env: PC_SHORTCUTS_FILES)
     #[arg(long = "shortcuts", env = env::SHORTCUTS_FILES)]
-    #[builder(default = Vec::new())]
+    #[cfg_attr(feature = "builder", builder(default = Vec::new()))]
     pub shortcuts: Vec<PathBuf>,
 
     /// Slow(er) refresh interval for resource metrics (must be > --ref-rate)
@@ -95,17 +99,17 @@ pub struct ProcessComposeFlagsUp {
 
     /// Sort column name (default NAME)
     #[arg(long = "sort", default_value = DEFAULT_SORT_COLUMN)]
-    #[builder(default = DEFAULT_SORT_COLUMN.to_string())]
+    #[cfg_attr(feature = "builder", builder(default = DEFAULT_SORT_COLUMN.to_string()))]
     pub sort: String,
 
     /// Select process compose theme (default Default)
     #[arg(long = "theme", default_value = DEFAULT_THEME_NAME)]
-    #[builder(default = DEFAULT_THEME_NAME.to_string())]
+    #[cfg_attr(feature = "builder", builder(default = DEFAULT_THEME_NAME.to_string()))]
     pub theme: String,
 
     /// Enable / disable TUI (use --tui=false to disable) (env: PC_DISABLE_TUI)
     #[arg(long = "tui", env = env::DISABLE_TUI, default_value_t = true)]
-    #[builder(default = true)]
+    #[cfg_attr(feature = "builder", builder(default = true))]
     pub tui: bool,
 }
 

@@ -16,8 +16,8 @@ serde_json = { version = "1.0", default-features = false }
 progenitor-client = { version = "0.11", default-features = false, optional = false}
 
 # Use the local client crate for CLI flags and exec
-process-compose-client = { path = "../client", default-features = false, features = ["cli"] }
+process-compose-client = { path = "../client", default-features = false, features = ["cli", "builder"] }
 process-wrap = { version = "9.0", default-features = false, features = ["tokio1", ]}
 
 [build-dependencies]
-process-compose-client = { path = "../client", default-features = false, features = ["progenitor", "typify"] }
+process-compose-client = { path = "../client", default-features = false, features = ["progenitor", "typify", "builder"] }
