@@ -2,8 +2,10 @@ package templater
 
 import (
 	"errors"
-	"github.com/f1bonacc1/process-compose/src/types"
+	"fmt"
 	"testing"
+
+	"github.com/f1bonacc1/process-compose/src/types"
 )
 
 func TestTemplater_Render(t *testing.T) {
@@ -74,4 +76,32 @@ func TestTemplater_GetError(t *testing.T) {
 			t.Error("Expected an error but got nil")
 		}
 	})
+}
+
+func TestTemplater_EnvVars(t *testing.T) {
+
+	procs := make([]types.ProcessConfig, 3)
+
+	for i := range procs {
+		procs[i] = types.ProcessConfig{
+			ReplicaNum:  i,
+			Environment: []string{"REPL={{.PC_REPLICA_NUM}}"},
+		}
+	}
+
+	templater := New(make(types.Vars))
+	for i, proc := range procs {
+		templater.RenderProcess(&proc)
+
+		procs[i] = proc
+	}
+
+	for i, proc := range procs {
+		expectedEnv := "REPL=" + fmt.Sprint(i)
+
+		if proc.Environment[0] != expectedEnv {
+			t.Errorf("Expected %s but got %s", expectedEnv, proc.Environment[0])
+		}
+	}
+
 }

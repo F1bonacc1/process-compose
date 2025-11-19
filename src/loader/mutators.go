@@ -2,8 +2,10 @@ package loader
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/f1bonacc1/process-compose/src/command"
@@ -99,13 +101,16 @@ func cloneReplicas(p *types.Project) {
 			procsToDel = append(procsToDel, name)
 		}
 		for replica := 0; replica < proc.Replicas; replica++ {
-			proc.ReplicaNum = replica
-			repName := proc.CalculateReplicaName()
-			proc.ReplicaName = repName
+			newProc := cloneProcess(&proc)
+			newProc.ReplicaNum = replica
+			repName := newProc.CalculateReplicaName()
+			newProc.ReplicaName = repName
 			if proc.Replicas == 1 {
-				p.Processes[repName] = proc
+				// Even if replicas == 1, we use newProc to ensure
+				// it has its own memory separate from any other references.
+				p.Processes[repName] = *newProc
 			} else {
-				procsToAdd = append(procsToAdd, proc)
+				procsToAdd = append(procsToAdd, *newProc)
 			}
 		}
 	}
@@ -115,6 +120,21 @@ func cloneReplicas(p *types.Project) {
 	for _, proc := range procsToAdd {
 		p.Processes[proc.ReplicaName] = proc
 	}
+}
+
+func cloneProcess(proc *types.ProcessConfig) *types.ProcessConfig {
+	// 1. Create a copy of the struct (Shallow copy)
+	newProc := *proc
+
+	// 2. DEEP COPY the Vars Map
+	maps.Copy(newProc.Vars, proc.Vars)
+
+	// 3. DEEP COPY the Environment Slices
+	newProc.Environment = slices.Clone(proc.Environment)
+	newProc.Args = slices.Clone(proc.Args)
+	newProc.Entrypoint = slices.Clone(proc.Entrypoint)
+
+	return &newProc
 }
 
 func assignExecutableAndArgs(p *types.Project) {
@@ -141,9 +161,10 @@ func renderTemplates(p *types.Project) error {
 
 func convertStrDisabledToBool(p *types.Project) {
 	for name, proc := range p.Processes {
-		if proc.IsDisabled == "false" {
+		switch proc.IsDisabled {
+		case "false":
 			proc.Disabled = false
-		} else if proc.IsDisabled == "true" {
+		case "true":
 			proc.Disabled = true
 		}
 		p.Processes[name] = proc

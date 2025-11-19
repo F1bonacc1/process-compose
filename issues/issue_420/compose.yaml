@@ -1,0 +1,12 @@
+version: "0.5"
+is_strict: true
+
+processes:
+  test:
+    replicas: 3
+    log_location: "./test.log"
+    log_configuration:
+      disable_json: true
+    environment:
+      - "REPL={{.PC_REPLICA_NUM}}"
+    command: echo [$REPL]
