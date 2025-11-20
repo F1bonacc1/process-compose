@@ -1,9 +1,10 @@
 package types
 
 import (
-	"github.com/f1bonacc1/process-compose/src/command"
 	"slices"
 	"testing"
+
+	"github.com/f1bonacc1/process-compose/src/command"
 )
 
 func TestProject_WithProcesses(t *testing.T) {
@@ -181,5 +182,111 @@ func TestProject_WithProcesses(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestProject_GetDependenciesOrderNames(t *testing.T) {
+	p := &Project{
+		Processes: map[string]ProcessConfig{
+			"A": {Name: "A", ReplicaName: "A"},
+			"B": {Name: "B", ReplicaName: "B", DependsOn: map[string]ProcessDependency{"A": {Condition: ProcessConditionStarted}}},
+			"C": {Name: "C", ReplicaName: "C", DependsOn: map[string]ProcessDependency{"B": {Condition: ProcessConditionStarted}}},
+		},
+	}
+	order, err := p.GetDependenciesOrderNames()
+	if err != nil {
+		t.Errorf("GetDependenciesOrderNames() error = %v", err)
+	}
+	expected := []string{"A", "B", "C"}
+	if !slices.Equal(order, expected) {
+		t.Errorf("GetDependenciesOrderNames() = %v, want %v", order, expected)
+	}
+}
+
+func TestProject_GetLexicographicProcessNames(t *testing.T) {
+	p := &Project{
+		Processes: map[string]ProcessConfig{
+			"B": {Name: "B"},
+			"A": {Name: "A"},
+			"C": {Name: "C"},
+		},
+	}
+	names, err := p.GetLexicographicProcessNames()
+	if err != nil {
+		t.Errorf("GetLexicographicProcessNames() error = %v", err)
+	}
+	expected := []string{"A", "B", "C"}
+	if !slices.Equal(names, expected) {
+		t.Errorf("GetLexicographicProcessNames() = %v, want %v", names, expected)
+	}
+}
+
+func TestProject_GetElevatedShellArg(t *testing.T) {
+	tests := []struct {
+		name          string
+		shellConfig   *command.ShellConfig
+		isTuiDisabled bool
+		want          string
+	}{
+		{
+			name: "TuiEnabled",
+			shellConfig: &command.ShellConfig{
+				ElevatedShellArg: "sudo",
+			},
+			isTuiDisabled: false,
+			want:          "sudo",
+		},
+		{
+			name: "TuiDisabled",
+			shellConfig: &command.ShellConfig{
+				ElevatedShellArg: "sudo",
+			},
+			isTuiDisabled: true,
+			want:          "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &Project{
+				ShellConfig:   tt.shellConfig,
+				IsTuiDisabled: tt.isTuiDisabled,
+			}
+			if got := p.GetElevatedShellArg(); got != tt.want {
+				t.Errorf("GetElevatedShellArg() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProject_GetProcesses(t *testing.T) {
+	p := &Project{
+		Processes: map[string]ProcessConfig{
+			"A": {Name: "A"},
+			"B": {Name: "B"},
+		},
+	}
+
+	// Test getting all processes
+	procs, err := p.GetProcesses()
+	if err != nil {
+		t.Errorf("GetProcesses() error = %v", err)
+	}
+	if len(procs) != 2 {
+		t.Errorf("GetProcesses() returned %d processes, want 2", len(procs))
+	}
+
+	// Test getting specific processes
+	procs, err = p.GetProcesses("A")
+	if err != nil {
+		t.Errorf("GetProcesses('A') error = %v", err)
+	}
+	if len(procs) != 1 || procs[0].Name != "A" {
+		t.Errorf("GetProcesses('A') returned %v, want [A]", procs)
+	}
+
+	// Test getting non-existent process
+	_, err = p.GetProcesses("C")
+	if err == nil {
+		t.Errorf("GetProcesses('C') expected error, got nil")
 	}
 }
