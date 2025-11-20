@@ -34,7 +34,7 @@ swag: swag2op ## Generate docs from swagger attributes in the code
 	./bin/swag2op init --dir src --output src/docs -g api/pc_api.go --openapiOutputDir src/docs --parseDependency --parseInternal
 
 build:
-	CGO_ENABLED=0 go build -o bin/${NAME}${EXT} ${LD_FLAGS} ./src
+	CGO_ENABLED=0 go build -o bin/${NAME}${EXT} ${LD_FLAGS} ./
 
 build-nix:
 	nix build .
@@ -46,19 +46,19 @@ nix-update-hash:
 	./scripts/update-vendor-hash.sh
 
 build-pi:
-	GOOS=linux GOARCH=arm go build ${LD_FLAGS} -o bin/${NAME}-linux-arm  ./src
+	GOOS=linux GOARCH=arm go build ${LD_FLAGS} -o bin/${NAME}-linux-arm  ./
 
 compile:
 	for arch in amd64 386 arm64 arm; do \
-		GOOS=linux GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-linux-$$arch  ./src ; \
+		GOOS=linux GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-linux-$$arch  ./ ; \
 	done;
 
 	for arch in amd64 arm64; do \
-		GOOS=darwin GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-darwin-$$arch  ./src ; \
+		GOOS=darwin GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-darwin-$$arch  ./ ; \
 	done;
 
 	for arch in amd64 arm64; do \
-		GOOS=windows GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-windows-$$arch.exe  ./src ; \
+		GOOS=windows GOARCH=$$arch go build ${LD_FLAGS} -o bin/${NAME}-windows-$$arch.exe  ./ ; \
 	done;
 
 test:
@@ -78,7 +78,7 @@ clean:
 	$(RM) bin/${NAME}*
 release:
 	source exports
-	goreleaser release --clean --skip validate
+	goreleaser release --clean --skip validate --auto-snapshot
 snapshot:
 	goreleaser release --snapshot --clean
 

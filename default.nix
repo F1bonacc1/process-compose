@@ -23,7 +23,6 @@ buildGoModule rec {
   #vendorHash = lib.fakeHash;
 
   postInstall = ''
-    mv $out/bin/{src,process-compose}
 
     installShellCompletion --cmd process-compose \
       --bash <($out/bin/process-compose completion bash) \
@@ -39,5 +38,5 @@ buildGoModule rec {
     mainProgram = "process-compose";
   };
 
-  doCheck = false; # it takes ages to run the tests
+  doCheck = true;
 }

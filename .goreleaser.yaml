@@ -1,3 +1,4 @@
+version: 2
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
 before:
@@ -27,7 +28,7 @@ builds:
         goarch: "386"
       - goos: windows
         goarch: arm
-    dir: src
+    dir: ./
     ldflags:
       - -X github.com/f1bonacc1/process-compose/src/config.Version={{.Tag}}
       - -X github.com/f1bonacc1/process-compose/src/config.CheckForUpdates=true
@@ -48,7 +49,7 @@ archives:
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
 snapshot:
-  name_template: "{{ .Version }}-SNAPSHOT-{{.ShortCommit}}"
+  version_template: "{{ .Version }}-SNAPSHOT-{{.ShortCommit}}"
 brews:
   - name: process-compose
     homepage: https://github.com/F1bonacc1/process-compose
