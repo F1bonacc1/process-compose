@@ -30,6 +30,7 @@ type Project struct {
 	FileNames           []string             `yaml:"file_names,omitempty"`
 	EnvFileNames        []string             `yaml:"env_file_names,omitempty"`
 	DotEnvVars          map[string]string    `yaml:"dot_env_vars,omitempty"`
+	Extensions          map[string]any       `yaml:",inline"`
 }
 
 type ProcessFunc func(process ProcessConfig) error

@@ -186,3 +186,65 @@ func Test_validateShellConfig(t *testing.T) {
 		})
 	}
 }
+func Test_validateProject(t *testing.T) {
+    type args struct {
+        p *types.Project
+    }
+    tests := []struct {
+        name    string
+        args    args
+        wantErr bool
+    }{
+        {
+            name: "No extensions",
+            args: args{
+                p: &types.Project{},
+            },
+            wantErr: false,
+        },
+        {
+            name: "Valid x-extension strict",
+            args: args{
+                p: &types.Project{
+                    Extensions: map[string]any{
+                        "x-foo": "bar",
+                    },
+                    IsStrict: true,
+                },
+            },
+            wantErr: false,
+        },
+        {
+            name: "Invalid non strict",
+            args: args{
+                p: &types.Project{
+                    Extensions: map[string]any{
+                        "invalid": "val",
+                    },
+                    IsStrict: false,
+                },
+            },
+            wantErr: false,
+        },
+        {
+            name: "Invalid strict",
+            args: args{
+                p: &types.Project{
+                    Extensions: map[string]any{
+                        "invalid": "val",
+                    },
+                    IsStrict: true,
+                },
+            },
+            wantErr: true,
+        },
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            if err := validateProject(tt.args.p); (err != nil) != tt.wantErr {
+                t.Errorf("validateProject() error = %v, wantErr %v", err, tt.wantErr)
+            }
+        })
+    }
+}
+

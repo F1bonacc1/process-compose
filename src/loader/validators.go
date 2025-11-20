@@ -3,11 +3,13 @@ package loader
 import (
 	"errors"
 	"fmt"
+	"os/exec"
+	"runtime"
+	"strings"
+
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"os/exec"
-	"runtime"
 )
 
 type validatorFunc func(p *types.Project) error
@@ -164,6 +166,20 @@ func validateDependencyIsEnabled(p *types.Project) error {
 				log.Error().Msg(errStr)
 			}
 		}
+	}
+	return nil
+}
+
+func validateProject(p *types.Project) error {
+	for key := range p.Extensions {
+		if strings.HasPrefix(key, "x-") {
+			continue
+		}
+		errStr := fmt.Sprintf("Unknown field '%s' in project file", key)
+		if p.IsStrict {
+			return errors.New(errStr)
+		}
+		log.Error().Msg(errStr)
 	}
 	return nil
 }
