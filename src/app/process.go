@@ -83,6 +83,7 @@ type Process struct {
 	lastStatusPoll       time.Time
 	refRate              time.Duration
 	withRecursiveMetrics bool
+	processTree          *ProcessTree
 }
 
 func NewProcess(opts ...ProcOpts) *Process {
@@ -608,16 +609,31 @@ func (p *Process) getResourceUsage() (int64, float64) {
 // recursively get the memory and cpu usage of the process and its children
 func (p *Process) getProcResourcesRecursive(proc *puproc.Process) (int64, float64) {
 	totalMem, totalCpu := p.getProcResources(proc)
-	childrenProcs, err := proc.Children()
-	if err != nil {
-		log.Err(err).
-			Str("process", p.getName()).
-			Int("pid", p.procState.Pid).
-			Msg("Error retrieving children")
+
+	if p.processTree == nil {
+		childrenProcs, err := proc.Children()
+		if err != nil {
+			log.Err(err).
+				Str("process", p.getName()).
+				Int("pid", p.procState.Pid).
+				Msg("Error retrieving children")
+			return totalMem, totalCpu
+		}
+		for _, childProc := range childrenProcs {
+			childMem, childCpu := p.getProcResourcesRecursive(childProc)
+			if childMem >= 0 {
+				totalMem += childMem
+			}
+			if childCpu >= 0 {
+				totalCpu += childCpu
+			}
+		}
 		return totalMem, totalCpu
 	}
-	for _, childProc := range childrenProcs {
-		childMem, childCpu := p.getProcResourcesRecursive(childProc)
+
+	descendants := p.processTree.GetDescendants(proc.Pid)
+	for _, childProc := range descendants {
+		childMem, childCpu := p.getProcResources(childProc)
 		if childMem >= 0 {
 			totalMem += childMem
 		}

@@ -61,6 +61,7 @@ type ProjectRunner struct {
 	refRate              time.Duration
 	withRecursiveMetrics bool
 	procCompleteChannel  chan int
+	processTree          *ProcessTree
 }
 
 // RestartCall represents an in-flight restart operation
@@ -77,6 +78,7 @@ func (p *ProjectRunner) init() {
 	p.initProcessStates()
 	p.initProcessLogs()
 	p.initRestartCoalescing()
+	p.processTree = NewProcessTree(p.refRate)
 }
 
 func (p *ProjectRunner) Run() error {
@@ -163,6 +165,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withLogsTruncate(p.truncateLogs),
 		withRefRate(p.refRate),
 		withRecursiveMetrics(p.withRecursiveMetrics),
+		withProcessTree(p.processTree),
 	)
 	p.addRunningProcess(process)
 	go func(proc *Process) {
@@ -292,6 +295,9 @@ func (p *ProjectRunner) getProcessStateData(name string, filter filterFn) error 
 }
 
 func (p *ProjectRunner) GetProcessesState() (*types.ProcessesState, error) {
+	if p.withRecursiveMetrics {
+		_ = p.processTree.Update()
+	}
 	states := &types.ProcessesState{
 		States: make([]types.ProcessState, 0),
 	}
