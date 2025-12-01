@@ -1177,3 +1177,10 @@ func validateProbes(probe *health.Probe) {
 		probe.ValidateAndSetDefaults()
 	}
 }
+func (p *ProjectRunner) GetProcessPty(name string) *os.File {
+	proc := p.getRunningProcess(name)
+	if proc == nil {
+		return nil
+	}
+	return proc.GetPty()
+}

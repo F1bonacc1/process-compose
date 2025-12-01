@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
+	"time"
+
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
-	"regexp"
-	"strconv"
-	"time"
 )
 
 type tableRowValues struct {
@@ -165,6 +166,19 @@ func (pv *pcView) onTableSelectionChange(_, _ int) {
 		// in case the following is disabled
 		pv.unFollowLog()
 	}
+
+	// Update terminal view for interactive processes
+	if pv.isInteractive(name) {
+		pty := pv.project.GetProcessPty(name)
+		pv.termView.SetPty(pty)
+		pv.termView.SetTitle(name)
+		pv.redrawGrid()
+	} else if pv.currentProcInteractive {
+		// Was previously interactive, now not - redraw to show logs
+		pv.termView.Stop()
+		pv.redrawGrid()
+	}
+
 	pv.showPassIfNeeded()
 }
 

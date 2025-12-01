@@ -225,10 +225,12 @@ func (p *Process) getProcessStarter() func() error {
 			if p.truncateLogs {
 				p.logBuffer.Truncate()
 			}
-			stdout, _ := p.command.StdoutPipe()
-			p.stdOutDone = make(chan struct{})
-			go p.handleOutput(stdout, "stdout", p.handleInfo, p.stdOutDone)
-			if !p.procConf.IsTty {
+			if !p.procConf.IsInteractive {
+				stdout, _ := p.command.StdoutPipe()
+				p.stdOutDone = make(chan struct{})
+				go p.handleOutput(stdout, "stdout", p.handleInfo, p.stdOutDone)
+			}
+			if !p.procConf.IsTty && !p.procConf.IsInteractive {
 				stderr, _ := p.command.StderrPipe()
 				p.stdErrDone = make(chan struct{})
 				go p.handleOutput(stderr, "stderr", p.handleError, p.stdErrDone)
@@ -248,7 +250,7 @@ func (p *Process) getProcessStarter() func() error {
 }
 
 func (p *Process) getCommander() command.Commander {
-	if p.procConf.IsTty && !p.isMain {
+	if (p.procConf.IsTty || p.procConf.IsInteractive) && !p.isMain {
 		return command.BuildPtyCommand(
 			p.procConf.Executable,
 			p.mergeExtraArgs(),
@@ -801,6 +803,13 @@ func (p *Process) setStateAndRun(state string, runnable func() error) error {
 	p.procState.Status = state
 	p.onStateChange(state)
 	return runnable()
+}
+
+func (p *Process) GetPty() *os.File {
+	if p.command == nil {
+		return nil
+	}
+	return p.command.GetPty()
 }
 
 func (p *Process) onStateChange(state string) {

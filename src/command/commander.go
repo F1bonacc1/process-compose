@@ -1,6 +1,9 @@
 package command
 
-import "io"
+import (
+	"io"
+	"os"
+)
 
 type Commander interface {
 	Stop(sig int, _parentOnly bool) error
@@ -18,4 +21,5 @@ type Commander interface {
 	SetDir(dir string)
 	Output() ([]byte, error)
 	CombinedOutput() ([]byte, error)
+	GetPty() *os.File
 }

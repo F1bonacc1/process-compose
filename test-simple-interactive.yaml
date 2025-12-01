@@ -1,0 +1,11 @@
+log_level: debug
+processes:
+  __pc_log:
+    command: "tail -f -n100 process-compose-${USER}.log"
+    working_dir: "/tmp"
+  my-top:
+    command: "top"
+    is_interactive: true
+  my-vim:
+    command: "vim README.md"
+    is_interactive: true

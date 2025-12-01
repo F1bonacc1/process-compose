@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
-	"net"
-	"net/http"
-	"sync"
-	"time"
 )
 
 var (
@@ -183,4 +185,8 @@ func (p *PcClient) ReloadProject() (map[string]string, error) {
 
 func (p *PcClient) TruncateProcessLogs(name string) error {
 	return p.truncateProcessLogs(name)
+}
+
+func (p *PcClient) GetProcessPty(name string) *os.File {
+	return nil
 }

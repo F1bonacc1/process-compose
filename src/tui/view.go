@@ -50,54 +50,56 @@ const shutDownAfterSec = 10
 var pcv *pcView
 
 type pcView struct {
-	procTable             *tview.Table
-	statTable             *tview.Table
-	appView               *tview.Application
-	logsText              *LogView
-	statusText            *tview.TextView
-	helpFooter            *tview.Flex
-	pages                 *tview.Pages
-	procNames             []string
-	logFollow             bool
-	logSelect             bool
-	scrSplitState         scrSplitState
-	loggedProc            string
-	shortcuts             *ShortCuts
-	extraShortCutsPaths   []string
-	procCountCell         *tview.TableCell
-	procMemCpuCell        *tview.TableCell
-	mainGrid              *tview.Grid
-	logsTextArea          *tview.TextArea
-	project               app.IProject
-	sortMtx               sync.Mutex
-	stateSorter           StateSorter
-	procRegex             *regexp.Regexp
-	procRegexMtx          sync.Mutex
-	procColumns           map[ColumnID]string
-	refreshRate           time.Duration
-	cancelFn              context.CancelFunc
-	cancelLogFn           context.CancelFunc
-	cancelSigFn           context.CancelFunc
-	ctxApp                context.Context
-	cancelAppFn           context.CancelFunc
-	selectedNsMtx         sync.Mutex
-	selectedNs            string
-	selectedNsChanged     atomic.Bool
-	hideDisabled          atomic.Bool
-	commandModeType       commandType
-	styles                *config.Styles
-	themes                *config.Themes
-	helpDialog            *helpDialog
-	settings              *config.Settings
-	isFullScreen          bool
-	isReadOnlyMode        bool
-	isExitConfirmDisabled bool
-	detachOnSuccess       bool
-	procStatesMtx         sync.Mutex
-	procStates            *types.ProcessesState
-	attentionMessages     chan attentionMessage
-	attentionCancel       context.CancelFunc
-	errTuiStartup         error
+	procTable              *tview.Table
+	statTable              *tview.Table
+	appView                *tview.Application
+	logsText               *LogView
+	termView               *TerminalView
+	statusText             *tview.TextView
+	helpFooter             *tview.Flex
+	pages                  *tview.Pages
+	procNames              []string
+	logFollow              bool
+	logSelect              bool
+	currentProcInteractive bool
+	scrSplitState          scrSplitState
+	loggedProc             string
+	shortcuts              *ShortCuts
+	extraShortCutsPaths    []string
+	procCountCell          *tview.TableCell
+	procMemCpuCell         *tview.TableCell
+	mainGrid               *tview.Grid
+	logsTextArea           *tview.TextArea
+	project                app.IProject
+	sortMtx                sync.Mutex
+	stateSorter            StateSorter
+	procRegex              *regexp.Regexp
+	procRegexMtx           sync.Mutex
+	procColumns            map[ColumnID]string
+	refreshRate            time.Duration
+	cancelFn               context.CancelFunc
+	cancelLogFn            context.CancelFunc
+	cancelSigFn            context.CancelFunc
+	ctxApp                 context.Context
+	cancelAppFn            context.CancelFunc
+	selectedNsMtx          sync.Mutex
+	selectedNs             string
+	selectedNsChanged      atomic.Bool
+	hideDisabled           atomic.Bool
+	commandModeType        commandType
+	styles                 *config.Styles
+	themes                 *config.Themes
+	helpDialog             *helpDialog
+	settings               *config.Settings
+	isFullScreen           bool
+	isReadOnlyMode         bool
+	isExitConfirmDisabled  bool
+	detachOnSuccess        bool
+	procStatesMtx          sync.Mutex
+	procStates             *types.ProcessesState
+	attentionMessages      chan attentionMessage
+	attentionCancel        context.CancelFunc
+	errTuiStartup          error
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -130,6 +132,7 @@ func newPcView(project app.IProject) *pcView {
 		settings:          config.NewSettings(),
 		attentionMessages: make(chan attentionMessage, 10),
 	}
+	pv.termView = NewTerminalView(pv.appView)
 	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
@@ -302,6 +305,9 @@ func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 }
 
 func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
+	if pv.termView.HasFocus() {
+		return event
+	}
 	switch event.Key() {
 	case pv.shortcuts.ShortCutKeys[ActionLogSelection].key:
 		if !config.IsLogSelectionOn() {
@@ -574,8 +580,13 @@ func (pv *pcView) resume() {
 
 func (pv *pcView) changeFocus() {
 	if pv.procTable.HasFocus() {
-		pv.appView.SetFocus(pv.logsText)
-	} else if pv.logsText.HasFocus() {
+		name := pv.getSelectedProcName()
+		if pv.isInteractive(name) {
+			pv.appView.SetFocus(pv.termView)
+		} else {
+			pv.appView.SetFocus(pv.logsText)
+		}
+	} else if pv.logsText.HasFocus() || pv.termView.HasFocus() {
 		pv.appView.SetFocus(pv.procTable)
 	}
 }
@@ -635,6 +646,14 @@ func Stop() {
 	if pcv != nil {
 		pcv.handleShutDown()
 	}
+}
+
+func (pv *pcView) isInteractive(name string) bool {
+	info, err := pv.project.GetProcessInfo(name)
+	if err != nil {
+		return false
+	}
+	return info.IsInteractive
 }
 
 func Wait() {

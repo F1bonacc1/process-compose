@@ -47,6 +47,7 @@ type (
 		IsForeground      bool                   `yaml:"is_foreground,omitempty"`
 		IsTty             bool                   `yaml:"is_tty,omitempty"`
 		IsElevated        bool                   `yaml:"is_elevated,omitempty"`
+		IsInteractive     bool                   `yaml:"is_interactive,omitempty"`
 		LaunchTimeout     int                    `yaml:"launch_timeout_seconds,omitempty"`
 		IsDisabled        string                 `yaml:"is_disabled,omitempty"`
 		DisableDotEnv     bool                   `yaml:"is_dotenv_disabled,omitempty"`
@@ -101,6 +102,7 @@ func (p *ProcessConfig) Compare(another *ProcessConfig) bool {
 		p.Description != another.Description ||
 		p.IsForeground != another.IsForeground ||
 		p.IsTty != another.IsTty ||
+		p.IsInteractive != another.IsInteractive ||
 		p.IsElevated != another.IsElevated {
 		return false
 	}

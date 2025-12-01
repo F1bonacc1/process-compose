@@ -10,6 +10,10 @@ type CmdWrapper struct {
 	cmd *exec.Cmd
 }
 
+func (c *CmdWrapper) GetPty() *os.File {
+	return nil
+}
+
 func (c *CmdWrapper) Start() error {
 	return c.cmd.Start()
 }

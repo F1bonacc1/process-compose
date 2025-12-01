@@ -2,9 +2,10 @@ package tui
 
 import (
 	"context"
+	"time"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"time"
 )
 
 func (pv *pcView) createGrid() {
@@ -20,15 +21,28 @@ func (pv *pcView) createGrid() {
 		pv.appView.SetFocus(textInput)
 		row++
 	}
-	var log tview.Primitive
+	var logPrimitive tview.Primitive
 	if !pv.logSelect {
-		log = pv.logsText
+		logPrimitive = pv.logsText
 	} else {
-		log = pv.logsTextArea
+		logPrimitive = pv.logsTextArea
 	}
+
+	name := pv.getSelectedProcName()
+	pv.currentProcInteractive = false
+	if name != "" && pv.isInteractive(name) {
+		pv.currentProcInteractive = true
+		logPrimitive = pv.termView
+		// Ensure PTY is set
+		pty := pv.project.GetProcessPty(name)
+		pv.termView.SetPty(pty)
+	} else {
+		pv.termView.Stop()
+	}
+
 	switch pv.scrSplitState {
 	case LogFull:
-		pv.mainGrid.AddItem(log, row, 0, 1, 1, 0, 0, true)
+		pv.mainGrid.AddItem(logPrimitive, row, 0, 1, 1, 0, 0, true)
 		row++
 	case ProcFull:
 		pv.mainGrid.AddItem(pv.procTable, row, 0, 1, 1, 0, 0, pv.isCommandModeDisabled())
@@ -36,7 +50,7 @@ func (pv *pcView) createGrid() {
 	case LogProcHalf:
 		pv.mainGrid.AddItem(pv.procTable, row, 0, 1, 1, 0, 0, pv.isCommandModeDisabled())
 		row++
-		pv.mainGrid.AddItem(log, row, 0, 1, 1, 0, 0, false)
+		pv.mainGrid.AddItem(logPrimitive, row, 0, 1, 1, 0, 0, false)
 		row++
 	}
 	if !pv.isFullScreen {

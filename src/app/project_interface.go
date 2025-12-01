@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
 )
@@ -33,4 +35,5 @@ type IProject interface {
 	UpdateProcess(updated *types.ProcessConfig) error
 	ReloadProject() (map[string]string, error)
 	TruncateProcessLogs(name string) error
+	GetProcessPty(name string) *os.File
 }

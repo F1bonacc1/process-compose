@@ -224,3 +224,10 @@ processes:
     command: "echo I\\'m disabled dependency"
     disabled: true
 
+  my-top:
+    command: top
+    is_interactive: true
+
+  my-vim:
+    command: vim process-compose.override.yaml
+    is_interactive: true    

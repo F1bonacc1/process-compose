@@ -27,7 +27,7 @@ func (n *noiseMaker) Run(ctx context.Context) {
 			data := append(n.noiseData, " "+t.String()+"\n"...)
 			n.noiseChan <- data
 		case <-ctx.Done():
-			break
+			return
 		}
 	}
 }
