@@ -553,9 +553,39 @@ func (t *AnsiTerminal) handleSGR(params []int) {
 		case param == 7: // Reverse
 			t.currentStyle = t.currentStyle.Reverse(true)
 		case param >= 30 && param <= 37: // Foreground color
-			t.currentStyle = t.currentStyle.Foreground(ansiColor(param - 30))
+			t.currentStyle = t.currentStyle.Foreground(ansiColor256(param - 30))
+		case param >= 90 && param <= 97: // Bright Foreground color
+			t.currentStyle = t.currentStyle.Foreground(ansiColor256(param - 90 + 8))
+		case param == 38: // Extended Foreground
+			if i+2 < len(params) && params[i+1] == 5 {
+				n := params[i+2]
+				t.currentStyle = t.currentStyle.Foreground(ansiColor256(n))
+				i += 2
+			} else if i+4 < len(params) && params[i+1] == 2 {
+				// RGB color: 38;2;r;g;b
+				r := int32(params[i+2])
+				g := int32(params[i+3])
+				b := int32(params[i+4])
+				t.currentStyle = t.currentStyle.Foreground(tcell.NewRGBColor(r, g, b))
+				i += 4
+			}
 		case param >= 40 && param <= 47: // Background color
-			t.currentStyle = t.currentStyle.Background(ansiColor(param - 40))
+			t.currentStyle = t.currentStyle.Background(ansiColor256(param - 40))
+		case param >= 100 && param <= 107: // Bright Background color
+			t.currentStyle = t.currentStyle.Background(ansiColor256(param - 100 + 8))
+		case param == 48: // Extended Background
+			if i+2 < len(params) && params[i+1] == 5 {
+				n := params[i+2]
+				t.currentStyle = t.currentStyle.Background(ansiColor256(n))
+				i += 2
+			} else if i+4 < len(params) && params[i+1] == 2 {
+				// RGB color: 48;2;r;g;b
+				r := int32(params[i+2])
+				g := int32(params[i+3])
+				b := int32(params[i+4])
+				t.currentStyle = t.currentStyle.Background(tcell.NewRGBColor(r, g, b))
+				i += 4
+			}
 		case param == 39: // Default foreground
 			t.currentStyle = t.currentStyle.Foreground(tcell.ColorDefault)
 		case param == 49: // Default background
@@ -564,21 +594,8 @@ func (t *AnsiTerminal) handleSGR(params []int) {
 	}
 }
 
-func ansiColor(n int) tcell.Color {
-	colors := []tcell.Color{
-		tcell.ColorBlack,
-		tcell.ColorMaroon,
-		tcell.ColorGreen,
-		tcell.ColorOlive,
-		tcell.ColorNavy,
-		tcell.ColorPurple,
-		tcell.ColorTeal,
-		tcell.ColorSilver,
-	}
-	if n >= 0 && n < len(colors) {
-		return colors[n]
-	}
-	return tcell.ColorDefault
+func ansiColor256(n int) tcell.Color {
+	return tcell.PaletteColor(n)
 }
 
 func (t *AnsiTerminal) putChar(ch rune) {
