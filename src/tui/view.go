@@ -297,6 +297,11 @@ func (pv *pcView) loadThemes() {
 
 func (pv *pcView) onAppKey(event *tcell.EventKey) *tcell.EventKey {
 	if event.Key() == tcell.KeyCtrlC {
+		if pv.termView.HasFocus() && pv.termView.isRunning {
+			handler := pv.termView.InputHandler()
+			handler(event, nil)
+			return nil
+		}
 		pv.terminateAppView()
 		return nil
 	} else {

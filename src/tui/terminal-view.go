@@ -265,6 +265,50 @@ func (t *TerminalView) InputHandler() func(event *tcell.EventKey, setFocus func(
 			switch event.Key() {
 			case tcell.KeyEnter:
 				data = []byte("\r")
+			case tcell.KeyCtrlA:
+				data = []byte("\x01")
+			case tcell.KeyCtrlB:
+				data = []byte("\x02")
+			case tcell.KeyCtrlC:
+				data = []byte("\x03")
+			case tcell.KeyCtrlD:
+				data = []byte("\x04")
+			case tcell.KeyCtrlE:
+				data = []byte("\x05")
+			case tcell.KeyCtrlF:
+				data = []byte("\x06")
+			case tcell.KeyCtrlK:
+				data = []byte("\x0B")
+			case tcell.KeyCtrlL:
+				data = []byte("\x0C")
+			case tcell.KeyCtrlN:
+				data = []byte("\x0E")
+			case tcell.KeyCtrlP:
+				data = []byte("\x10")
+			case tcell.KeyCtrlQ: // XON
+				data = []byte("\x11")
+			case tcell.KeyCtrlR:
+				data = []byte("\x12")
+			case tcell.KeyCtrlS: // XOFF
+				data = []byte("\x13")
+			case tcell.KeyCtrlT:
+				data = []byte("\x14")
+			case tcell.KeyCtrlU:
+				data = []byte("\x15")
+			case tcell.KeyCtrlV:
+				data = []byte("\x16")
+			case tcell.KeyCtrlW:
+				data = []byte("\x17")
+			case tcell.KeyCtrlX:
+				data = []byte("\x18")
+			case tcell.KeyCtrlY:
+				data = []byte("\x19")
+			case tcell.KeyCtrlZ:
+				data = []byte("\x1A")
+			case tcell.KeyCtrlBackslash:
+				data = []byte("\x1C") // SIGQUIT
+			case tcell.KeyCtrlRightSq:
+				data = []byte("\x1D")
 			case tcell.KeyBackspace, tcell.KeyBackspace2:
 				data = []byte("\b")
 			case tcell.KeyTab:
