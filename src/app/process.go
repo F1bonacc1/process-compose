@@ -846,6 +846,7 @@ func (p *Process) setUpProbes() {
 			p.getName()+"_live_probe",
 			*p.procConf.LivenessProbe,
 			p.getProcessEnvironment(),
+			p.shellConfig,
 			p.onLivenessCheckEnd,
 		)
 		if err != nil {
@@ -859,6 +860,7 @@ func (p *Process) setUpProbes() {
 			p.getName()+"_ready_probe",
 			*p.procConf.ReadinessProbe,
 			p.getProcessEnvironment(),
+			p.shellConfig,
 			p.onReadinessCheckEnd,
 		)
 		if err != nil {

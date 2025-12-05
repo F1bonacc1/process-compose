@@ -8,6 +8,7 @@ import (
 
 	"github.com/f1bonacc1/go-health/v2"
 	"github.com/f1bonacc1/go-health/v2/checkers"
+	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -104,7 +105,7 @@ func TestProber_getHttpChecker(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := New(tt.fields.Name, tt.fields.Probe, tt.fields.Env, tt.fields.OnCheckEnd)
+			p, err := New(tt.fields.Name, tt.fields.Probe, tt.fields.Env, *command.DefaultShellConfig(), tt.fields.OnCheckEnd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("health.New error = %v, wantErr %v", err, tt.wantErr)
 				return
