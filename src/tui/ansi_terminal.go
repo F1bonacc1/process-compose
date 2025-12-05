@@ -2,6 +2,7 @@ package tui
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -48,6 +49,9 @@ type AnsiTerminal struct {
 	// Scrolling region
 	scrollTop    int
 	scrollBottom int
+
+	// Callback for sending responses back to the PTY
+	responseCallback func([]byte)
 }
 
 const (
@@ -79,6 +83,13 @@ func NewAnsiTerminal(width, height int) *AnsiTerminal {
 	return t
 }
 
+// SetResponseCallback sets the callback for sending responses back to the PTY
+func (t *AnsiTerminal) SetResponseCallback(callback func([]byte)) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	t.responseCallback = callback
+}
+
 // Resize changes the terminal dimensions
 func (t *AnsiTerminal) Resize(width, height int) {
 	t.lock.Lock()
@@ -94,7 +105,7 @@ func (t *AnsiTerminal) Resize(width, height int) {
 		for i := range newBuf {
 			newBuf[i] = make([]Cell, width)
 			for j := range newBuf[i] {
-				newBuf[i][j] = Cell{Char: ' ', Style: tcell.StyleDefault}
+				newBuf[i][j] = Cell{Char: ' ', Style: t.currentStyle}
 			}
 		}
 
@@ -120,6 +131,11 @@ func (t *AnsiTerminal) Resize(width, height int) {
 		// Resize main screen (current t.cells)
 		t.cells = resizeBuffer(t.cells)
 		// t.mainScreen is nil in this mode
+
+		// Also resize altScreen if it exists, to keep it in sync
+		if t.altScreen != nil {
+			t.altScreen = resizeBuffer(t.altScreen)
+		}
 	}
 
 	t.width = width
@@ -270,6 +286,13 @@ func (t *AnsiTerminal) executeCSI(command byte) {
 	params := t.parseCSIParams()
 
 	switch command {
+	case '@': // Insert character (ICH)
+		n := 1
+		if len(params) > 0 {
+			n = params[0]
+		}
+		t.insertChar(n)
+
 	case 'A': // Cursor up
 		n := 1
 		if len(params) > 0 {
@@ -311,6 +334,20 @@ func (t *AnsiTerminal) executeCSI(command byte) {
 		t.cursorX -= n
 		if t.cursorX < 0 {
 			t.cursorX = 0
+		}
+		t.latentWrap = false
+
+	case 'G': // Cursor Horizontal Absolute (CHA)
+		n := 1
+		if len(params) > 0 {
+			n = params[0]
+		}
+		t.cursorX = n - 1
+		if t.cursorX < 0 {
+			t.cursorX = 0
+		}
+		if t.cursorX >= t.width {
+			t.cursorX = t.width - 1
 		}
 		t.latentWrap = false
 
@@ -367,6 +404,63 @@ func (t *AnsiTerminal) executeCSI(command byte) {
 		}
 		t.deleteLine(n)
 
+	case 'P': // Delete character (DCH)
+		n := 1
+		if len(params) > 0 {
+			n = params[0]
+		}
+		t.deleteChar(n)
+
+	case 'X': // Erase character (ECH)
+		n := 1
+		if len(params) > 0 {
+			n = params[0]
+		}
+		t.eraseChar(n)
+
+	case 'S': // Scroll Up
+		n := 1
+		if len(params) > 0 {
+			n = params[0]
+		}
+		for i := 0; i < n; i++ {
+			t.scrollUp()
+		}
+
+	case 'T': // Scroll Down
+		n := 1
+		if len(params) > 0 {
+			n = params[0]
+		}
+		for i := 0; i < n; i++ {
+			t.scrollDown()
+		}
+
+	case 'd': // Line Position Absolute (VPA)
+		n := 1
+		if len(params) > 0 {
+			n = params[0]
+		}
+		t.cursorY = n - 1
+		if t.cursorY < 0 {
+			t.cursorY = 0
+		}
+		if t.cursorY >= t.height {
+			t.cursorY = t.height - 1
+		}
+		t.latentWrap = false
+
+	case 'e': // Line Position Relative (VPR)
+		n := 1
+		if len(params) > 0 {
+			n = params[0]
+		}
+		t.cursorY += n
+		if t.cursorY >= t.height {
+			t.cursorY = t.height - 1
+		}
+		t.latentWrap = false
+
 	case 'm': // SGR - Select Graphic Rendition
 		t.handleSGR(params)
 
@@ -406,6 +500,9 @@ func (t *AnsiTerminal) executeCSI(command byte) {
 
 	case 'l': // Reset mode
 		t.handleResetMode(params)
+
+	case 'n': // Device Status Report (DSR)
+		t.handleDSR(params)
 
 	default:
 		// Log unhandled CSI sequences
@@ -630,6 +727,53 @@ func (t *AnsiTerminal) GetCell(x, y int) Cell {
 }
 
 // GetCursor returns the current cursor position
+// insertChar inserts n characters at the current cursor position
+func (t *AnsiTerminal) insertChar(n int) {
+	if t.cursorX >= t.width {
+		return
+	}
+
+	// Shift characters to the right
+	copy(t.cells[t.cursorY][t.cursorX+n:], t.cells[t.cursorY][t.cursorX:])
+
+	// Clear the inserted space
+	for i := 0; i < n && t.cursorX+i < t.width; i++ {
+		t.cells[t.cursorY][t.cursorX+i] = Cell{Char: ' ', Style: t.currentStyle}
+	}
+}
+
+// deleteChar deletes n characters at the current cursor position
+func (t *AnsiTerminal) deleteChar(n int) {
+	if t.cursorX >= t.width {
+		return
+	}
+
+	// Shift characters to the left
+	if t.cursorX+n < t.width {
+		copy(t.cells[t.cursorY][t.cursorX:], t.cells[t.cursorY][t.cursorX+n:])
+	}
+
+	// Clear the space at the end
+	startClear := t.width - n
+	if startClear < t.cursorX {
+		startClear = t.cursorX
+	}
+	for i := startClear; i < t.width; i++ {
+		t.cells[t.cursorY][i] = Cell{Char: ' ', Style: t.currentStyle}
+	}
+}
+
+// eraseChar erases n characters at the current cursor position
+func (t *AnsiTerminal) eraseChar(n int) {
+	if t.cursorX >= t.width {
+		return
+	}
+
+	for i := 0; i < n && t.cursorX+i < t.width; i++ {
+		t.cells[t.cursorY][t.cursorX+i] = Cell{Char: ' ', Style: t.currentStyle}
+	}
+}
+
 func (t *AnsiTerminal) GetCursor() (int, int) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -654,6 +798,25 @@ func (t *AnsiTerminal) restoreCursor() {
 	t.cursorY = t.savedCursorY
 	t.currentStyle = t.savedStyle
 	t.latentWrap = false
+}
+
+func (t *AnsiTerminal) handleDSR(params []int) {
+	if len(params) == 0 {
+		return
+	}
+
+	switch params[0] {
+	case 5: // Status Report - always report OK
+		if t.responseCallback != nil {
+			t.responseCallback([]byte("\x1b[0n"))
+		}
+	case 6: // Report Cursor Position (CPR)
+		if t.responseCallback != nil {
+			// Response: CSI <row>;<col> R (1-based)
+			response := fmt.Sprintf("\x1b[%d;%dR", t.cursorY+1, t.cursorX+1)
+			t.responseCallback([]byte(response))
+		}
+	}
 }
 
 func (t *AnsiTerminal) handleSetMode(params []int) {
@@ -695,7 +858,7 @@ func (t *AnsiTerminal) switchToAltScreen() {
 	for i := range t.altScreen {
 		t.altScreen[i] = make([]Cell, t.width)
 		for j := range t.altScreen[i] {
-			t.altScreen[i][j] = Cell{Char: ' ', Style: tcell.StyleDefault}
+			t.altScreen[i][j] = Cell{Char: ' ', Style: t.currentStyle}
 		}
 	}
 	t.cells = t.altScreen

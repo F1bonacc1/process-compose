@@ -57,24 +57,47 @@ func (t *TerminalView) SetPty(ptyFile *os.File) {
 			height = 24
 		}
 
-		// Update stored dimensions
+		// Force a delayed resize event.
+		// We deliberately set the terminal height to (height - 1).
+		// This causes the state to mismatch with the actual widget dimensions.
+		// The next `Draw` call (which runs on a ticker) will detect this mismatch (h-1 vs h)
+		// and trigger a standard resize back to `height`.
+		// This ensures that `vim` sees two distinct resize events spaced out in time,
+		// guaranteeing a redraw.
+		fakeHeight := height
+		if height > 1 {
+			fakeHeight = height - 1
+		}
+
+		// Update stored dimensions to the FAKE height
 		t.width = width
-		t.height = height
+		t.height = fakeHeight
 
 		// Check if we already have a terminal for this PTY
 		if term, ok := t.terminals[ptyFile]; ok {
 			t.term = term
-			// Resize existing terminal if needed
-			t.term.Resize(width, height)
+			// Resize existing terminal to FAKE height
+			t.term.Resize(width, fakeHeight)
 		} else {
-			// Create terminal with actual dimensions (not default 80x24)
-			t.term = NewAnsiTerminal(width, height)
+			// Create terminal with FAKE dimensions
+			t.term = NewAnsiTerminal(width, fakeHeight)
 			t.terminals[ptyFile] = t.term
 		}
 
-		// Set PTY size to match terminal
+		// Set response callback to write to PTY
+		// We use a closure to capture ptyFile
+		t.term.SetResponseCallback(func(data []byte) {
+			if ptyFile != nil {
+				_, err := ptyFile.Write(data)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to write response to PTY")
+				}
+			}
+		})
+
+		// Set PTY size to FAKE height
 		err := pty.Setsize(ptyFile, &pty.Winsize{
-			Rows: uint16(height),
+			Rows: uint16(fakeHeight),
 			Cols: uint16(width),
 		})
 		if err != nil {
