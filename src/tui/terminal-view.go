@@ -12,6 +12,46 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var specialKeyMap = map[tcell.Key][]byte{
+	tcell.KeyEnter:         []byte("\r"),
+	tcell.KeyCtrlA:         []byte("\x01"),
+	tcell.KeyCtrlB:         []byte("\x02"),
+	tcell.KeyCtrlC:         []byte("\x03"),
+	tcell.KeyCtrlD:         []byte("\x04"),
+	tcell.KeyCtrlE:         []byte("\x05"),
+	tcell.KeyCtrlF:         []byte("\x06"),
+	tcell.KeyCtrlK:         []byte("\x0B"),
+	tcell.KeyCtrlL:         []byte("\x0C"),
+	tcell.KeyCtrlN:         []byte("\x0E"),
+	tcell.KeyCtrlP:         []byte("\x10"),
+	tcell.KeyCtrlQ:         []byte("\x11"),
+	tcell.KeyCtrlR:         []byte("\x12"),
+	tcell.KeyCtrlS:         []byte("\x13"),
+	tcell.KeyCtrlT:         []byte("\x14"),
+	tcell.KeyCtrlU:         []byte("\x15"),
+	tcell.KeyCtrlV:         []byte("\x16"),
+	tcell.KeyCtrlW:         []byte("\x17"),
+	tcell.KeyCtrlX:         []byte("\x18"),
+	tcell.KeyCtrlY:         []byte("\x19"),
+	tcell.KeyCtrlZ:         []byte("\x1A"),
+	tcell.KeyCtrlBackslash: []byte("\x1C"), // SIGQUIT
+	tcell.KeyCtrlRightSq:   []byte("\x1D"),
+	tcell.KeyBackspace:     []byte("\b"),
+	tcell.KeyBackspace2:    []byte("\b"),
+	tcell.KeyTab:           []byte("\t"),
+	tcell.KeyEsc:           []byte("\x1b"),
+	tcell.KeyUp:            []byte("\x1b[A"),
+	tcell.KeyDown:          []byte("\x1b[B"),
+	tcell.KeyRight:         []byte("\x1b[C"),
+	tcell.KeyLeft:          []byte("\x1b[D"),
+	tcell.KeyPgUp:          []byte("\x1b[5~"),
+	tcell.KeyPgDn:          []byte("\x1b[6~"),
+	tcell.KeyHome:          []byte("\x1b[H"),
+	tcell.KeyEnd:           []byte("\x1b[F"),
+	tcell.KeyDelete:        []byte("\x1b[3~"),
+	tcell.KeyInsert:        []byte("\x1b[2~"),
+}
+
 type TerminalView struct {
 	*tview.Box
 	app          *tview.Application
@@ -259,130 +299,63 @@ func (t *TerminalView) InputHandler() func(event *tcell.EventKey, setFocus func(
 			return
 		}
 
-		// Forward input to PTY
-		// We might need to convert tcell events to bytes expected by the terminal
-		// For now, let's try simple rune forwarding and some keys
+		t.handleKeyInput(event)
+	}
+}
 
-		if event.Key() == tcell.KeyCtrlA {
-			if !t.inEscapeMode {
-				t.inEscapeMode = true
-				return
-			}
-			// If already in escape mode, Ctrl+A means send Ctrl+A literally
+func (t *TerminalView) handleKeyInput(event *tcell.EventKey) {
+	if event.Key() == tcell.KeyCtrlA {
+		if !t.inEscapeMode {
+			t.inEscapeMode = true
+			return
+		}
+		// If already in escape mode, Ctrl+A means send Ctrl+A literally
+		t.inEscapeMode = false
+	}
+
+	if t.inEscapeMode {
+		if event.Key() == tcell.KeyEsc {
 			t.inEscapeMode = false
+			if t.onEscape != nil {
+				t.onEscape()
+			}
+			return
 		}
-
-		if t.inEscapeMode {
-			if event.Key() == tcell.KeyEsc {
-				t.inEscapeMode = false
-				if t.onEscape != nil {
-					t.onEscape()
-				}
-				return
-			}
-			// If key is not Esc and not Ctrl+A (handled above),
-			// we treat it as a normal sequence preceded by Ctrl+A.
-			// So we first send the buffered Ctrl+A.
-			t.inEscapeMode = false
-			_, err := t.pty.Write([]byte{'\x01'})
-			if err != nil {
-				log.Error().Err(err).Msg("Error writing to PTY")
-			}
-		}
-
-		var data []byte
-		if event.Key() == tcell.KeyRune {
-			data = []byte(string(event.Rune()))
-		} else {
-			// Handle special keys
-			switch event.Key() {
-			case tcell.KeyEnter:
-				data = []byte("\r")
-			case tcell.KeyCtrlA:
-				data = []byte("\x01")
-			case tcell.KeyCtrlB:
-				data = []byte("\x02")
-			case tcell.KeyCtrlC:
-				data = []byte("\x03")
-			case tcell.KeyCtrlD:
-				data = []byte("\x04")
-			case tcell.KeyCtrlE:
-				data = []byte("\x05")
-			case tcell.KeyCtrlF:
-				data = []byte("\x06")
-			case tcell.KeyCtrlK:
-				data = []byte("\x0B")
-			case tcell.KeyCtrlL:
-				data = []byte("\x0C")
-			case tcell.KeyCtrlN:
-				data = []byte("\x0E")
-			case tcell.KeyCtrlP:
-				data = []byte("\x10")
-			case tcell.KeyCtrlQ: // XON
-				data = []byte("\x11")
-			case tcell.KeyCtrlR:
-				data = []byte("\x12")
-			case tcell.KeyCtrlS: // XOFF
-				data = []byte("\x13")
-			case tcell.KeyCtrlT:
-				data = []byte("\x14")
-			case tcell.KeyCtrlU:
-				data = []byte("\x15")
-			case tcell.KeyCtrlV:
-				data = []byte("\x16")
-			case tcell.KeyCtrlW:
-				data = []byte("\x17")
-			case tcell.KeyCtrlX:
-				data = []byte("\x18")
-			case tcell.KeyCtrlY:
-				data = []byte("\x19")
-			case tcell.KeyCtrlZ:
-				data = []byte("\x1A")
-			case tcell.KeyCtrlBackslash:
-				data = []byte("\x1C") // SIGQUIT
-			case tcell.KeyCtrlRightSq:
-				data = []byte("\x1D")
-			case tcell.KeyBackspace, tcell.KeyBackspace2:
-				data = []byte("\b")
-			case tcell.KeyTab:
-				data = []byte("\t")
-			case tcell.KeyEsc:
-				data = []byte("\x1b")
-			case tcell.KeyUp:
-				data = []byte("\x1b[A")
-			case tcell.KeyDown:
-				data = []byte("\x1b[B")
-			case tcell.KeyRight:
-				data = []byte("\x1b[C")
-			case tcell.KeyLeft:
-				data = []byte("\x1b[D")
-			case tcell.KeyPgUp:
-				data = []byte("\x1b[5~")
-			case tcell.KeyPgDn:
-				data = []byte("\x1b[6~")
-			case tcell.KeyHome:
-				data = []byte("\x1b[H")
-			case tcell.KeyEnd:
-				data = []byte("\x1b[F")
-			case tcell.KeyDelete:
-				data = []byte("\x1b[3~")
-			case tcell.KeyInsert:
-				data = []byte("\x1b[2~")
-			}
-		}
-
-		if len(data) > 0 {
-			// Release lock before writing to PTY to avoid deadlock
-			// if PTY write blocks
-			t.lock.Unlock()
-			_, err := t.pty.Write(data)
-			if err != nil {
-				log.Error().Err(err).Msg("Error writing to PTY")
-			}
-			// Re-acquire lock to satisfy defer Unlock
-			t.lock.Lock()
+		// If key is not Esc and not Ctrl+A (handled above),
+		// we treat it as a normal sequence preceded by Ctrl+A.
+		// So we first send the buffered Ctrl+A.
+		t.inEscapeMode = false
+		_, err := t.pty.Write([]byte{'\x01'})
+		if err != nil {
+			log.Error().Err(err).Msg("Error writing to PTY")
 		}
 	}
+
+	var data []byte
+	if event.Key() == tcell.KeyRune {
+		data = []byte(string(event.Rune()))
+	} else {
+		data = t.getSpecialKeySequence(event.Key())
+	}
+
+	if len(data) > 0 {
+		// Release lock before writing to PTY to avoid deadlock
+		// if PTY write blocks
+		t.lock.Unlock()
+		_, err := t.pty.Write(data)
+		if err != nil {
+			log.Error().Err(err).Msg("Error writing to PTY")
+		}
+		// Re-acquire lock to satisfy defer Unlock
+		t.lock.Lock()
+	}
+}
+
+func (t *TerminalView) getSpecialKeySequence(key tcell.Key) []byte {
+	if seq, ok := specialKeyMap[key]; ok {
+		return seq
+	}
+	return nil
 }
 
 func (t *TerminalView) Stop() {

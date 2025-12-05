@@ -311,180 +311,17 @@ func (t *AnsiTerminal) executeCSI(command byte) {
 	params := t.parseCSIParams()
 
 	switch command {
-	case '@': // Insert character (ICH)
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.insertChar(n)
+	case '@', 'L', 'M', 'P', 'X':
+		t.handleTextModification(command, params)
 
-	case 'A': // Cursor up
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.cursorY -= n
-		if t.cursorY < 0 {
-			t.cursorY = 0
-		}
-		t.latentWrap = false
+	case 'A', 'B', 'C', 'D', 'G', 'H', 'f', 'd', 'e':
+		t.handleCursorMovement(command, params)
 
-	case 'B': // Cursor down
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.cursorY += n
-		if t.cursorY >= t.height {
-			t.cursorY = t.height - 1
-		}
-		t.latentWrap = false
+	case 'J', 'K':
+		t.handleErase(command, params)
 
-	case 'C': // Cursor forward
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.cursorX += n
-		if t.cursorX >= t.width {
-			t.cursorX = t.width - 1
-		}
-		t.latentWrap = false
-
-	case 'D': // Cursor back
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.cursorX -= n
-		if t.cursorX < 0 {
-			t.cursorX = 0
-		}
-		t.latentWrap = false
-
-	case 'G': // Cursor Horizontal Absolute (CHA)
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.cursorX = n - 1
-		if t.cursorX < 0 {
-			t.cursorX = 0
-		}
-		if t.cursorX >= t.width {
-			t.cursorX = t.width - 1
-		}
-		t.latentWrap = false
-
-	case 'H', 'f': // Cursor position
-		row, col := 1, 1
-		if len(params) > 0 {
-			row = params[0]
-		}
-		if len(params) > 1 {
-			col = params[1]
-		}
-		t.cursorY = row - 1
-		t.cursorX = col - 1
-		t.latentWrap = false
-
-		if t.cursorY < 0 {
-			t.cursorY = 0
-		}
-		if t.cursorY >= t.height {
-			t.cursorY = t.height - 1
-		}
-		if t.cursorX < 0 {
-			t.cursorX = 0
-		}
-		if t.cursorX >= t.width {
-			t.cursorX = t.width - 1
-		}
-
-	case 'J': // Erase in display
-		mode := 0
-		if len(params) > 0 {
-			mode = params[0]
-		}
-		t.eraseDisplay(mode)
-
-	case 'K': // Erase in line
-		mode := 0
-		if len(params) > 0 {
-			mode = params[0]
-		}
-		t.eraseLine(mode)
-
-	case 'L': // Insert line
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.insertLine(n)
-
-	case 'M': // Delete line
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.deleteLine(n)
-
-	case 'P': // Delete character (DCH)
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.deleteChar(n)
-
-	case 'X': // Erase character (ECH)
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.eraseChar(n)
-
-	case 'S': // Scroll Up
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		for i := 0; i < n; i++ {
-			t.scrollUp()
-		}
-
-	case 'T': // Scroll Down
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		for i := 0; i < n; i++ {
-			t.scrollDown()
-		}
-
-	case 'd': // Line Position Absolute (VPA)
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.cursorY = n - 1
-		if t.cursorY < 0 {
-			t.cursorY = 0
-		}
-		if t.cursorY >= t.height {
-			t.cursorY = t.height - 1
-		}
-		t.latentWrap = false
-
-	case 'e': // Line Position Relative (VPR)
-		n := 1
-		if len(params) > 0 {
-			n = params[0]
-		}
-		t.cursorY += n
-		if t.cursorY >= t.height {
-			t.cursorY = t.height - 1
-		}
-		t.latentWrap = false
+	case 'S', 'T':
+		t.handleScrolling(command, params)
 
 	case 'm': // SGR - Select Graphic Rendition
 		t.handleSGR(params)
@@ -531,6 +368,142 @@ func (t *AnsiTerminal) executeCSI(command byte) {
 
 	default:
 		// Log unhandled CSI sequences
+	}
+}
+
+func (t *AnsiTerminal) handleTextModification(command byte, params []int) {
+	n := 1
+	if len(params) > 0 {
+		n = params[0]
+	}
+
+	switch command {
+	case '@': // Insert character (ICH)
+		t.insertChar(n)
+	case 'L': // Insert line
+		t.insertLine(n)
+	case 'M': // Delete line
+		t.deleteLine(n)
+	case 'P': // Delete character (DCH)
+		t.deleteChar(n)
+	case 'X': // Erase character (ECH)
+		t.eraseChar(n)
+	}
+}
+
+func (t *AnsiTerminal) handleCursorMovement(command byte, params []int) {
+	n := 1
+	if len(params) > 0 {
+		n = params[0]
+	}
+
+	switch command {
+	case 'A': // Cursor up
+		t.cursorY -= n
+		if t.cursorY < 0 {
+			t.cursorY = 0
+		}
+		t.latentWrap = false
+
+	case 'B': // Cursor down
+		t.cursorY += n
+		if t.cursorY >= t.height {
+			t.cursorY = t.height - 1
+		}
+		t.latentWrap = false
+
+	case 'C': // Cursor forward
+		t.cursorX += n
+		if t.cursorX >= t.width {
+			t.cursorX = t.width - 1
+		}
+		t.latentWrap = false
+
+	case 'D': // Cursor back
+		t.cursorX -= n
+		if t.cursorX < 0 {
+			t.cursorX = 0
+		}
+		t.latentWrap = false
+
+	case 'G': // Cursor Horizontal Absolute (CHA)
+		t.cursorX = n - 1
+		if t.cursorX < 0 {
+			t.cursorX = 0
+		}
+		if t.cursorX >= t.width {
+			t.cursorX = t.width - 1
+		}
+		t.latentWrap = false
+
+	case 'H', 'f': // Cursor position
+		row, col := 1, 1
+		if len(params) > 0 {
+			row = params[0]
+		}
+		if len(params) > 1 {
+			col = params[1]
+		}
+		t.cursorY = row - 1
+		t.cursorX = col - 1
+		t.latentWrap = false
+
+		if t.cursorY < 0 {
+			t.cursorY = 0
+		}
+		if t.cursorY >= t.height {
+			t.cursorY = t.height - 1
+		}
+		if t.cursorX < 0 {
+			t.cursorX = 0
+		}
+		if t.cursorX >= t.width {
+			t.cursorX = t.width - 1
+		}
+
+	case 'd': // Line Position Absolute (VPA)
+		t.cursorY = n - 1
+		if t.cursorY < 0 {
+			t.cursorY = 0
+		}
+		if t.cursorY >= t.height {
+			t.cursorY = t.height - 1
+		}
+		t.latentWrap = false
+
+	case 'e': // Line Position Relative (VPR)
+		t.cursorY += n
+		if t.cursorY >= t.height {
+			t.cursorY = t.height - 1
+		}
+		t.latentWrap = false
+	}
+}
+
+func (t *AnsiTerminal) handleErase(command byte, params []int) {
+	mode := 0
+	if len(params) > 0 {
+		mode = params[0]
+	}
+	switch command {
+	case 'J': // Erase in display
+		t.eraseDisplay(mode)
+	case 'K': // Erase in line
+		t.eraseLine(mode)
+	}
+}
+
+func (t *AnsiTerminal) handleScrolling(command byte, params []int) {
+	n := 1
+	if len(params) > 0 {
+		n = params[0]
+	}
+	for i := 0; i < n; i++ {
+		if command == 'S' { // Scroll Up
+			t.scrollUp()
+		} else { // Scroll Down
+			t.scrollDown()
+		}
 	}
 }
 

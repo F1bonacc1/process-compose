@@ -21,7 +21,10 @@ func TestSetTerminalTitle(t *testing.T) {
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, err := io.Copy(&buf, r)
+	if err != nil {
+		t.Fatalf("Failed to copy from pipe: %v", err)
+	}
 	output := buf.String()
 
 	expected := "\033]0;process-compose: test-title\007"
@@ -77,7 +80,10 @@ func TestSetProjectNameAsTerminalTitle(t *testing.T) {
 			os.Stdout = oldStdout
 
 			var buf bytes.Buffer
-			io.Copy(&buf, r)
+			_, err := io.Copy(&buf, r)
+			if err != nil {
+				t.Fatalf("Failed to copy from pipe: %v", err)
+			}
 			output := buf.String()
 
 			if output != tt.expectedOutput {
