@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
@@ -45,6 +46,7 @@ type AnsiTerminal struct {
 	escapeSeq        bytes.Buffer
 	expectingCharSet bool // For ESC ( B sequences
 	latentWrap       bool // Pending wrap state
+	utf8Buffer       []byte
 
 	// Scrolling region
 	scrollTop    int
@@ -72,6 +74,7 @@ func NewAnsiTerminal(width, height int) *AnsiTerminal {
 		parseState:    stateNormal,
 		scrollTop:     0,
 		scrollBottom:  height - 1,
+		utf8Buffer:    make([]byte, 0, 4),
 	}
 	t.cells = make([][]Cell, height)
 	for i := range t.cells {
@@ -160,6 +163,28 @@ func (t *AnsiTerminal) Write(data []byte) {
 	defer t.lock.Unlock()
 
 	for _, b := range data {
+		if t.parseState == stateNormal {
+			// Handle UTF-8 buffering
+			if len(t.utf8Buffer) > 0 || b >= 128 {
+				t.utf8Buffer = append(t.utf8Buffer, b)
+
+				// Determine if we have a complete rune
+				if utf8.FullRune(t.utf8Buffer) {
+					r, width := utf8.DecodeRune(t.utf8Buffer)
+					t.utf8Buffer = t.utf8Buffer[:0]
+
+					if r == utf8.RuneError && width == 1 {
+						// Invalid UTF-8, print replacement character or ignore?
+						// Usually terminals print specific replacement char
+						t.putChar(r)
+					} else {
+						t.putChar(r)
+					}
+				}
+				continue
+			}
+		}
+
 		switch t.parseState {
 		case stateNormal:
 			t.handleNormal(b)

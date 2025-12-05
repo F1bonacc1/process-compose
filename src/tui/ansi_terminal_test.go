@@ -48,3 +48,36 @@ func TestAnsiColors(t *testing.T) {
 		})
 	}
 }
+
+func TestUtf8Rendering(t *testing.T) {
+	term := NewAnsiTerminal(80, 24)
+
+	// Test string with mixed ASCII and multi-byte UTF-8 characters
+	// "Hi 🌍" -> 'H', 'i', ' ', '🌍'
+	input := "Hi 🌍"
+	term.Write([]byte(input))
+
+	// 'H'
+	c0 := term.GetCell(0, 0)
+	if c0.Char != 'H' {
+		t.Errorf("expected 'H', got %c", c0.Char)
+	}
+
+	// 'i'
+	c1 := term.GetCell(1, 0)
+	if c1.Char != 'i' {
+		t.Errorf("expected 'i', got %c", c1.Char)
+	}
+
+	// ' '
+	c2 := term.GetCell(2, 0)
+	if c2.Char != ' ' {
+		t.Errorf("expected ' ', got %c", c2.Char)
+	}
+
+	// '🌍' (Earth Globe Europe-Africa)
+	c3 := term.GetCell(3, 0)
+	if c3.Char != '🌍' {
+		t.Errorf("expected '🌍', got %c", c3.Char)
+	}
+}
