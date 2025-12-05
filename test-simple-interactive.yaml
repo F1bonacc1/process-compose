@@ -3,9 +3,12 @@ processes:
   __pc_log:
     command: "tail -f -n100 process-compose-${USER}.log"
     working_dir: "/tmp"
-  my-top:
-    command: "top"
+  my-htop:
+    command: "htop"
     is_interactive: true
   my-vim:
     command: "vim README.md"
+    is_interactive: true
+  my-zsh:
+    command: "zsh"
     is_interactive: true
