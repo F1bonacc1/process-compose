@@ -9,6 +9,7 @@ process-compose [flags]
 ### Options
 
 ```
+      --address string           address to listen on (env: PC_ADDRESS)
   -f, --config stringArray       path to config files to load (env: PC_CONFIG_FILES)
       --detach-on-success        detach the process-compose TUI after successful startup. Requires --detached-with-tui
   -D, --detached                 run process-compose in detached mode

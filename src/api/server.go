@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/app"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 const EnvDebugMode = "PC_DEBUG_MODE"
@@ -45,9 +46,9 @@ func StartHttpServerWithUnixSocket(useLogger bool, unixSocket string, project ap
 	return server, nil
 }
 
-func StartHttpServerWithTCP(useLogger bool, port int, project app.IProject) (*http.Server, error) {
+func StartHttpServerWithTCP(useLogger bool, address string, port int, project app.IProject) (*http.Server, error) {
 	router := getRouter(useLogger, project)
-	endPoint := fmt.Sprintf(":%d", port)
+	endPoint := fmt.Sprintf("%s:%d", address, port)
 	log.Info().Msgf("start http server listening %s", endPoint)
 
 	server := &http.Server{

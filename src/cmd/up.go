@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"runtime"
+
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/spf13/cobra"
-	"runtime"
 )
 
 // upCmd represents the up command

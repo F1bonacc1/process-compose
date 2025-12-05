@@ -46,6 +46,7 @@ const (
 	EnvVarNameOrderedShutdown  = "PC_ORDERED_SHUTDOWN"
 	EnvVarWithRecursiveMetrics = "PC_RECURSIVE_METRICS"
 	EnvVarDisabledProcs        = "PC_DISABLED_PROCESSES"
+	EnvVarNameAddress          = "PC_ADDRESS"
 )
 
 // Flags represents PC configuration flags.

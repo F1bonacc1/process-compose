@@ -10,12 +10,13 @@ process-compose version [flags]
 
 ```
   -h, --help    help for version
-      --short   Print only version
+  -s, --short   Print only version
 ```
 
 ### Options inherited from parent commands
 
 ```
+      --address string       address to listen on (env: PC_ADDRESS)
   -L, --log-file string      Specify the log file path (env: PC_LOG_FILE) (default "/tmp/process-compose-<user>.log")
       --no-server            disable HTTP server (env: PC_NO_SERVER)
       --ordered-shutdown     shut down processes in reverse dependency order
