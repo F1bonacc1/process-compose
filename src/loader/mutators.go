@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"syscall"
 
 	"github.com/f1bonacc1/process-compose/src/command"
 	"github.com/f1bonacc1/process-compose/src/config"
@@ -57,6 +58,9 @@ func assignDefaultProcessValues(p *types.Project) {
 		}
 		if proc.LaunchTimeout < 1 {
 			proc.LaunchTimeout = types.DefaultLaunchTimeout
+		}
+		if proc.ShutDownParams.Signal == 0 {
+			proc.ShutDownParams.Signal = int(syscall.SIGTERM)
 		}
 		proc.Name = name
 		p.Processes[name] = proc

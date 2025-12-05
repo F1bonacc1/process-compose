@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"syscall"
 
 	"github.com/creack/pty"
 )
@@ -45,6 +46,22 @@ func (c *CmdWrapperPty) Start() (err error) {
 func (c *CmdWrapperPty) Wait() error {
 	defer c.ptmx.Close()
 	return c.cmd.Wait()
+}
+
+func (c *CmdWrapperPty) Stop(sig int, parentOnly bool) error {
+	// For PTY processes (interactive), SIGTERM is often ignored (e.g. shells).
+	// They expect SIGHUP (hangup) to terminate gracefully.
+	if sig == int(syscall.SIGTERM) {
+		sig = int(syscall.SIGHUP)
+	}
+
+	// Send the signal
+	err := c.CmdWrapper.Stop(sig, parentOnly)
+	if c.ptmx != nil {
+		_ = c.ptmx.Close()
+	}
+
+	return err
 }
 
 func (c *CmdWrapperPty) StdoutPipe() (io.ReadCloser, error) {
