@@ -12,6 +12,7 @@ nav:
     - Logger: logging.md
     - 'Health Checks': health.md
     - Configuration: configuration.md
+    - 'Interactive Processes': interactive-processes.md
     - 'Merging Configuration': merge.md
     - 'Remote Client': client.md
     - TUI: tui.md
