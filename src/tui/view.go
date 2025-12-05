@@ -133,6 +133,7 @@ func newPcView(project app.IProject) *pcView {
 		attentionMessages: make(chan attentionMessage, 10),
 	}
 	pv.termView = NewTerminalView(pv.appView)
+	pv.termView.SetOnEscape(pv.changeFocus)
 	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()

@@ -14,15 +14,17 @@ import (
 
 type TerminalView struct {
 	*tview.Box
-	app       *tview.Application
-	pty       *os.File
-	term      *AnsiTerminal
-	terminals map[*os.File]*AnsiTerminal
-	lock      sync.Mutex
-	isRunning bool
-	width     int
-	height    int
-	firstDraw bool // Track if we've had the first draw with proper dimensions
+	app          *tview.Application
+	pty          *os.File
+	term         *AnsiTerminal
+	terminals    map[*os.File]*AnsiTerminal
+	lock         sync.Mutex
+	isRunning    bool
+	width        int
+	height       int
+	firstDraw    bool // Track if we've had the first draw with proper dimensions
+	inEscapeMode bool
+	onEscape     func()
 }
 
 func NewTerminalView(app *tview.Application) *TerminalView {
@@ -36,6 +38,10 @@ func NewTerminalView(app *tview.Application) *TerminalView {
 	}
 	tv.SetTitle("Terminal")
 	return tv
+}
+
+func (t *TerminalView) SetOnEscape(handler func()) {
+	t.onEscape = handler
 }
 
 func (t *TerminalView) SetPty(ptyFile *os.File) {
@@ -256,6 +262,33 @@ func (t *TerminalView) InputHandler() func(event *tcell.EventKey, setFocus func(
 		// Forward input to PTY
 		// We might need to convert tcell events to bytes expected by the terminal
 		// For now, let's try simple rune forwarding and some keys
+
+		if event.Key() == tcell.KeyCtrlA {
+			if !t.inEscapeMode {
+				t.inEscapeMode = true
+				return
+			}
+			// If already in escape mode, Ctrl+A means send Ctrl+A literally
+			t.inEscapeMode = false
+		}
+
+		if t.inEscapeMode {
+			if event.Key() == tcell.KeyEsc {
+				t.inEscapeMode = false
+				if t.onEscape != nil {
+					t.onEscape()
+				}
+				return
+			}
+			// If key is not Esc and not Ctrl+A (handled above),
+			// we treat it as a normal sequence preceded by Ctrl+A.
+			// So we first send the buffered Ctrl+A.
+			t.inEscapeMode = false
+			_, err := t.pty.Write([]byte{'\x01'})
+			if err != nil {
+				log.Error().Err(err).Msg("Error writing to PTY")
+			}
+		}
 
 		var data []byte
 		if event.Key() == tcell.KeyRune {
