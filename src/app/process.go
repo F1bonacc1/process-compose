@@ -421,6 +421,13 @@ func (p *Process) stopProcess(withNoRestart bool) error {
 		return nil
 	}
 	p.setState(types.ProcessStateTerminating)
+	// if the process is interactive and running in the background, it might be blocked on writing to the pty
+	// so we need to drain the pty to allow it to exit
+	if ptyFile := p.command.GetPty(); ptyFile != nil {
+		go func() {
+			_, _ = io.Copy(io.Discard, ptyFile)
+		}()
+	}
 	p.stopProbes()
 	if withNoRestart {
 		if p.readyProber != nil {
