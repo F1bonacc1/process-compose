@@ -40,3 +40,11 @@ To use process-compose declaratively configured in your project `flake.nix`, che
 ```shell
 brew install f1bonacc1/tap/process-compose
 ```
+
+## Go install
+If you have [Golang](https://go.dev/doc/install) installed:
+
+```shell
+go install github.com/f1bonacc1/process-compose@latest
+```
+This will [compile and install](https://pkg.go.dev/cmd/go#hdr-Compile_and_install_packages_and_dependencies) the binary.
