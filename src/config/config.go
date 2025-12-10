@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,39 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
+
+func init() {
+	// When installed via "go install", ldflags aren't used, but Go embeds
+	// build info that we can read as a fallback.
+	if Version != "undefined" {
+		return
+	}
+
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return
+	}
+
+	// Module version is set when installed via "go install module@version"
+	if info.Main.Version != "" && info.Main.Version != "(devel)" {
+		Version = info.Main.Version
+	}
+
+	// Extract VCS info from build settings
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			if len(setting.Value) >= 7 {
+				Commit = setting.Value[:7] // Short commit hash
+			} else {
+				Commit = setting.Value
+			}
+		case "vcs.time":
+			Date = setting.Value
+		}
+	}
+	CheckForUpdates = "true"
+}
 
 var (
 	Version           = "undefined"
