@@ -2,13 +2,14 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
-	"os"
-	"strings"
 )
 
 type ActionName string
@@ -40,6 +41,7 @@ const (
 	ActionClearLog         = ActionName("clear_log")
 	ActionMarkLog          = ActionName("mark_log")
 	ActionEditProcess      = ActionName("edit_process")
+	ActionTermExit         = ActionName("term_exit")
 	ActionReloadConfig     = ActionName("reload_config")
 )
 
@@ -71,6 +73,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionMarkLog:          tcell.KeyRune,
 	ActionEditProcess:      tcell.KeyCtrlE,
 	ActionReloadConfig:     tcell.KeyCtrlL,
+	ActionTermExit:         tcell.KeyCtrlA,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -83,6 +86,7 @@ var generalActionsOrder = []ActionName{
 	ActionThemeSelector,
 	ActionSendToBackground,
 	ActionFullScreen,
+	ActionTermExit,
 }
 
 var logActionsOrder = []ActionName{
@@ -388,6 +392,9 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionReloadConfig: {
 				Description: "Reload Project Configuration",
+			},
+			ActionTermExit: {
+				Description: "Switch to Escape Mode",
 			},
 		},
 	}

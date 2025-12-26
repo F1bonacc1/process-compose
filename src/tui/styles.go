@@ -18,7 +18,13 @@ func (pv *pcView) StylesChanged(s *config.Styles) {
 	pv.mainGrid.SetBordersColor(s.BorderColor())
 	pv.setProcTableStyles(s)
 	pv.setLogViewStyle(s)
+	pv.setTermViewStyle(s)
 	pv.setHelpTextStyles(s)
+}
+
+func (pv *pcView) setTermViewStyle(s *config.Styles) {
+	pv.termView.SetTitleColor(s.Body().SecondaryTextColor.Color())
+	pv.termView.SetBorderColor(s.BorderColor())
 }
 
 func (pv *pcView) setStatTableStyles(s *config.Styles) {

@@ -64,6 +64,7 @@ type TerminalView struct {
 	height       int
 	firstDraw    bool // Track if we've had the first draw with proper dimensions
 	inEscapeMode bool
+	exitKey      tcell.Key
 	onEscape     func()
 }
 
@@ -75,13 +76,19 @@ func NewTerminalView(app *tview.Application) *TerminalView {
 		terminals: make(map[*os.File]*AnsiTerminal),
 		width:     80,
 		height:    24,
+		exitKey:   tcell.KeyCtrlA,
 	}
 	tv.SetTitle("Terminal")
+	tv.SetTitleAlign(tview.AlignCenter)
 	return tv
 }
 
 func (t *TerminalView) SetOnEscape(handler func()) {
 	t.onEscape = handler
+}
+
+func (t *TerminalView) SetExitKey(key tcell.Key) {
+	t.exitKey = key
 }
 
 func (t *TerminalView) SetPty(ptyFile *os.File) {
@@ -295,8 +302,9 @@ func (t *TerminalView) InputHandler() func(event *tcell.EventKey, setFocus func(
 		t.lock.Lock()
 		defer t.lock.Unlock()
 
-		if !t.isRunning || t.pty == nil {
-			return
+		if !t.isRunning {
+			// If not running, we still want to handle potential exit keys
+			// check if pty is nil before writing
 		}
 
 		t.handleKeyInput(event)
@@ -304,12 +312,12 @@ func (t *TerminalView) InputHandler() func(event *tcell.EventKey, setFocus func(
 }
 
 func (t *TerminalView) handleKeyInput(event *tcell.EventKey) {
-	if event.Key() == tcell.KeyCtrlA {
+	if event.Key() == t.exitKey {
 		if !t.inEscapeMode {
 			t.inEscapeMode = true
 			return
 		}
-		// If already in escape mode, Ctrl+A means send Ctrl+A literally
+		// If already in escape mode, exitKey means send it literally
 		t.inEscapeMode = false
 	}
 
@@ -321,13 +329,22 @@ func (t *TerminalView) handleKeyInput(event *tcell.EventKey) {
 			}
 			return
 		}
-		// If key is not Esc and not Ctrl+A (handled above),
-		// we treat it as a normal sequence preceded by Ctrl+A.
-		// So we first send the buffered Ctrl+A.
+		// If key is not Esc and not exitKey (handled above),
+		// we treat it as a normal sequence preceded by exitKey.
+		// So we first send the buffered exitKey.
 		t.inEscapeMode = false
-		_, err := t.pty.Write([]byte{'\x01'})
-		if err != nil {
-			log.Error().Err(err).Msg("Error writing to PTY")
+
+		// Try to send the corresponding control character for the exitKey
+		if t.pty != nil {
+			if exitBytes := t.getSpecialKeySequence(t.exitKey); len(exitBytes) > 0 {
+				_, err := t.pty.Write(exitBytes)
+				if err != nil {
+					log.Error().Err(err).Msg("Error writing to PTY")
+				}
+			} else {
+				// Fallback if no mapping (though tcell generally maps KeyCtrlX)
+				log.Warn().Msgf("No byte sequence found for configured exit key: %v", t.exitKey)
+			}
 		}
 	}
 
@@ -338,7 +355,7 @@ func (t *TerminalView) handleKeyInput(event *tcell.EventKey) {
 		data = t.getSpecialKeySequence(event.Key())
 	}
 
-	if len(data) > 0 {
+	if len(data) > 0 && t.pty != nil {
 		// Release lock before writing to PTY to avoid deadlock
 		// if PTY write blocks
 		t.lock.Unlock()
@@ -365,4 +382,88 @@ func (t *TerminalView) Stop() {
 	// Do NOT clear terminal state here, as we want to persist it in the map
 	// t.term = NewAnsiTerminal(t.width, t.height)
 	t.pty = nil
+}
+
+func (t *TerminalView) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+	return func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+		t.lock.Lock()
+		defer t.lock.Unlock()
+
+		if !t.isRunning || t.pty == nil {
+			return t.Box.MouseHandler()(action, event, setFocus)
+		}
+
+		if !t.InRect(event.Position()) {
+			return false, nil
+		}
+
+		// Calculate coordinates relative to the terminal view
+		x, y, _, _ := t.GetInnerRect()
+		mx, my := event.Position()
+		relX := mx - x
+		relY := my - y
+
+		// Bounds check
+		if relX < 0 || relY < 0 || relX >= t.width || relY >= t.height {
+			return false, nil
+		}
+
+		// Forward mouse event to PTY
+		// We use X10 mouse encoding (simple encoding)
+		// Format: CSI M <button+32> <x+33> <y+33>
+		// Note: coordinates are 1-based in Xterm protocol
+
+		btn := event.Buttons()
+		var buttonCode byte
+
+		switch {
+		case btn&tcell.Button1 != 0: // Left click
+			buttonCode = 0
+		case btn&tcell.Button2 != 0: // Middle click
+			buttonCode = 1
+		case btn&tcell.Button3 != 0: // Right click
+			buttonCode = 2
+		case btn&tcell.WheelUp != 0:
+			buttonCode = 64
+		case btn&tcell.WheelDown != 0:
+			buttonCode = 65
+
+		default:
+			// For movements or unsupported buttons, we consume but don't send (for now)
+			// unless we implement full motion tracking
+			return true, nil
+		}
+
+		// Add modifiers
+		if event.Modifiers()&tcell.ModShift != 0 {
+			buttonCode |= 4
+		}
+		if event.Modifiers()&tcell.ModAlt != 0 {
+			buttonCode |= 8
+		}
+		if event.Modifiers()&tcell.ModCtrl != 0 {
+			buttonCode |= 16
+		}
+
+		// Encode and write
+		// <button+32> <x+33> <y+33>
+		encoded := []byte{
+			'\x1b', '[', 'M',
+			buttonCode + 32,
+			byte(relX) + 33,
+			byte(relY) + 33,
+		}
+
+		_, err := t.pty.Write(encoded)
+		if err != nil {
+			log.Error().Err(err).Msg("Error writing mouse event to PTY")
+		}
+
+		// Ensure we get focus on click (especially left click)
+		if action == tview.MouseLeftClick {
+			setFocus(t)
+		}
+
+		return true, nil
+	}
 }

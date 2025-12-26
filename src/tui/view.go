@@ -183,6 +183,13 @@ func (pv *pcView) loadShortcuts() {
 }
 
 func (pv *pcView) setShortCutsActions() {
+	if action, ok := pv.shortcuts.ShortCutKeys[ActionTermExit]; ok {
+		pv.termView.SetExitKey(action.key)
+	}
+	// ActionTermExit is a special action that is handled by the terminal view directly.
+	// We assign a no-op here to prevent crashes if it's triggered from the help menu.
+	pv.shortcuts.setAction(ActionTermExit, func() {})
+
 	pv.shortcuts.setAction(ActionQuit, pv.terminateAppView)
 	pv.shortcuts.setAction(ActionLogScreen, func() {
 		if pv.scrSplitState == LogFull {
