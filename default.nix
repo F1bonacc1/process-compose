@@ -19,7 +19,7 @@ buildGoModule rec {
 
   nativeBuildInputs = [ installShellFiles ];
 
-  vendorHash = "sha256-uZFwiYTkx9TE6T0UJ+EUF8zqP4/8vWYoN+frD6KvQC0=";
+  vendorHash = "sha256-VNqzm1t0YzLa3d3m/7vgeAWlOI5H5t8cHaBCK75uneI=";
   #vendorHash = lib.fakeHash;
 
   postInstall = ''
