@@ -8,7 +8,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
@@ -21,7 +24,7 @@ jobs:
       run: go build -v -o process-compose ./
 
     - name: Test
-      run: go test -v ./src/...
+      run: go test -v ./...
 
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6.5.2
