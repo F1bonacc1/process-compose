@@ -48,6 +48,7 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 - Namespaces
 - Run Multiple Replicas of a Process
 - Run a Foreground Process 
+- Interactive Process 
 - Themes Support
 - On the fly Process configuration edit
 - On the fly Project update

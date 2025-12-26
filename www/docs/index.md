@@ -43,6 +43,7 @@ Check the [Documentation](launcher.md) for more advanced use cases.
 - Namespaces
 - Run Multiple Replicas of a Process
 - Run a Foreground Process 
+- Interactive Process 
 - Themes Support
 - On the fly Process configuration edit
 - On the fly Project update
