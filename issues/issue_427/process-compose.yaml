@@ -1,0 +1,21 @@
+environment:
+  - "ENVGLOBAL=hello"
+
+processes:
+  test_foreground:
+    command: |
+      echo global is "$$ENVGLOBAL"
+      echo local is "$$ENVLOCAL"
+      sleep 60
+    environment:
+      - "ENVLOCAL=world"
+    is_foreground: true
+  test:
+    command: |
+      echo global is "$$ENVGLOBAL"
+      echo local is "$$ENVLOCAL"
+      sleep 60
+    environment:
+      - "ENVLOCAL=world"
+    is_foreground: false
+

@@ -1184,3 +1184,11 @@ func (p *ProjectRunner) GetProcessPty(name string) *os.File {
 	}
 	return proc.GetPty()
 }
+
+func (p *ProjectRunner) GetFullProcessEnvironment(proc *types.ProcessConfig) []string {
+	var dotEnvVars map[string]string
+	if !p.disableDotenv {
+		dotEnvVars = p.project.DotEnvVars
+	}
+	return buildProcessEnvironment(proc, p.project.Environment, dotEnvVars)
+}

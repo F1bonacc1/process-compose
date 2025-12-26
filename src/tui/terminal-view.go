@@ -302,11 +302,6 @@ func (t *TerminalView) InputHandler() func(event *tcell.EventKey, setFocus func(
 		t.lock.Lock()
 		defer t.lock.Unlock()
 
-		if !t.isRunning {
-			// If not running, we still want to handle potential exit keys
-			// check if pty is nil before writing
-		}
-
 		t.handleKeyInput(event)
 	}
 }

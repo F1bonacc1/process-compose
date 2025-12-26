@@ -190,3 +190,7 @@ func (p *PcClient) TruncateProcessLogs(name string) error {
 func (p *PcClient) GetProcessPty(name string) *os.File {
 	return nil
 }
+
+func (p *PcClient) GetFullProcessEnvironment(proc *types.ProcessConfig) []string {
+	return append(os.Environ(), proc.Environment...)
+}

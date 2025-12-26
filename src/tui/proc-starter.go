@@ -3,13 +3,14 @@ package tui
 import (
 	"context"
 	"fmt"
-	"github.com/f1bonacc1/process-compose/src/command"
-	"github.com/f1bonacc1/process-compose/src/types"
-	"github.com/rs/zerolog/log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"syscall"
+
+	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/rs/zerolog/log"
 )
 
 func (pv *pcView) startProcess() {
@@ -81,6 +82,7 @@ func (pv *pcView) execute(info *types.ProcessConfig) error {
 	}(cancel)
 
 	cmd := exec.CommandContext(ctx, info.Executable, info.Args...)
+	cmd.Env = pv.project.GetFullProcessEnvironment(info)
 	log.Debug().Str("exec", info.Executable).Strs("args", info.Args).Msg("running start")
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	err := cmd.Run()
