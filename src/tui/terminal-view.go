@@ -455,7 +455,7 @@ func (t *TerminalView) MouseHandler() func(action tview.MouseAction, event *tcel
 		}
 
 		// Ensure we get focus on click (especially left click)
-		if action == tview.MouseLeftClick {
+		if action == tview.MouseLeftClick || action == tview.MouseLeftDown {
 			setFocus(t)
 		}
 
