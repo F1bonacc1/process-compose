@@ -86,6 +86,10 @@ English is not my native language, so PRs correcting grammar or spelling are wel
 
 https://github.com/sponsors/F1bonacc1
 
+Huge thanks to my **amazing** GitHub sponsors:
+
+![Sponsors](https://readme-contribs.as93.net/sponsors/f1bonacc1)
+
 ##### Bitcoin
 
 <img src="./imgs/btc.wallet.qr.png" style="zoom:50%;"  alt="3QjRfBzwQASQfypATTwa6gxwUB65CX1jfX"/>
