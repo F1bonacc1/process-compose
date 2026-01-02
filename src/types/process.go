@@ -56,6 +56,7 @@ type (
 		ReplicaName       string                 `yaml:"replica_name,omitempty"`
 		Executable        string                 `yaml:"executable,omitempty"`
 		Args              []string               `yaml:"args,omitempty"`
+		Schedule          *ScheduleConfig        `yaml:"schedule,omitempty"`
 	}
 )
 
@@ -227,6 +228,7 @@ type ProcessState struct {
 	Mem              int64         `json:"mem"`
 	CPU              float64       `json:"cpu"`
 	IsRunning        bool          `json:"is_running"`
+	NextRunTime      *time.Time    `json:"next_run_time,omitempty"`
 }
 
 type ProcessPorts struct {
@@ -332,6 +334,7 @@ const (
 	ProcessStateCompleted   = "Completed"
 	ProcessStateSkipped     = "Skipped"
 	ProcessStateError       = "Error"
+	ProcessStateScheduled   = "Scheduled"
 )
 
 // Display a process status for the UI.
@@ -343,6 +346,9 @@ const (
 // We can't change the `Status` field to "Failed" directly because that would
 // change the JSON API behavior, but we can change it in the TUI.
 func DisplayProcessStatus(state ProcessState) string {
+	if state.NextRunTime != nil && !state.IsRunning {
+		return ProcessStateScheduled
+	}
 	if state.Status == ProcessStateCompleted && state.ExitCode != 0 {
 		return "Failed"
 	}

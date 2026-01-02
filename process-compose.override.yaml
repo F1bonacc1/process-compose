@@ -230,4 +230,22 @@ processes:
 
   my-vim:
     command: vim process-compose.override.yaml
-    is_interactive: true    
+    is_interactive: true
+
+  test-cron:
+    command: "echo Cron triggered at $(date)"
+    schedule:
+      cron: "*/1 * * * *"  # Every minute for testing
+
+  test-interval:
+    command: "echo 'Interval triggered' && sleep 5"
+    schedule:
+      interval: "10s"
+      run_on_start: true
+    disabled: true
+
+  slow-task:
+    command: "sleep 30"
+    schedule:
+      interval: "10s"
+      max_concurrent: 1  # Should skip runs while previous is still running

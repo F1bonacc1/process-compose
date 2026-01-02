@@ -411,7 +411,8 @@ func (pv *pcView) getIconForState(state types.ProcessState) (string, tcell.Color
 		}
 		return "●", pv.styles.ProcTable().FgColor.Color()
 	case types.ProcessStatePending,
-		types.ProcessStateRestarting:
+		types.ProcessStateRestarting,
+		types.ProcessStateScheduled:
 		return "●", pv.styles.ProcTable().FgPending.Color()
 	case types.ProcessStateCompleted:
 		if state.ExitCode == 0 {

@@ -19,6 +19,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/pclog"
+	"github.com/f1bonacc1/process-compose/src/scheduler"
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 
@@ -48,6 +49,8 @@ type ProjectRunner struct {
 	restartCalls     map[string]*RestartCall
 	logger           pclog.PcLogger
 	//waitGroup            sync.WaitGroup
+	//waitGroup            sync.WaitGroup
+	exitCodeMutex        sync.Mutex
 	exitCode             int
 	projectState         *types.ProjectState
 	mainProcess          string
@@ -62,6 +65,7 @@ type ProjectRunner struct {
 	withRecursiveMetrics bool
 	procCompleteChannel  chan int
 	processTree          *ProcessTree
+	processScheduler     *scheduler.Scheduler
 }
 
 // RestartCall represents an in-flight restart operation
@@ -112,22 +116,64 @@ func (p *ProjectRunner) Run() error {
 	p.prepareEnvCmds()
 	//zerolog.SetGlobalLevel(zerolog.PanicLevel)
 	log.Debug().Msgf("Spinning up %d processes. Order: %q", len(runOrder), nameOrder)
+
+	// Initialize and start scheduler for scheduled processes
+	p.processScheduler, err = scheduler.New(p)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create scheduler")
+	} else {
+		for name, proc := range p.project.Processes {
+			if proc.Schedule != nil && proc.Schedule.IsScheduled() {
+				if err := p.processScheduler.AddProcess(name, proc.Schedule); err != nil {
+					log.Error().Err(err).Msgf("Failed to schedule process %s", name)
+				} else if proc.Disabled {
+					if err := p.processScheduler.PauseProcess(name); err != nil {
+						log.Error().Err(err).Msgf("Failed to pause schedule for disabled process %s", name)
+					}
+				}
+			}
+		}
+		p.processScheduler.Start()
+		defer func() {
+			if err := p.processScheduler.Stop(); err != nil {
+				log.Error().Err(err).Msg("Failed to stop scheduler gracefully")
+			}
+		}()
+	}
+
 	for _, proc := range runOrder {
+		if proc.Schedule != nil && proc.Schedule.IsScheduled() {
+			continue
+		}
 		newConf := proc
 		p.runProcess(&newConf)
 	}
 	for {
-		runProcCount := <-p.procCompleteChannel
-		log.Debug().Msgf("Remaining processes: %d", runProcCount)
-		if runProcCount == 0 {
-			break
+		select {
+		case <-p.ctxApp.Done():
+			p.exitCodeMutex.Lock()
+			exitCode := p.exitCode
+			p.exitCodeMutex.Unlock()
+			if exitCode != 0 {
+				return &ExitError{exitCode}
+			}
+			return err
+		case runProcCount := <-p.procCompleteChannel:
+			log.Debug().Msgf("Remaining processes: %d", runProcCount)
+			if runProcCount == 0 {
+				if p.processScheduler == nil || len(p.processScheduler.GetScheduledProcesses()) == 0 {
+					log.Info().Msg("Project completed")
+					p.exitCodeMutex.Lock()
+					exitCode := p.exitCode
+					p.exitCodeMutex.Unlock()
+					if exitCode != 0 {
+						err = &ExitError{exitCode}
+					}
+					return err
+				}
+			}
 		}
 	}
-	log.Info().Msg("Project completed")
-	if p.exitCode != 0 {
-		err = &ExitError{p.exitCode}
-	}
-	return err
 }
 
 func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
@@ -225,14 +271,18 @@ func (p *ProjectRunner) onProcessEnd(exitCode int, procConf *types.ProcessConfig
 	if (exitCode != 0 && procConf.RestartPolicy.Restart == types.RestartPolicyExitOnFailure) ||
 		procConf.RestartPolicy.ExitOnEnd {
 		_ = p.ShutDownProject()
+		p.exitCodeMutex.Lock()
 		p.exitCode = exitCode
+		p.exitCodeMutex.Unlock()
 	}
 }
 
 func (p *ProjectRunner) onProcessSkipped(procConf *types.ProcessConfig) {
 	if procConf.RestartPolicy.ExitOnSkipped {
 		_ = p.ShutDownProject()
+		p.exitCodeMutex.Lock()
 		p.exitCode = 1
+		p.exitCodeMutex.Unlock()
 	}
 }
 
@@ -261,19 +311,34 @@ func (p *ProjectRunner) initProcessLog(name string) {
 }
 
 func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error) {
+	var state *types.ProcessState
 	proc := p.getRunningProcess(name)
 	if proc != nil {
-		return proc.getState(), nil
+		state = proc.getState()
 	} else {
 		p.statesMutex.Lock()
 		defer p.statesMutex.Unlock()
-		state, ok := p.processStates[name]
+		var ok bool
+		state, ok = p.processStates[name]
 		if !ok {
 			log.Error().Msgf("Error: process %s doesn't exist", name)
 			return nil, fmt.Errorf("can't get state of process %s: no such process", name)
 		}
-		return state, nil
 	}
+	// Add next run time for scheduled processes
+	if p.processScheduler != nil {
+		nextRun := p.processScheduler.GetNextRunTime(name)
+		state.NextRunTime = nextRun
+		if nextRun != nil {
+			if !state.IsRunning {
+				state.Status = types.ProcessStateScheduled
+			}
+		} else if state.Status == types.ProcessStateScheduled {
+			// Restore to Completed if it was marked as Scheduled but no longer has a next run
+			state.Status = types.ProcessStateCompleted
+		}
+	}
+	return state, nil
 }
 
 func (p *ProjectRunner) getProcessStateData(name string, filter filterFn) error {
@@ -375,6 +440,12 @@ func (p *ProjectRunner) StartProcess(name string) error {
 	}
 	if processConfig, ok := p.project.Processes[name]; ok {
 		p.runProcess(&processConfig)
+		// Resume schedule if it was paused (e.g. initially disabled)
+		if p.processScheduler != nil && p.processScheduler.IsScheduled(name) {
+			if err := p.processScheduler.ResumeProcess(name); err != nil {
+				log.Error().Err(err).Msgf("Failed to resume schedule for process %s", name)
+			}
+		}
 	} else {
 		return fmt.Errorf("no such process: %s", name)
 	}
@@ -385,18 +456,35 @@ func (p *ProjectRunner) StartProcess(name string) error {
 func (p *ProjectRunner) StopProcess(name string) error {
 	log.Info().Msgf("Stopping %s", name)
 	proc := p.getRunningProcess(name)
-	if proc == nil {
-		if _, ok := p.project.Processes[name]; !ok {
-			log.Error().Msgf("Process %s does not exist", name)
-			return fmt.Errorf("process %s does not exist", name)
+
+	var err error
+	if proc != nil {
+		err = proc.shutDownNoRestart()
+		if err != nil {
+			log.Err(err).Msgf("failed to stop process %s", name)
 		}
-		log.Error().Msgf("Process %s is not running", name)
-		return fmt.Errorf("process %s is not running", name)
+	} else {
+		// If not running, check if it's scheduled. If so, we'll just pause the schedule.
+		if p.processScheduler == nil || !p.processScheduler.IsScheduled(name) {
+			if _, ok := p.project.Processes[name]; !ok {
+				log.Error().Msgf("Process %s does not exist", name)
+				return fmt.Errorf("process %s does not exist", name)
+			}
+			log.Error().Msgf("Process %s is not running", name)
+			return fmt.Errorf("process %s is not running", name)
+		}
 	}
-	err := proc.shutDownNoRestart()
-	if err != nil {
-		log.Err(err).Msgf("failed to stop process %s", name)
+
+	// Pause schedule if it was running or scheduled
+	if p.processScheduler != nil && p.processScheduler.IsScheduled(name) {
+		if pauseErr := p.processScheduler.PauseProcess(name); pauseErr != nil {
+			log.Error().Err(pauseErr).Msgf("Failed to pause schedule for process %s", name)
+			if err == nil {
+				err = pauseErr
+			}
+		}
 	}
+
 	return err
 }
 

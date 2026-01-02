@@ -1,8 +1,10 @@
 package types
 
 import (
-	"github.com/f1bonacc1/process-compose/src/health"
 	"testing"
+	"time"
+
+	"github.com/f1bonacc1/process-compose/src/health"
 )
 
 func TestCompareProcessConfigs(t *testing.T) {
@@ -318,6 +320,82 @@ func TestProcessStateIsReady(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.p.IsReady() != tt.isReady {
 				t.Errorf("Expected IsReady() = %v for state %v", tt.isReady, tt.p)
+			}
+		})
+	}
+}
+
+func TestDisplayProcessStatus(t *testing.T) {
+	now := time.Now()
+	next := now.Add(time.Minute)
+
+	tests := []struct {
+		name     string
+		state    ProcessState
+		expected string
+	}{
+		{
+			name: "running process",
+			state: ProcessState{
+				Status:    ProcessStateRunning,
+				IsRunning: true,
+			},
+			expected: ProcessStateRunning,
+		},
+		{
+			name: "running process with next run (should still show running)",
+			state: ProcessState{
+				Status:      ProcessStateRunning,
+				IsRunning:   true,
+				NextRunTime: &next,
+			},
+			expected: ProcessStateRunning,
+		},
+		{
+			name: "completed process with next run (should show scheduled)",
+			state: ProcessState{
+				Status:      ProcessStateCompleted,
+				IsRunning:   false,
+				NextRunTime: &next,
+			},
+			expected: ProcessStateScheduled,
+		},
+		{
+			name: "failed process with next run (should show scheduled)",
+			state: ProcessState{
+				Status:      ProcessStateCompleted,
+				IsRunning:   false,
+				ExitCode:    1,
+				NextRunTime: &next,
+			},
+			expected: ProcessStateScheduled,
+		},
+		{
+			name: "completed process success (no next run)",
+			state: ProcessState{
+				Status:      ProcessStateCompleted,
+				IsRunning:   false,
+				ExitCode:    0,
+				NextRunTime: nil,
+			},
+			expected: ProcessStateCompleted,
+		},
+		{
+			name: "completed process failed (no next run)",
+			state: ProcessState{
+				Status:      ProcessStateCompleted,
+				IsRunning:   false,
+				ExitCode:    1,
+				NextRunTime: nil,
+			},
+			expected: "Failed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DisplayProcessStatus(tt.state); got != tt.expected {
+				t.Errorf("DisplayProcessStatus() = %v, want %v", got, tt.expected)
 			}
 		})
 	}

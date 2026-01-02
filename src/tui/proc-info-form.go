@@ -2,12 +2,15 @@ package tui
 
 import (
 	"fmt"
+	"time"
+
+	"strings"
+
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rivo/tview"
-	"strings"
 )
 
-func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.ProcessPorts) *tview.Form {
+func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, state *types.ProcessState, ports *types.ProcessPorts) *tview.Form {
 	f := tview.NewForm()
 	f.SetCancelFunc(func() {
 		pv.pages.RemovePage(PageDialog)
@@ -22,6 +25,10 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, ports *types.Pro
 	addStringIfNotEmpty("Working Directory:", info.WorkingDir, f)
 	addStringIfNotEmpty("Log Location:", info.LogLocation, f)
 	f.AddInputField("Replica:", fmt.Sprintf("%d/%d", info.ReplicaNum+1, info.Replicas), 0, nil, nil)
+	// Display next run time for scheduled processes
+	if state != nil && state.NextRunTime != nil {
+		f.AddInputField("Next Run:", state.NextRunTime.Format(time.RFC1123), 0, nil, nil)
+	}
 	addDropDownIfNotEmpty("Environment:", info.Environment, f)
 	addCSVIfNotEmpty("Depends On:", mapKeysToSlice(info.DependsOn), f)
 	if ports != nil {

@@ -183,3 +183,16 @@ func validateProject(p *types.Project) error {
 	}
 	return nil
 }
+
+func validateScheduledProcessScaling(p *types.Project) error {
+	for name, proc := range p.Processes {
+		if proc.Schedule != nil && proc.Replicas > 1 {
+			errStr := fmt.Sprintf("scheduled process '%s' cannot be scaled (replicas > 1)", name)
+			if p.IsStrict {
+				return errors.New(errStr)
+			}
+			log.Error().Msg(errStr)
+		}
+	}
+	return nil
+}

@@ -1,9 +1,10 @@
 package tui
 
 import (
+	"strconv"
+
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
-	"strconv"
 )
 
 func (pv *pcView) showScale() {
@@ -14,6 +15,15 @@ func (pv *pcView) showScale() {
 	f.SetItemPadding(3)
 	f.SetBorder(true)
 	name := pv.getSelectedProcName()
+	procConfig, err := pv.project.GetProcessInfo(name)
+	if err != nil {
+		pv.showError(err.Error())
+		return
+	}
+	if procConfig.Schedule != nil {
+		pv.showError("Scaling is not supported for scheduled processes")
+		return
+	}
 	f.SetTitle("Scale " + name + " Process")
 	f.AddInputField("Replicas:", "1", 0, nil, nil)
 	f.AddButton("Scale", func() {
