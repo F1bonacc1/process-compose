@@ -83,7 +83,7 @@ snapshot:
 	goreleaser release --snapshot --clean
 
 github-workflows:
-	act -W ./.github/workflows/go.yml -j build
+	act -W ./.github/workflows/go.yml -j build --matrix os:ubuntu-latest
 	act -W ./.github/workflows/nix.yml -j build
 
 docs: build
