@@ -170,16 +170,9 @@ func (t *AnsiTerminal) Write(data []byte) {
 
 				// Determine if we have a complete rune
 				if utf8.FullRune(t.utf8Buffer) {
-					r, width := utf8.DecodeRune(t.utf8Buffer)
+					r, _ := utf8.DecodeRune(t.utf8Buffer)
 					t.utf8Buffer = t.utf8Buffer[:0]
-
-					if r == utf8.RuneError && width == 1 {
-						// Invalid UTF-8, print replacement character or ignore?
-						// Usually terminals print specific replacement char
-						t.putChar(r)
-					} else {
-						t.putChar(r)
-					}
+					t.putChar(r)
 				}
 				continue
 			}
