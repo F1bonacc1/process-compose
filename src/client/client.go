@@ -194,3 +194,7 @@ func (p *PcClient) GetProcessPty(name string) *os.File {
 func (p *PcClient) GetFullProcessEnvironment(proc *types.ProcessConfig) []string {
 	return append(os.Environ(), proc.Environment...)
 }
+
+func (p *PcClient) GetDependencyGraph() (*types.DependencyGraph, error) {
+	return p.getDependencyGraph()
+}

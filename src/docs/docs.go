@@ -22,6 +22,36 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/graph": {
+            "get": {
+                "description": "Returns the process dependency graph with current status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph"
+                ],
+                "summary": "Get dependency graph",
+                "operationId": "GetDependencyGraph",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.DependencyGraph"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/live": {
             "get": {
                 "description": "Check if server is responding",
@@ -47,9 +77,6 @@ const docTemplate = `{
             "post": {
                 "description": "Update process",
                 "consumes": [
-                    "application/json"
-                ],
-                "produces": [
                     "application/json"
                 ],
                 "tags": [
@@ -870,6 +897,34 @@ const docTemplate = `{
                 }
             }
         },
+        "types.DependencyGraph": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/types.DependencyNode"
+                    }
+                }
+            }
+        },
+        "types.DependencyNode": {
+            "type": "object",
+            "properties": {
+                "depends_on": {
+                    "type": "object"
+                },
+                "is_ready": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "process_status": {
+                    "type": "string"
+                }
+            }
+        },
         "types.DependsOnConfig": {
             "type": "object",
             "additionalProperties": {
@@ -1041,6 +1096,9 @@ const docTemplate = `{
                 "isForeground": {
                     "type": "boolean"
                 },
+                "isInteractive": {
+                    "type": "boolean"
+                },
                 "isTty": {
                     "type": "boolean"
                 },
@@ -1082,6 +1140,9 @@ const docTemplate = `{
                 },
                 "restartPolicy": {
                     "$ref": "#/definitions/types.RestartPolicyConfig"
+                },
+                "schedule": {
+                    "$ref": "#/definitions/types.ScheduleConfig"
                 },
                 "shutDownParams": {
                     "$ref": "#/definitions/types.ShutDownParams"
@@ -1157,6 +1218,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "namespace": {
+                    "type": "string"
+                },
+                "next_run_time": {
                     "type": "string"
                 },
                 "password_provided": {
@@ -1254,6 +1318,31 @@ const docTemplate = `{
                 },
                 "restart": {
                     "$ref": "#/definitions/types.RestartPolicy"
+                }
+            }
+        },
+        "types.ScheduleConfig": {
+            "type": "object",
+            "properties": {
+                "cron": {
+                    "description": "Cron expression for cron-based scheduling (e.g., \"0 2 * * *\")",
+                    "type": "string"
+                },
+                "interval": {
+                    "description": "Interval for interval-based scheduling (e.g., \"30m\", \"1h\", \"5s\")",
+                    "type": "string"
+                },
+                "max_concurrent": {
+                    "description": "MaxConcurrent limits concurrent executions (default: 1)",
+                    "type": "integer"
+                },
+                "run_on_start": {
+                    "description": "RunOnStart determines whether to run immediately when process-compose starts",
+                    "type": "boolean"
+                },
+                "timezone": {
+                    "description": "Timezone for cron expression (e.g., \"UTC\", \"America/New_York\")",
+                    "type": "string"
                 }
             }
         },

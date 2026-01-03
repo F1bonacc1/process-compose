@@ -48,3 +48,5 @@ Check the [Documentation](launcher.md) for more advanced use cases.
 - On the fly Process configuration edit
 - On the fly Project update
 - [Recipes](https://github.com/F1bonacc1/process-compose-recipes) Management
+- Scheduled Processes (cron and interval-based)
+- Dependency Graph visualization (CLI, TUI, and API)

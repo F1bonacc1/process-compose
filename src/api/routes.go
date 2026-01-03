@@ -43,6 +43,7 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r.GET("/project/state", handler.GetProjectState)
 	r.PATCH("/process/scale/:name/:scale", handler.ScaleProcess)
 	r.GET("/process/logs/ws", handler.HandleLogsStream)
+	r.GET("/graph", handler.GetDependencyGraph)
 
 	return r
 }

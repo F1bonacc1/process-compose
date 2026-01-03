@@ -37,4 +37,5 @@ type IProject interface {
 	TruncateProcessLogs(name string) error
 	GetProcessPty(name string) *os.File
 	GetFullProcessEnvironment(proc *types.ProcessConfig) []string
+	GetDependencyGraph() (*types.DependencyGraph, error)
 }

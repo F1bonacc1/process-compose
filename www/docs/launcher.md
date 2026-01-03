@@ -74,6 +74,7 @@ processes:
       process4:
         condition: process_completed_successfully
 ```
+> :bulb: You can visualize your process dependencies using the [Dependency Graph](graph.md).
 
 There are 5 condition types that can be used in process dependencies:
 

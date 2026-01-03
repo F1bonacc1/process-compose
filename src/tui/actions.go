@@ -43,6 +43,7 @@ const (
 	ActionEditProcess      = ActionName("edit_process")
 	ActionTermExit         = ActionName("term_exit")
 	ActionReloadConfig     = ActionName("reload_config")
+	ActionDependencyGraph  = ActionName("dependency_graph")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -74,6 +75,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionEditProcess:      tcell.KeyCtrlE,
 	ActionReloadConfig:     tcell.KeyCtrlL,
 	ActionTermExit:         tcell.KeyCtrlA,
+	ActionDependencyGraph:  tcell.KeyCtrlQ,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -111,6 +113,7 @@ var procActionsOrder = []ActionName{
 	ActionReloadConfig,
 	ActionNsFilter,
 	ActionHideDisabled,
+	ActionDependencyGraph,
 	ActionQuit,
 }
 
@@ -395,6 +398,9 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionTermExit: {
 				Description: "Switch to Escape Mode",
+			},
+			ActionDependencyGraph: {
+				Description: "Dependency Graph",
 			},
 		},
 	}

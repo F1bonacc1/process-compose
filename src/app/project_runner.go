@@ -1280,3 +1280,17 @@ func (p *ProjectRunner) GetFullProcessEnvironment(proc *types.ProcessConfig) []s
 	}
 	return buildProcessEnvironment(proc, p.project.Environment, dotEnvVars)
 }
+
+// GetDependencyGraph builds and returns the process dependency graph with current status
+func (p *ProjectRunner) GetDependencyGraph() (*types.DependencyGraph, error) {
+	graph := types.BuildDependencyGraph(p.project.Processes)
+
+	// Enrich with runtime status
+	for name, node := range graph.AllNodes {
+		if state, err := p.GetProcessState(name); err == nil {
+			node.Status = state.Status
+			node.IsReady = state.Health
+		}
+	}
+	return graph, nil
+}

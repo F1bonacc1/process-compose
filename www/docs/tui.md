@@ -8,6 +8,7 @@ TUI Allows you to:
 - Review logs
 - Restart running processes
 - Edit processes' configuration
+- Review process dependency graph (`Ctrl+Q`)
 
 TUI is the default run mode, but it's possible to disable it:
 
@@ -85,6 +86,9 @@ shortcuts:
   quit:
     description: Quit
     shortcut: F10
+  dependency_graph:
+    description: Dependency Graph
+    shortcut: Ctrl-Q
 ```
 
 `shortcuts.yaml` can contain only the values you wish to change, default values will be used for the rest.  

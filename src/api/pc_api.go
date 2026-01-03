@@ -439,3 +439,21 @@ func (api *PcApi) ReloadProject(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, status)
 }
+
+// @Schemes
+// @Id              GetDependencyGraph
+// @Description     Returns the process dependency graph with current status
+// @Tags            Graph
+// @Summary         Get dependency graph
+// @Produce         json
+// @Success         200 {object} types.DependencyGraph
+// @Failure         400 {object} map[string]string
+// @Router          /graph [get]
+func (api *PcApi) GetDependencyGraph(c *gin.Context) {
+	graph, err := api.project.GetDependencyGraph()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, graph)
+}

@@ -110,6 +110,34 @@
                 },
                 "type": "object"
             },
+            "types.DependencyGraph": {
+                "properties": {
+                    "nodes": {
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/types.DependencyNode"
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "types.DependencyNode": {
+                "properties": {
+                    "depends_on": {
+                        "type": "object"
+                    },
+                    "is_ready": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "process_status": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "types.DependsOnConfig": {
                 "additionalProperties": {
                     "$ref": "#/components/schemas/types.ProcessDependency"
@@ -280,6 +308,9 @@
                     "isForeground": {
                         "type": "boolean"
                     },
+                    "isInteractive": {
+                        "type": "boolean"
+                    },
                     "isTty": {
                         "type": "boolean"
                     },
@@ -321,6 +352,9 @@
                     },
                     "restartPolicy": {
                         "$ref": "#/components/schemas/types.RestartPolicyConfig"
+                    },
+                    "schedule": {
+                        "$ref": "#/components/schemas/types.ScheduleConfig"
                     },
                     "shutDownParams": {
                         "$ref": "#/components/schemas/types.ShutDownParams"
@@ -396,6 +430,9 @@
                         "type": "string"
                     },
                     "namespace": {
+                        "type": "string"
+                    },
+                    "next_run_time": {
                         "type": "string"
                     },
                     "password_provided": {
@@ -497,6 +534,31 @@
                 },
                 "type": "object"
             },
+            "types.ScheduleConfig": {
+                "properties": {
+                    "cron": {
+                        "description": "Cron expression for cron-based scheduling (e.g., \"0 2 * * *\")",
+                        "type": "string"
+                    },
+                    "interval": {
+                        "description": "Interval for interval-based scheduling (e.g., \"30m\", \"1h\", \"5s\")",
+                        "type": "string"
+                    },
+                    "max_concurrent": {
+                        "description": "MaxConcurrent limits concurrent executions (default: 1)",
+                        "type": "integer"
+                    },
+                    "run_on_start": {
+                        "description": "RunOnStart determines whether to run immediately when process-compose starts",
+                        "type": "boolean"
+                    },
+                    "timezone": {
+                        "description": "Timezone for cron expression (e.g., \"UTC\", \"America/New_York\")",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "types.ShutDownParams": {
                 "properties": {
                     "parentOnly": {
@@ -538,6 +600,41 @@
     },
     "openapi": "3.0.3",
     "paths": {
+        "/graph": {
+            "get": {
+                "description": "Returns the process dependency graph with current status",
+                "operationId": "GetDependencyGraph",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/types.DependencyGraph"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Get dependency graph",
+                "tags": [
+                    "Graph"
+                ]
+            }
+        },
         "/live": {
             "get": {
                 "description": "Check if server is responding",

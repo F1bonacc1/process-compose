@@ -54,6 +54,7 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 - On the fly Project update
 - [Recipes](https://github.com/F1bonacc1/process-compose-recipes) Management
 - Scheduled Processes (cron and interval-based)
+- Dependency Graph visualization (CLI, TUI, and API)
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 

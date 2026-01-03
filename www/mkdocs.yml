@@ -16,6 +16,7 @@ nav:
     - 'Merging Configuration': merge.md
     - 'Remote Client': client.md
     - TUI: tui.md
+    - 'Dependency Graph': graph.md
   - CLI:
     - 'process-compose': cli/process-compose.md
     - 'attach': cli/process-compose_attach.md

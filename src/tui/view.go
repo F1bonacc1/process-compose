@@ -291,6 +291,7 @@ func (pv *pcView) setShortCutsActions() {
 		}
 		pv.showPassIfNeeded()
 	})
+	pv.shortcuts.setAction(ActionDependencyGraph, pv.showGraphDialog)
 }
 
 func (pv *pcView) setFullScreen(isFullScreen bool) {
@@ -424,6 +425,32 @@ func (pv *pcView) showInfo() {
 	ports, _ := pv.project.GetProcessPorts(name)
 	form := pv.createProcInfoForm(info, state, ports)
 	pv.showDialog(form, 0, 5+form.GetFormItemCount()*2)
+}
+
+func (pv *pcView) showGraphDialog() {
+	graph, err := pv.project.GetDependencyGraph()
+	if err != nil {
+		pv.showError(fmt.Sprintf("Failed to get dependency graph: %v", err))
+		return
+	}
+
+	states, err := pv.project.GetProcessesState()
+	if err != nil {
+		pv.showError(fmt.Sprintf("Failed to get process states: %v", err))
+		return
+	}
+
+	dialog := newGraphDialog(func() {
+		pv.pages.RemovePage(PageDialog)
+		pv.appView.SetFocus(pv.procTable)
+	})
+	dialog.buildTree(graph, states)
+
+	width := dialog.GetWidth()
+	if width > 120 {
+		width = 120
+	}
+	pv.showDialog(dialog.TreeView, width, 30)
 }
 
 func (pv *pcView) handleShutDown() {
