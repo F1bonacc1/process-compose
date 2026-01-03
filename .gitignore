@@ -19,3 +19,4 @@ www/.cache
 Cargo.lock
 target
 *.swp
+/.agent
