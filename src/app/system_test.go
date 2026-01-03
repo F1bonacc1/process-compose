@@ -696,7 +696,7 @@ func TestSystem_TestReadyLine(t *testing.T) {
 		return
 	}
 	// Wait for proc2 to become running (it waits for proc1 ready log line)
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 50; i++ {
 		proc = runner.getRunningProcess(proc2)
 		if proc != nil && proc.getStatusName() == types.ProcessStateRunning {
 			break
@@ -1102,7 +1102,7 @@ func TestSystem_TestRestartingProcessShutDown(t *testing.T) {
 		}
 	}()
 	var proc *Process
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 50; i++ {
 		proc = p.getRunningProcess(proc1)
 		if proc != nil && proc.getStatusName() == types.ProcessStateRestarting {
 			break

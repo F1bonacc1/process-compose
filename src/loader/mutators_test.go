@@ -81,18 +81,29 @@ func Test_setDefaultShell(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			hasOrig := tt.args.p.ShellConfig != nil
+			origCmd := ""
+			origArg := ""
+			if hasOrig {
+				origCmd = tt.args.p.ShellConfig.ShellCommand
+				origArg = tt.args.p.ShellConfig.ShellArgument
+			}
 			setDefaultShell(tt.args.p)
-			wantCmd := "bash"
-			wantArg := "-c"
-			if runtime.GOOS == "windows" {
-				wantCmd = "cmd"
-				wantArg = "/C"
+			wantCmd := origCmd
+			wantArg := origArg
+			if !hasOrig {
+				wantCmd = "bash"
+				wantArg = "-c"
+				if runtime.GOOS == "windows" {
+					wantCmd = "cmd"
+					wantArg = "/C"
+				}
 			}
 			if tt.args.p.ShellConfig.ShellCommand != wantCmd {
-				t.Errorf("Expected shell command to be %s", wantCmd)
+				t.Errorf("Expected shell command to be %s, got %s", wantCmd, tt.args.p.ShellConfig.ShellCommand)
 			}
 			if tt.args.p.ShellConfig.ShellArgument != wantArg {
-				t.Errorf("Expected shell argument to be '%s'", wantArg)
+				t.Errorf("Expected shell argument to be '%s', got '%s'", wantArg, tt.args.p.ShellConfig.ShellArgument)
 			}
 		})
 	}

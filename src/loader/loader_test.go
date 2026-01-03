@@ -2,6 +2,7 @@ package loader
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -160,8 +161,12 @@ func TestLoadFileWithExtendProject(t *testing.T) {
 	for _, proc := range opts.projects[0].Processes {
 		// check ABS working dir for process2
 		if proc.Name == "process2" {
-			if proc.WorkingDir != filepath.FromSlash("/tmp") {
-				t.Errorf("expected %s, got %s", filepath.FromSlash("/tmp"), proc.WorkingDir)
+			expectedDir := filepath.FromSlash("/tmp")
+			if runtime.GOOS == "windows" {
+				expectedDir = filepath.Join(expected, filepath.FromSlash("/tmp"))
+			}
+			if proc.WorkingDir != expectedDir {
+				t.Errorf("expected %s, got %s", expectedDir, proc.WorkingDir)
 			}
 			continue
 		}

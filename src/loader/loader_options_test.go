@@ -28,7 +28,10 @@ func TestLoaderOptions_getWorkingDir(t *testing.T) {
 				},
 				projects: nil,
 			},
-			want:    filepath.FromSlash("/home/user/dir"),
+			want: func() string {
+				abs, _ := filepath.Abs(filepath.FromSlash("/home/user/dir/process-compose.yaml"))
+				return filepath.Dir(abs)
+			}(),
 			wantErr: false,
 		},
 	}
