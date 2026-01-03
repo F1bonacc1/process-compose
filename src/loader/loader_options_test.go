@@ -1,8 +1,10 @@
 package loader
 
 import (
-	"github.com/f1bonacc1/process-compose/src/types"
+	"path/filepath"
 	"testing"
+
+	"github.com/f1bonacc1/process-compose/src/types"
 )
 
 func TestLoaderOptions_getWorkingDir(t *testing.T) {
@@ -22,11 +24,11 @@ func TestLoaderOptions_getWorkingDir(t *testing.T) {
 			fields: fields{
 				workingDir: "",
 				FileNames: []string{
-					"/home/user/dir/process-compose.yaml",
+					filepath.FromSlash("/home/user/dir/process-compose.yaml"),
 				},
 				projects: nil,
 			},
-			want:    "/home/user/dir",
+			want:    filepath.FromSlash("/home/user/dir"),
 			wantErr: false,
 		},
 	}

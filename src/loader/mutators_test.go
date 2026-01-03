@@ -2,6 +2,8 @@ package loader
 
 import (
 	"fmt"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/f1bonacc1/process-compose/src/command"
@@ -80,11 +82,17 @@ func Test_setDefaultShell(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setDefaultShell(tt.args.p)
-			if tt.args.p.ShellConfig.ShellCommand != "bash" {
-				t.Error("Expected shell command to be bash")
+			wantCmd := "bash"
+			wantArg := "-c"
+			if runtime.GOOS == "windows" {
+				wantCmd = "cmd"
+				wantArg = "/C"
 			}
-			if tt.args.p.ShellConfig.ShellArgument != "-c" {
-				t.Error("Expected shell argument to be '-c'")
+			if tt.args.p.ShellConfig.ShellCommand != wantCmd {
+				t.Errorf("Expected shell command to be %s", wantCmd)
+			}
+			if tt.args.p.ShellConfig.ShellArgument != wantArg {
+				t.Errorf("Expected shell argument to be '%s'", wantArg)
 			}
 		})
 	}
@@ -109,7 +117,7 @@ func Test_copyWorkingDirToProbes(t *testing.T) {
 					Processes: types.Processes{
 						procNoWorkingDir: {
 							Name:       procNoWorkingDir,
-							WorkingDir: "/tmp",
+							WorkingDir: filepath.FromSlash("/tmp"),
 							LivenessProbe: &health.Probe{
 								Exec: &health.ExecProbe{
 									Command: "echo",
@@ -123,15 +131,15 @@ func Test_copyWorkingDirToProbes(t *testing.T) {
 						},
 						procWithWorkingDir: {
 							Name:       procWithWorkingDir,
-							WorkingDir: "/tmp",
+							WorkingDir: filepath.FromSlash("/tmp"),
 							LivenessProbe: &health.Probe{
 								Exec: &health.ExecProbe{
-									WorkingDir: "/another",
+									WorkingDir: filepath.FromSlash("/another"),
 								},
 							},
 							ReadinessProbe: &health.Probe{
 								Exec: &health.ExecProbe{
-									WorkingDir: "/another",
+									WorkingDir: filepath.FromSlash("/another"),
 								},
 							},
 						},
@@ -146,17 +154,17 @@ func Test_copyWorkingDirToProbes(t *testing.T) {
 			for _, p := range tt.args.p.Processes {
 				switch p.Name {
 				case procWithWorkingDir:
-					if p.LivenessProbe.Exec.WorkingDir != "/another" {
+					if p.LivenessProbe.Exec.WorkingDir != filepath.FromSlash("/another") {
 						t.Error("Expected liveness probe working dir to be another")
 					}
-					if p.ReadinessProbe.Exec.WorkingDir != "/another" {
+					if p.ReadinessProbe.Exec.WorkingDir != filepath.FromSlash("/another") {
 						t.Error("Expected readiness probe working dir to be another")
 					}
 				case procNoWorkingDir:
-					if p.LivenessProbe.Exec.WorkingDir != "/tmp" {
+					if p.LivenessProbe.Exec.WorkingDir != filepath.FromSlash("/tmp") {
 						t.Error("Expected lieveness probe working dir to be tmp")
 					}
-					if p.ReadinessProbe.Exec.WorkingDir != "/tmp" {
+					if p.ReadinessProbe.Exec.WorkingDir != filepath.FromSlash("/tmp") {
 						t.Error("Expected readiness probe working dir to be tmp")
 					}
 				default:

@@ -695,8 +695,14 @@ func TestSystem_TestReadyLine(t *testing.T) {
 		t.Errorf("process %s is %s want %s", proc2, state, types.ProcessStatePending)
 		return
 	}
-	time.Sleep(400 * time.Millisecond)
-	proc = runner.getRunningProcess(proc2)
+	// Wait for proc2 to become running (it waits for proc1 ready log line)
+	for i := 0; i < 20; i++ {
+		proc = runner.getRunningProcess(proc2)
+		if proc != nil && proc.getStatusName() == types.ProcessStateRunning {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	if proc == nil {
 		t.Fatalf("process %s is nil", proc2)
 	}
@@ -1095,8 +1101,14 @@ func TestSystem_TestRestartingProcessShutDown(t *testing.T) {
 			t.Errorf("Failed to run project: %v", err)
 		}
 	}()
-	time.Sleep(300 * time.Millisecond)
-	proc := p.getRunningProcess(proc1)
+	var proc *Process
+	for i := 0; i < 20; i++ {
+		proc = p.getRunningProcess(proc1)
+		if proc != nil && proc.getStatusName() == types.ProcessStateRestarting {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	assertProcessStatus(t, proc, proc1, types.ProcessStateRestarting)
 	err = p.StopProcess(proc1)
 	if err != nil {
@@ -1218,8 +1230,8 @@ func TestSystem_TestEnvCmds(t *testing.T) {
 	if len(log) != 1 {
 		t.Fatalf("Expected 1 log message, got %d", len(log))
 	}
-	if log[0] != "live long and prosper" {
-		t.Errorf("Expected log message to be 'live long and prosper', got %s", log[0])
+	if strings.TrimRight(log[0], "\r\n ") != "live long and prosper" {
+		t.Errorf("Expected log message to be 'live long and prosper', got '%s'", log[0])
 	}
 }
 

@@ -160,15 +160,15 @@ func TestLoadFileWithExtendProject(t *testing.T) {
 	for _, proc := range opts.projects[0].Processes {
 		// check ABS working dir for process2
 		if proc.Name == "process2" {
-			if proc.WorkingDir != "/tmp" {
-				t.Errorf("expected %s, got %s", "/tmp", proc.WorkingDir)
+			if proc.WorkingDir != filepath.FromSlash("/tmp") {
+				t.Errorf("expected %s, got %s", filepath.FromSlash("/tmp"), proc.WorkingDir)
 			}
 			continue
 		}
 		// check REL working dir for process3
 		if proc.Name == "process3" {
-			if proc.WorkingDir != "../../.." {
-				t.Errorf("expected %s, got %s", "../../..", proc.WorkingDir)
+			if proc.WorkingDir != filepath.FromSlash("../../..") {
+				t.Errorf("expected %s, got %s", filepath.FromSlash("../../.."), proc.WorkingDir)
 			}
 			continue
 		}
