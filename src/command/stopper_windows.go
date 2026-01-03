@@ -8,19 +8,32 @@ import (
 )
 
 func (c *CmdWrapper) Stop(sig int, parentOnly bool) error {
-	//p.command.Process.Kill()
+	pid := c.Pid()
+	if pid == 0 {
+		return nil
+	}
 	log.
 		Debug().
-		Int("pid", c.Pid()).
+		Int("pid", pid).
 		Bool("parentOnly", parentOnly).
 		Msg("Stop Windows process.")
 
-	if parentOnly {
-		kill := exec.Command("C:/Windows/System32/taskkill.exe", "/F", "/PID", strconv.Itoa(c.Pid()))
-		return kill.Run()
+	args := []string{"/F", "/PID", strconv.Itoa(pid)}
+	if !parentOnly {
+		args = append([]string{"/T"}, args...)
 	}
-	kill := exec.Command("C:/Windows/System32/taskkill.exe", "/T", "/F", "/PID", strconv.Itoa(c.Pid()))
-	return kill.Run()
+
+	kill := exec.Command("taskkill", args...)
+	err := kill.Run()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			// 128: The process with PID XXX could not be terminated. Reason: There is no running instance of the task.
+			if exitErr.ExitCode() == 128 {
+				return nil
+			}
+		}
+	}
+	return err
 }
 
 func (c *CmdWrapper) SetCmdArgs() {

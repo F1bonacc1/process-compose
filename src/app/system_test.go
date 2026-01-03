@@ -1029,7 +1029,7 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 	t.Run("with timeout sigterm success", func(t *testing.T) {
 		procConf := project.Processes[ignoresSigTerm]
 		if runtime.GOOS == "windows" {
-			procConf.Args[1] = "ping -n 60 127.0.0.1 >nul"
+			procConf.Args[1] = "ping 127.0.0.1 -n 60"
 		} else {
 			procConf.Args[1] = "sleep 60"
 		}
