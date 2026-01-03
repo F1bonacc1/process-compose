@@ -17,6 +17,7 @@ nav:
     - 'Remote Client': client.md
     - TUI: tui.md
     - 'Dependency Graph': graph.md
+    - 'Scheduled Processes': scheduled-processes.md
   - CLI:
     - 'process-compose': cli/process-compose.md
     - 'attach': cli/process-compose_attach.md
