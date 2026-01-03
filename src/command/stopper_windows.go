@@ -9,7 +9,7 @@ import (
 
 func (c *CmdWrapper) Stop(sig int, parentOnly bool) error {
 	pid := c.Pid()
-	if pid == 0 {
+	if pid <= 0 {
 		return nil
 	}
 	log.
@@ -23,17 +23,16 @@ func (c *CmdWrapper) Stop(sig int, parentOnly bool) error {
 		args = append([]string{"/T"}, args...)
 	}
 
+	// Try taskkill
 	kill := exec.Command("taskkill", args...)
-	err := kill.Run()
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			// 128: The process with PID XXX could not be terminated. Reason: There is no running instance of the task.
-			if exitErr.ExitCode() == 128 {
-				return nil
-			}
-		}
+	_ = kill.Run()
+
+	// Direct kill as fallback
+	if c.cmd.Process != nil {
+		_ = c.cmd.Process.Kill()
 	}
-	return err
+
+	return nil
 }
 
 func (c *CmdWrapper) SetCmdArgs() {

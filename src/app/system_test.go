@@ -449,6 +449,9 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 }
 
 func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping on Windows due to bash-specific fixture (trap/sleep)")
+	}
 	fixture1 := filepath.Join("..", "..", "fixtures-code", "process-compose-shutdown-inorder.yaml")
 	t.Run("Single Proc with deps", func(t *testing.T) {
 
@@ -478,7 +481,7 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 				t.Errorf("process %s is disabled", name)
 			}
 		}
-		file, err := os.CreateTemp("/tmp", "pc_log.*.log")
+		file, err := os.CreateTemp(t.TempDir(), "pc_log.*.log")
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -559,7 +562,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 				Name:        restarting,
 				ReplicaName: restarting,
 				Executable:  shell.ShellCommand,
-				Args:        []string{shell.ShellArgument, "sleep 2"},
+				Args:        []string{shell.ShellArgument, getSleepCommand(2.0)},
 				RestartPolicy: types.RestartPolicyConfig{
 					Restart: types.RestartPolicyAlways,
 				},
@@ -568,7 +571,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 				Name:        notRestarting,
 				ReplicaName: notRestarting,
 				Executable:  shell.ShellCommand,
-				Args:        []string{shell.ShellArgument, "sleep 2"},
+				Args:        []string{shell.ShellArgument, getSleepCommand(2.0)},
 				RestartPolicy: types.RestartPolicyConfig{
 					Restart: types.RestartPolicyNo,
 				},
@@ -651,14 +654,14 @@ func TestSystem_TestReadyLine(t *testing.T) {
 				Name:         proc1,
 				ReplicaName:  proc1,
 				Executable:   shell.ShellCommand,
-				Args:         []string{shell.ShellArgument, "sleep 0.3 && echo ready"},
+				Args:         []string{shell.ShellArgument, getSleepCommand(0.3) + " && echo ready"},
 				ReadyLogLine: "ready",
 			},
 			proc2: {
 				Name:        proc2,
 				ReplicaName: proc2,
 				Executable:  shell.ShellCommand,
-				Args:        []string{shell.ShellArgument, "sleep 2"},
+				Args:        []string{shell.ShellArgument, getSleepCommand(2.0)},
 				DependsOn: map[string]types.ProcessDependency{
 					proc1: {
 						Condition: types.ProcessConditionLogReady,
@@ -721,7 +724,7 @@ func TestSystem_TestReadyLineWithSkipped(t *testing.T) {
 				Name:        proc2,
 				ReplicaName: proc2,
 				Executable:  shell.ShellCommand,
-				Args:        []string{shell.ShellArgument, "sleep 2"},
+				Args:        []string{shell.ShellArgument, getSleepCommand(2.0)},
 				DependsOn: map[string]types.ProcessDependency{
 					proc1: {
 						Condition: types.ProcessConditionLogReady,
@@ -1074,7 +1077,7 @@ func TestSystem_TestRestartingProcessShutDown(t *testing.T) {
 					Name:        proc1,
 					ReplicaName: proc1,
 					Executable:  shell.ShellCommand,
-					Args:        []string{shell.ShellArgument, "sleep 0.2"},
+					Args:        []string{shell.ShellArgument, getSleepCommand(0.2)},
 					RestartPolicy: types.RestartPolicyConfig{
 						Restart:        types.RestartPolicyAlways,
 						BackoffSeconds: 1,
@@ -1149,7 +1152,7 @@ func TestSystem_WaitForStartShutDown(t *testing.T) {
 				Name:        proc4,
 				ReplicaName: proc4,
 				Executable:  shell.ShellCommand,
-				Args:        []string{shell.ShellArgument, "sleep 5 && echo " + proc4},
+				Args:        []string{shell.ShellArgument, getSleepCommand(5.0) + " && echo " + proc4},
 			},
 		},
 		ShellConfig: shell,
@@ -1304,7 +1307,7 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 				Name:        testProcess,
 				ReplicaName: testProcess,
 				Executable:  shell.ShellCommand,
-				Args:        []string{shell.ShellArgument, "sleep 2"},
+				Args:        []string{shell.ShellArgument, getSleepCommand(2.0)},
 				RestartPolicy: types.RestartPolicyConfig{
 					Restart: types.RestartPolicyNo,
 				},
@@ -1412,8 +1415,9 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 
 func TestReadinessProbeRestart(t *testing.T) {
 	proc := &types.ProcessConfig{
-		Name:    "test",
-		Command: "sleep 10",
+		Name:        "test",
+		ReplicaName: "test",
+		Command:     getSleepCommand(10.0),
 		RestartPolicy: types.RestartPolicyConfig{
 			Restart:        types.RestartPolicyOnFailure,
 			MaxRestarts:    2,
@@ -1452,4 +1456,16 @@ func TestReadinessProbeRestart(t *testing.T) {
 	}
 	_ = p.shutDown()
 	p.waitForCompletion()
+}
+
+func getSleepCommand(seconds float64) string {
+	if runtime.GOOS == "windows" {
+		// ping -n is integer only, so we round up.
+		secs := int(seconds + 0.9)
+		if secs == 0 {
+			secs = 1
+		}
+		return fmt.Sprintf("ping 127.0.0.1 -n %d >nul", secs+1)
+	}
+	return fmt.Sprintf("sleep %f", seconds)
 }
