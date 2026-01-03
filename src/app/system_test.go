@@ -1176,6 +1176,10 @@ func TestSystem_WaitForStartShutDown(t *testing.T) {
 func TestSystem_TestEnvCmds(t *testing.T) {
 	proc1 := "proc1"
 	shell := command.DefaultShellConfig()
+	echoCmd := "echo $LIVE $LONG and $PROSPER"
+	if runtime.GOOS == "windows" {
+		echoCmd = "echo %LIVE% %LONG% and %PROSPER%"
+	}
 	project := &types.Project{
 		EnvCommands: map[string]string{
 			"LIVE":    "echo live",
@@ -1187,7 +1191,7 @@ func TestSystem_TestEnvCmds(t *testing.T) {
 				Name:        proc1,
 				ReplicaName: proc1,
 				Executable:  shell.ShellCommand,
-				Args:        []string{shell.ShellArgument, "echo $LIVE $LONG and $PROSPER"},
+				Args:        []string{shell.ShellArgument, echoCmd},
 			},
 		},
 		ShellConfig: shell,
