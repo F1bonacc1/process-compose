@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"slices"
 	"strings"
 	"syscall"
@@ -681,14 +682,22 @@ func TestSystem_TestReadyLine(t *testing.T) {
 		}
 	}()
 	time.Sleep(100 * time.Millisecond)
-	state := runner.getRunningProcess(proc2).getStatusName()
+	proc := runner.getRunningProcess(proc2)
+	if proc == nil {
+		t.Fatalf("process %s is nil", proc2)
+	}
+	state := proc.getStatusName()
 
 	if state != types.ProcessStatePending {
 		t.Errorf("process %s is %s want %s", proc2, state, types.ProcessStatePending)
 		return
 	}
 	time.Sleep(400 * time.Millisecond)
-	state = runner.getRunningProcess(proc2).getStatusName()
+	proc = runner.getRunningProcess(proc2)
+	if proc == nil {
+		t.Fatalf("process %s is nil", proc2)
+	}
+	state = proc.getStatusName()
 	if state != types.ProcessStateRunning {
 		t.Errorf("process %s is %s want %s", proc2, state, types.ProcessStateRunning)
 		return
@@ -936,6 +945,9 @@ func TestUpdateProject(t *testing.T) {
 
 func assertProcessStatus(t *testing.T, proc *Process, procName string, wantStatus string) {
 	t.Helper()
+	if proc == nil {
+		t.Fatalf("process %s is nil, expected status %s", procName, wantStatus)
+	}
 	status := proc.getStatusName()
 	if status != wantStatus {
 		t.Fatalf("process %s status want %s got %s", procName, wantStatus, status)
@@ -963,6 +975,9 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 		ShellConfig: shell,
 	}
 	t.Run("with timeout sigterm fail", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skipping SIGTERM ignore test on Windows")
+		}
 		procConf := project.Processes[ignoresSigTerm]
 		procConf.Args[1] = "trap '' SIGTERM && sleep 60"
 		project.Processes[ignoresSigTerm] = procConf
@@ -976,8 +991,15 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 				t.Errorf("%s", err)
 			}
 		}()
-		time.Sleep(100 * time.Millisecond)
-		proc := runner.getRunningProcess(ignoresSigTerm)
+
+		var proc *Process
+		for i := 0; i < 10; i++ {
+			time.Sleep(100 * time.Millisecond)
+			proc = runner.getRunningProcess(ignoresSigTerm)
+			if proc != nil {
+				break
+			}
+		}
 		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateRunning)
 
 		// If the test fails, cleanup after ourselves
@@ -1016,8 +1038,14 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 				t.Errorf("%s", err1)
 			}
 		}()
-		time.Sleep(100 * time.Millisecond)
-		proc := runner.getRunningProcess(ignoresSigTerm)
+		var proc *Process
+		for i := 0; i < 10; i++ {
+			time.Sleep(100 * time.Millisecond)
+			proc = runner.getRunningProcess(ignoresSigTerm)
+			if proc != nil {
+				break
+			}
+		}
 		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateRunning)
 		go func() {
 			err1 := runner.StopProcess(ignoresSigTerm)
