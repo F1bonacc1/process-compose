@@ -1,0 +1,36 @@
+## process-compose graph
+
+Display process dependency graph
+
+### Synopsis
+
+Output the process dependency graph in various formats (mermaid, json, yaml, ascii)
+
+```
+process-compose graph [flags]
+```
+
+### Options
+
+```
+  -f, --format string   Output format: mermaid, json, yaml, or ascii (default)
+  -h, --help            help for graph
+```
+
+### Options inherited from parent commands
+
+```
+      --address string       address to listen on (env: PC_ADDRESS)
+  -L, --log-file string      Specify the log file path (env: PC_LOG_FILE) (default "/tmp/process-compose-<user>.log")
+      --no-server            disable HTTP server (env: PC_NO_SERVER)
+      --ordered-shutdown     shut down processes in reverse dependency order
+  -p, --port int             port number (env: PC_PORT_NUM) (default 8080)
+      --read-only            enable read-only mode (env: PC_READ_ONLY)
+  -u, --unix-socket string   path to unix socket (env: PC_SOCKET_PATH) (default "/tmp/process-compose-<pid>.sock")
+  -U, --use-uds              use unix domain sockets instead of tcp
+```
+
+### SEE ALSO
+
+* [process-compose](process-compose.md)	 - Processes scheduler and orchestrator
+
