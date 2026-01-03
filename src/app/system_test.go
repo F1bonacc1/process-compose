@@ -1007,11 +1007,12 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 			_ = command.Stop(int(syscall.SIGKILL), true)
 		}(proc.command)
 
+		stopDone := make(chan struct{})
 		go func() {
+			defer close(stopDone)
 			err := runner.StopProcess(ignoresSigTerm)
 			if err != nil {
 				t.Errorf("%s", err)
-				return
 			}
 		}()
 
@@ -1022,11 +1023,16 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 
 		time.Sleep(2 * time.Second)
 		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateCompleted)
+		<-stopDone
 	})
 
 	t.Run("with timeout sigterm success", func(t *testing.T) {
 		procConf := project.Processes[ignoresSigTerm]
-		procConf.Args[1] = "sleep 60"
+		if runtime.GOOS == "windows" {
+			procConf.Args[1] = "ping -n 60 127.0.0.1 >nul"
+		} else {
+			procConf.Args[1] = "sleep 60"
+		}
 		project.Processes[ignoresSigTerm] = procConf
 		runner, err := NewProjectRunner(&ProjectOpts{project: project})
 		if err != nil {
@@ -1047,13 +1053,10 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 			}
 		}
 		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateRunning)
-		go func() {
-			err1 := runner.StopProcess(ignoresSigTerm)
-			if err1 != nil {
-				t.Errorf("%s", err1)
-				return
-			}
-		}()
+		err = runner.StopProcess(ignoresSigTerm)
+		if err != nil {
+			t.Errorf("%s", err)
+		}
 		time.Sleep(200 * time.Millisecond)
 		assertProcessStatus(t, proc, ignoresSigTerm, types.ProcessStateCompleted)
 	})
