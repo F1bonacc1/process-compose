@@ -132,6 +132,14 @@ func getNoServerDefault() bool {
 	return found
 }
 
+func getAddressDefault() string {
+	val, found := os.LookupEnv(EnvVarNameAddress)
+	if found {
+		return val
+	}
+	return DefaultAddress
+}
+
 func getPortDefault() int {
 	val, found := os.LookupEnv(EnvVarNamePort)
 	if found {

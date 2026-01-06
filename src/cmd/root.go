@@ -93,7 +93,7 @@ func init() {
 	rootCmd.Flags().VarP(refreshRateFlag{pcFlags.RefreshRate}, "ref-rate", "r", "TUI refresh interval in seconds or as a Go duration string (e.g. 1s)")
 	rootCmd.Flags().Var(refreshRateFlag{pcFlags.SlowRefreshRate}, "slow-ref-rate", "Slow(er) refresh interval for resources (CPU, RAM) in seconds or as a Go duration string (e.g. 1s). The value should be higher than --ref-rate")
 	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.EnvVarNamePort+")")
-	rootCmd.PersistentFlags().StringVar(pcFlags.Address, "address", "", "address to listen on (env: "+config.EnvVarNameAddress+")")
+	rootCmd.PersistentFlags().StringVarP(pcFlags.Address, "address", "", *pcFlags.Address, "address to listen on (env: "+config.EnvVarNameAddress+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
 	rootCmd.Flags().StringArrayVarP(&opts.EnvFileNames, "env", "e", []string{".env"}, "path to env files to load")
 	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
