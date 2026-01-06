@@ -99,7 +99,7 @@ func NewFlags() *Flags {
 		SlowRefreshRate:      toPtr(DefaultRefreshRate),
 		IsTuiEnabled:         toPtr(getDisableTuiDefault()),
 		PortNum:              toPtr(getPortDefault()),
-		Address:              toPtr(DefaultAddress),
+		Address:              toPtr(getAddressDefault()),
 		LogLength:            toPtr(DefaultLogLength),
 		LogLevel:             toPtr(DefaultLogLevel),
 		LogFile:              toPtr(GetLogFilePath()),
