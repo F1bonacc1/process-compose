@@ -931,7 +931,60 @@ func (p *Process) validateProcess() error {
 	return nil
 }
 
+func (p *Process) collectPortPids() map[int]struct{} {
+	pids := map[int]struct{}{
+		p.procState.Pid: {},
+	}
+	if p.procState.Pid == 0 {
+		return pids
+	}
+	if p.processTree != nil {
+		if err := p.processTree.Update(); err != nil {
+			log.Err(err).Msgf("failed to update process tree for %s", p.getName())
+		} else {
+			descendants := p.processTree.GetDescendants(int32(p.procState.Pid))
+			for _, proc := range descendants {
+				pids[int(proc.Pid)] = struct{}{}
+			}
+			return pids
+		}
+	}
+
+	proc := p.metricsProc
+	if proc == nil {
+		var err error
+		proc, err = puproc.NewProcess(int32(p.procState.Pid))
+		if err != nil {
+			log.Err(err).Msgf("failed to load process %d for %s", p.procState.Pid, p.getName())
+			return pids
+		}
+	}
+	p.addChildPids(proc, pids, map[int32]bool{})
+	return pids
+}
+
+func (p *Process) addChildPids(proc *puproc.Process, pids map[int]struct{}, visited map[int32]bool) {
+	if proc == nil {
+		return
+	}
+	if visited[proc.Pid] {
+		return
+	}
+	visited[proc.Pid] = true
+
+	children, err := proc.Children()
+	if err != nil {
+		log.Err(err).Msgf("failed to list child processes for %s", p.getName())
+		return
+	}
+	for _, child := range children {
+		pids[int(child.Pid)] = struct{}{}
+		p.addChildPids(child, pids, visited)
+	}
+}
+
 func (p *Process) getOpenPorts(ports *types.ProcessPorts) error {
+	pids := p.collectPortPids()
 	socks, err := netstat.TCPSocks(func(s *netstat.SockTabEntry) bool {
 		return s.State == netstat.Listen
 	})
@@ -948,9 +1001,35 @@ func (p *Process) getOpenPorts(ports *types.ProcessPorts) error {
 		return err
 	}
 	for _, e := range socks {
-		if e.Process != nil && e.Process.Pid == p.procState.Pid {
-			log.Debug().Msgf("%s is listening on %d", p.getName(), e.LocalAddr.Port)
-			ports.TcpPorts = append(ports.TcpPorts, e.LocalAddr.Port)
+		if e.Process != nil {
+			if _, ok := pids[e.Process.Pid]; ok {
+				log.Debug().Msgf("%s is listening on %d", p.getName(), e.LocalAddr.Port)
+				ports.TcpPorts = append(ports.TcpPorts, e.LocalAddr.Port)
+			}
+		}
+	}
+
+	udpSocks, err := netstat.UDPSocks(func(s *netstat.SockTabEntry) bool {
+		return true
+	})
+	if err != nil {
+		log.Err(err).Msgf("failed to get open UDP ports for %s", p.getName())
+		return err
+	}
+	udpSocks6, err := netstat.UDP6Socks(func(s *netstat.SockTabEntry) bool {
+		return true
+	})
+	udpSocks = append(udpSocks, udpSocks6...)
+	if err != nil {
+		log.Err(err).Msgf("failed to get open UDP ports for %s", p.getName())
+		return err
+	}
+	for _, e := range udpSocks {
+		if e.Process != nil {
+			if _, ok := pids[e.Process.Pid]; ok {
+				log.Debug().Msgf("%s is listening on %d/udp", p.getName(), e.LocalAddr.Port)
+				ports.UdpPorts = append(ports.UdpPorts, e.LocalAddr.Port)
+			}
 		}
 	}
 	return nil
