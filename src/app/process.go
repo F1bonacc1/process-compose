@@ -954,45 +954,49 @@ func (p *Process) collectPortPids() map[int]struct{} {
 
 func (p *Process) getOpenPorts(ports *types.ProcessPorts) error {
 	pids := p.collectPortPids()
-	collect := func(v4, v6 func(netstat.AcceptFn) ([]netstat.SockTabEntry, error), filter netstat.AcceptFn, label string, target *[]uint16) error {
-		socks, err := v4(filter)
-		if err != nil {
-			log.Err(err).Msgf("failed to get open %s ports for %s", label, p.getName())
-			return err
-		}
-		socks6, err := v6(filter)
-		if err != nil {
-			log.Err(err).Msgf("failed to get open %s ports for %s", label, p.getName())
-			return err
-		}
-		socks = append(socks, socks6...)
-
-		for _, e := range socks {
-			if e.Process == nil {
-				continue
-			}
-			if _, ok := pids[e.Process.Pid]; !ok {
-				continue
-			}
-			if label == "UDP" {
-				log.Debug().Msgf("%s is listening on %d/udp", p.getName(), e.LocalAddr.Port)
-			} else {
-				log.Debug().Msgf("%s is listening on %d", p.getName(), e.LocalAddr.Port)
-			}
-			*target = append(*target, e.LocalAddr.Port)
-		}
-		return nil
-	}
-
-	if err := collect(netstat.TCPSocks, netstat.TCP6Socks, func(s *netstat.SockTabEntry) bool {
+	if err := p.collectSockets("TCP", netstat.TCPSocks, netstat.TCP6Socks, func(s *netstat.SockTabEntry) bool {
 		return s.State == netstat.Listen
-	}, "TCP", &ports.TcpPorts); err != nil {
+	}, pids, &ports.TcpPorts); err != nil {
 		return err
 	}
 
-	return collect(netstat.UDPSocks, netstat.UDP6Socks, func(s *netstat.SockTabEntry) bool {
+	return p.collectSockets("UDP", netstat.UDPSocks, netstat.UDP6Socks, func(s *netstat.SockTabEntry) bool {
 		return s.RemoteAddr != nil && s.RemoteAddr.Port == 0
-	}, "UDP", &ports.UdpPorts)
+	}, pids, &ports.UdpPorts)
+}
+
+func (p *Process) collectSockets(label string, v4, v6 func(netstat.AcceptFn) ([]netstat.SockTabEntry, error), filter netstat.AcceptFn, pids map[int]struct{}, target *[]uint16) error {
+	socks, err := v4(filter)
+	if err != nil {
+		log.Err(err).Msgf("failed to get open %s ports for %s", label, p.getName())
+		return err
+	}
+	socks6, err := v6(filter)
+	if err != nil {
+		log.Err(err).Msgf("failed to get open %s ports for %s", label, p.getName())
+		return err
+	}
+	socks = append(socks, socks6...)
+
+	for _, e := range socks {
+		if e.Process == nil {
+			continue
+		}
+		if _, ok := pids[e.Process.Pid]; !ok {
+			continue
+		}
+		p.logOpenPort(label, e.LocalAddr.Port)
+		*target = append(*target, e.LocalAddr.Port)
+	}
+	return nil
+}
+
+func (p *Process) logOpenPort(label string, port uint16) {
+	if label == "UDP" {
+		log.Debug().Msgf("%s is listening on %d/udp", p.getName(), port)
+		return
+	}
+	log.Debug().Msgf("%s is listening on %d", p.getName(), port)
 }
 
 func (p *Process) getExitCode() int {
