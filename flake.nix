@@ -15,7 +15,14 @@
       };
     in
     (flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [
+          (self: super: {
+            go_1_24_0 = super.go_1_24;
+          })
+        ];
+      };
     in {
         packages.process-compose = mkPackage pkgs;
         defaultPackage = self.packages."${system}".process-compose;
