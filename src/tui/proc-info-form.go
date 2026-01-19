@@ -33,6 +33,7 @@ func (pv *pcView) createProcInfoForm(info *types.ProcessConfig, state *types.Pro
 	addCSVIfNotEmpty("Depends On:", mapKeysToSlice(info.DependsOn), f)
 	if ports != nil {
 		addCSVIfNotEmpty("TCP Ports:", ports.TcpPorts, f)
+		addCSVIfNotEmpty("UDP Ports:", ports.UdpPorts, f)
 	}
 	f.AddCheckbox("Is Disabled:", info.Disabled, nil)
 	f.AddCheckbox("Is Daemon:", info.IsDaemon, nil)
