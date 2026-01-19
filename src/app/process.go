@@ -991,7 +991,7 @@ func (p *Process) getOpenPorts(ports *types.ProcessPorts) error {
 	}
 
 	return collect(netstat.UDPSocks, netstat.UDP6Socks, func(s *netstat.SockTabEntry) bool {
-		return true
+		return s.RemoteAddr != nil && s.RemoteAddr.Port == 0
 	}, "UDP", &ports.UdpPorts)
 }
 
