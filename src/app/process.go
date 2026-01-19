@@ -938,49 +938,18 @@ func (p *Process) collectPortPids() map[int]struct{} {
 	if p.procState.Pid == 0 {
 		return pids
 	}
-	if p.processTree != nil {
-		if err := p.processTree.Update(); err != nil {
-			log.Err(err).Msgf("failed to update process tree for %s", p.getName())
-		} else {
-			descendants := p.processTree.GetDescendants(int32(p.procState.Pid))
-			for _, proc := range descendants {
-				pids[int(proc.Pid)] = struct{}{}
-			}
-			return pids
-		}
+	if p.processTree == nil {
+		return pids
 	}
-
-	proc := p.metricsProc
-	if proc == nil {
-		var err error
-		proc, err = puproc.NewProcess(int32(p.procState.Pid))
-		if err != nil {
-			log.Err(err).Msgf("failed to load process %d for %s", p.procState.Pid, p.getName())
-			return pids
-		}
+	if err := p.processTree.Update(); err != nil {
+		log.Err(err).Msgf("failed to update process tree for %s", p.getName())
+		return pids
 	}
-	p.addChildPids(proc, pids, map[int32]bool{})
+	descendants := p.processTree.GetDescendants(int32(p.procState.Pid))
+	for _, proc := range descendants {
+		pids[int(proc.Pid)] = struct{}{}
+	}
 	return pids
-}
-
-func (p *Process) addChildPids(proc *puproc.Process, pids map[int]struct{}, visited map[int32]bool) {
-	if proc == nil {
-		return
-	}
-	if visited[proc.Pid] {
-		return
-	}
-	visited[proc.Pid] = true
-
-	children, err := proc.Children()
-	if err != nil {
-		log.Err(err).Msgf("failed to list child processes for %s", p.getName())
-		return
-	}
-	for _, child := range children {
-		pids[int(child.Pid)] = struct{}{}
-		p.addChildPids(child, pids, visited)
-	}
 }
 
 func (p *Process) getOpenPorts(ports *types.ProcessPorts) error {
