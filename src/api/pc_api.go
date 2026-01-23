@@ -251,6 +251,25 @@ func (api *PcApi) RestartProcess(c *gin.Context) {
 }
 
 // @Schemes
+// @Id				RestartAllProcesses
+// @Description	Restarts all processes
+// @Tags			Process
+// @Summary		Restart all processes
+// @Produce		json
+// @Success		200	{object}	api.StatusResponse	"Restart All Status"
+// @Failure		400	{object}	map[string]string
+// @Router			/processes/restart [post]
+func (api *PcApi) RestartAllProcesses(c *gin.Context) {
+	err := api.project.RestartAllProcesses()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "restarted"})
+}
+
+// @Schemes
 // @Id				ScaleProcess
 // @Description	Scale a process
 // @Tags			Process

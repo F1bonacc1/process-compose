@@ -28,6 +28,7 @@ type IProject interface {
 	StopProcesses(names []string) (map[string]string, error)
 	StartProcess(name string) error
 	RestartProcess(name string) error
+	RestartAllProcesses() error
 	ScaleProcess(name string, scale int) error
 	GetProcessPorts(name string) (*types.ProcessPorts, error)
 	SetProcessPassword(name string, password string) error

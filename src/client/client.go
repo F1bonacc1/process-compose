@@ -132,6 +132,10 @@ func (p *PcClient) RestartProcess(name string) error {
 	return p.restartProcess(name)
 }
 
+func (p *PcClient) RestartAllProcesses() error {
+	return p.restartAllProcesses()
+}
+
 func (p *PcClient) ScaleProcess(name string, scale int) error {
 	return p.scaleProcess(name, scale)
 }

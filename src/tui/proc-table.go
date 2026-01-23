@@ -549,3 +549,46 @@ func (pv *pcView) handleProcessStopped(name string) {
 		log.Error().Err(err).Msg("Failed to stop process")
 	}
 }
+
+func (pv *pcView) handleRestartAll() {
+	pv.appView.QueueUpdateDraw(func() {
+		m := tview.NewModal().
+			SetText("Restart all processes?\nThis will stop all running processes and start them again.").
+			AddButtons([]string{"Yes", "No"}).
+			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+				pv.pages.SwitchToPage(PageMain)
+				pv.pages.RemovePage(PageDialog)
+				if buttonLabel == "Yes" {
+					go pv.executeRestartAll()
+				}
+			})
+		m.SetInputCapture(func(e *tcell.EventKey) *tcell.EventKey {
+			switch e.Rune() {
+			case 'h':
+				return tcell.NewEventKey(tcell.KeyLeft, e.Rune(), e.Modifiers())
+			case 'l':
+				return tcell.NewEventKey(tcell.KeyRight, e.Rune(), e.Modifiers())
+			case 'j':
+				return tcell.NewEventKey(tcell.KeyDown, e.Rune(), e.Modifiers())
+			case 'k':
+				return tcell.NewEventKey(tcell.KeyUp, e.Rune(), e.Modifiers())
+			}
+			return e
+		})
+		pv.pages.AddPage(PageDialog, createDialogPage(m, 50, 50), true, true)
+	})
+}
+
+func (pv *pcView) executeRestartAll() {
+	ctx, cancel := context.WithCancel(context.Background())
+	pv.showAutoProgress(ctx, time.Second*1)
+	err := pv.project.RestartAllProcesses()
+	cancel()
+	if err != nil {
+		pv.appView.QueueUpdateDraw(func() {
+			pv.showError(err.Error())
+		})
+		log.Error().Err(err).Msg("Failed to restart all processes")
+	}
+	pv.showPassIfNeeded()
+}
