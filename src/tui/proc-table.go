@@ -31,9 +31,7 @@ type tableRowValues struct {
 	exitCode  string
 }
 
-var (
-	DetachOnSuccessMessage = "All processes started successfully, detached from TUI"
-)
+var DetachOnSuccessMessage = "All processes started successfully, detached from TUI"
 
 func (pv *pcView) fillTableData() {
 	if pv.project == nil {
@@ -148,7 +146,26 @@ func setRowValues(procTable *tview.Table, row int, rowVals tableRowValues) {
 	procTable.SetCell(row, int(ProcessStateExit), tview.NewTableCell(rowVals.exitCode).SetAlign(tview.AlignRight).SetExpansion(0).SetTextColor(rowVals.fgColor))
 }
 
-func (pv *pcView) onTableSelectionChange(_, _ int) {
+func (pv *pcView) onTableSelectionChange(row, _ int) {
+	// Header row selected - show all logs
+	if row == 0 {
+		if !pv.allLogsMode {
+			pv.allLogsMode = true
+			pv.logsText.resetSearch()
+			pv.unFollowLog()
+			pv.followAllLogs()
+			pv.logsText.SetTitle(pv.getLogTitle(""))
+			pv.updateHelpTextView()
+		}
+		return
+	}
+
+	// Process row selected - exit all-logs mode if active
+	if pv.allLogsMode {
+		pv.allLogsMode = false
+		pv.unFollowAllLogs()
+	}
+
 	name := pv.getSelectedProcName()
 	if len(name) == 0 {
 		return
@@ -256,11 +273,9 @@ func (pv *pcView) createProcTable() *tview.Table {
 		expansion := 10
 		align := tview.AlignLeft
 		switch ColumnID(i) {
-		case
-			ProcessStatePid:
+		case ProcessStatePid:
 			expansion = 1
-		case
-			ProcessStateIcon:
+		case ProcessStateIcon:
 			expansion = 1
 			align = tview.AlignCenter
 		case
@@ -270,7 +285,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 		}
 
 		table.SetCell(0, i, tview.NewTableCell(pv.procColumns[ColumnID(i)]).
-			SetSelectable(false).SetExpansion(expansion).SetAlign(align))
+			SetSelectable(true).SetExpansion(expansion).SetAlign(align))
 	}
 	table.SetSelectionChangedFunc(pv.onTableSelectionChange)
 	return table
@@ -435,7 +450,6 @@ func byteCountIEC(b int64) string {
 	const mib = 1024 * 1024
 	if b < mib {
 		return fmt.Sprintf("%.1f MiB", float64(b)/float64(mib))
-
 	}
 	const unit = 1024
 	div, exp := int64(1024), 0
