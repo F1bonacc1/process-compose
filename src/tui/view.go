@@ -303,6 +303,9 @@ func (pv *pcView) setShortCutsActions() {
 		}
 		pv.showPassIfNeeded()
 	})
+	pv.shortcuts.setAction(ActionProcessRestartAll, func() {
+		go pv.handleRestartAll()
+	})
 	pv.shortcuts.setAction(ActionDependencyGraph, pv.showGraphDialog)
 }
 
@@ -539,6 +542,7 @@ func (pv *pcView) updateHelpTextView() {
 		pv.shortcuts.addToggleButton(ActionProcessScreen, pv.helpFooter, procScrBool)
 		pv.shortcuts.addButton(ActionProcessStop, pv.helpFooter)
 		pv.shortcuts.addButton(ActionProcessRestart, pv.helpFooter)
+		pv.shortcuts.addButton(ActionProcessRestartAll, pv.helpFooter)
 	}
 	pv.shortcuts.addButton(ActionQuit, pv.helpFooter)
 }
