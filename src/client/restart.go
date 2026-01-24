@@ -33,10 +33,10 @@ func (p *PcClient) restartAllProcesses() error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
 		return nil
 	}
-	defer resp.Body.Close()
 	var respErr pcError
 	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
 		log.Error().Msgf("failed to decode restart all processes response: %v", err)
