@@ -66,6 +66,8 @@ type ProjectRunner struct {
 	procCompleteChannel  chan int
 	processTree          *ProcessTree
 	processScheduler     *scheduler.Scheduler
+	isRestartingAll      bool
+	restartAllMutex      sync.Mutex
 }
 
 // RestartCall represents an in-flight restart operation
@@ -161,6 +163,14 @@ func (p *ProjectRunner) Run() error {
 		case runProcCount := <-p.procCompleteChannel:
 			log.Debug().Msgf("Remaining processes: %d", runProcCount)
 			if runProcCount == 0 {
+				// Check if a restart-all operation is in progress
+				p.restartAllMutex.Lock()
+				isRestarting := p.isRestartingAll
+				p.restartAllMutex.Unlock()
+				if isRestarting {
+					log.Debug().Msg("Restart all in progress, not exiting")
+					continue
+				}
 				if p.processScheduler == nil || len(p.processScheduler.GetScheduledProcesses()) == 0 {
 					log.Info().Msg("Project completed")
 					p.exitCodeMutex.Lock()
@@ -558,6 +568,106 @@ func (p *ProjectRunner) doRestart(name string) error {
 	} else {
 		return fmt.Errorf("no such process: %s", name)
 	}
+	return nil
+}
+
+func (p *ProjectRunner) RestartAllProcesses() error {
+	log.Info().Msg("Restarting all processes")
+
+	// Set flag to prevent main loop from exiting when process count reaches 0
+	p.restartAllMutex.Lock()
+	p.isRestartingAll = true
+	p.restartAllMutex.Unlock()
+
+	// Build shutdown order
+	p.runProcMutex.Lock()
+	shutdownOrder := []*Process{}
+	if p.isOrderedShutdown {
+		err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
+			if runningProc, ok := p.runningProcesses[process.ReplicaName]; ok {
+				shutdownOrder = append(shutdownOrder, runningProc)
+			}
+			return nil
+		})
+		if err != nil {
+			log.Error().Msgf("Failed to build project run order: %s", err.Error())
+		}
+		slices.Reverse(shutdownOrder)
+	} else {
+		for _, proc := range p.runningProcesses {
+			shutdownOrder = append(shutdownOrder, proc)
+		}
+	}
+	p.runProcMutex.Unlock()
+
+	var nameOrder []string
+	for _, v := range shutdownOrder {
+		nameOrder = append(nameOrder, v.getName())
+	}
+	log.Debug().Msgf("Stopping %d processes for restart. Order: %q", len(shutdownOrder), nameOrder)
+
+	// Prepare all processes for shutdown (prevents auto-restart)
+	for _, proc := range shutdownOrder {
+		proc.prepareForShutDown()
+	}
+
+	// Stop all processes
+	p.shutDownAndWait(shutdownOrder)
+
+	// Clear done processes map
+	p.doneProcMutex.Lock()
+	p.doneProcesses = make(map[string]*Process)
+	p.doneProcMutex.Unlock()
+
+	// Reset process states to pending
+	p.statesMutex.Lock()
+	for name, state := range p.processStates {
+		state.Status = types.ProcessStatePending
+		state.Pid = 0
+		state.ExitCode = 0
+		state.IsRunning = false
+		p.processStates[name] = state
+	}
+	p.statesMutex.Unlock()
+
+	// Build run order (same as initial Run())
+	runOrder := []types.ProcessConfig{}
+	err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
+		if process.IsDeferred() {
+			return nil
+		}
+		runOrder = append(runOrder, process)
+		return nil
+	})
+	if err != nil {
+		// Clear the restart flag on error
+		p.restartAllMutex.Lock()
+		p.isRestartingAll = false
+		p.restartAllMutex.Unlock()
+		return fmt.Errorf("failed to build project run order: %w", err)
+	}
+
+	var startOrder []string
+	for _, v := range runOrder {
+		startOrder = append(startOrder, v.ReplicaName)
+	}
+	log.Debug().Msgf("Starting %d processes. Order: %q", len(runOrder), startOrder)
+
+	// Start all processes
+	for _, proc := range runOrder {
+		if proc.Schedule != nil && proc.Schedule.IsScheduled() {
+			continue
+		}
+		newConf := proc
+		p.runProcess(&newConf)
+	}
+
+	// Clear the restart flag now that new processes are started
+	p.restartAllMutex.Lock()
+	p.isRestartingAll = false
+	p.restartAllMutex.Unlock()
+
+	log.Info().Msg("All processes restarted")
 	return nil
 }
 
