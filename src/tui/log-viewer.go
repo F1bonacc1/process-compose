@@ -40,7 +40,6 @@ type LogView struct {
 }
 
 func NewLogView(maxLines int) *LogView {
-
 	l := &LogView{
 		isWrapOn: true,
 		TextView: *tview.NewTextView().
@@ -74,6 +73,12 @@ func (l *LogView) WriteString(line string) (n int, err error) {
 	} else {
 		return fmt.Fprintf(l.buffer, "%s\n", tview.Escape(line))
 	}
+}
+
+// WriteStringWithProcess writes a log line prefixed with a colored process name.
+func (l *LogView) WriteStringWithProcess(line, processName, color string) (n int, err error) {
+	// Use tview color tags: [color]text[-:-:-]
+	return fmt.Fprintf(l.buffer, "[%s][%s][-:-:-] %s\n", color, tview.Escape(processName), tview.Escape(line))
 }
 
 func (l *LogView) AddLines(lines []string) {
@@ -205,4 +210,3 @@ func (l *LogView) AddMark() {
 func (l *LogView) setTruncator(t truncator) {
 	l.truncator = t
 }
-

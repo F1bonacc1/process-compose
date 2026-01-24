@@ -25,6 +25,7 @@ const (
 	ActionProcessInfo      = ActionName("process_info")
 	ActionProcessStop      = ActionName("process_stop")
 	ActionProcessRestart   = ActionName("process_restart")
+	ActionProcessRestartAll = ActionName("process_restart_all")
 	ActionProcessScreen    = ActionName("process_screen")
 	ActionQuit             = ActionName("quit")
 	ActionLogFind          = ActionName("find")
@@ -57,6 +58,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionProcessStart:     tcell.KeyF7,
 	ActionProcessStop:      tcell.KeyF9,
 	ActionProcessRestart:   tcell.KeyCtrlR,
+	ActionProcessRestartAll: tcell.KeyCtrlU,
 	ActionProcessScreen:    tcell.KeyF8,
 	ActionQuit:             tcell.KeyF10,
 	ActionLogFind:          tcell.KeyCtrlF,
@@ -109,6 +111,7 @@ var procActionsOrder = []ActionName{
 	ActionProcessScreen,
 	ActionProcessStop,
 	ActionProcessRestart,
+	ActionProcessRestartAll,
 	ActionEditProcess,
 	ActionReloadConfig,
 	ActionNsFilter,
@@ -341,6 +344,9 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionProcessRestart: {
 				Description: "Restart",
+			},
+			ActionProcessRestartAll: {
+				Description: "Restart All",
 			},
 			ActionQuit: {
 				Description: "Quit",

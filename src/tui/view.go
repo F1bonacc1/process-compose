@@ -23,8 +23,10 @@ import (
 	"github.com/rivo/tview"
 )
 
-type scrSplitState int
-type commandType int
+type (
+	scrSplitState int
+	commandType   int
+)
 
 const (
 	LogFull     scrSplitState = 0
@@ -100,10 +102,13 @@ type pcView struct {
 	attentionMessages      chan attentionMessage
 	attentionCancel        context.CancelFunc
 	errTuiStartup          error
+
+	// All-logs mode fields
+	allLogsMode      bool
+	allLogsObservers map[string]*AllLogsObserver
 }
 
 func newPcView(project app.IProject) *pcView {
-
 	pv := &pcView{
 		appView:        tview.NewApplication(),
 		logsText:       NewLogView(project.GetLogLength()),
@@ -131,6 +136,9 @@ func newPcView(project app.IProject) *pcView {
 		themes:            config.NewThemes(),
 		settings:          config.NewSettings(),
 		attentionMessages: make(chan attentionMessage, 10),
+
+		// All-logs mode
+		allLogsObservers: make(map[string]*AllLogsObserver),
 	}
 	pv.termView = NewTerminalView(pv.appView)
 	pv.termView.SetOnEscape(pv.changeFocus)
@@ -160,7 +168,7 @@ func newPcView(project app.IProject) *pcView {
 		pv.followLog(name)
 	}
 	go pv.startAttentionsMessageRoutine()
-	//pv.dumpStyles()
+	// pv.dumpStyles()
 	return pv
 }
 
@@ -261,7 +269,11 @@ func (pv *pcView) setShortCutsActions() {
 	})
 	pv.shortcuts.setAction(ActionClearLog, func() {
 		pv.logsText.Clear()
-		pv.truncateLog()
+		if pv.allLogsMode {
+			pv.truncateAllLogs()
+		} else {
+			pv.truncateLog()
+		}
 	})
 	pv.shortcuts.setAction(ActionMarkLog, func() {
 		pv.logsText.AddMark()
@@ -350,10 +362,10 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 			if !pv.isCommandModeDisabled() {
 				return event
 			}
-			return pv.shortcuts.runRuneAction(event.Rune(), event) //event
+			return pv.shortcuts.runRuneAction(event.Rune(), event) // event
 		}
 	default:
-		return pv.shortcuts.runKeyAction(event.Key(), event) //event
+		return pv.shortcuts.runKeyAction(event.Key(), event) // event
 	}
 	return nil
 }
@@ -365,7 +377,6 @@ func (pv *pcView) exitSearch() {
 }
 
 func (pv *pcView) terminateAppView() {
-
 	result := "Are you sure you want to quit?\nThis will terminate all the running processes."
 	if pv.project.IsRemote() {
 		result = "Detach from the remote project?"
@@ -519,13 +530,16 @@ func (pv *pcView) updateHelpTextView() {
 		pv.shortcuts.addToggleButton(ActionLogSelection, pv.helpFooter, !pv.logSelect)
 	}
 	pv.shortcuts.addButton(ActionLogFind, pv.helpFooter)
-	pv.shortcuts.addCategory("PROCESS:", pv.helpFooter)
-	pv.shortcuts.addButton(ActionProcessScale, pv.helpFooter)
-	pv.shortcuts.addButton(ActionProcessInfo, pv.helpFooter)
-	pv.shortcuts.addButton(ActionProcessStart, pv.helpFooter)
-	pv.shortcuts.addToggleButton(ActionProcessScreen, pv.helpFooter, procScrBool)
-	pv.shortcuts.addButton(ActionProcessStop, pv.helpFooter)
-	pv.shortcuts.addButton(ActionProcessRestart, pv.helpFooter)
+	// Only show process-specific shortcuts when NOT in all-logs mode
+	if !pv.allLogsMode {
+		pv.shortcuts.addCategory("PROCESS:", pv.helpFooter)
+		pv.shortcuts.addButton(ActionProcessScale, pv.helpFooter)
+		pv.shortcuts.addButton(ActionProcessInfo, pv.helpFooter)
+		pv.shortcuts.addButton(ActionProcessStart, pv.helpFooter)
+		pv.shortcuts.addToggleButton(ActionProcessScreen, pv.helpFooter, procScrBool)
+		pv.shortcuts.addButton(ActionProcessStop, pv.helpFooter)
+		pv.shortcuts.addButton(ActionProcessRestart, pv.helpFooter)
+	}
 	pv.shortcuts.addButton(ActionQuit, pv.helpFooter)
 }
 
@@ -633,7 +647,6 @@ func (pv *pcView) changeFocus() {
 }
 
 func setupTui(project app.IProject, options ...Option) {
-
 	pv := newPcView(project)
 	for _, option := range options {
 		if err := option(pv); err != nil {
@@ -647,7 +660,6 @@ func setupTui(project app.IProject, options ...Option) {
 	}
 
 	pcv = pv
-
 }
 
 func RunTUIAsync(project app.IProject, options ...Option) {

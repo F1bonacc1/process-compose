@@ -31,6 +31,7 @@ func (pv *pcView) toggleLogFollow() {
 		pv.stopFollowLog()
 	} else {
 		name := pv.getSelectedProcName()
+		// In all-logs mode, name will be empty but startFollowLog handles it
 		pv.startFollowLog(name)
 	}
 }
@@ -38,7 +39,11 @@ func (pv *pcView) toggleLogFollow() {
 func (pv *pcView) startFollowLog(name string) {
 	pv.exitSearch()
 	pv.logFollow = true
-	pv.followLog(name)
+	if pv.allLogsMode {
+		pv.followAllLogs()
+	} else {
+		pv.followLog(name)
+	}
 	var ctx context.Context
 	ctx, pv.cancelLogFn = context.WithCancel(context.Background())
 	go pv.updateLogs(ctx)
@@ -51,7 +56,11 @@ func (pv *pcView) stopFollowLog() {
 		pv.cancelLogFn()
 		pv.cancelLogFn = nil
 	}
-	pv.unFollowLog()
+	if pv.allLogsMode {
+		pv.unFollowAllLogs()
+	} else {
+		pv.unFollowLog()
+	}
 	pv.updateHelpTextView()
 }
 
@@ -104,7 +113,7 @@ func (pv *pcView) createLogSelectionTextArea() {
 			err := glippy.Set(text)
 			if err != nil {
 				log.Err(err).Msg("failed to set clipboard")
-                pv.attentionMessage(fmt.Sprintf("Failed to copy to clipboard: %s", err.Error()), 5*time.Second)
+				pv.attentionMessage(fmt.Sprintf("Failed to copy to clipboard: %s", err.Error()), 5*time.Second)
 			}
 			pv.logsTextArea.Select(start, start)
 		case tcell.KeyEsc:
@@ -116,11 +125,14 @@ func (pv *pcView) createLogSelectionTextArea() {
 }
 
 func (pv *pcView) getLogTitle(name string) string {
-	if pv.logsText.isSearchActive() {
-		return fmt.Sprintf("Find: %s [%d of %d] - %s", pv.logsText.getSearchTerm(), pv.logsText.getCurrentSearchIndex()+1, pv.logsText.getTotalSearchCount(), name)
-	} else {
-		return name
+	displayName := name
+	if pv.allLogsMode {
+		displayName = "All Processes"
 	}
+	if pv.logsText.isSearchActive() {
+		return fmt.Sprintf("Find: %s [%d of %d] - %s", pv.logsText.getSearchTerm(), pv.logsText.getCurrentSearchIndex()+1, pv.logsText.getTotalSearchCount(), displayName)
+	}
+	return displayName
 }
 
 func (pv *pcView) truncateLog() {
@@ -128,5 +140,40 @@ func (pv *pcView) truncateLog() {
 	err := pv.project.TruncateProcessLogs(name)
 	if err != nil {
 		log.Err(err).Msgf("failed to truncate process %s logs", name)
+	}
+}
+
+// followAllLogs subscribes to logs from all processes and displays them with process name prefixes.
+func (pv *pcView) followAllLogs() {
+	pv.logsText.Clear()
+	pv.logsText.useAnsi = false // Process name prefixes use tview color tags
+
+	for _, name := range pv.procNames {
+		observer := NewAllLogsObserver(name, pv.logsText)
+		pv.allLogsObservers[name] = observer
+		if err := pv.project.GetLogsAndSubscribe(name, observer); err != nil {
+			log.Err(err).Msgf("failed to subscribe to logs for process %s", name)
+		}
+	}
+	pv.logsText.ScrollToEnd()
+}
+
+// unFollowAllLogs unsubscribes from all process logs.
+func (pv *pcView) unFollowAllLogs() {
+	for name, observer := range pv.allLogsObservers {
+		if err := pv.project.UnSubscribeLogger(name, observer); err != nil {
+			log.Err(err).Msgf("failed to unsubscribe from logs for process %s", name)
+		}
+	}
+	pv.allLogsObservers = make(map[string]*AllLogsObserver)
+	pv.logsText.Flush()
+}
+
+// truncateAllLogs truncates logs for all processes.
+func (pv *pcView) truncateAllLogs() {
+	for _, name := range pv.procNames {
+		if err := pv.project.TruncateProcessLogs(name); err != nil {
+			log.Err(err).Msgf("failed to truncate process %s logs", name)
+		}
 	}
 }
