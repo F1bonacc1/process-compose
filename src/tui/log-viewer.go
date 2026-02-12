@@ -2,6 +2,7 @@ package tui
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -30,6 +31,7 @@ type LogView struct {
 	buffer                 *bytes.Buffer
 	ansiWriter             io.Writer
 	useAnsi                bool
+	prettyPrintJson        bool
 	uniqueId               string
 	searchCurrentSelection int
 	isSearching            bool
@@ -59,6 +61,9 @@ func NewLogView(maxLines int) *LogView {
 }
 
 func (l *LogView) WriteString(line string) (n int, err error) {
+	if l.prettyPrintJson {
+		line = l.tryPrettyPrintJson(line)
+	}
 	if l.useAnsi {
 		// Check for clear screen sequences
 		if clearScreenPattern.MatchString(line) {
@@ -74,6 +79,30 @@ func (l *LogView) WriteString(line string) (n int, err error) {
 	} else {
 		return fmt.Fprintf(l.buffer, "%s\n", tview.Escape(line))
 	}
+}
+
+func (l *LogView) tryPrettyPrintJson(line string) string {
+	trimmed := strings.TrimSpace(line)
+	if len(trimmed) < 2 || (trimmed[0] != '{' && trimmed[0] != '[') {
+		return line
+	}
+	var raw json.RawMessage
+	if err := json.Unmarshal([]byte(trimmed), &raw); err != nil {
+		return line
+	}
+	pretty, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return line
+	}
+	return string(pretty)
+}
+
+func (l *LogView) TogglePrettyPrint() {
+	l.prettyPrintJson = !l.prettyPrintJson
+}
+
+func (l *LogView) IsPrettyPrintOn() bool {
+	return l.prettyPrintJson
 }
 
 func (l *LogView) AddLines(lines []string) {
