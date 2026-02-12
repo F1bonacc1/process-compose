@@ -205,6 +205,16 @@ func (pv *pcView) setShortCutsActions() {
 		pv.logsText.ToggleWrap()
 		pv.updateHelpTextView()
 	})
+	pv.shortcuts.setAction(ActionLogPrettyPrint, func() {
+		pv.logsText.TogglePrettyPrint()
+		// Re-render current logs with new setting
+		name := pv.getSelectedProcName()
+		if name != "" {
+			pv.unFollowLog()
+			pv.followLog(name)
+		}
+		pv.updateHelpTextView()
+	})
 	pv.shortcuts.setAction(ActionLogSelection, func() {
 		pv.stopFollowLog()
 		pv.toggleLogSelection()
@@ -524,6 +534,7 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.addToggleButton(ActionLogScreen, pv.helpFooter, logScrBool)
 	pv.shortcuts.addToggleButton(ActionFollowLog, pv.helpFooter, !pv.logFollow)
 	pv.shortcuts.addToggleButton(ActionWrapLog, pv.helpFooter, !pv.logsText.IsWrapOn())
+	pv.shortcuts.addToggleButton(ActionLogPrettyPrint, pv.helpFooter, !pv.logsText.IsPrettyPrintOn())
 	if config.IsLogSelectionOn() {
 		pv.shortcuts.addToggleButton(ActionLogSelection, pv.helpFooter, !pv.logSelect)
 	}

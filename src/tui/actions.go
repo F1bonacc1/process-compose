@@ -43,6 +43,7 @@ const (
 	ActionEditProcess      = ActionName("edit_process")
 	ActionTermExit         = ActionName("term_exit")
 	ActionReloadConfig     = ActionName("reload_config")
+	ActionLogPrettyPrint   = ActionName("log_pretty_print")
 	ActionDependencyGraph  = ActionName("dependency_graph")
 	ActionNamespaceOps     = ActionName("namespace_ops")
 )
@@ -77,13 +78,15 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionReloadConfig:     tcell.KeyCtrlL,
 	ActionTermExit:         tcell.KeyCtrlA,
 	ActionDependencyGraph:  tcell.KeyCtrlQ,
+	ActionLogPrettyPrint:   tcell.KeyRune,
 	ActionNamespaceOps:     tcell.KeyRune,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
-	ActionProcFilter:   '/',
-	ActionMarkLog:      'm',
-	ActionNamespaceOps: 'n',
+	ActionProcFilter:     '/',
+	ActionMarkLog:        'm',
+	ActionLogPrettyPrint: 'p',
+	ActionNamespaceOps:   'n',
 }
 
 var generalActionsOrder = []ActionName{
@@ -98,6 +101,7 @@ var logActionsOrder = []ActionName{
 	ActionLogScreen,
 	ActionFollowLog,
 	ActionWrapLog,
+	ActionLogPrettyPrint,
 	ActionLogSelection,
 	ActionLogFind,
 	ActionClearLog,
@@ -323,6 +327,12 @@ func newShortCuts() *ShortCuts {
 				ToggleDescription: map[bool]string{
 					true:  "Select On",
 					false: "Select Off",
+				},
+			},
+			ActionLogPrettyPrint: {
+				ToggleDescription: map[bool]string{
+					true:  "Pretty On",
+					false: "Pretty Off",
 				},
 			},
 			ActionProcessScale: {
