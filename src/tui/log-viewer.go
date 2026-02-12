@@ -86,11 +86,10 @@ func (l *LogView) tryPrettyPrintJson(line string) string {
 	if len(trimmed) < 2 || (trimmed[0] != '{' && trimmed[0] != '[') {
 		return line
 	}
-	var raw json.RawMessage
-	if err := json.Unmarshal([]byte(trimmed), &raw); err != nil {
+	if !json.Valid([]byte(trimmed)) {
 		return line
 	}
-	pretty, err := json.MarshalIndent(raw, "", "  ")
+	pretty, err := json.MarshalIndent(json.RawMessage(trimmed), "", "  ")
 	if err != nil {
 		return line
 	}
