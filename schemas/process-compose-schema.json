@@ -116,6 +116,67 @@
       },
       "type": "object"
     },
+    "MCPArgument": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "default": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ]
+    },
+    "MCPProcessConfig": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "arguments": {
+          "items": {
+            "$ref": "#/$defs/MCPArgument"
+          },
+          "type": "array"
+        },
+        "timeout": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "required": [
+        "type"
+      ]
+    },
+    "MCPServerConfig": {
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "transport": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "Probe": {
       "properties": {
         "exec": {
@@ -248,6 +309,12 @@
         },
         "schedule": {
           "$ref": "#/$defs/ScheduleConfig"
+        },
+        "mcp": {
+          "$ref": "#/$defs/MCPProcessConfig"
+        },
+        "truncate_log": {
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -343,6 +410,9 @@
             "type": "string"
           },
           "type": "object"
+        },
+        "mcp_server": {
+          "$ref": "#/$defs/MCPServerConfig"
         }
       },
       "type": "object",
