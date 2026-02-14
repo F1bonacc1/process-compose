@@ -2,18 +2,20 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/tui"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/f1bonacc1/process-compose/src/util"
 	"github.com/rs/zerolog/log"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
-func getProjectRunner(process []string, noDeps bool, mainProcess string, mainProcessArgs []string) *app.ProjectRunner {
+func getProjectRunner(process []string, noDeps bool, mainProcess string, mainProcessArgs []string) (*app.ProjectRunner, *types.Project) {
 	opts.DisableDotenv(*pcFlags.DisableDotEnv)
 	opts.WithTuiDisabled(!*pcFlags.IsTuiEnabled)
 	opts.WithOrderedShutdown(*pcFlags.IsOrderedShutdown)
@@ -42,7 +44,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize the project")
 	}
-	return runner
+	return runner, project
 }
 
 func runProject(runner *app.ProjectRunner) error {

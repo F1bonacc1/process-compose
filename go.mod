@@ -31,7 +31,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/go-co-op/gocron/v2 v2.19.0
+require (
+	github.com/go-co-op/gocron/v2 v2.19.0
+	github.com/mark3labs/mcp-go v0.43.2
+)
 
 require (
 	github.com/InVisionApp/go-logger v1.0.1 // indirect
@@ -83,11 +86,13 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/spf13/cast v1.7.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.23.0 // indirect

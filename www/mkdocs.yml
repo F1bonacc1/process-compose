@@ -18,6 +18,7 @@ nav:
     - TUI: tui.md
     - 'Dependency Graph': graph.md
     - 'Scheduled Processes': scheduled-processes.md
+    - 'MCP Server': mcp-server.md
   - CLI:
     - 'process-compose': cli/process-compose.md
     - 'attach': cli/process-compose_attach.md

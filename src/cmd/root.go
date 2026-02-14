@@ -18,6 +18,8 @@ import (
 	"github.com/f1bonacc1/process-compose/src/client"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
+	"github.com/f1bonacc1/process-compose/src/mcp"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -51,7 +53,7 @@ func runProjectCmd(args []string) {
 	defer func() {
 		_ = logFile.Close()
 	}()
-	runner := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
+	runner, project := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
 	if opts.DryRun {
 		processNames, _ := runner.GetLexicographicProcessNames()
 		fmt.Printf("Validated %d configured processes from %d files.\n", len(processNames), len(opts.FileNames)+len(opts.EnvFileNames))
@@ -61,7 +63,7 @@ func runProjectCmd(args []string) {
 		//placing it here ensures that if the compose.yaml is invalid, the program will exit immediately
 		runInDetachedMode()
 	}
-	err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner)
+	err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner, project)
 	handleErrorAndExit(err)
 }
 
@@ -191,7 +193,13 @@ func startHttpServerIfEnabled(useLogger bool, runner *app.ProjectRunner) (*http.
 	return nil, nil
 }
 
-func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner) error {
+func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner, project *types.Project) error {
+	// Create and start MCP server if enabled
+	mcpManager := mcp.NewMCPManager(runner, project.MCPServer, project.Processes)
+	if err := mcpManager.Start(); err != nil {
+		return err
+	}
+
 	server, err := startHttpServerIfEnabled(useLogger, runner)
 	if err != nil {
 		return err
@@ -200,6 +208,12 @@ func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner) error {
 	if err = runProject(runner); err != nil {
 		return err
 	}
+
+	// Stop MCP server
+	if err := mcpManager.Stop(); err != nil {
+		log.Error().Err(err).Msg("Failed to stop MCP server")
+	}
+
 	if server != nil {
 		shutdownTimeout := 5 * time.Second
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)

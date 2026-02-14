@@ -1,0 +1,167 @@
+# Example process-compose configuration with MCP server
+# This demonstrates the MCP server integration for exposing processes as tools and resources
+
+version: "0.5"
+
+# MCP Server Configuration
+# Note: Transport defaults to SSE when not specified
+# Optional: global timeout for all MCP processes (defaults to 5m)
+mcp_server:
+  host: localhost
+  port: 3000
+  # timeout: "5m"  # Global timeout (optional)
+
+# Global settings
+log_level: debug
+log_length: 1000
+
+processes:
+  # Example MCP Tool: Search logs with parameters
+  search-logs:
+    command: "grep @{pattern} @{filename}"
+    description: "Search for a pattern in a log file"
+    disabled: true  # MCP processes should be disabled initially
+    working_dir: "/var/log"
+    mcp:
+      type: tool
+      arguments:
+        - name: pattern
+          type: string
+          description: "Search pattern to find in file"
+          required: true
+        - name: filename
+          type: string
+          description: "File to search in"
+          required: true
+
+  # Example MCP Tool: Echo a message
+  echo-message:
+    command: "echo @{message}"
+    description: "Echo a custom message"
+    disabled: true
+    mcp:
+      type: tool
+      arguments:
+        - name: message
+          type: string
+          description: "Message to echo"
+          required: false
+          default: "hello"
+
+  # Example MCP Resource: Read configuration file
+  get-config:
+    command: "cat /etc/myapp/config.json 2>/dev/null || echo '{}'"
+    description: "Read application configuration"
+    disabled: true
+    mcp:
+      type: resource
+
+  # Example MCP Resource: Get current date/time
+  get-datetime:
+    command: "date -u +'%Y-%m-%d %H:%M:%S UTC'"
+    description: "Get current date and time in UTC"
+    disabled: true
+    mcp:
+      type: resource
+
+  # Regular process (not MCP-enabled)
+  web-server:
+    command: "python3 -m http.server 8981"
+    description: "Simple HTTP server"
+    availability:
+      restart: "on_failure"
+      backoff_seconds: 2
+    readiness_probe:
+      http_get:
+        host: "localhost"
+        port: "8981"
+        scheme: "http"
+      initial_delay_seconds: 1
+      period_seconds: 5
+
+  # MCP Tool with integer parameter
+  wait-seconds:
+    command: "sleep @{duration} && echo 'Waited for @{duration} seconds'"
+    description: "Wait for a specified number of seconds"
+    disabled: true
+    mcp:
+      type: tool
+      arguments:
+        - name: duration
+          type: integer
+          description: "Number of seconds to wait"
+          required: true
+
+  # MCP Tool with boolean parameter
+  toggle-feature:
+    command: "if @{enabled}; then echo 'Feature enabled'; else echo 'Feature disabled'; fi"
+    description: "Toggle a feature on or off"
+    disabled: true
+    mcp:
+      type: tool
+      arguments:
+        - name: enabled
+          type: boolean
+          description: "Whether to enable or disable the feature"
+          required: true
+
+  # MCP Tool with number parameter
+  calculate:
+    command: "echo \"@{operand1} @{operator} @{operand2}\" | bc"
+    description: "Calculate the result of two numbers"
+    disabled: true
+    mcp:
+      type: tool
+      arguments:
+        - name: operand1
+          type: number
+          description: "First operand"
+          required: true
+        - name: operand2
+          type: number
+          description: "Second operand"
+          required: true
+        - name: operator
+          type: string
+          description: "Operator"
+          required: true
+
+  # MCP Tool with retries
+  calculate-retries:
+    command: "[[ $((1 + RANDOM % 10)) -eq @{guess} ]] && exit 0 || exit 1"
+    description: "Guess the number between 1 and 10"
+    disabled: true
+    availability:
+      restart: "on_failure"
+      backoff_seconds: 1
+    mcp:
+      type: tool
+      arguments:
+        - name: guess
+          type: integer
+          description: "your guess between 1 and 10"
+          required: true
+
+  # MCP Resource with custom timeout (overrides global timeout)
+  slow-operation:
+    command: "sleep 2 && echo 'Slow operation complete'"
+    description: "A slow operation with custom timeout"
+    disabled: true
+    mcp:
+      type: resource
+      timeout: "10s"  # This process has 1 second timeout (overrides global)
+
+  # MCP Tool that returns JSON output (auto-detected)
+  get-system-info:
+    command: |
+      echo '{
+        "hostname": "'$(hostname)'",
+        "uptime": "'$(uptime -p)'",
+        "load_average": ['$(cut -d" " -f1-3 /proc/loadavg | tr " " ",")'],
+        "timestamp": '$(date +%s)'
+      }'
+    description: "Get system information as JSON"
+    disabled: true
+    mcp:
+      type: tool
+      arguments: []

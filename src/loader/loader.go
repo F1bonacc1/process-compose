@@ -87,6 +87,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		validateDependencyIsEnabled,
 		validateNoIncompatibleHealthChecks,
 		validateScheduledProcessScaling,
+		validateMCPConfig,
 		validateProject,
 	)
 	admitProcesses(opts, mergedProject)

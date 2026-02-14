@@ -196,3 +196,42 @@ func validateScheduledProcessScaling(p *types.Project) error {
 	}
 	return nil
 }
+
+func validateMCPConfig(p *types.Project) error {
+	// Validate MCP server configuration
+	if p.MCPServer != nil {
+		if err := p.MCPServer.Validate(); err != nil {
+			if p.IsStrict {
+				return err
+			}
+			log.Error().Err(err).Msg("MCP server configuration invalid")
+		}
+	}
+
+	// Validate MCP process configurations
+	for name, proc := range p.Processes {
+		if proc.IsMCP() {
+			log.Debug().
+				Str("process", name).
+				Str("command", proc.Command).
+				Int("argCount", len(proc.MCP.Arguments)).
+				Msg("Validating MCP process")
+
+			if err := proc.MCP.Validate(name, proc.Command, proc.Args); err != nil {
+				if p.IsStrict {
+					return err
+				}
+				log.Error().Err(err).Msgf("MCP process '%s' configuration invalid", name)
+			}
+
+			// MCP processes should be disabled initially
+			if !proc.Disabled {
+				log.Warn().Msgf("MCP process '%s' should be disabled (setting disabled=true)", name)
+				proc.Disabled = true
+				p.Processes[name] = proc
+			}
+		}
+	}
+
+	return nil
+}

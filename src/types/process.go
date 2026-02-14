@@ -57,6 +57,8 @@ type (
 		Executable        string                 `yaml:"executable,omitempty"`
 		Args              []string               `yaml:"args,omitempty"`
 		Schedule          *ScheduleConfig        `yaml:"schedule,omitempty"`
+		MCP               *MCPProcessConfig      `yaml:"mcp,omitempty"`
+		TruncateLog       bool                   `yaml:"truncate_log,omitempty"`
 	}
 )
 
@@ -81,6 +83,21 @@ func (p *ProcessConfig) CalculateReplicaName() string {
 
 func (p *ProcessConfig) IsDeferred() bool {
 	return p.IsForeground || p.Disabled
+}
+
+// IsMCP returns true if this process is MCP-enabled
+func (p *ProcessConfig) IsMCP() bool {
+	return p.MCP != nil
+}
+
+// IsMCPTool returns true if this is an MCP tool
+func (p *ProcessConfig) IsMCPTool() bool {
+	return p.MCP != nil && p.MCP.IsTool()
+}
+
+// IsMCPResource returns true if this is an MCP resource
+func (p *ProcessConfig) IsMCPResource() bool {
+	return p.MCP != nil && p.MCP.IsResource()
 }
 
 // Compare returns true if two process configs are equal

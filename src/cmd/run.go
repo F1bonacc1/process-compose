@@ -32,14 +32,14 @@ Command line arguments, provided after --, are passed to the PROCESS.`,
 			args = []string{}
 		}
 
-		runner := getProjectRunner(
+		runner, project := getProjectRunner(
 			[]string{processName},
 			*pcFlags.NoDependencies,
 			processName,
 			args,
 		)
 
-		err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner)
+		err := waitForProjectAndServer(!*pcFlags.IsTuiEnabled, runner, project)
 		handleErrorAndExit(err)
 	},
 }
