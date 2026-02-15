@@ -534,7 +534,6 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.addToggleButton(ActionLogScreen, pv.helpFooter, logScrBool)
 	pv.shortcuts.addToggleButton(ActionFollowLog, pv.helpFooter, !pv.logFollow)
 	pv.shortcuts.addToggleButton(ActionWrapLog, pv.helpFooter, !pv.logsText.IsWrapOn())
-	pv.shortcuts.addToggleButton(ActionLogPrettyPrint, pv.helpFooter, !pv.logsText.IsPrettyPrintOn())
 	if config.IsLogSelectionOn() {
 		pv.shortcuts.addToggleButton(ActionLogSelection, pv.helpFooter, !pv.logSelect)
 	}
