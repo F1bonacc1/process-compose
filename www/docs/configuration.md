@@ -42,7 +42,9 @@ DB_USER='USERNAME'
 DB_PASSWORD='VERY_STRONG_PASSWORD'
 WAIT_SEC=60
 ```
+
 Override ${var} and $var from environment variables or .env values
+
 ```yaml hl_lines="3 6"
 processes:
   downloader:
@@ -109,39 +111,41 @@ PC_NO_SERVER=1
 Process Compose provides 2 ways to disable the automatic environment variables expansion:
 
 1. Escape the environment variables with `$$`. Example:
+
    ```yaml
    processes:
-   	foo:
-     	command: echo I am $$ENV_TEST
+    foo:
+      command: echo I am $$ENV_TEST
        environment:
-       	- 'ENV_TEST=ready'
+        - 'ENV_TEST=ready'
    ```
 
    **Output**: `I am ready`
 
 2. Globally disable the automatic expansion with `disable_env_expansion: true`. Example:
+
    ```yaml
    disable_env_expansion: true
    processes:
-   	foo:
-     	command: echo I am $ENV_TEST
+    foo:
+      command: echo I am $ENV_TEST
        environment:
-       	- 'ENV_TEST=ready'
+        - 'ENV_TEST=ready'
    ```
 
    **Output**: `I am ready`
 
->  :bulb: Note: The default behavior for the following `process-compose.yaml`:
+> :bulb: Note: The default behavior for the following `process-compose.yaml`:
 >
->  ```yaml
->  processes:
->  	foo:
->    	command: echo I am $ENV_TEST
->      environment:
->      	- 'ENV_TEST=ready'
+> ```yaml
+> processes:
+>  foo:
+>    command: echo I am $ENV_TEST
+>     environment:
+>      - 'ENV_TEST=ready'
 >  ```
 >
->  **Output**: `I am `
+> **Output**: `I am`
 
 ## Environment Commands
 
@@ -150,6 +154,7 @@ The `env_cmds` feature allows you to dynamically populate environment variables 
 ### Configuration
 
 Environment commands are defined in the `env_cmds` section of your `process-compose.yaml` file. Each entry consists of:
+
 - An environment variable name (key)
 - A command to execute (value)
 
@@ -181,7 +186,7 @@ processes:
 
 1. **Execution Time**: Commands should complete within 2 seconds. Longer-running commands may cause process-compose startup delays or timeouts.
 
-2. **Command Output**: 
+2. **Command Output**:
    - Commands should output a single line of text
    - The output will be trimmed of leading/trailing whitespace
    - The output becomes the value of the environment variable
@@ -200,20 +205,23 @@ processes:
 ### Example Use Cases
 
 1. **System Information**:
+
 ```yaml
 env_cmds:
   HOSTNAME: "hostname"
   KERNEL_VERSION: "uname -r"
 ```
 
-2. **Time-based Values**:
+1. **Time-based Values**:
+
 ```yaml
 env_cmds:
   TIMESTAMP: "date +%s"
   DATE_ISO: "date -u +%Y-%m-%dT%H:%M:%SZ"
 ```
 
-3. **Resource Information**:
+1. **Resource Information**:
+
 ```yaml
 env_cmds:
   AVAILABLE_MEMORY: "free -m | awk '/Mem:/ {print $7}'"
@@ -224,19 +232,19 @@ env_cmds:
 
 Variables in Process Compose rely on [Go template engine](https://pkg.go.dev/text/template)
 
-#### Rendered Parameters:
+#### Rendered Parameters
 
-* `processes.process.command`
-* `processes.process.working_dir`
-* `processes.process.log_location`
-* `processes.process.description`
-* `processes.process.environment` values.
-* For `readiness_probe`and `liveness_probe`:
-  * `processes.process.<probe>.exec.command`
-  * `processes.process.<probe>.http_get.host`
-  * `processes.process.<probe>.http_get.path`
-  * `processes.process.<probe>.http_get.scheme`
-  * `processes.process.<probe>.http_get.port`
+- `processes.process.command`
+- `processes.process.working_dir`
+- `processes.process.log_location`
+- `processes.process.description`
+- `processes.process.environment` values.
+- For `readiness_probe`and `liveness_probe`:
+  - `processes.process.<probe>.exec.command`
+  - `processes.process.<probe>.http_get.host`
+  - `processes.process.<probe>.http_get.path`
+  - `processes.process.<probe>.http_get.scheme`
+  - `processes.process.<probe>.http_get.port`
 
 ### Local (Per Process)
 
@@ -282,6 +290,7 @@ processes:
   not_supported:
     command: "echo 'Hi {{if and .FTR_A_ENABLED .FTR_B_ENABLED}}Not Supported{{end}}'"
 ```
+
 ```shell
 #output:
 version v1.2.3 #if $VERSION environment variable is undefined. The value of $VERSION if it is. 
@@ -319,6 +328,19 @@ processes:
         command: '[ $(docker inspect -f {{ "{{.State.Running}}" }} nginx_test) = true ]'
 ```
 
+### Disable Command Rendering
+
+Alternatively, if your command contains complex template-like syntax (e.g. JSON with curly braces) and escaping is impractical, you can disable template rendering for the command entirely using `is_template_disabled`:
+
+```yaml hl_lines="4"
+processes:
+  api-call:
+    command: "curl -X POST -d '{\"key\":\"value\"}' http://localhost:8080/api"
+    is_template_disabled: true
+```
+
+When `is_template_disabled` is set to `true`, the `command` field is passed as-is without Go template rendering. All other fields (`working_dir`, `log_location`, `description`, `environment`, and probes) continue to be rendered normally.
+
 ### Auto Inserted Variables
 
 Process Compose will insert `PC_REPLICA_NUM` variable that will represent the replica number of the process. This will allow to conveniently scale processes using the following example configuration:
@@ -334,8 +356,6 @@ processes:
         port: "404{{.PC_REPLICA_NUM}}"
         scheme: "http"
 ```
-
-
 
 ## Specify which configuration files to use
 
@@ -464,24 +484,28 @@ You can perform bulk operations on namespaces using the CLI or TUI.
 
 #### CLI Commands
 
-*   **List Namespaces:**
+- **List Namespaces:**
+
     ```shell
     process-compose namespace list
     # or use those aliases
     process-compose ns ls
     ```
 
-*   **Start Namespace:**
+- **Start Namespace:**
+
     ```shell
     process-compose namespace start <namespace_name>
     ```
 
-*   **Stop Namespace:**
+- **Stop Namespace:**
+
     ```shell
     process-compose namespace stop <namespace_name>
     ```
 
-*   **Restart Namespace:**
+- **Restart Namespace:**
+
     ```shell
     process-compose namespace restart <namespace_name>
     ```
@@ -489,15 +513,16 @@ You can perform bulk operations on namespaces using the CLI or TUI.
 #### TUI Interaction
 
 In the TUI, press `n` to open the **Namespace Operations** modal.
-1.  Select a namespace from the list.
-2.  Press `Tab` to switch to the Operation list.
-3.  Select an operation (`Stop`, `Start`, `Restart`).
-4.  Press `Enter` to execute.
 
+1. Select a namespace from the list.
+2. Press `Tab` to switch to the Operation list.
+3. Select an operation (`Stop`, `Start`, `Restart`).
+4. Press `Enter` to execute.
 
 ## Misc
 
 #### Strict Configuration Validation
+
 To avoid minor `process-compose.yaml` configuration errors and typos it is recommended to enable `is_strict` flag:
 
 ```yaml hl_lines="2 5"
@@ -507,7 +532,9 @@ processes:
   process1:
    commnad: "sleep 1" # <-- notice the typo here
 ```
+
 The above configuration will fail the Process Compose start and exit with error code `1`:
+
 ```shell
 unknown key commnad found in process process1
 ```
@@ -538,25 +565,28 @@ processes:
     shutdown:
       signal: 9
 ```
+
 * In TUI mode, elevated processes awaiting password input are marked with a yellow ▲.
-* To enter a password in TUI mode:
+- To enter a password in TUI mode:
   1. Select the elevated process.
   2. Type the password.
   3. Press the `Enter` key.
-* To exit the password prompt, press the `ESC` key at any time.
-* To re-enter password mode, select the process again.
-* The entered password will be applied to all elevated processes in pending status.
+- To exit the password prompt, press the `ESC` key at any time.
+- To re-enter password mode, select the process again.
+- The entered password will be applied to all elevated processes in pending status.
 
 #### Ordered Shutdown
+
 ```yaml
 ordered_shutdown: true
 ```
+
 Shut down processes in reverse dependency order.
 > :bulb: ordered-shutdown can be passed as a command-line parameter when starting process-compose (see [CLI](/cli/process-compose/)), set permanently in `process-compose.yaml` (see this section), or by setting the environment variable `PC_ORDERED_SHUTDOWN`.
 
-
 #### Multiline Command Support
-Process Compose respects all the multiline `YAML` [specification](https://yaml-multiline.info/) variations. 
+
+Process Compose respects all the multiline `YAML` [specification](https://yaml-multiline.info/) variations.
 
 Examples:
 
@@ -604,4 +634,5 @@ processes:
       flow_double:
         condition: process_completed
 ```
+
 > :bulb: The extra blank lines (`\n`) in the command string are to introduce a newline to the command.

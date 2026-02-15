@@ -3,11 +3,12 @@ package templater
 import (
 	"bytes"
 	"encoding/json"
+	"maps"
+	"text/template"
+
 	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
-	"maps"
-	"text/template"
 )
 
 type Templater struct {
@@ -29,7 +30,9 @@ func (t *Templater) RenderProcess(proc *types.ProcessConfig) {
 	}
 	proc.OriginalConfig = string(procConf)
 	proc.Vars["PC_REPLICA_NUM"] = proc.ReplicaNum
-	proc.Command = t.RenderWithExtraVars(proc.Command, proc.Vars)
+	if !proc.DisableCommandRendering {
+		proc.Command = t.RenderWithExtraVars(proc.Command, proc.Vars)
+	}
 	proc.WorkingDir = t.RenderWithExtraVars(proc.WorkingDir, proc.Vars)
 	proc.LogLocation = t.RenderWithExtraVars(proc.LogLocation, proc.Vars)
 	proc.Description = t.RenderWithExtraVars(proc.Description, proc.Vars)

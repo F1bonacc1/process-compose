@@ -315,6 +315,9 @@
         },
         "truncate_log": {
           "type": "boolean"
+        },
+        "is_template_disabled": {
+          "type": "boolean"
         }
       },
       "type": "object"

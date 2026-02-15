@@ -105,3 +105,32 @@ func TestTemplater_EnvVars(t *testing.T) {
 	}
 
 }
+
+func TestTemplater_DisableCommandRendering(t *testing.T) {
+	t.Run("Command rendering is skipped when DisableCommandRendering is true", func(t *testing.T) {
+		vars := types.Vars{"Name": "Alice"}
+
+		procConf := &types.ProcessConfig{
+			ReplicaNum:              3,
+			Command:                 `curl -d '{"key":"{{value}}"}'`,
+			WorkingDir:              "{{.Name}}-dir",
+			DisableCommandRendering: true,
+		}
+		templater := New(vars)
+		templater.RenderProcess(procConf)
+
+		if templater.GetError() != nil {
+			t.Errorf("Expected no error but got %v", templater.GetError())
+		}
+
+		expectedCmd := `curl -d '{"key":"{{value}}"}'`
+		if procConf.Command != expectedCmd {
+			t.Errorf("Expected command %q but got %q", expectedCmd, procConf.Command)
+		}
+
+		expectedDir := "Alice-dir"
+		if procConf.WorkingDir != expectedDir {
+			t.Errorf("Expected working dir %q but got %q", expectedDir, procConf.WorkingDir)
+		}
+	})
+}
