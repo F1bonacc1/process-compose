@@ -190,7 +190,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 	procState, _ := p.GetProcessState(config.ReplicaName)
 	isMain := config.Name == p.mainProcess
 	hasMain := p.mainProcess != ""
-	printLogs := !hasMain && !p.isTuiOn
+	printLogs := !hasMain && !p.isTuiOn && !p.project.MCPServer.IsStdio()
 	extraArgs := []string{}
 	if isMain {
 		extraArgs = p.mainProcessArgs

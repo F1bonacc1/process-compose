@@ -10,6 +10,7 @@ mcp_server:
   host: localhost
   port: 3000
   # timeout: "5m"  # Global timeout (optional)
+  transport: stdio
 
 # Global settings
 log_level: debug

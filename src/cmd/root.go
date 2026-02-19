@@ -49,11 +49,29 @@ var (
 	}
 )
 
+var (
+	// Saved standard streams for MCP stdio transport
+	savedStdin  io.Reader = os.Stdin
+	savedStdout io.Writer = os.Stdout
+	isMCPStdio  bool      = false
+)
+
 func runProjectCmd(args []string) {
 	defer func() {
 		_ = logFile.Close()
 	}()
+
+	// First pass to check for MCP stdio mode
 	runner, project := getProjectRunner(args, *pcFlags.NoDependencies, "", []string{})
+
+	// Check if MCP stdio is enabled
+	if project != nil && project.MCPServer.IsStdio() {
+		isMCPStdio = true
+		// Hijack Stdout: redirect os.Stdout to os.Stderr
+		// This ensures any fmt.Printf goes to stderr
+		os.Stdout = os.Stderr
+	}
+
 	if opts.DryRun {
 		processNames, _ := runner.GetLexicographicProcessNames()
 		fmt.Printf("Validated %d configured processes from %d files.\n", len(processNames), len(opts.FileNames)+len(opts.EnvFileNames))
@@ -196,6 +214,11 @@ func startHttpServerIfEnabled(useLogger bool, runner *app.ProjectRunner) (*http.
 func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner, project *types.Project) error {
 	// Create and start MCP server if enabled
 	mcpManager := mcp.NewMCPManager(runner, project.MCPServer, project.Processes)
+
+	if isMCPStdio {
+		mcpManager.SetStdio(savedStdin, savedStdout)
+	}
+
 	if err := mcpManager.Start(); err != nil {
 		return err
 	}

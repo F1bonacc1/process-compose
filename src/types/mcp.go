@@ -17,7 +17,7 @@ type MCPServerConfig struct {
 
 // IsEnabled returns true if MCP server is configured
 func (m *MCPServerConfig) IsEnabled() bool {
-	return m != nil && (m.Transport != "" || m.Host != "" || m.Port > 0)
+	return m != nil && (m.IsStdio() || m.Transport != "" || m.Host != "" || m.Port > 0)
 }
 
 // IsSSE returns true if transport is sse (or default)
@@ -27,6 +27,14 @@ func (m *MCPServerConfig) IsSSE() bool {
 	}
 	// If transport is not specified, default to sse
 	return m.Transport == "" || m.Transport == "sse"
+}
+
+// IsStdio returns true if transport is stdio
+func (m *MCPServerConfig) IsStdio() bool {
+	if m == nil {
+		return false
+	}
+	return m.getTransport() == "stdio"
 }
 
 // getTransport returns the transport type, defaulting to "sse" if not specified
@@ -44,11 +52,12 @@ func (m *MCPServerConfig) Validate() error {
 	}
 
 	transport := m.getTransport()
-	if transport == "stdio" {
-		return fmt.Errorf("MCP stdio transport is not supported. Please use 'sse' transport instead")
+	if transport != "sse" && transport != "stdio" {
+		return fmt.Errorf("invalid MCP transport: %s (must be 'sse' or 'stdio')", m.Transport)
 	}
-	if transport != "sse" {
-		return fmt.Errorf("invalid MCP transport: %s (must be 'sse')", m.Transport)
+
+	if transport == "stdio" {
+		return nil
 	}
 
 	// SSE is the default, so always require host and port

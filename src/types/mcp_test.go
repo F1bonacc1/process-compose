@@ -17,11 +17,11 @@ func TestMCPServerConfigValidation(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "stdio not supported",
+			name: "valid stdio config",
 			config: &MCPServerConfig{
 				Transport: "stdio",
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "valid sse config",

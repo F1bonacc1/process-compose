@@ -3,6 +3,8 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"io"
+	stdLog "log"
 	"sync"
 
 	"github.com/f1bonacc1/process-compose/src/types"
@@ -32,6 +34,8 @@ type Server struct {
 	mutexesMu      sync.RWMutex
 	ctx            context.Context
 	cancel         context.CancelFunc
+	stdin          io.Reader
+	stdout         io.Writer
 }
 
 // NewServer creates a new MCP server instance
@@ -50,6 +54,12 @@ func NewServer(runner ProcessRunner, config *types.MCPServerConfig) *Server {
 		ctx:            ctx,
 		cancel:         cancel,
 	}
+}
+
+// SetStdio sets the stdin and stdout for the MCP server when using stdio transport
+func (s *Server) SetStdio(stdin io.Reader, stdout io.Writer) {
+	s.stdin = stdin
+	s.stdout = stdout
 }
 
 // RegisterProcess registers a process as an MCP tool or resource
@@ -144,11 +154,41 @@ func (s *Server) Start() error {
 		Str("transport", s.config.Transport).
 		Msg("Starting MCP server")
 
+	if s.config.IsStdio() {
+		return s.startStdio()
+	}
+
 	if s.config.IsSSE() {
 		return s.startSSE()
 	}
 
-	return fmt.Errorf("unknown MCP transport: %s (only 'sse' is supported)", s.config.Transport)
+	return fmt.Errorf("unknown MCP transport: %s (only 'sse' and 'stdio' are supported)", s.config.Transport)
+}
+
+// startStdio starts the MCP server with stdio transport
+func (s *Server) startStdio() error {
+	if s.stdin == nil || s.stdout == nil {
+		return fmt.Errorf("stdio transport requires stdin and stdout to be set")
+	}
+
+	log.Info().Msg("Starting MCP server with stdio transport")
+
+	// Create Stdio server
+	stdioServer := server.NewStdioServer(s.mcpServer)
+
+	// Redirect StdioServer's internal error logger to discard (we use zerolog)
+	// This prevents the library from writing to stderr which might be used for
+	// something else or closed. We rely on our own logging.
+	stdioServer.SetErrorLogger(stdLog.New(io.Discard, "", 0))
+
+	// Stdio transport blocks Listen, so run in goroutine
+	go func() {
+		if err := stdioServer.Listen(s.ctx, s.stdin, s.stdout); err != nil {
+			log.Error().Err(err).Msg("MCP stdio server error")
+		}
+	}()
+
+	return nil
 }
 
 // startSSE starts the MCP server with SSE transport

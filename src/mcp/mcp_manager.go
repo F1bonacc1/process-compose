@@ -1,6 +1,8 @@
 package mcp
 
 import (
+	"io"
+
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
 )
@@ -56,4 +58,12 @@ func (m *MCPManager) Stop() error {
 		return nil
 	}
 	return m.server.Stop()
+}
+
+// SetStdio sets the stdin and stdout for the MCP server when using stdio transport
+func (m *MCPManager) SetStdio(stdin io.Reader, stdout io.Writer) {
+	if m == nil || m.server == nil {
+		return
+	}
+	m.server.SetStdio(stdin, stdout)
 }

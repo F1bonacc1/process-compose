@@ -22,15 +22,14 @@ Add an `mcp_server` section to your process-compose configuration file:
 
 ```yaml
 mcp_server:
-  host: localhost      # Required: host to bind to
-  port: 3000           # Required: port to listen on
-  # transport: sse    # Optional: defaults to "sse" (only SSE is supported at the moment)
+  host: localhost      # Required: host to bind to (ignored for stdio)
+  port: 3000           # Required: port to listen on (ignored for stdio)
+  # transport: sse    # Optional: defaults to "sse". Supported: "sse", "stdio"
 ```
 
 > [!NOTE]
-> **Only SSE transport is supported.** The transport defaults to SSE when not specified, making it optional in your configuration.
-
-> [!NOTE]
+> **Both SSE and Stdio transports are supported.** The transport defaults to SSE when not specified, making it optional in your configuration.
+>
 > The MCP server will only start if at least one process has an `mcp:` configuration section. If you configure `mcp_server` but have no MCP processes, the server will not start.
 
 ### Timeout Configuration
@@ -286,18 +285,54 @@ processes:
 
 ## Using with MCP Clients
 
-Since process-compose only supports SSE transport, MCP clients must connect via HTTP to the SSE endpoint.
+Process Compose supports both HTTP Server-Sent Events (SSE) and Standard Input/Output (stdio) transports, allowing integration with a wide variety of clients.
+
+### Stdio Clients (Cursor, Claude Desktop, VS Code)
+
+Most popular AI clients and IDEs primarily use stdio transport. To use them with process-compose:
+
+1. Update your configuration to use `transport: stdio`:
+
+```yaml
+mcp_server:
+  transport: stdio
+```
+
+1. Configure your client to run process-compose. For example, in Claude Desktop `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "process-compose": {
+      "command": "process-compose",
+      "args": ["-f", "/path/to/your/process-compose.yaml"]
+    }
+  }
+}
+```
+
+> [!NOTE]
+> When using `stdio` transport, the TUI is automatically disabled. The TUI and stdio transport cannot be used at the same time as they both require control over the process's standard input and output streams.
 
 ### MCP Inspector
 
 Test your MCP configuration with the official MCP Inspector:
 
+**For SSE transport:**
+
 ```bash
-# Start process-compose with MCP enabled
+# Start process-compose with MCP enabled (SSE default)
 process-compose -f your-config.yaml
 
 # In another terminal, connect inspector to the SSE endpoint
 npx @modelcontextprotocol/inspector http://localhost:3000/sse
+```
+
+**For Stdio transport:**
+
+```bash
+# Provide the process-compose command directly to the inspector
+npx @modelcontextprotocol/inspector process-compose -f your-config.yaml
 ```
 
 ### HTTP/SSE Clients
@@ -313,9 +348,6 @@ For example, with the default configuration:
 ```HTTP
 http://localhost:3000/sse
 ```
-
-> [!NOTE]
-> Many popular MCP clients (Cursor, Claude Desktop, VS Code) primarily support stdio transport. Since process-compose only supports SSE, you'll need to use clients that can connect to HTTP endpoints, or use a bridge/translator if needed.
 
 ## Behavior and Lifecycle
 

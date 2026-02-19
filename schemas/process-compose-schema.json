@@ -169,7 +169,11 @@
           "type": "integer"
         },
         "transport": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "sse",
+            "stdio"
+          ]
         },
         "timeout": {
           "type": "string"

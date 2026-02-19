@@ -24,6 +24,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load project")
 	}
+	project.IsTuiDisabled = project.IsTuiDisabled || project.MCPServer.IsStdio()
 	*pcFlags.IsTuiEnabled = !project.IsTuiDisabled
 	*pcFlags.IsOrderedShutdown = project.IsOrderedShutdown
 
