@@ -7,13 +7,14 @@ import (
 
 // parseJSONIfValid attempts to parse the output as JSON.
 // Returns the parsed data and true if valid JSON, nil and false otherwise.
-func parseJSONIfValid(output string) (string, bool) {
+func parseJSONIfValid(output string) (any, bool) {
 	trimmed := strings.TrimSpace(output)
 	if (strings.HasPrefix(trimmed, "{") && strings.HasSuffix(trimmed, "}")) ||
 		(strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]")) {
-		if json.Valid([]byte(trimmed)) {
-			return trimmed, true
+		var data any
+		if err := json.Unmarshal([]byte(trimmed), &data); err == nil {
+			return data, true
 		}
 	}
-	return "", false
+	return nil, false
 }

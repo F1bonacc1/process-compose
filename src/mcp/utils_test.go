@@ -103,12 +103,29 @@ func TestParseJSONIfValid(t *testing.T) {
 			if isJSON != tt.wantJSON {
 				t.Errorf("parseJSONIfValid() isJSON = %v, want %v", isJSON, tt.wantJSON)
 			}
-			if tt.wantData && data == "" {
+			if tt.wantData && data == nil {
 				t.Errorf("parseJSONIfValid() data = nil, want non-nil")
 			}
-			if !tt.wantData && data != "" {
+			if !tt.wantData && data != nil {
 				t.Errorf("parseJSONIfValid() data = %v, want nil", data)
 			}
 		})
+	}
+}
+
+func TestParseJSONIfValid_Type(t *testing.T) {
+	output := `{"status": "success", "data": [1, 2, 3]}`
+	data, isJSON := parseJSONIfValid(output)
+	if !isJSON {
+		t.Fatalf("expected isJSON to be true")
+	}
+
+	switch any(data).(type) {
+	case string:
+		t.Errorf("expected data to be unmarshaled (e.g., map[string]any), but got string literal")
+	case map[string]any:
+		// Passed!
+	default:
+		t.Errorf("expected map[string]any, got %T", data)
 	}
 }
