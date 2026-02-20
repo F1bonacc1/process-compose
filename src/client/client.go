@@ -11,9 +11,27 @@ import (
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/rs/zerolog/log"
 )
+
+type pcRoundTripper struct {
+	token string
+	next  http.RoundTripper
+}
+
+func (t *pcRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if t.token != "" {
+		req.Header.Set("x-pc-token-key", t.token)
+	}
+	resp, err := t.next.RoundTrip(req)
+	if err == nil && resp.StatusCode == http.StatusUnauthorized {
+		log.Fatal().Msgf("authentication failed: invalid or missing %s", config.EnvVarApiToken)
+	}
+	return resp, err
+}
 
 var (
 	zeroTime = time.Unix(0, 0)
@@ -52,6 +70,15 @@ func NewTcpClient(host string, port, logLength int) *PcClient {
 }
 
 func newClient(address string, client *http.Client, logLength int) *PcClient {
+	token := config.GetApiToken()
+	next := client.Transport
+	if next == nil {
+		next = http.DefaultTransport
+	}
+	client.Transport = &pcRoundTripper{
+		token: token,
+		next:  next,
+	}
 	return &PcClient{
 		address:    address,
 		logLength:  logLength,

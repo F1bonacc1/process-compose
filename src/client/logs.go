@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 
 	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 )
@@ -44,9 +45,21 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, fn fun
 			return (&net.Dialer{}).DialContext(ctx, l.address, l.socketPath)
 		}
 	}
-	l.ws, _, err = dialer.Dial(url, nil)
+
+	var header http.Header
+	token := config.GetApiToken()
+	if token != "" {
+		header = make(http.Header)
+		header.Set("x-pc-token-key", token)
+	}
+
+	var resp *http.Response
+	l.ws, resp, err = dialer.Dial(url, header)
 
 	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusUnauthorized {
+			log.Fatal().Msgf("authentication failed: invalid or missing %s", config.EnvVarApiToken)
+		}
 		log.Error().Msgf("failed to dial to %s error: %v", url, err)
 		return done, fmt.Errorf("failed to connect to %s: %w", l.address, err)
 	}

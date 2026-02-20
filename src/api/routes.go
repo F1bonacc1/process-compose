@@ -4,11 +4,30 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/f1bonacc1/process-compose/src/config"
 	_ "github.com/f1bonacc1/process-compose/src/docs"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// TokenAuthMiddleware enforces API access using an auth token if configured.
+func TokenAuthMiddleware(token string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		reqToken := c.GetHeader("x-pc-token-key")
+		if reqToken != token {
+			log.Error().
+				Str("client_ip", c.ClientIP()).
+				Str("method", c.Request.Method).
+				Str("path", c.Request.URL.Path).
+				Msg("failed login attempt: invalid or missing token")
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		c.Next()
+	}
+}
 
 // InitRoutes initialize routing information
 func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
@@ -17,6 +36,14 @@ func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 		r.Use(gin.Logger())
 	}
 	r.Use(gin.Recovery())
+
+	authToken := config.GetApiToken()
+	if authToken != "" {
+		if len(authToken) < 20 {
+			log.Fatal().Msgf("%s must be at least 20 characters long", config.EnvVarApiToken)
+		}
+		r.Use(TokenAuthMiddleware(authToken))
+	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/", func(c *gin.Context) {

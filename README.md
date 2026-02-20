@@ -2,8 +2,6 @@
 
 [![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/F1bonacc1/process-compose/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![Go Report](https://goreportcard.com/badge/github.com/F1bonacc1/process-compose) [![Releases](https://img.shields.io/github/downloads/F1bonacc1/process-compose/total.svg)]() ![X (formerly Twitter) URL](https://img.shields.io/twitter/url?url=https%3A%2F%2Ftwitter.com%2FProcessCompose&style=flat&logo=x&label=Process%20Compose)
 
-
-
 Process Compose is a simple and flexible scheduler and orchestrator to manage non-containerized applications.
 
 **Why?** Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
@@ -28,7 +26,7 @@ And start it by running `process-compose` from your terminal.
 
 Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/) for more advanced use cases.
 
-#### Features:
+#### Features
 
 - Processes execution (in parallel or/and serially)
 - Processes dependencies and startup order
@@ -40,7 +38,7 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 - Health checks (liveness and readiness)
 - Terminal User Interface (TUI) or CLI modes
 - Forking (services or daemons) processes
-- REST API (OpenAPI a.k.a Swagger)
+- REST API (OpenAPI a.k.a Swagger) with optional token authentication `PC_API_TOKEN`
 - Logs caching
 - Functions as both server and client
 - Configurable shortcuts
@@ -48,8 +46,8 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 - Namespaces
 - Namespace Operations (Start, Stop, Restart via CLI and TUI)
 - Run Multiple Replicas of a Process
-- Run a Foreground Process 
-- Interactive Process 
+- Run a Foreground Process
+- Interactive Process
 - Themes Support
 - On the fly Process configuration edit
 - On the fly Project update
@@ -87,7 +85,7 @@ English is not my native language, so PRs correcting grammar or spelling are wel
 
 ##### Github (preferred)
 
-https://github.com/sponsors/F1bonacc1
+<https://github.com/sponsors/F1bonacc1>
 
 Huge thanks to my **amazing** GitHub sponsors:
 

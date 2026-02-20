@@ -2,7 +2,7 @@
 
 ## REST API
 
-Open API client and documentation is available on: http://localhost:8080
+Open API client and documentation is available on: <http://localhost:8080>
 
 Default port is `8080`. Specify your own port:
 
@@ -14,6 +14,23 @@ Alternatively use `PC_PORT_NUM` environment variable:
 
 ```shell
 PC_PORT_NUM=8080 process-compose
+```
+
+### API Authentication
+
+You can protect the REST API using an authentication token by setting the `PC_API_TOKEN` environment variable. The token **must be at least 20 characters long**.
+
+When the token is configured, all API requests must include it in the `x-pc-token-key` HTTP header. Without the correct token, the API will return a `401 Unauthorized` status.
+No other special configuration is needed to enable or disable it; defining the environment variable is sufficient.
+
+**Example usage with cURL:**
+
+```bash
+# Start Process Compose with the token
+PC_API_TOKEN="my-super-secret-token-12345" process-compose up
+
+# Call the API using the token
+curl -H "x-pc-token-key: my-super-secret-token-12345" http://localhost:8080/processes
 ```
 
 ## Unix Domain Sockets (UDS)
@@ -57,6 +74,7 @@ process-compose process restart [PROCESS] #restarts one of the available process
 Restart will wait `process.availability.backoff_seconds` seconds between `stop` and `start` of the process. If not configured the default value is 1s.
 
 > :bulb: New remote commands are added constantly. For full list run:
+
 ```shell
 process-compose --help
 ```

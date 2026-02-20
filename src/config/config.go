@@ -65,6 +65,7 @@ var (
 )
 
 const (
+	EnvVarApiToken     = "PC_API_TOKEN"
 	pcConfigEnv        = "PROC_COMP_CONFIG"
 	LogPathEnvVarName  = "PC_LOG_FILE"
 	LogLevelEnvVarName = "PC_LOG_LEVEL"
@@ -117,6 +118,14 @@ func GetLogLevel() zerolog.Level {
 		}
 	}
 	return zerolog.InfoLevel
+}
+
+func GetApiToken() string {
+	val, found := os.LookupEnv(EnvVarApiToken)
+	if found {
+		return val
+	}
+	return ""
 }
 
 func getDisableTuiDefault() bool {
