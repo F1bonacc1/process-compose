@@ -223,6 +223,11 @@ func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner, project 
 		return err
 	}
 
+	// Keep project running if MCP server is active, so we don't exit if all processes are disabled/MCP
+	if mcpManager != nil {
+		*pcFlags.KeepProjectOn = true
+	}
+
 	server, err := startHttpServerIfEnabled(useLogger, runner)
 	if err != nil {
 		return err
