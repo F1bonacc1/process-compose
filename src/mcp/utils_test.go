@@ -120,7 +120,7 @@ func TestParseJSONIfValid_Type(t *testing.T) {
 		t.Fatalf("expected isJSON to be true")
 	}
 
-	switch any(data).(type) {
+	switch data.(type) {
 	case string:
 		t.Errorf("expected data to be unmarshaled (e.g., map[string]any), but got string literal")
 	case map[string]any:
