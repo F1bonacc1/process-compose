@@ -24,7 +24,7 @@ type pcRoundTripper struct {
 
 func (t *pcRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.token != "" {
-		req.Header.Set("x-pc-token-key", t.token)
+		req.Header.Set(config.TokenHeader, t.token)
 	}
 	resp, err := t.next.RoundTrip(req)
 	if err == nil && resp.StatusCode == http.StatusUnauthorized {

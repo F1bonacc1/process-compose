@@ -66,6 +66,7 @@ var (
 
 const (
 	EnvVarApiToken     = "PC_API_TOKEN"
+	TokenHeader        = "X-PC-Token-Key"
 	pcConfigEnv        = "PROC_COMP_CONFIG"
 	LogPathEnvVarName  = "PC_LOG_FILE"
 	LogLevelEnvVarName = "PC_LOG_LEVEL"

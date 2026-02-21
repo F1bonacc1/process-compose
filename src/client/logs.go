@@ -50,7 +50,7 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, fn fun
 	token := config.GetApiToken()
 	if token != "" {
 		header = make(http.Header)
-		header.Set("x-pc-token-key", token)
+		header.Set(config.TokenHeader, token)
 	}
 
 	var resp *http.Response

@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,7 +29,7 @@ func TestTokenAuthMiddleware(t *testing.T) {
 
 	t.Run("invalid token", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, "/test", nil)
-		req.Header.Set("x-pc-token-key", "wrong-token")
+		req.Header.Set(config.TokenHeader, "wrong-token")
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 		if w.Code != http.StatusUnauthorized {
@@ -38,7 +39,7 @@ func TestTokenAuthMiddleware(t *testing.T) {
 
 	t.Run("valid token", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, "/test", nil)
-		req.Header.Set("x-pc-token-key", "valid-token-1234567890")
+		req.Header.Set(config.TokenHeader, "valid-token-1234567890")
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {

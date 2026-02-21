@@ -15,7 +15,7 @@ import (
 // TokenAuthMiddleware enforces API access using an auth token if configured.
 func TokenAuthMiddleware(token string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		reqToken := c.GetHeader("x-pc-token-key")
+		reqToken := c.GetHeader(config.TokenHeader)
 		if reqToken != token {
 			log.Error().
 				Str("client_ip", c.ClientIP()).
