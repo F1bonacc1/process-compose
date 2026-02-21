@@ -76,13 +76,13 @@ plugins:
       blog_dir: blog
       blog_toc: true
       post_url_format: "{slug}"      
-  - rss:
-      match_path: "blog/posts/.*"
-      pretty_print: false
-      rss_feed_enabled: true
-      date_from_meta:
-        as_creation: date.created
-        as_update: date.updated
+  # - rss:
+  #     match_path: "blog/posts/.*"
+  #     pretty_print: false
+  #     rss_feed_enabled: true
+  #     date_from_meta:
+  #       as_creation: date.created
+  #       as_update: date.updated
   - tags:
       tags_file: tags.md
 
