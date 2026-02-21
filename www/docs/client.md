@@ -22,6 +22,7 @@ You can protect the REST API using an authentication token by setting the `PC_AP
 
 When the token is configured, all API requests must include it in the `x-pc-token-key` HTTP header. Without the correct token, the API will return a `401 Unauthorized` status.
 No other special configuration is needed to enable or disable it; defining the environment variable is sufficient.
+The same `PC_API_TOKEN` environment variable is used automatically by the `process-compose` binary when performing CLI (remote) commands or attaching a remote TUI.
 
 **Example usage with cURL:**
 
