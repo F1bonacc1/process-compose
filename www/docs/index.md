@@ -35,15 +35,16 @@ Check the [Documentation](launcher.md) for more advanced use cases.
 - Health checks (liveness and readiness)
 - Terminal User Interface (TUI) or CLI modes
 - Forking (services or daemons) processes
-- REST API (OpenAPI a.k.a Swagger)
+- REST API (OpenAPI a.k.a Swagger) with optional token authentication
 - Logs caching
 - Functions as both server and client
 - Configurable shortcuts
 - Merge Configuration Files
 - Namespaces
+- Namespace Operations (Start, Stop, Restart via CLI and TUI)
 - Run Multiple Replicas of a Process
-- Run a Foreground Process 
-- Interactive Process 
+- Run a Foreground Process
+- Interactive Process
 - Themes Support
 - On the fly Process configuration edit
 - On the fly Project update

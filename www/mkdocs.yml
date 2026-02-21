@@ -2,6 +2,7 @@ site_name: Process Compose
 site_url: https://github.com/F1bonacc1/process-compose
 repo_url: https://github.com/F1bonacc1/process-compose
 repo_name: process-compose
+site_description: Process Compose is a simple and flexible scheduler and orchestrator to manage non-containerized applications.
 nav:
   - Home: index.md
   - Getting Started:
@@ -30,11 +31,14 @@ nav:
     - 'run': cli/process-compose_run.md
     - 'up': cli/process-compose_up.md
     - 'version': cli/process-compose_version.md
+  - Blog:
+    - blog/index.md
   - Contributing:
     - Contributing: contributing.md
     - Sponsors: sponsors.md
 
 theme:
+  custom_dir: overrides
   name: material
   favicon: img/favicon.ico
   logo: img/favicon.ico
@@ -68,6 +72,19 @@ theme:
 plugins:
   - social
   - search
+  - blog:
+      blog_dir: blog
+      blog_toc: true
+      post_url_format: "{slug}"      
+  - rss:
+      match_path: "blog/posts/.*"
+      pretty_print: false
+      rss_feed_enabled: true
+      date_from_meta:
+        as_creation: date.created
+        as_update: date.updated
+  - tags:
+      tags_file: tags.md
 
 extra:
   social:
@@ -100,4 +117,4 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 copyright: |
-  &copy; 2024 <a href="https://github.com/f1bonacc1"  target="_blank" rel="noopener">Eugene Berger</a>
+  &copy; 2026 <a href="https://github.com/f1bonacc1"  target="_blank" rel="noopener">Eugene Berger</a>
