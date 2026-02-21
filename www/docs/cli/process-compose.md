@@ -34,6 +34,7 @@ process-compose [flags]
       --slow-ref-rate duration   Slow(er) refresh interval for resources (CPU, RAM) in seconds or as a Go duration string (e.g. 1s). The value should be higher than --ref-rate (default 1)
   -S, --sort string              sort column name. legal values (case insensitive): [AGE, CPU, EXIT, HEALTH, MEM, NAME, NAMESPACE, PID, RESTARTS, STATUS] (default "NAME")
       --theme string             select process compose theme (default "Default")
+      --token-file string        path to a file containing the API token (env: PC_API_TOKEN_PATH)
   -t, --tui                      enable TUI (disable with -t=false) (env: PC_DISABLE_TUI) (default true)
       --tui-fs                   enable TUI full screen (env: PC_TUI_FULL_SCREEN=1)
   -u, --unix-socket string       path to unix socket (env: PC_SOCKET_PATH) (default "/tmp/process-compose-<pid>.sock")

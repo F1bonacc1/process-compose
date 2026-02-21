@@ -23,6 +23,7 @@ See each sub-command's help for details on how to use the generated script.
       --ordered-shutdown     shut down processes in reverse dependency order
   -p, --port int             port number (env: PC_PORT_NUM) (default 8080)
       --read-only            enable read-only mode (env: PC_READ_ONLY)
+      --token-file string    path to a file containing the API token (env: PC_API_TOKEN_PATH)
   -u, --unix-socket string   path to unix socket (env: PC_SOCKET_PATH) (default "/tmp/process-compose-<pid>.sock")
   -U, --use-uds              use unix domain sockets instead of tcp
 ```
