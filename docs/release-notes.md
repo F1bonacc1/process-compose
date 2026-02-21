@@ -1,5 +1,20 @@
 # Release Notes
 
+## [v1.94.0] - 2026-02-21
+
+### New Features
+
+- **API Token Authentication**: Added support for token-based authentication for the REST API and WebSocket connections. Configurable via `PC_API_TOKEN`, `PC_API_TOKEN_PATH`, or the `--token-file` flag.
+- **MCP Server Support**: Integrated Model Context Protocol (MCP) server for dynamic process management and tool execution, supporting both `stdio` and `sse` transports.
+- **Template Rendering Control**: Added `is_template_disabled` option to skip Go template rendering for processes containing JSON strings in their commands.
+- **JSON Pretty-Print**: Added a toggle for pretty-printing JSON logs in the TUI terminal view.
+
+### Bug Fixes
+
+- Fixed JSON autodetection for processes running in MCP `stdio` mode.
+
+---
+
 ## [v1.90.0] - 2026-01-31
 
 ### New Features
