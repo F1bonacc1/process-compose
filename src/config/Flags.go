@@ -90,6 +90,7 @@ type Flags struct {
 	ShortVersion         *bool
 	LogsTruncate         *bool
 	WithRecursiveMetrics *bool
+	ApiTokenPath         *string
 }
 
 // NewFlags returns new configuration flags.
@@ -130,6 +131,7 @@ func NewFlags() *Flags {
 		ShortVersion:         toPtr(false),
 		LogsTruncate:         toPtr(false),
 		WithRecursiveMetrics: toPtr(getWithRecursiveMetricsEnvDefault()),
+		ApiTokenPath:         toPtr(getApiTokenPathDefault()),
 	}
 }
 
