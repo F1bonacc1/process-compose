@@ -363,3 +363,8 @@ func getWithRecursiveMetricsEnvDefault() bool {
 	_, found := os.LookupEnv(EnvVarWithRecursiveMetrics)
 	return found
 }
+
+func getLogNoColorDefault() bool {
+	_, found := os.LookupEnv(EnvVarLogNoColor)
+	return found
+}

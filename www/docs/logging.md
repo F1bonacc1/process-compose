@@ -1,4 +1,5 @@
 # Logger
+
 ## Per Process Log Collection
 
 ```yaml
@@ -82,6 +83,15 @@ log_configuration:
 ## Process Compose Internal Log
 
 Default log location: `/tmp/process-compose-$USER.log`
+
+By default, the internal log file contains ANSI color codes. You can disable color output using the `--log-no-color` flag or the `PC_LOG_NO_COLOR` environment variable.
+
+```bash
+process-compose --log-no-color
+# OR
+export PC_LOG_NO_COLOR=1
+process-compose
+```
 
 > :bulb: It is recommended to add the following process configuration to your `process-compose.yaml`:
 

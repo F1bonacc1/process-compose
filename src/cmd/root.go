@@ -126,6 +126,7 @@ func init() {
 	rootCmd.Flags().BoolVar(pcFlags.WithRecursiveMetrics, "recursive-metrics", *pcFlags.WithRecursiveMetrics, "collect metrics recursively (env: "+config.EnvVarWithRecursiveMetrics+")")
 	rootCmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "validate the config and exit")
 	rootCmd.PersistentFlags().StringVar(pcFlags.ApiTokenPath, "token-file", *pcFlags.ApiTokenPath, "path to a file containing the API token (env: "+config.EnvVarApiTokenPath+")")
+	rootCmd.PersistentFlags().BoolVar(pcFlags.LogNoColor, "log-no-color", *pcFlags.LogNoColor, "disable color output in the log file (env: "+config.EnvVarLogNoColor+")")
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))
@@ -164,6 +165,7 @@ func setupLogger() *os.File {
 			Writer: zerolog.LevelWriterAdapter{Writer: zerolog.ConsoleWriter{
 				Out:        file,
 				TimeFormat: "06-01-02 15:04:05.000",
+				NoColor:    *pcFlags.LogNoColor,
 			}},
 		},
 		&zerolog.FilteredLevelWriter{

@@ -47,6 +47,7 @@ const (
 	EnvVarWithRecursiveMetrics = "PC_RECURSIVE_METRICS"
 	EnvVarDisabledProcs        = "PC_DISABLED_PROCESSES"
 	EnvVarNameAddress          = "PC_ADDRESS"
+	EnvVarLogNoColor           = "PC_LOG_NO_COLOR"
 )
 
 // Flags represents PC configuration flags.
@@ -91,6 +92,7 @@ type Flags struct {
 	LogsTruncate         *bool
 	WithRecursiveMetrics *bool
 	ApiTokenPath         *string
+	LogNoColor           *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -132,6 +134,7 @@ func NewFlags() *Flags {
 		LogsTruncate:         toPtr(false),
 		WithRecursiveMetrics: toPtr(getWithRecursiveMetricsEnvDefault()),
 		ApiTokenPath:         toPtr(getApiTokenPathDefault()),
+		LogNoColor:           toPtr(getLogNoColorDefault()),
 	}
 }
 
