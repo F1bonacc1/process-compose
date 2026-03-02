@@ -1,0 +1,5 @@
+processes:
+  test_env_file:
+    command: "echo My name is $$MY_NAME"
+    env_file: ".env.test"
+    working_dir: "../../fixtures-code/"

@@ -80,6 +80,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	err = validate(mergedProject,
 		validateLogLevel,
 		validateProcessConfig,
+		validateProcessEnvFileExists,
 		validateNoCircularDependencies,
 		validateShellConfig,
 		validatePlatformCompatibility,

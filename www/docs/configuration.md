@@ -64,6 +64,19 @@ process-compose -e .env -e .env.local -e .env.dev
 
 For situations where the you would like to disable the automatic `.env` file loading you might want to use the `--disable-dotenv` flag.
 
+### Process Specific `env_file`
+
+If you want to specify an environment file for a particular process instead of the global Process Compose application, use the `env_file` property. This loads the variables defined in the specified file specifically for that process, overriding any global variables or global `.env` definitions.
+
+If the `env_file` is defined as a relative path and the process has a `working_dir` specified, the `env_file` path will be resolved relative to the `working_dir`.
+
+```yaml
+processes:
+  backend:
+    command: "./server"
+    env_file: ".env.backend"
+```
+
 ## Disabling Dotenv Environment Variable Injection (`is_dotenv_disabled`)
 
 By default, Process Compose reads variables from specified `.env` files (or a default `.env` file) and injects them into the environment of *all* managed processes. This is often convenient, but can interfere with processes that have their own built-in mechanisms for loading configuration directly from a `.env` file, especially when relying on that mechanism for configuration updates or hot-reloading.
@@ -566,7 +579,8 @@ processes:
       signal: 9
 ```
 
-* In TUI mode, elevated processes awaiting password input are marked with a yellow ▲.
+- In TUI mode, elevated processes awaiting password input are marked with a yellow ▲.
+
 - To enter a password in TUI mode:
   1. Select the elevated process.
   2. Type the password.

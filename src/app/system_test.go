@@ -1484,3 +1484,49 @@ func getSleepCommand(seconds float64) string {
 	}
 	return fmt.Sprintf("sleep %f", seconds)
 }
+
+func TestSystem_TestEnvFile(t *testing.T) {
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-env-file.yaml")
+	t.Run(fixture, func(t *testing.T) {
+		project, err := loader.Load(&loader.LoaderOptions{
+			FileNames: []string{fixture},
+		})
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         project,
+			processesToRun:  []string{},
+			mainProcessArgs: []string{},
+		})
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		err = runner.Run()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		log, err := runner.GetProcessLog("test_env_file", 0, 1)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		found := false
+		for _, line := range log {
+			if strings.Contains(line, "My name is Inigo_Montoya") {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			t.Errorf("Expected output to contain 'My name is Inigo_Montoya' in the logs")
+		}
+	})
+}

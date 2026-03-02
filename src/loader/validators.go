@@ -3,7 +3,9 @@ package loader
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -233,5 +235,24 @@ func validateMCPConfig(p *types.Project) error {
 		}
 	}
 
+	return nil
+}
+
+func validateProcessEnvFileExists(p *types.Project) error {
+	for procName, proc := range p.Processes {
+		if proc.EnvFile != "" {
+			envFile := proc.EnvFile
+			if !filepath.IsAbs(envFile) && proc.WorkingDir != "" {
+				envFile = filepath.Join(proc.WorkingDir, envFile)
+			}
+			if _, err := os.Stat(envFile); os.IsNotExist(err) {
+				errStr := fmt.Sprintf("env_file '%s' for process '%s' does not exist", envFile, procName)
+				if p.IsStrict {
+					return errors.New(errStr)
+				}
+				log.Error().Msg(errStr)
+			}
+		}
+	}
 	return nil
 }

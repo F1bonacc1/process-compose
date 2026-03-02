@@ -31,6 +31,7 @@ type (
 		LogLocation             string                 `yaml:"log_location,omitempty"`
 		LoggerConfig            *LoggerConfig          `yaml:"log_configuration,omitempty"`
 		Environment             Environment            `yaml:"environment,omitempty"`
+		EnvFile                 string                 `yaml:"env_file,omitempty"`
 		RestartPolicy           RestartPolicyConfig    `yaml:"availability,omitempty"`
 		DependsOn               DependsOnConfig        `yaml:"depends_on,omitempty"`
 		LivenessProbe           *health.Probe          `yaml:"liveness_probe,omitempty"`
@@ -115,6 +116,7 @@ func (p *ProcessConfig) Compare(another *ProcessConfig) bool {
 		p.LogLocation != another.LogLocation ||
 		p.ReadyLogLine != another.ReadyLogLine ||
 		p.DisableAnsiColors != another.DisableAnsiColors ||
+		p.EnvFile != another.EnvFile ||
 		p.WorkingDir != another.WorkingDir ||
 		p.Namespace != another.Namespace ||
 		p.Replicas != another.Replicas ||
