@@ -101,7 +101,7 @@ func (p *ProjectRunner) Run() error {
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to build project run order: %e", err)
+		return fmt.Errorf("failed to build project run order: %w", err)
 	}
 	var nameOrder []string
 	for _, v := range runOrder {
@@ -776,32 +776,33 @@ func (p *ProjectRunner) GetProcessPorts(name string) (*types.ProcessPorts, error
 
 func (p *ProjectRunner) SetProcessPassword(name, pass string) error {
 	p.runProcMutex.Lock()
-
-	var wg sync.WaitGroup
+	var elevatedProcs []*Process
 	for _, process := range p.runningProcesses {
 		if process.procConf.IsElevated && !process.passProvided {
-			wg.Add(1)
-			go func(process *Process) {
-				defer wg.Done()
-				err := process.setPassword(pass)
-				if err != nil {
-					log.Err(err).Msgf("failed to set password for elevated process %s", process.getName())
-				}
-			}(process)
+			elevatedProcs = append(elevatedProcs, process)
 		}
 	}
 	p.runProcMutex.Unlock()
+
+	var wg sync.WaitGroup
+	for _, process := range elevatedProcs {
+		wg.Add(1)
+		go func(process *Process) {
+			defer wg.Done()
+			err := process.setPassword(pass)
+			if err != nil {
+				log.Err(err).Msgf("failed to set password for elevated process %s", process.getName())
+			}
+		}(process)
+	}
 	wg.Wait()
-	p.runProcMutex.Lock()
-	defer p.runProcMutex.Unlock()
-	for _, process := range p.runningProcesses {
-		if process.procConf.IsElevated && process.passProvided {
+
+	for _, process := range elevatedProcs {
+		if process.passProvided {
 			return nil
 		}
 	}
-
 	return errors.New("password not accepted")
-
 }
 
 func (p *ProjectRunner) runningProcessesReverseDependencies() map[string]map[string]*Process {
@@ -1153,7 +1154,9 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	p.statesMutex.Lock()
 	p.processStates[proc.ReplicaName] = types.NewProcessState(&proc)
 	p.statesMutex.Unlock()
+	p.procConfMutex.Lock()
 	p.project.Processes[proc.ReplicaName] = proc
+	p.procConfMutex.Unlock()
 	p.initProcessLog(proc.ReplicaName)
 	if !proc.IsDeferred() {
 		p.runProcess(&proc)
