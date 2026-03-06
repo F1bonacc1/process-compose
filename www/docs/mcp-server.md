@@ -27,8 +27,7 @@ mcp_server:
   # transport: sse    # Optional: defaults to "sse". Supported: "sse", "stdio"
 ```
 
-> [!NOTE]
-> **Both SSE and Stdio transports are supported.** The transport defaults to SSE when not specified, making it optional in your configuration.
+> :bulb: **Both SSE and Stdio transports are supported.** The transport defaults to SSE when not specified, making it optional in your configuration.
 >
 > The MCP server will only start if at least one process has an `mcp:` configuration section. If you configure `mcp_server` but have no MCP processes, the server will not start.
 
@@ -115,8 +114,7 @@ arguments:
 - **Required arguments** (`required: true`): Must be provided when the tool is invoked. If missing, the invocation will fail with an error.
 - **Optional arguments** (`required: false` or omitted): Can be omitted. When not provided, the `@{arg}` placeholder is replaced with an empty string.
 
-> [!NOTE]
-> Optional arguments are substituted with an empty string when not provided. Design your commands to handle this gracefully, or use default values (see below).
+> :bulb: Optional arguments are substituted with an empty string when not provided. Design your commands to handle this gracefully, or use default values (see below).
 
 #### Argument Substitution
 
@@ -311,8 +309,7 @@ mcp_server:
 }
 ```
 
-> [!NOTE]
-> When using `stdio` transport, the TUI is automatically disabled. The TUI and stdio transport cannot be used at the same time as they both require control over the process's standard input and output streams.
+> :bulb: When using `stdio` transport, the TUI is automatically disabled. The TUI and stdio transport cannot be used at the same time as they both require control over the process's standard input and output streams.
 
 ### MCP Inspector
 
