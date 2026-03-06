@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"time"
 )
 
 func runInDetachedMode() {
@@ -36,9 +37,28 @@ func runInDetachedMode() {
 	if err := cmd.Start(); err != nil {
 		panic(err)
 	}
+
+	// Wait for the HTTP server to be ready before returning to the caller.
+	if err := waitForServerReady(getClient().IsAlive, 5*time.Second); err != nil {
+		fmt.Fprintf(os.Stderr, "error: process-compose daemon did not become ready within 5s\nCheck the logs for more information: %s\n", *pcFlags.LogFile)
+		os.Exit(1)
+	}
+
 	if *pcFlags.IsDetachedWithTui {
 		startTui(getClient(), false)
 	}
 	// Exit the parent process
 	os.Exit(0)
+}
+
+func waitForServerReady(isAlive func() error, timeout time.Duration) error {
+	const pollInterval = 100 * time.Millisecond
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if err := isAlive(); err == nil {
+			return nil
+		}
+		time.Sleep(pollInterval)
+	}
+	return fmt.Errorf("server did not become ready within %s", timeout)
 }
