@@ -5,6 +5,7 @@ VERSION = $(shell git describe --abbrev=0)
 GIT_REV    ?= $(shell git rev-parse --short HEAD)
 DATE       ?= $(shell TZ=UTC0 git show --quiet --date='format-local:%Y-%m-%dT%H:%M:%SZ' --format="%cd")
 NUMVER = $(shell echo ${VERSION} | cut -d"v" -f 2)
+NIX_VERSION = $(shell sed -n '7p' default.nix | grep -oP '[0-9]+\.[0-9]+\.[0-9]+')
 PKG = github.com/f1bonacc1/${NAME}
 SHELL := /usr/bin/env bash
 PROJ_NAME := Process Compose
@@ -21,7 +22,7 @@ ifeq ($(OS),Windows_NT)
 	RM = cmd /C del /Q /F
 endif
 
-.PHONY: test run testrace docs schema
+.PHONY: test run testrace docs schema check-nix-version
 
 buildrun: build run
 
@@ -79,7 +80,14 @@ run:
 
 clean:
 	$(RM) bin/${NAME}*
-release:
+
+check-nix-version:
+	@if [ "$(NUMVER)" != "$(NIX_VERSION)" ]; then \
+		echo "ERROR: git tag version ($(NUMVER)) does not match default.nix version ($(NIX_VERSION))"; \
+		exit 1; \
+	fi
+
+release: check-nix-version
 	source exports
 	goreleaser release --clean --skip validate --auto-snapshot
 snapshot:
