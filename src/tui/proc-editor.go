@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
@@ -44,7 +45,12 @@ func (pv *pcView) editSelectedProcess() {
 	defer os.Remove(filename)
 	var updatedProc *types.ProcessConfig
 	for {
+		contentBefore, _ := os.ReadFile(filename)
 		pv.runCommandInForeground(editor, filename)
+		contentAfter, _ := os.ReadFile(filename)
+		if bytes.Equal(contentBefore, contentAfter) {
+			break // user didn't save changes — treat as cancel
+		}
 		updatedProc, err = loadProcInfoFromFile(filename)
 		if err != nil {
 			var de *dataError
