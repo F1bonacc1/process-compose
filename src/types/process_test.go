@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/health"
+	"gopkg.in/yaml.v3"
 )
 
 func TestCompareProcessConfigs(t *testing.T) {
@@ -320,6 +321,83 @@ func TestProcessStateIsReady(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.p.IsReady() != tt.isReady {
 				t.Errorf("Expected IsReady() = %v for state %v", tt.isReady, tt.p)
+			}
+		})
+	}
+}
+
+func TestRestartPolicyMarshalYAML(t *testing.T) {
+	tests := []struct {
+		policy   RestartPolicy
+		expected string
+	}{
+		{RestartPolicyNo, "no"},
+		{RestartPolicyAlways, "always"},
+		{RestartPolicyOnFailure, "on_failure"},
+		{RestartPolicyExitOnFailure, "exit_on_failure"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			// Verify MarshalYAML returns the expected string
+			got, err := tt.policy.MarshalYAML()
+			if err != nil {
+				t.Fatalf("MarshalYAML() error: %v", err)
+			}
+			if got != tt.expected {
+				t.Errorf("MarshalYAML() = %q, want %q", got, tt.expected)
+			}
+
+			// Verify round-trip through yaml.Marshal/Unmarshal
+			data, err := yaml.Marshal(tt.policy)
+			if err != nil {
+				t.Fatalf("yaml.Marshal() error: %v", err)
+			}
+			var roundTripped RestartPolicy
+			if err := yaml.Unmarshal(data, &roundTripped); err != nil {
+				t.Fatalf("yaml.Unmarshal() error: %v", err)
+			}
+			if roundTripped != tt.policy {
+				t.Errorf("Round-trip failed: got %v, want %v", roundTripped, tt.policy)
+			}
+		})
+	}
+}
+
+func TestProcessConditionMarshalYAML(t *testing.T) {
+	tests := []struct {
+		condition ProcessCondition
+		expected  string
+	}{
+		{ProcessConditionCompleted, "process_completed"},
+		{ProcessConditionCompletedSuccessfully, "process_completed_successfully"},
+		{ProcessConditionHealthy, "process_healthy"},
+		{ProcessConditionStarted, "process_started"},
+		{ProcessConditionLogReady, "process_log_ready"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			// Verify MarshalYAML returns the expected string
+			got, err := tt.condition.MarshalYAML()
+			if err != nil {
+				t.Fatalf("MarshalYAML() error: %v", err)
+			}
+			if got != tt.expected {
+				t.Errorf("MarshalYAML() = %q, want %q", got, tt.expected)
+			}
+
+			// Verify round-trip through yaml.Marshal/Unmarshal
+			data, err := yaml.Marshal(tt.condition)
+			if err != nil {
+				t.Fatalf("yaml.Marshal() error: %v", err)
+			}
+			var roundTripped ProcessCondition
+			if err := yaml.Unmarshal(data, &roundTripped); err != nil {
+				t.Fatalf("yaml.Unmarshal() error: %v", err)
+			}
+			if roundTripped != tt.condition {
+				t.Errorf("Round-trip failed: got %v, want %v", roundTripped, tt.condition)
 			}
 		})
 	}

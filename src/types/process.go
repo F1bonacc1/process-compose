@@ -342,6 +342,21 @@ func (p *RestartPolicy) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
+func (p RestartPolicy) MarshalYAML() (interface{}, error) {
+	switch p {
+	case RestartPolicyNo:
+		return "no", nil
+	case RestartPolicyAlways:
+		return "always", nil
+	case RestartPolicyOnFailure:
+		return "on_failure", nil
+	case RestartPolicyExitOnFailure:
+		return "exit_on_failure", nil
+	default:
+		return nil, fmt.Errorf("invalid restart policy: %d", p)
+	}
+}
+
 const (
 	ProcessStateDisabled    = "Disabled"
 	ProcessStateForeground  = "Foreground"
@@ -432,6 +447,23 @@ func (c *ProcessCondition) UnmarshalYAML(node *yaml.Node) error {
 		return fmt.Errorf("Invalid process dependency condition: %q", value)
 	}
 	return nil
+}
+
+func (c ProcessCondition) MarshalYAML() (interface{}, error) {
+	switch c {
+	case ProcessConditionCompleted:
+		return "process_completed", nil
+	case ProcessConditionCompletedSuccessfully:
+		return "process_completed_successfully", nil
+	case ProcessConditionHealthy:
+		return "process_healthy", nil
+	case ProcessConditionStarted:
+		return "process_started", nil
+	case ProcessConditionLogReady:
+		return "process_log_ready", nil
+	default:
+		return nil, fmt.Errorf("invalid process condition: %d", c)
+	}
 }
 
 // Where key is process name.
