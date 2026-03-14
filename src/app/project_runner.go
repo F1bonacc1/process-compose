@@ -283,6 +283,7 @@ func (p *ProjectRunner) onProcessSkipped(procConf *types.ProcessConfig) {
 		p.exitCodeMutex.Lock()
 		p.exitCode = 1
 		p.exitCodeMutex.Unlock()
+		log.Info().Msgf("Process %s skipped. Shutting down project...", procConf.Name)
 		_ = p.ShutDownProject()
 	}
 }
