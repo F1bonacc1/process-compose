@@ -5,10 +5,10 @@
 ```yaml
 processes:
   process1:
-  	description: This process will sleep for 2 seconds
+   description: This process will sleep for 2 seconds
     command: "sleep 2"
   process2:
-  	description: This process will sleep for 3 seconds
+   description: This process will sleep for 3 seconds
     command: "sleep 3"
 ```
 
@@ -74,6 +74,7 @@ processes:
       process4:
         condition: process_completed_successfully
 ```
+
 > :bulb: You can visualize your process dependencies using the [Dependency Graph](graph.md).
 
 There are 5 condition types that can be used in process dependencies:
@@ -91,13 +92,13 @@ In some situations a process's log output is a simple way to determine if it is 
 ```yaml hl_lines="6 12"
 processes:
   world:
-  	command: "echo Connected"
+   command: "echo Connected"
     depends_on:
       hello:
         condition: process_log_ready
   hello:
-  	command: |
-  	  echo 'Preparing...'
+   command: |
+     echo 'Preparing...'
       sleep 1
       echo 'I am ready to accept connections now'
     ready_log_line: "ready to accept connections" # equal to *.ready to accept connections.*\n regex    
@@ -149,8 +150,6 @@ process-compose up process1 process3 --no-deps # will run 'process1', 'process3'
 #Hi from Process1
 ```
 
-
-
 ## Termination Parameters
 
 ```yaml
@@ -166,7 +165,7 @@ processes:
 
 `shutdown` is optional and can be omitted. The default behavior in this case: `SIGTERM` is issued to the process group of the running process.
 
-In case only `shutdown.signal` is defined `[1..31] ` the running process group will be terminated with its value.
+In case only `shutdown.signal` is defined `[1..31]` the running process group will be terminated with its value.
 
 If `shutdown.parent_only` is yes, the signal is only sent to the running process and not to the whole process group.
 
@@ -208,6 +207,7 @@ processes:
     command: "vim process-compose.yaml"
     is_foreground: true
 ```
+
 Foreground processes are useful for cases when a full `tty` access is required (e.g. `vim`, `top`, `gdb -tui`)
 
 1. Foreground process have to be started manually (`F7`). They can be started multiple times.
@@ -274,8 +274,10 @@ processes:
       # exit_on_end implies it.
       exit_on_end: true
     depends_on:
-      redis: process_healthy
-      postgres: process_healthy
+      redis:
+        condition: process_healthy
+      postgres:
+        condition: process_healthy
 
   redis:
     command: redis-start
