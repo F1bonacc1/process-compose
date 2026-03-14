@@ -22,6 +22,8 @@ style:
     keyColor: '#8839ef'
     hlColor: '#bcc0cc'
     categoryFgColor: '#ea76cb'
+    linkDonateColor: '#df8e1d'
+    linkAskColor: '#fe640b'
   dialog:
     fgColor: '#ea76cb'
     bgColor: '#8839ef'

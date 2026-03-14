@@ -521,7 +521,7 @@ func (pv *pcView) updateHelpTextView() {
 	logScrBool := pv.scrSplitState != LogFull
 	procScrBool := pv.scrSplitState != ProcFull
 	pv.helpFooter.Clear()
-	defer pv.helpFooter.AddItem(tview.NewBox(), 0, 1, false)
+	defer pv.addFooterLinks()
 	if pv.logsText.isSearchActive() {
 		pv.shortcuts.addButton(ActionLogFind, pv.helpFooter)
 		pv.shortcuts.addButton(ActionLogFindNext, pv.helpFooter)
@@ -549,6 +549,27 @@ func (pv *pcView) updateHelpTextView() {
 	pv.shortcuts.addButton(ActionProcessStop, pv.helpFooter)
 	pv.shortcuts.addButton(ActionProcessRestart, pv.helpFooter)
 	pv.shortcuts.addButton(ActionQuit, pv.helpFooter)
+}
+
+func (pv *pcView) addFooterLinks() {
+	style := pv.shortcuts.style
+	pv.helpFooter.AddItem(tview.NewBox(), 0, 1, false)
+
+	donateText := "[::u]Donate[-:-:-]"
+	donateBtn := tview.NewButton(donateText).SetSelectedFunc(func() {
+		openBrowser(config.DonateURL)
+	})
+	donateBtn.SetStyle(tcell.StyleDefault.Background(style.ButtonBgColor.Color()).Foreground(style.LinkDonateColor.Color()))
+	donateBtn.SetActivatedStyle(tcell.StyleDefault.Background(style.ButtonBgColor.Color()).Foreground(style.LinkDonateColor.Color()))
+	pv.helpFooter.AddItem(donateBtn, 8, 0, false)
+
+	askText := "[::u]Ask Question[-:-:-]"
+	askBtn := tview.NewButton(askText).SetSelectedFunc(func() {
+		openBrowser(config.DiscussionsURL)
+	})
+	askBtn.SetStyle(tcell.StyleDefault.Background(style.ButtonBgColor.Color()).Foreground(style.LinkAskColor.Color()))
+	askBtn.SetActivatedStyle(tcell.StyleDefault.Background(style.ButtonBgColor.Color()).Foreground(style.LinkAskColor.Color()))
+	pv.helpFooter.AddItem(askBtn, 14, 0, false)
 }
 
 func (pv *pcView) saveTuiState() {

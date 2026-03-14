@@ -67,6 +67,8 @@ type (
 		HlColor         Color `yaml:"hlColor"`
 		ButtonBgColor   Color `yaml:"buttonBgColor"`
 		FgCategoryColor Color `yaml:"categoryFgColor"`
+		LinkDonateColor Color `yaml:"linkDonateColor"`
+		LinkAskColor    Color `yaml:"linkAskColor"`
 	}
 
 	// Dialog tracks dialog styles.
@@ -135,6 +137,8 @@ func newHelp() Help {
 		HlColor:         "green",
 		ButtonBgColor:   "black",
 		FgCategoryColor: "lightskyblue",
+		LinkDonateColor: "yellow",
+		LinkAskColor:    "orange",
 	}
 }
 
@@ -248,9 +252,15 @@ func (s *Styles) GetStyleName() string {
 	return s.Style.Name
 }
 
-// setDefaults sets the background color to help button.
+// setDefaults sets default values for fields that may not be specified in theme files.
 func (s *Styles) setDefaults() {
 	s.Style.Help.ButtonBgColor = s.Body().BgColor
+	if s.Style.Help.LinkDonateColor == "" {
+		s.Style.Help.LinkDonateColor = "yellow"
+	}
+	if s.Style.Help.LinkAskColor == "" {
+		s.Style.Help.LinkAskColor = "orange"
+	}
 }
 
 // Dump for debug.

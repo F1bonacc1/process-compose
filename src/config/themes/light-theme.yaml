@@ -24,6 +24,8 @@ style:
     keyColor: blue
     hlColor: lightgreen
     categoryFgColor: blue
+    linkDonateColor: "#B8860B"
+    linkAskColor: "#CC5500"
   dialog:
     fgColor: cadetblue
     bgColor: "#3B3B3B"
