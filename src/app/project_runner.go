@@ -273,6 +273,7 @@ func (p *ProjectRunner) onProcessEnd(exitCode int, procConf *types.ProcessConfig
 		p.exitCodeMutex.Lock()
 		p.exitCode = exitCode
 		p.exitCodeMutex.Unlock()
+		log.Info().Msgf("Process %s exited with code %d. Shutting down project...", procConf.Name, exitCode)
 		_ = p.ShutDownProject()
 	}
 }
