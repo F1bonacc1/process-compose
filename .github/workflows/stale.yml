@@ -1,0 +1,36 @@
+name: Stale Issues
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/stale@b5d41d4e1d5dceea10e7104786b73624c18a190f # v10.2.0
+      with:
+        days-before-stale: 60
+        days-before-close: 7
+        stale-issue-label: stale
+        stale-pr-label: stale
+        exempt-issue-labels: pinned,security
+        exempt-pr-labels: pinned,security
+        stale-issue-message: >
+          This issue has been automatically marked as stale because it has not
+          had recent activity. It will be closed in 7 days if no further
+          activity occurs.
+        stale-pr-message: >
+          This pull request has been automatically marked as stale because it
+          has not had recent activity. It will be closed in 7 days if no
+          further activity occurs.
+        close-issue-message: >
+          This has been automatically closed due to inactivity. Feel free to
+          reopen if this is still relevant.
+        close-pr-message: >
+          This has been automatically closed due to inactivity. Feel free to
+          reopen if this is still relevant.
