@@ -21,6 +21,7 @@ process-compose [flags]
   -d, --hide-disabled            hide disabled processes (env: PC_HIDE_DISABLED_PROC)
       --keep-project             keep the project running even after all processes exit
   -L, --log-file string          Specify the log file path (env: PC_LOG_FILE) (default "/tmp/process-compose-<user>.log")
+      --log-no-color             disable color output in the log file (env: PC_LOG_NO_COLOR)
       --logs-truncate            truncate process logs buffer on startup
   -n, --namespace stringArray    run only specified namespaces (default all)
       --no-server                disable HTTP server (env: PC_NO_SERVER)

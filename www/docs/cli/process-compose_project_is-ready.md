@@ -18,6 +18,7 @@ process-compose project is-ready [flags]
 ```
   -a, --address string       address of the target process compose server (default "localhost")
   -L, --log-file string      Specify the log file path (env: PC_LOG_FILE) (default "/tmp/process-compose-<user>.log")
+      --log-no-color         disable color output in the log file (env: PC_LOG_NO_COLOR)
       --no-server            disable HTTP server (env: PC_NO_SERVER)
       --ordered-shutdown     shut down processes in reverse dependency order
   -p, --port int             port number (env: PC_PORT_NUM) (default 8080)
