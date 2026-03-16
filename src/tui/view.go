@@ -351,7 +351,7 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 		}
 		pv.shortcuts.ShortCutKeys[ActionLogSelection].actionFn()
 	case pv.shortcuts.ShortCutKeys[ActionLogFindExit].key:
-		if !(pv.logsText.isSearchActive() || pv.procRegex != nil) {
+		if !pv.logsText.isSearchActive() && pv.procRegex == nil {
 			return event
 		}
 		pv.shortcuts.ShortCutKeys[ActionLogFindExit].actionFn()
@@ -364,7 +364,7 @@ func (pv *pcView) onMainGridKey(event *tcell.EventKey) *tcell.EventKey {
 			}
 			pv.shortcuts.ShortCutKeys[ActionLogSelection].actionFn()
 		case pv.shortcuts.ShortCutKeys[ActionLogFindExit].rune:
-			if !(pv.logsText.isSearchActive() || pv.procRegex != nil) {
+			if !pv.logsText.isSearchActive() && pv.procRegex == nil {
 				return event
 			}
 			pv.shortcuts.ShortCutKeys[ActionLogFindExit].actionFn()

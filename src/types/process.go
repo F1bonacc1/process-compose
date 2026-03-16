@@ -337,7 +337,7 @@ func (p *RestartPolicy) UnmarshalYAML(node *yaml.Node) error {
 	case "no":
 		*p = RestartPolicyNo
 	default:
-		return fmt.Errorf("Invalid restart policy: %q", value)
+		return fmt.Errorf("invalid restart policy: %q", value)
 	}
 	return nil
 }
@@ -444,7 +444,7 @@ func (c *ProcessCondition) UnmarshalYAML(node *yaml.Node) error {
 	case "process_log_ready":
 		*c = ProcessConditionLogReady
 	default:
-		return fmt.Errorf("Invalid process dependency condition: %q", value)
+		return fmt.Errorf("invalid process dependency condition: %q", value)
 	}
 	return nil
 }

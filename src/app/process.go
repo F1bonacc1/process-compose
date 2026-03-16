@@ -536,7 +536,7 @@ func (p *Process) getLogPath() string {
 
 	if strings.Contains(logLocation, LogReplicaNum) {
 		replicaStr := strconv.Itoa(p.procConf.ReplicaNum)
-		logLocation = strings.Replace(logLocation, LogReplicaNum, replicaStr, -1)
+		logLocation = strings.ReplaceAll(logLocation, LogReplicaNum, replicaStr)
 	} else if p.procConf.Replicas > 1 {
 		logLocation = fmt.Sprintf("%s.%d", logLocation, p.procConf.ReplicaNum)
 	}

@@ -58,7 +58,7 @@ func checkReady(client *client.PcClient) error {
 		return err
 	}
 
-	var notReady []ProcessStateReason = make([]ProcessStateReason, 0, len(states.States))
+	notReady := make([]ProcessStateReason, 0, len(states.States))
 	for _, state := range states.States {
 		isReady, reason := state.IsReadyReason()
 		stateReason := ProcessStateReason{
@@ -74,11 +74,11 @@ func checkReady(client *client.PcClient) error {
 		log.Info().Msgf("%d processes are ready", len(states.States))
 		return nil
 	} else {
-		var explanations []string = make([]string, 0, len(notReady))
+		explanations := make([]string, 0, len(notReady))
 		for _, process := range notReady {
 			explanations = append(explanations, process.String())
 		}
-		return fmt.Errorf("Processes are not ready:\n• %s", strings.Join(explanations, "\n• "))
+		return fmt.Errorf("processes are not ready:\n• %s", strings.Join(explanations, "\n• "))
 	}
 }
 

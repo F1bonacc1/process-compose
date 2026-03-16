@@ -235,7 +235,7 @@ func getProcConfigDir() string {
 }
 
 func GetShortCutsPaths(extraFiles []string) []string {
-	var existingPaths []string = make([]string, 0, len(scFiles)+len(extraFiles))
+	existingPaths := make([]string, 0, len(scFiles)+len(extraFiles))
 
 	// Load shortcuts in order of precedence, lowest to highest: first from the
 	// config directory, then from environment variables, then from the CLI

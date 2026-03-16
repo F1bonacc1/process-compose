@@ -101,13 +101,13 @@ func TestScheduleConfig_GetTimezone(t *testing.T) {
 		{
 			name:      "nil config uses local",
 			config:    nil,
-			wantName:  time.Local.String(),
+			wantName:  time.Now().Location().String(),
 			wantError: false,
 		},
 		{
 			name:      "empty timezone uses local",
 			config:    &ScheduleConfig{Timezone: ""},
-			wantName:  time.Local.String(),
+			wantName:  time.Now().Location().String(),
 			wantError: false,
 		},
 		{

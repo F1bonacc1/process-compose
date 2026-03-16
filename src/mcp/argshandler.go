@@ -94,7 +94,7 @@ func SubstituteArguments(input string, args map[string]interface{}, argDefs []ty
 
 	// Restore escaped patterns (remove placeholder, keep as @{arg})
 	for placeholder, original := range escapedMap {
-		result = strings.Replace(result, placeholder, original, -1)
+		result = strings.ReplaceAll(result, placeholder, original)
 	}
 
 	// Return error if any required arguments were missing

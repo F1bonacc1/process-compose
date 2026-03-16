@@ -548,7 +548,7 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 		//the order if first D or C exits is not defined
 		wantOrder1 := []string{"B: exit", "D: exit", "C: exit", "A: exit"}
 		wantOrder2 := []string{"B: exit", "C: exit", "D: exit", "A: exit"}
-		if !(slices.Equal(order, wantOrder1) || slices.Equal(order, wantOrder2)) {
+		if !slices.Equal(order, wantOrder1) && !slices.Equal(order, wantOrder2) {
 			t.Errorf("content = %v, want %v or %v", order, wantOrder1, wantOrder2)
 			return
 		}

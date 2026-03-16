@@ -31,5 +31,5 @@ jobs:
       run: go test -v ./...
 
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6.5.2
+      uses: golangci/golangci-lint-action@v9.0.0
 
