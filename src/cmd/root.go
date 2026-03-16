@@ -20,14 +20,16 @@ import (
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/mcp"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/f1bonacc1/process-compose/src/updater"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
 var (
-	opts    *loader.LoaderOptions
-	logFile *os.File
+	opts      *loader.LoaderOptions
+	logFile   *os.File
+	updateMsg chan string // receives update notification from background check
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
@@ -42,6 +44,23 @@ var (
 			pcFlags.PcThemeChanged = cmd.Flags().Changed(flagTheme)
 			pcFlags.SortColumnChanged = cmd.Flags().Changed(flagSort)
 			config.CliApiTokenPath = *pcFlags.ApiTokenPath
+
+			isVersionUpdate := cmd.Name() == versionUpdateCmd.Name() && cmd.Parent() != nil && cmd.Parent().Name() == versionCmd.Name()
+			if config.CheckForUpdates == "true" && !isMCPStdio && !isVersionUpdate {
+				checkForUpdatesInBackground()
+			}
+		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			if updateMsg != nil {
+				select {
+				case msg, ok := <-updateMsg:
+					if ok && msg != "" {
+						fmt.Fprint(os.Stderr, msg)
+					}
+				case <-time.After(500 * time.Millisecond):
+					// Don't block exit for too long
+				}
+			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			runProjectCmd([]string{})
@@ -304,4 +323,29 @@ func (f refreshRateFlag) Set(str string) error {
 
 func (f refreshRateFlag) Type() string {
 	return "duration"
+}
+
+func checkForUpdatesInBackground() {
+	updateMsg = make(chan string, 1)
+	go func() {
+		latest, err := updater.GetLatestReleaseName()
+		if err != nil {
+			close(updateMsg)
+			return
+		}
+		if updater.CompareVersions(config.Version, latest) >= 0 {
+			close(updateMsg)
+			return
+		}
+		hint := "process-compose version update"
+		if _, err := updater.CheckCanReplace(); err != nil {
+			if runtime.GOOS == "windows" {
+				hint = "an Administrator shell to run: process-compose version update"
+			} else {
+				hint = "sudo process-compose version update"
+			}
+		}
+		updateMsg <- fmt.Sprintf("\n\033[33mInfo:\033[0m New version available: %s -> %s. Run '%s'\n",
+			config.Version, latest, hint)
+	}()
 }

@@ -1,16 +1,15 @@
-## process-compose version
+## process-compose version update
 
-Print version and build info
+Update process-compose to the latest version
 
 ```
-process-compose version [flags]
+process-compose version update [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help    help for version
-  -s, --short   Print only version
+  -h, --help   help for update
 ```
 
 ### Options inherited from parent commands
@@ -18,6 +17,7 @@ process-compose version [flags]
 ```
       --address string       address to listen on (env: PC_ADDRESS) (default "localhost")
   -L, --log-file string      Specify the log file path (env: PC_LOG_FILE) (default "/tmp/process-compose-<user>.log")
+      --log-no-color         disable color output in the log file (env: PC_LOG_NO_COLOR)
       --no-server            disable HTTP server (env: PC_NO_SERVER)
       --ordered-shutdown     shut down processes in reverse dependency order
   -p, --port int             port number (env: PC_PORT_NUM) (default 8080)
@@ -29,6 +29,5 @@ process-compose version [flags]
 
 ### SEE ALSO
 
-* [process-compose](process-compose.md)	 - Processes scheduler and orchestrator
-* [process-compose version update](process-compose_version_update.md)	 - Update process-compose to the latest version
+* [process-compose version](process-compose_version.md)	 - Print version and build info
 

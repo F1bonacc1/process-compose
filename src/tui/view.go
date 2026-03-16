@@ -593,7 +593,7 @@ func (pv *pcView) runOnce() {
 	if err != nil {
 		return
 	}
-	if config.Version != version {
+	if updater.CompareVersions(config.Version, version) < 0 {
 		pv.showUpdateAvailable(version)
 	}
 }
