@@ -169,11 +169,7 @@
           "type": "integer"
         },
         "transport": {
-          "type": "string",
-          "enum": [
-            "sse",
-            "stdio"
-          ]
+          "type": "string"
         },
         "timeout": {
           "type": "string"
@@ -235,6 +231,9 @@
         },
         "environment": {
           "$ref": "#/$defs/Environment"
+        },
+        "env_file": {
+          "type": "string"
         },
         "availability": {
           "$ref": "#/$defs/RestartPolicyConfig"
