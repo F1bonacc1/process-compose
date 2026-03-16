@@ -488,6 +488,20 @@ func (p *ProjectRunner) StopProcess(name string) error {
 	return err
 }
 
+func (p *ProjectRunner) SendSignal(name string, sig int) error {
+	log.Info().Msgf("Sending signal %d to %s", sig, name)
+	proc := p.getRunningProcess(name)
+	if proc == nil {
+		if _, ok := p.project.Processes[name]; !ok {
+			log.Error().Msgf("Process %s does not exist", name)
+			return fmt.Errorf("process %s does not exist", name)
+		}
+		log.Error().Msgf("Process %s is not running", name)
+		return fmt.Errorf("process %s is not running", name)
+	}
+	return proc.sendSignal(sig)
+}
+
 func (p *ProjectRunner) StopProcesses(names []string) (map[string]string, error) {
 	stopped := make(map[string]string)
 	successes := 0

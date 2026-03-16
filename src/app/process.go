@@ -384,6 +384,13 @@ func (p *Process) internalStop() error {
 	return p.stopProcess(false)
 }
 
+func (p *Process) sendSignal(sig int) error {
+	if !p.isRunning() {
+		return fmt.Errorf("process %s is not running", p.getName())
+	}
+	return p.command.Signal(sig, p.procConf.ShutDownParams.ParentOnly)
+}
+
 func (p *Process) stopProcess(withNoRestart bool) error {
 	if withNoRestart {
 		p.runCancelFn()

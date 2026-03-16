@@ -147,6 +147,10 @@ func (p *PcClient) StopProcess(name string) error {
 	return p.stopProcess(name)
 }
 
+func (p *PcClient) SendSignal(name string, sig int) error {
+	return p.sendSignal(name, sig)
+}
+
 func (p *PcClient) StopProcesses(names []string) (map[string]string, error) {
 	return p.stopProcesses(names)
 }

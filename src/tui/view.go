@@ -233,6 +233,7 @@ func (pv *pcView) setShortCutsActions() {
 	})
 	pv.shortcuts.setAction(ActionProcessScale, pv.showScale)
 	pv.shortcuts.setAction(ActionProcessInfo, pv.showInfo)
+	pv.shortcuts.setAction(ActionProcessSignal, pv.showSignalDialog)
 	pv.shortcuts.setAction(ActionLogFind, pv.showSearch)
 	pv.shortcuts.setAction(ActionLogFindNext, func() {
 		pv.logsText.SearchNext()

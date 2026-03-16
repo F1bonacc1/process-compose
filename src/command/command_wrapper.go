@@ -67,3 +67,7 @@ func (c *CmdWrapper) Output() ([]byte, error) {
 func (c *CmdWrapper) CombinedOutput() ([]byte, error) {
 	return c.cmd.CombinedOutput()
 }
+
+func (c *CmdWrapper) Signal(sig int, parentOnly bool) error {
+	return c.Stop(sig, parentOnly)
+}

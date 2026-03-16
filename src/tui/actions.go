@@ -23,6 +23,7 @@ const (
 	ActionProcessStart     = ActionName("process_start")
 	ActionProcessScale     = ActionName("process_scale")
 	ActionProcessInfo      = ActionName("process_info")
+	ActionProcessSignal    = ActionName("process_signal")
 	ActionProcessStop      = ActionName("process_stop")
 	ActionProcessRestart   = ActionName("process_restart")
 	ActionProcessScreen    = ActionName("process_screen")
@@ -56,6 +57,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionLogSelection:     tcell.KeyCtrlS,
 	ActionProcessScale:     tcell.KeyF2,
 	ActionProcessInfo:      tcell.KeyF3,
+	ActionProcessSignal:    tcell.KeyF12,
 	ActionProcessStart:     tcell.KeyF7,
 	ActionProcessStop:      tcell.KeyF9,
 	ActionProcessRestart:   tcell.KeyCtrlR,
@@ -112,6 +114,7 @@ var procActionsOrder = []ActionName{
 	ActionProcFilter,
 	ActionProcessScale,
 	ActionProcessInfo,
+	ActionProcessSignal,
 	ActionProcessStart,
 	ActionProcessScreen,
 	ActionProcessStop,
@@ -340,6 +343,9 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionProcessInfo: {
 				Description: "Info",
+			},
+			ActionProcessSignal: {
+				Description: "Signal",
 			},
 			ActionProcessStart: {
 				Description: "Start",

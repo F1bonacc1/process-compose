@@ -176,6 +176,34 @@ func (api *PcApi) StopProcess(c *gin.Context) {
 }
 
 // @Schemes
+// @Id				SendSignal
+// @Description	Sends a POSIX signal to the process
+// @Tags			Process
+// @Summary		Signal a process
+// @Produce		json
+// @Param			name	path		string				true	"Process Name"
+// @Param			signal	path		int					true	"Signal Number"
+// @Success		200		{object}	api.NameResponse	"Signaled Process Name"
+// @Failure		400		{object}	map[string]string
+// @Router			/process/signal/{name}/{signal} [patch]
+func (api *PcApi) SendSignal(c *gin.Context) {
+	name := c.Param("name")
+	sig, err := strconv.Atoi(c.Param("signal"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid signal"})
+		return
+	}
+
+	err = api.project.SendSignal(name, sig)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"name": name})
+}
+
+// @Schemes
 // @Id				StopProcesses
 // @Description	Sends kill signal to the processes list
 // @Tags			Process

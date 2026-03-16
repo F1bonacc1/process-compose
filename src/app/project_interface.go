@@ -25,6 +25,7 @@ type IProject interface {
 	GetProcessState(name string) (*types.ProcessState, error)
 	GetProcessesState() (*types.ProcessesState, error)
 	StopProcess(name string) error
+	SendSignal(name string, sig int) error
 	StopProcesses(names []string) (map[string]string, error)
 	StartNamespace(namespace string) error
 	StopNamespace(namespace string) error
