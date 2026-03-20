@@ -9,37 +9,38 @@ import (
 
 // mockProject implements app.IProject for testing API handlers.
 type mockProject struct {
-	shutDownProjectFn        func() error
-	isRemoteFn               func() bool
-	errorForSecsFn           func() int
-	getProjectNameFn         func() (string, error)
-	getProjectStateFn        func(bool) (*types.ProjectState, error)
-	getLogLengthFn           func() int
-	getLogsAndSubscribeFn    func(string, pclog.LogObserver) error
-	unSubscribeLoggerFn      func(string, pclog.LogObserver) error
-	getProcessLogFn          func(string, int, int) ([]string, error)
-	getLexicographicNamesFn  func() ([]string, error)
-	getProcessInfoFn         func(string) (*types.ProcessConfig, error)
-	getProcessStateFn        func(string) (*types.ProcessState, error)
-	getProcessesStateFn      func() (*types.ProcessesState, error)
-	stopProcessFn            func(string) error
-	stopProcessesFn          func([]string) (map[string]string, error)
-	startNamespaceFn         func(string) error
-	stopNamespaceFn          func(string) error
-	restartNamespaceFn       func(string) error
-	getNamespacesFn          func() ([]string, error)
-	startProcessFn           func(string) error
-	restartProcessFn         func(string) error
-	scaleProcessFn           func(string, int) error
-	getProcessPortsFn        func(string) (*types.ProcessPorts, error)
-	setProcessPasswordFn     func(string, string) error
-	updateProjectFn          func(*types.Project) (map[string]string, error)
-	updateProcessFn          func(*types.ProcessConfig) error
-	reloadProjectFn          func() (map[string]string, error)
-	truncateProcessLogsFn    func(string) error
-	getProcessPtyFn          func(string) *os.File
-	getFullProcessEnvFn      func(*types.ProcessConfig) []string
-	getDependencyGraphFn     func() (*types.DependencyGraph, error)
+	shutDownProjectFn       func() error
+	isRemoteFn              func() bool
+	errorForSecsFn          func() int
+	getProjectNameFn        func() (string, error)
+	getProjectStateFn       func(bool) (*types.ProjectState, error)
+	getLogLengthFn          func() int
+	getLogsAndSubscribeFn   func(string, pclog.LogObserver) error
+	unSubscribeLoggerFn     func(string, pclog.LogObserver) error
+	getProcessLogFn         func(string, int, int) ([]string, error)
+	getLexicographicNamesFn func() ([]string, error)
+	getProcessInfoFn        func(string) (*types.ProcessConfig, error)
+	getProcessStateFn       func(string) (*types.ProcessState, error)
+	getProcessesStateFn     func() (*types.ProcessesState, error)
+	stopProcessFn           func(string) error
+	stopProcessesFn         func([]string) (map[string]string, error)
+	startNamespaceFn        func(string) error
+	stopNamespaceFn         func(string) error
+	restartNamespaceFn      func(string) error
+	getNamespacesFn         func() ([]string, error)
+	startProcessFn          func(string) error
+	restartProcessFn        func(string) error
+	scaleProcessFn          func(string, int) error
+	getProcessPortsFn       func(string) (*types.ProcessPorts, error)
+	setProcessPasswordFn    func(string, string) error
+	updateProjectFn         func(*types.Project) (map[string]string, error)
+	updateProcessFn         func(*types.ProcessConfig) error
+	reloadProjectFn         func() (map[string]string, error)
+	truncateProcessLogsFn   func(string) error
+	getProcessPtyFn         func(string) *os.File
+	getFullProcessEnvFn     func(*types.ProcessConfig) []string
+	getDependencyGraphFn    func() (*types.DependencyGraph, error)
+	sendSignalFn            func(string, int) error
 }
 
 func (m *mockProject) ShutDownProject() error {
@@ -136,6 +137,13 @@ func (m *mockProject) GetProcessesState() (*types.ProcessesState, error) {
 func (m *mockProject) StopProcess(name string) error {
 	if m.stopProcessFn != nil {
 		return m.stopProcessFn(name)
+	}
+	return nil
+}
+
+func (m *mockProject) SendSignal(name string, sig int) error {
+	if m.sendSignalFn != nil {
+		return m.sendSignalFn(name, sig)
 	}
 	return nil
 }
