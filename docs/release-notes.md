@@ -1,5 +1,25 @@
 # Release Notes
 
+## [v1.100.0] - 2026-03-20
+
+### New Features
+
+- **POSIX Signal Support**: Added support for sending custom POSIX signals to processes via the TUI, by Kevin J. Lynagh.
+- **Process Environment Files**: Added process-specific `env_file` support to load environment variables from dedicated files.
+- **Log Color Control**: Added the `--log-no-color` CLI flag and `PC_LOG_NO_COLOR` environment variable to disable color output in log files.
+- **Self-Update Capability**: Added a self-update command to securely download and install new versions.
+- **Shutdown Logging**: Added explicit logging when a process exits or is skipped and triggers project shutdown.
+- **TUI Footer Links**: Added "Donate" and "Ask Question" links to the TUI footer that open in the default browser.
+
+### Bug Fixes
+
+- Fixed a race condition by waiting for the detached daemon's HTTP server to be ready before proceeding.
+- Fixed the process editing loop to correctly exit if a user exits without changing the configuration.
+- Fixed incorrectly typed `RestartPolicy` and `ProcessCondition` properties when marshaling for editing.
+- Improved concurrency safety in the project runner.
+
+---
+
 ## [v1.94.0] - 2026-02-21
 
 ### New Features
