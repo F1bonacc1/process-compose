@@ -1486,6 +1486,9 @@ func getSleepCommand(seconds float64) string {
 }
 
 func TestSystem_TestEnvFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping on Windows: fixture uses bash-specific variable expansion ($$MY_NAME)")
+	}
 	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-env-file.yaml")
 	t.Run(fixture, func(t *testing.T) {
 		project, err := loader.Load(&loader.LoaderOptions{
