@@ -22,6 +22,7 @@ Bullet each item at the start of the line with `-`.
 End each bullet with a period.
 
 If the change was made by someone other than Eugene Berger note it at the end of the bullet point as ", by XXX."
+If the change addresses an issue, include the issue number in the bullet point as ", addresses issue #XXX.". The fixed issues are mentioned in the git commit message.
 The release caption should be `## [v1.Y.0] - YYYY-MM-DD` where `v1.Y.0` is the new version and `YYYY-MM-DD` is the date of the release.
 The `Y` in `v1.Y.0` should be calculated as `last_release_Y + num_new_features` where `num_new_features` is the number of new features in the release.
 Release footer should be `---` followed by a blank line.

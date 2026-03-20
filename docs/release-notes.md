@@ -5,15 +5,15 @@
 ### New Features
 
 - **POSIX Signal Support**: Added support for sending custom POSIX signals to processes via the TUI, by Kevin J. Lynagh.
-- **Process Environment Files**: Added process-specific `env_file` support to load environment variables from dedicated files.
-- **Log Color Control**: Added the `--log-no-color` CLI flag and `PC_LOG_NO_COLOR` environment variable to disable color output in log files.
+- **Process Environment Files**: Added process-specific `env_file` support to load environment variables from dedicated files, addresses issue #406.
+- **Log Color Control**: Added the `--log-no-color` CLI flag and `PC_LOG_NO_COLOR` environment variable to disable color output in log files, addresses issue #440.
 - **Self-Update Capability**: Added a self-update command to securely download and install new versions.
 - **Shutdown Logging**: Added explicit logging when a process exits or is skipped and triggers project shutdown.
 - **TUI Footer Links**: Added "Donate" and "Ask Question" links to the TUI footer that open in the default browser.
 
 ### Bug Fixes
 
-- Fixed a race condition by waiting for the detached daemon's HTTP server to be ready before proceeding.
+- Fixed a race condition by waiting for the detached daemon's HTTP server to be ready before proceeding, addresses issue #443 and #424.
 - Fixed the process editing loop to correctly exit if a user exits without changing the configuration.
 - Fixed incorrectly typed `RestartPolicy` and `ProcessCondition` properties when marshaling for editing.
 - Improved concurrency safety in the project runner.
