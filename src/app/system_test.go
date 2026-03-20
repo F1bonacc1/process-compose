@@ -21,6 +21,24 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 )
 
+func waitForProcessState(t *testing.T, runner *ProjectRunner, name string, wantStatus string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		state, err := runner.GetProcessState(name)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		if state.Status == wantStatus {
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	state, _ := runner.GetProcessState(name)
+	t.Errorf("process %s: want %s, got %s (after %v)", name, wantStatus, state.Status, timeout)
+}
+
 func getFixtures() []string {
 	matches, err := filepath.Glob("../../fixtures/process-compose-*.yaml")
 	if err != nil {
@@ -611,14 +629,8 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 		return
 	}
 
-	time.Sleep(100 * time.Millisecond)
-	state, err = runner.GetProcessState(restarting)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if state.Status != types.ProcessStateCompleted {
-		t.Errorf("process %s want %s got %s", restarting, types.ProcessStateCompleted, state.Status)
+	waitForProcessState(t, runner, restarting, types.ProcessStateCompleted, 5*time.Second)
+	if t.Failed() {
 		return
 	}
 	state, err = runner.GetProcessState(notRestarting)
@@ -636,16 +648,7 @@ func TestSystem_TestProcShutDownNoRestart(t *testing.T) {
 		return
 	}
 
-	time.Sleep(100 * time.Millisecond)
-	state, err = runner.GetProcessState(notRestarting)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if state.Status != types.ProcessStateCompleted {
-		t.Errorf("process %s is running", notRestarting)
-		return
-	}
+	waitForProcessState(t, runner, notRestarting, types.ProcessStateCompleted, 5*time.Second)
 }
 func TestSystem_TestReadyLine(t *testing.T) {
 	proc1 := "proc1"

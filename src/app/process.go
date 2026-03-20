@@ -37,7 +37,6 @@ const (
 type Process struct {
 	sync.Mutex
 	globalEnv            []string
-	confMtx              sync.Mutex
 	procConf             *types.ProcessConfig
 	procState            *types.ProcessState
 	stateMtx             sync.Mutex
@@ -780,7 +779,8 @@ func (p *Process) getState() *types.ProcessState {
 	p.updateProcState()
 	p.stateMtx.Lock()
 	defer p.stateMtx.Unlock()
-	return p.procState
+	stateCopy := *p.procState
+	return &stateCopy
 }
 
 type filterFn func(*types.ProcessState)
@@ -819,7 +819,7 @@ func (p *Process) GetPty() *os.File {
 func (p *Process) onStateChange(state string) {
 	switch state {
 	case types.ProcessStateSkipped:
-		p.setExitCode(1)
+		p.setExitCodeLocked(1)
 	case types.ProcessStateRestarting:
 		fallthrough
 	case types.ProcessStateLaunching:
@@ -1018,20 +1018,25 @@ func (p *Process) logOpenPort(label string, port uint16) {
 }
 
 func (p *Process) getExitCode() int {
-	defer p.confMtx.Unlock()
-	p.confMtx.Lock()
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
 	return p.procState.ExitCode
 }
 
 func (p *Process) setExitCode(code int) {
-	defer p.confMtx.Unlock()
-	p.confMtx.Lock()
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
+	p.procState.ExitCode = code
+}
+
+// setExitCodeLocked sets the exit code when stateMtx is already held.
+func (p *Process) setExitCodeLocked(code int) {
 	p.procState.ExitCode = code
 }
 
 func (p *Process) setProcHealth(health string) {
-	defer p.confMtx.Unlock()
-	p.confMtx.Lock()
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
 	p.procState.Health = health
 }
 
