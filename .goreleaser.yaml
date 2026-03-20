@@ -101,22 +101,6 @@ announce:
     #
     # Default: 'https://goreleaser.com/static/avatar.png'
     icon_url: "https://avatars.githubusercontent.com/u/806740?v=4"
-  twitter:
-    enabled: false
-
-    # Message template to use while publishing.
-    #
-    # Default: '{{ .ProjectName }} {{ .Tag }} is out! Check it out at {{ .ReleaseURL }}'.
-    # Templates: allowed.
-    message_template: |
-      **New Release: Process Compose {{.Tag}}**
-      Process Compose {{.Tag}} is out.
-
-      What's new: {{.ReleaseURL}}
-
-      Thanks,
-      f1bonacc1
-
   bluesky:
     # Whether it's enabled or not.
     enabled: true
