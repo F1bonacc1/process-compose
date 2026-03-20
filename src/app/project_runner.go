@@ -161,6 +161,13 @@ func (p *ProjectRunner) Run() error {
 		case runProcCount := <-p.procCompleteChannel:
 			log.Debug().Msgf("Remaining processes: %d", runProcCount)
 			if runProcCount == 0 {
+				p.restartMutex.Lock()
+				pendingRestarts := len(p.restartCalls)
+				p.restartMutex.Unlock()
+				if pendingRestarts > 0 {
+					log.Debug().Msgf("Skipping project completion: %d restart(s) in progress", pendingRestarts)
+					continue
+				}
 				if p.processScheduler == nil || len(p.processScheduler.GetScheduledProcesses()) == 0 {
 					log.Info().Msg("Project completed")
 					p.exitCodeMutex.Lock()
