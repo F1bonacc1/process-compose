@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"syscall"
 
 	"github.com/f1bonacc1/process-compose/src/types"
 
@@ -195,8 +194,9 @@ func (api *PcApi) SendSignal(c *gin.Context) {
 		return
 	}
 
-	if sig < 0 || sig > int(syscall.SIGTTOU) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid signal: " + strconv.Itoa(sig) + ". Must be between 0 and " + strconv.Itoa(int(syscall.SIGTTOU))})
+	const maxSignal = 22
+	if sig < 0 || sig > maxSignal {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid signal: " + strconv.Itoa(sig) + ". Must be between 0 and " + strconv.Itoa(maxSignal)})
 		return
 	}
 
