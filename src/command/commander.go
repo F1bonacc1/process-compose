@@ -6,7 +6,6 @@ import (
 )
 
 type Commander interface {
-	Signal(sig int, parentOnly bool) error
 	Stop(sig int, _parentOnly bool) error
 	SetCmdArgs()
 	Start() error

@@ -11,48 +11,12 @@ import (
 
 func (p *PcClient) stopProcess(name string) error {
 	url := fmt.Sprintf("http://%s/process/stop/%s", p.address, name)
-	req, err := http.NewRequest(http.MethodPatch, url, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		return nil
-	}
-
-	var respErr pcError
-	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-		log.Error().Msgf("failed to decode stop process %s response: %v", name, err)
-		return err
-	}
-	return errors.New(respErr.Error)
+	return p.doAction(http.MethodPatch, url, fmt.Sprintf("stop process %s", name))
 }
 
 func (p *PcClient) sendSignal(name string, sig int) error {
 	url := fmt.Sprintf("http://%s/process/signal/%s/%d", p.address, name, sig)
-	req, err := http.NewRequest(http.MethodPatch, url, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		return nil
-	}
-
-	var respErr pcError
-	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-		log.Error().Msgf("failed to decode send signal %s response: %v", name, err)
-		return err
-	}
-	return errors.New(respErr.Error)
+	return p.doAction(http.MethodPatch, url, fmt.Sprintf("send signal %s", name))
 }
 
 func (p *PcClient) stopProcesses(names []string) (map[string]string, error) {

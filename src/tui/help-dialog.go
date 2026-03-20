@@ -105,6 +105,9 @@ func createHelpTable(shortcuts *ShortCuts, fn func()) *tview.Table {
 	table.SetCell(row, 0, tview.NewTableCell(processes).SetSelectable(false))
 	row++
 	for _, act := range procActionsOrder {
+		if act == ActionProcessSignal && len(availableSignalOptions()) == 0 {
+			continue
+		}
 		action := shortcuts.ShortCutKeys[act]
 		table.SetCell(row, 0, tview.NewTableCell(action.ShortCut).SetSelectable(false))
 		if len(action.Description) > 0 {

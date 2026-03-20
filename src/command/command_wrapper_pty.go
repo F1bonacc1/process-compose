@@ -64,10 +64,6 @@ func (c *CmdWrapperPty) Stop(sig int, parentOnly bool) error {
 	return err
 }
 
-func (c *CmdWrapperPty) Signal(sig int, parentOnly bool) error {
-	return c.CmdWrapper.Signal(sig, parentOnly)
-}
-
 func (c *CmdWrapperPty) StdoutPipe() (io.ReadCloser, error) {
 	if c.ptmx == nil {
 		err := c.Start()

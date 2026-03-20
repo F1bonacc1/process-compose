@@ -29,10 +29,6 @@ func (c *MockCommand) Start() error {
 	return nil
 }
 
-func (c *MockCommand) Signal(_ int, _ bool) error {
-	return nil
-}
-
 func (c *MockCommand) Stop(_ int, _ bool) error {
 	c.stopChan <- struct{}{}
 	c.cancel()

@@ -23,40 +23,61 @@ func (pv *pcView) showSignalDialog() {
 	}
 
 	name := pv.getSelectedProcName()
-	form := tview.NewForm()
-	form.SetCancelFunc(func() {
-		pv.pages.RemovePage(PageDialog)
-	})
-	form.SetItemPadding(1)
-	form.SetBorder(true)
-	form.SetButtonsAlign(tview.AlignCenter)
-	form.SetTitle("Send Signal to " + name)
+	list := tview.NewList()
 
-	labels := make([]string, len(options))
+	const scList = "123456789abcdefghijklmnopqrstuvwyzABCDEGHIJKLMNOPQRSTUVWXYZ"
+	maxLblLen := 0
 	current := 0
 	for i, option := range options {
-		labels[i] = fmt.Sprintf("%s (%d) - %s", option.Name, option.Signal, option.Description)
-		if option.Name == "SIGTERM" {
+		opt := option
+		label := fmt.Sprintf("%s (%d)", opt.Name, opt.Signal)
+		secondaryText := opt.Description
+		r := '0'
+		if i < len(scList) {
+			r = rune(scList[i])
+		}
+		if opt.Name == "SIGTERM" {
 			current = i
 		}
-	}
-
-	form.AddDropDown("Signal:", labels, current, nil)
-	form.AddButton("Send", func() {
-		selected, _ := form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
-		if selected < 0 || selected >= len(options) {
-			pv.showError("Please select a signal")
-			return
+		list.AddItem(label, secondaryText, r, func() {
+			pv.pages.RemovePage(PageDialog)
+			go pv.handleProcessSignaled(name, opt)
+		})
+		if len(secondaryText) > maxLblLen {
+			maxLblLen = len(secondaryText)
 		}
-		pv.pages.RemovePage(PageDialog)
-		go pv.handleProcessSignaled(name, options[selected])
-	})
-	form.AddButton("Cancel", func() {
+	}
+	list.AddItem(cancelLbl, "Select to close", 'x', func() {
 		pv.pages.RemovePage(PageDialog)
 	})
+	list.SetCurrentItem(current)
+	list.SetDoneFunc(func() {
+		pv.pages.RemovePage(PageDialog)
+	})
+	list.SetBorder(true).SetTitle("Send Signal to " + name)
 
-	pv.styleForm(form)
-	pv.showDialog(form, 76, 10)
+	footer := tview.NewTextView().
+		SetDynamicColors(true).
+		SetTextAlign(tview.AlignCenter).
+		SetText("↑/↓: Navigate  Enter: Send  Esc: Cancel")
+	footer.SetTextColor(pv.styles.Dialog().LabelFgColor.Color())
+	footer.SetBackgroundColor(pv.styles.BgColor())
+
+	listHeight := (len(options) + 2) * 2
+	footerHeight := 1
+	totalHeight := listHeight + footerHeight
+	listWidth := maxLblLen + 10
+
+	flex := tview.NewFlex().
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(list, listHeight, 0, true).
+			AddItem(footer, footerHeight, 0, false), listWidth, 1, true).
+		AddItem(nil, 0, 1, false)
+	list.SetBackgroundColor(pv.styles.BgColor())
+
+	pv.pages.AddPage(PageDialog, createDialogPage(flex, listWidth, totalHeight), true, true)
+	pv.appView.SetFocus(flex)
 }
 
 func (pv *pcView) handleProcessSignaled(name string, option processSignalOption) {

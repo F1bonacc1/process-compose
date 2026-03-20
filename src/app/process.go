@@ -385,10 +385,10 @@ func (p *Process) internalStop() error {
 }
 
 func (p *Process) sendSignal(sig int) error {
-	if !p.isRunning() {
+	if !p.isSignalable() {
 		return fmt.Errorf("process %s is not running", p.getName())
 	}
-	return p.command.Signal(sig, p.procConf.ShutDownParams.ParentOnly)
+	return p.command.Stop(sig, p.procConf.ShutDownParams.ParentOnly)
 }
 
 func (p *Process) stopProcess(withNoRestart bool) error {
@@ -475,7 +475,18 @@ func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
 }
 
 func (p *Process) isRunning() bool {
-	return p.isOneOfStates(types.ProcessStateRunning, types.ProcessStateLaunched, types.ProcessStateLaunching)
+	return p.isOneOfStates(
+		types.ProcessStateRunning,
+		types.ProcessStateLaunched,
+		types.ProcessStateLaunching,
+	)
+}
+
+func (p *Process) isSignalable() bool {
+	return p.isOneOfStates(
+		types.ProcessStateRunning,
+		types.ProcessStateTerminating,
+	)
 }
 
 func (p *Process) prepareForShutDown() {

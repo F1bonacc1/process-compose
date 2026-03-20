@@ -57,7 +57,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionLogSelection:     tcell.KeyCtrlS,
 	ActionProcessScale:     tcell.KeyF2,
 	ActionProcessInfo:      tcell.KeyF3,
-	ActionProcessSignal:    tcell.KeyF12,
+	ActionProcessSignal:    tcell.KeyCtrlX,
 	ActionProcessStart:     tcell.KeyF7,
 	ActionProcessStop:      tcell.KeyF9,
 	ActionProcessRestart:   tcell.KeyCtrlR,
@@ -345,7 +345,7 @@ func newShortCuts() *ShortCuts {
 				Description: "Info",
 			},
 			ActionProcessSignal: {
-				Description: "Signal",
+				Description: "Send Signal",
 			},
 			ActionProcessStart: {
 				Description: "Start",
@@ -426,6 +426,9 @@ func newShortCuts() *ShortCuts {
 				Description: "Namespace Operations",
 			},
 		},
+	}
+	if len(availableSignalOptions()) == 0 {
+		delete(sc.ShortCutKeys, ActionProcessSignal)
 	}
 	for k, v := range sc.ShortCutKeys {
 		assignDefaultKeys(k, v)

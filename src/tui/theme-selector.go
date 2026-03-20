@@ -69,6 +69,11 @@ func (pv *pcView) createThemeSelector() tview.Primitive {
 		pv.setTheme(currentStyle)
 		pv.pages.RemovePage(PageDialog)
 	})
+	list.SetDoneFunc(func() {
+		log.Debug().Msgf("reverting to the original theme %s", currentStyle)
+		pv.setTheme(currentStyle)
+		pv.pages.RemovePage(PageDialog)
+	})
 	list.SetBorder(true).SetTitle("Themes")
 
 	flex := tview.NewFlex().
