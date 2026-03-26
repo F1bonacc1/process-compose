@@ -187,6 +187,14 @@ func (p *Process) waitForStdOutErr() {
 	ctx, cancel := context.WithCancel(context.Background())
 	if p.procConf.IsDaemon {
 		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(p.procConf.LaunchTimeout)*time.Second)
+	} else if p.isState(types.ProcessStateTerminating) {
+		// In terminating state, never block forever on stdout/stderr drain.
+		// Reaching command.Wait() is required to reap child processes.
+		timeoutSec := p.procConf.ShutDownParams.ShutDownTimeout
+		if timeoutSec == UndefinedShutdownTimeoutSec {
+			timeoutSec = DefaultShutdownTimeoutSec
+		}
+		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 	}
 	defer cancel()
 	if p.stdOutDone != nil {

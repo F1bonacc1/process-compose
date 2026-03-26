@@ -1431,6 +1431,83 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 	}
 }
 
+func TestSystem_StartProcessResetsStaleTerminatingState(t *testing.T) {
+	testProcess := "stale_terminating"
+	shell := command.DefaultShellConfig()
+
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			testProcess: {
+				Name:        testProcess,
+				ReplicaName: testProcess,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, getSleepCommand(1.0)},
+				RestartPolicy: types.RestartPolicyConfig{
+					Restart: types.RestartPolicyNo,
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project:         project,
+		processesToRun:  []string{},
+		noDeps:          false,
+		mainProcess:     "",
+		mainProcessArgs: []string{},
+		isTuiOn:         false,
+	})
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	// Simulate stale state from a prior broken termination.
+	runner.statesMutex.Lock()
+	runner.processStates[testProcess].Status = types.ProcessStateTerminating
+	runner.processStates[testProcess].IsRunning = false
+	runner.statesMutex.Unlock()
+	runner.runProcMutex.Lock()
+	runner.runningProcesses = make(map[string]*Process)
+	runner.runProcMutex.Unlock()
+	runner.doneProcMutex.Lock()
+	runner.doneProcesses = make(map[string]*Process)
+	runner.doneProcMutex.Unlock()
+	runner.logger = pclog.NewNilLogger()
+
+	if err := runner.StartProcess(testProcess); err != nil {
+		t.Fatalf("failed to start process: %v", err)
+	}
+
+	var lastStatus string
+	for attempts := range 200 {
+		state, stateErr := runner.GetProcessState(testProcess)
+		if stateErr != nil {
+			t.Fatalf("failed to get process state: %v", stateErr)
+		}
+		lastStatus = state.Status
+		if state.Status == types.ProcessStateRunning || state.Status == types.ProcessStateCompleted {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+		if attempts == 199 {
+			t.Fatalf("process failed to leave stale Terminating state, last status=%s", state.Status)
+		}
+	}
+
+	if lastStatus == types.ProcessStateTerminating {
+		t.Fatalf("expected process to recover from stale Terminating state, got %s", lastStatus)
+	}
+
+	// Cleanup if still running.
+	if runner.getRunningProcess(testProcess) != nil {
+		if err := runner.StopProcess(testProcess); err != nil {
+			t.Fatalf("failed to stop process: %v", err)
+		}
+	}
+}
+
 func TestReadinessProbeRestart(t *testing.T) {
 	proc := &types.ProcessConfig{
 		Name:        "test",
