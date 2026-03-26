@@ -195,6 +195,20 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		procLog = pclog.NewLogBuffer(0)
 	}
 	procState, _ := p.GetProcessState(config.ReplicaName)
+	// Recover from stale "Terminating" state snapshots (for example when a
+	// process ended as zombie and never transitioned to Completed). Reusing
+	// that snapshot would cause Process.run() to short-circuit immediately.
+	if procState != nil &&
+		procState.Status == types.ProcessStateTerminating &&
+		!procState.IsRunning {
+		log.Warn().
+			Str("process", config.ReplicaName).
+			Msg("Resetting stale terminating state before start")
+		procState = types.NewProcessState(config)
+		p.statesMutex.Lock()
+		p.processStates[config.ReplicaName] = procState
+		p.statesMutex.Unlock()
+	}
 	isMain := config.Name == p.mainProcess
 	hasMain := p.mainProcess != ""
 	printLogs := !hasMain && !p.isTuiOn && !p.project.MCPServer.IsStdio()
