@@ -19,6 +19,10 @@ var (
 	// ANSI escape sequence patterns
 	// Clear entire screen sequences
 	clearScreenPattern = regexp.MustCompile(`\x1b\[2J|\x1bc|\x1b\[H\x1b\[2J`)
+	// tviewTagPattern matches patterns that tview's parseTag actually interprets
+	// as style/region tags. Unlike tview.Escape's regex, this excludes spaces,
+	// underscores, and other characters that parseTag rejects.
+	tviewTagPattern = regexp.MustCompile(`(\[[a-zA-Z0-9#:\-"]+\[*)\]`)
 )
 
 type truncator interface {
@@ -72,13 +76,30 @@ func (l *LogView) WriteString(line string) (n int, err error) {
 			// Remove the clear sequence and process remaining text
 			line = clearScreenPattern.ReplaceAllString(line, "")
 		}
-		return l.buffer.WriteString(tview.Escape(line + "\n"))
+		return l.buffer.WriteString(escapeForAnsiWriter(line) + "\n")
 	}
 	if strings.Contains(strings.ToLower(line), "error") {
 		return fmt.Fprintf(l.buffer, "[deeppink]%s[-:-:-]\n", tview.Escape(line))
 	} else {
 		return fmt.Fprintf(l.buffer, "%s\n", tview.Escape(line))
 	}
+}
+
+
+// escapeForAnsiWriter escapes tview-style tags in text that also contains ANSI
+// escape sequences. tview.Escape cannot be used here for two reasons:
+//  1. Its regex matches across ANSI/literal boundaries (e.g. "\x1b[0m]" contains
+//     "[0m]" which tview.Escape corrupts to "[0m[]").
+//  2. Its regex is broader than tview's actual parser — it escapes patterns with
+//     spaces and underscores that parseTag would never interpret as tags.
+//
+// This function protects ANSI CSI introducers (\x1b[) with a placeholder, then
+// applies a tighter escape regex that only matches what tview actually parses.
+func escapeForAnsiWriter(line string) string {
+	const placeholder = "\x1a" // SUB control char, not expected in log output
+	protected := strings.ReplaceAll(line, "\x1b[", placeholder)
+	protected = tviewTagPattern.ReplaceAllString(protected, "$1[]")
+	return strings.ReplaceAll(protected, placeholder, "\x1b[")
 }
 
 func (l *LogView) tryPrettyPrintJson(line string) string {

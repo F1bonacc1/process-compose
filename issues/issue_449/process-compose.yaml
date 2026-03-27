@@ -1,0 +1,5 @@
+processes:
+  repro:
+    command: ./repro.py
+  but:
+    command: "echo this will print [butThisWont] and this also should: [with spaces]"
