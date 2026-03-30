@@ -11,7 +11,7 @@ require (
 	github.com/f1bonacc1/glippy v1.1.0
 	github.com/f1bonacc1/go-health/v2 v2.1.6
 	github.com/f1bonacc1/netstat v1.0.2
-	github.com/fatih/color v1.18.0
+	github.com/fatih/color v1.19.0
 	github.com/gdamore/tcell/v2 v2.13.8
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/go-cmp v0.7.0
