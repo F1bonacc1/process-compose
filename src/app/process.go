@@ -110,7 +110,18 @@ func NewProcess(opts ...ProcOpts) *Process {
 
 func (p *Process) run() int {
 	if p.isState(types.ProcessStateTerminating) {
-		return 0
+		select {
+		case <-p.procRunCtx.Done():
+			// Concurrent stop in progress — honour it.
+			return 0
+		default:
+			// Stale "Terminating" state from a prior broken shutdown (e.g. zombie
+			// that was reaped without completing the normal lifecycle). Reset so
+			// the process can start fresh.
+			log.Warn().Str("process", p.getName()).
+				Msg("Resetting stale Terminating state before start")
+			p.setState(types.ProcessStatePending)
+		}
 	}
 
 	if err := p.validateProcess(); err != nil {
@@ -187,12 +198,23 @@ func (p *Process) waitForStdOutErr() {
 	ctx, cancel := context.WithCancel(context.Background())
 	if p.procConf.IsDaemon {
 		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(p.procConf.LaunchTimeout)*time.Second)
+	} else if p.isState(types.ProcessStateTerminating) {
+		// In terminating state, never block forever on stdout/stderr drain.
+		// Reaching command.Wait() is required to reap child processes.
+		timeoutSec := p.procConf.ShutDownParams.ShutDownTimeout
+		if timeoutSec == UndefinedShutdownTimeoutSec {
+			timeoutSec = DefaultShutdownTimeoutSec
+		}
+		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 	}
 	defer cancel()
 	if p.stdOutDone != nil {
 		select {
 		case <-ctx.Done():
 			log.Debug().Msgf("%s stdout done with timeout", p.getName())
+			return
+		case <-p.procRunCtx.Done():
+			log.Debug().Msgf("%s stdout abandoned: process stopped", p.getName())
 			return
 		case <-p.stdOutDone:
 			log.Debug().Msgf("%s stdout done", p.getName())
@@ -203,6 +225,9 @@ func (p *Process) waitForStdOutErr() {
 		select {
 		case <-ctx.Done():
 			log.Debug().Msgf("%s stderr done with timeout", p.getName())
+			return
+		case <-p.procRunCtx.Done():
+			log.Debug().Msgf("%s stderr abandoned: process stopped", p.getName())
 			return
 		case <-p.stdErrDone:
 			log.Debug().Msgf("%s stderr done", p.getName())
