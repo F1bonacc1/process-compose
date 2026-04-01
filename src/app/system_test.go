@@ -1508,6 +1508,80 @@ func TestSystem_StartProcessResetsStaleTerminatingState(t *testing.T) {
 	}
 }
 
+func TestSystem_TestTerminatingWithOrphanedChildHoldingPipe(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("test requires Unix process semantics")
+	}
+	// Reproduce the zombie/stale-Terminating scenario:
+	// A parent process spawns a child that inherits stdout and keeps it open.
+	// When we stop the parent, the stdout pipe never gets an EOF because the
+	// child still holds it. Without a timeout in waitForStdOutErr, the
+	// process would hang in Terminating forever and never reach Completed.
+
+	testProcess := "orphan_pipe"
+	shell := command.DefaultShellConfig()
+	shutdownTimeout := 3
+
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			testProcess: {
+				Name:        testProcess,
+				ReplicaName: testProcess,
+				Executable:  shell.ShellCommand,
+				// Parent spawns a child in a new session (setsid) so it won't
+				// receive the SIGTERM sent to the parent's process group.
+				// The child writes to stdout (holding the pipe open) and sleeps.
+				// When the parent is killed, the child survives and keeps the
+				// pipe open, blocking waitForStdOutErr until the timeout fires.
+				Args: []string{shell.ShellArgument, "setsid bash -c 'while true; do echo holding_pipe; sleep 1; done' & sleep 60"},
+				RestartPolicy: types.RestartPolicyConfig{
+					Restart: types.RestartPolicyNo,
+				},
+				ShutDownParams: types.ShutDownParams{
+					ShutDownTimeout: shutdownTimeout,
+					Signal:          int(syscall.SIGTERM),
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+
+	runner, err := NewProjectRunner(&ProjectOpts{project: project})
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		_ = runner.Run()
+	}()
+
+	// Wait for the process to be running (poll via mutex-protected method to avoid race).
+	var proc *Process
+	for i := 0; i < 50; i++ {
+		time.Sleep(100 * time.Millisecond)
+		proc = runner.getRunningProcess(testProcess)
+		if proc != nil {
+			break
+		}
+	}
+	if proc == nil {
+		t.Fatal("process never started")
+	}
+
+	// Stop the parent — it will enter Terminating, but the child keeps stdout open.
+	stopDone := make(chan struct{})
+	go func() {
+		defer close(stopDone)
+		_ = runner.StopProcess(testProcess)
+	}()
+
+	// The process must reach Completed within the shutdown timeout + margin,
+	// NOT stay stuck in Terminating.
+	waitForProcessState(t, runner, testProcess, types.ProcessStateCompleted,
+		time.Duration(shutdownTimeout+5)*time.Second)
+
+	<-stopDone
+}
+
 func TestReadinessProbeRestart(t *testing.T) {
 	proc := &types.ProcessConfig{
 		Name:        "test",
