@@ -60,6 +60,9 @@ type AnsiTerminal struct {
 	// Mouse mode state
 	mouseModeEnabled bool
 
+	// Application cursor keys mode (DECCKM)
+	applicationCursorKeys bool
+
 	// Callback for sending responses back to the PTY
 	responseCallback func([]byte)
 }
@@ -938,6 +941,8 @@ func (t *AnsiTerminal) handleDSR(params []int) {
 func (t *AnsiTerminal) handleSetMode(params []int) {
 	for _, p := range params {
 		switch p {
+		case 1: // DECCKM - Application cursor keys
+			t.applicationCursorKeys = true
 		case 25: // Show cursor
 			t.cursorVisible = true
 		case 1000, 1002, 1003: // Mouse reporting modes
@@ -954,6 +959,8 @@ func (t *AnsiTerminal) handleSetMode(params []int) {
 func (t *AnsiTerminal) handleResetMode(params []int) {
 	for _, p := range params {
 		switch p {
+		case 1: // DECCKM - Normal cursor keys
+			t.applicationCursorKeys = false
 		case 25: // Hide cursor
 			t.cursorVisible = false
 		case 1000, 1002, 1003: // Mouse reporting modes
@@ -1025,4 +1032,10 @@ func (t *AnsiTerminal) IsMouseModeEnabled() bool {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	return t.mouseModeEnabled
+}
+
+func (t *AnsiTerminal) IsApplicationCursorKeys() bool {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	return t.applicationCursorKeys
 }

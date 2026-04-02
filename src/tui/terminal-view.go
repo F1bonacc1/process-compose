@@ -413,7 +413,22 @@ func (t *TerminalView) handleKeyInput(event *tcell.EventKey) {
 	}
 }
 
+// Application cursor key mode sequences (DECCKM / SS3)
+var applicationKeyMap = map[tcell.Key][]byte{
+	tcell.KeyUp:    []byte("\x1bOA"),
+	tcell.KeyDown:  []byte("\x1bOB"),
+	tcell.KeyRight: []byte("\x1bOC"),
+	tcell.KeyLeft:  []byte("\x1bOD"),
+	tcell.KeyHome:  []byte("\x1bOH"),
+	tcell.KeyEnd:   []byte("\x1bOF"),
+}
+
 func (t *TerminalView) getSpecialKeySequence(key tcell.Key) []byte {
+	if t.term != nil && t.term.IsApplicationCursorKeys() {
+		if seq, ok := applicationKeyMap[key]; ok {
+			return seq
+		}
+	}
 	if seq, ok := specialKeyMap[key]; ok {
 		return seq
 	}
