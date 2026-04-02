@@ -557,6 +557,12 @@ func (t *AnsiTerminal) handleSGR(params []int) {
 			t.currentStyle = t.currentStyle.Underline(true)
 		case param == 7: // Reverse
 			t.currentStyle = t.currentStyle.Reverse(true)
+		case param == 22: // Bold off
+			t.currentStyle = t.currentStyle.Bold(false)
+		case param == 24: // Underline off
+			t.currentStyle = t.currentStyle.Underline(false)
+		case param == 27: // Reverse off
+			t.currentStyle = t.currentStyle.Reverse(false)
 		case param >= 30 && param <= 37: // Foreground color
 			t.currentStyle = t.currentStyle.Foreground(ansiColor256(param - 30))
 		case param >= 90 && param <= 97: // Bright Foreground color
