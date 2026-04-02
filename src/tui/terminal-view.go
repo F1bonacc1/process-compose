@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/creack/pty"
+	"github.com/f1bonacc1/glippy"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
@@ -70,6 +71,15 @@ type TerminalView struct {
 	onFocus      func()
 	onBlur       func()
 	isScrolling  bool
+
+	// Selection state
+	isSelecting  bool
+	hasSelection bool
+	selStartCol  int
+	selStartRow  int
+	selEndCol    int
+	selEndRow    int
+	onSelectionChanged func()
 }
 
 func NewTerminalView(app *tview.Application) *TerminalView {
@@ -111,6 +121,51 @@ func (t *TerminalView) Blur() {
 	if t.onBlur != nil {
 		t.onBlur()
 	}
+}
+
+func (t *TerminalView) SetOnSelectionChanged(handler func()) {
+	t.onSelectionChanged = handler
+}
+
+func (t *TerminalView) HasSelection() bool {
+	return t.hasSelection
+}
+
+func (t *TerminalView) clearSelection() {
+	if t.hasSelection || t.isSelecting {
+		t.hasSelection = false
+		t.isSelecting = false
+		if t.onSelectionChanged != nil {
+			t.onSelectionChanged()
+		}
+	}
+}
+
+func (t *TerminalView) isInSelection(col, row int) bool {
+	if !t.hasSelection && !t.isSelecting {
+		return false
+	}
+	startCol, startRow := t.selStartCol, t.selStartRow
+	endCol, endRow := t.selEndCol, t.selEndRow
+	// Normalize direction
+	startPos := startRow*t.width + startCol
+	endPos := endRow*t.width + endCol
+	if startPos > endPos {
+		startPos, endPos = endPos, startPos
+	}
+	pos := row*t.width + col
+	return pos >= startPos && pos <= endPos
+}
+
+func (t *TerminalView) copySelection() {
+	if !t.hasSelection || t.term == nil {
+		return
+	}
+	text := t.term.GetText(t.selStartCol, t.selStartRow, t.selEndCol, t.selEndRow)
+	if err := glippy.Set(text); err != nil {
+		log.Error().Err(err).Msg("Failed to copy to clipboard")
+	}
+	t.clearSelection()
 }
 
 func (t *TerminalView) SetExitKey(key tcell.Key) {
@@ -312,7 +367,11 @@ func (t *TerminalView) Draw(screen tcell.Screen) {
 	for row := range height {
 		for col := range width {
 			cell := t.term.GetCell(col, row)
-			screen.SetContent(x+col, y+row, cell.Char, nil, cell.Style)
+			style := cell.Style
+			if t.isInSelection(col, row) {
+				style = style.Reverse(true)
+			}
+			screen.SetContent(x+col, y+row, cell.Char, nil, style)
 		}
 	}
 
@@ -347,6 +406,15 @@ func (t *TerminalView) InputHandler() func(event *tcell.EventKey, setFocus func(
 }
 
 func (t *TerminalView) handleKeyInput(event *tcell.EventKey) {
+	// Handle selection: Enter copies, any other key clears
+	if t.hasSelection {
+		if event.Key() == tcell.KeyEnter {
+			t.copySelection()
+			return
+		}
+		t.clearSelection()
+	}
+
 	if event.Key() == t.exitKey {
 		if !t.inEscapeMode {
 			t.inEscapeMode = true
@@ -492,82 +560,107 @@ func (t *TerminalView) MouseHandler() func(action tview.MouseAction, event *tcel
 			return false, nil
 		}
 
-		// Forward mouse event to PTY
-		// We use X10 mouse encoding (simple encoding)
-		// Format: CSI M <button+32> <x+33> <y+33>
-		// Note: coordinates are 1-based in Xterm protocol
+		// When PTY mouse mode is OFF, handle text selection
+		if !t.term.IsMouseModeEnabled() {
+			return t.handleSelectionMouse(action, relX, relY, setFocus)
+		}
 
-		btn := event.Buttons()
-		var buttonCode byte
+		// PTY mouse mode is ON: forward to PTY
+		return t.handlePtyMouse(action, event, relX, relY, setFocus)
+	}
+}
 
-		switch {
-		case btn&tcell.Button1 != 0: // Left click
-			buttonCode = 0
-		case btn&tcell.Button2 != 0: // Middle click
-			buttonCode = 1
-		case btn&tcell.Button3 != 0: // Right click
-			buttonCode = 2
-		case btn&tcell.WheelUp != 0:
-			if !t.isRunning {
-				return true, nil
+func (t *TerminalView) handleSelectionMouse(action tview.MouseAction, relX, relY int, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+	switch action {
+	case tview.MouseLeftDown:
+		t.clearSelection()
+		t.isSelecting = true
+		t.selStartCol = relX
+		t.selStartRow = relY
+		t.selEndCol = relX
+		t.selEndRow = relY
+		setFocus(t)
+		return true, t // Capture subsequent mouse events
+	case tview.MouseMove:
+		if t.isSelecting {
+			t.selEndCol = relX
+			t.selEndRow = relY
+			return true, t // Keep capturing
+		}
+	case tview.MouseLeftUp:
+		if t.isSelecting {
+			t.selEndCol = relX
+			t.selEndRow = relY
+			t.isSelecting = false
+			// Only mark as having selection if start != end
+			if t.selStartCol != t.selEndCol || t.selStartRow != t.selEndRow {
+				t.hasSelection = true
+				if t.onSelectionChanged != nil {
+					t.onSelectionChanged()
+				}
 			}
-			if t.term.IsMouseModeEnabled() {
-				buttonCode = 64
-				break // Continue to encoding
-			}
-			t.isScrolling = true
-			t.term.ScrollViewport(1)
-			return true, nil
-		case btn&tcell.WheelDown != 0:
-			if !t.isRunning {
-				return true, nil
-			}
-			if t.term.IsMouseModeEnabled() {
-				buttonCode = 65
-				break // Continue to encoding
-			}
-			t.isScrolling = true
-			t.term.ScrollViewport(-1)
-			return true, nil
-
-		default:
-			// For movements or unsupported buttons, we consume but don't send (for now)
-			// unless we implement full motion tracking
-			return true, nil
+			return true, nil // Release capture
 		}
-
-		// Add modifiers
-		if event.Modifiers()&tcell.ModShift != 0 {
-			buttonCode |= 4
-		}
-		if event.Modifiers()&tcell.ModAlt != 0 {
-			buttonCode |= 8
-		}
-		if event.Modifiers()&tcell.ModCtrl != 0 {
-			buttonCode |= 16
-		}
-
-		// Encode and write
-		// <button+32> <x+33> <y+33>
-		encoded := []byte{
-			'\x1b', '[', 'M',
-			buttonCode + 32,
-			byte(relX) + 33,
-			byte(relY) + 33,
-		}
-
-		if t.term.IsMouseModeEnabled() {
-			_, err := t.pty.Write(encoded)
-			if err != nil {
-				log.Error().Err(err).Msg("Error writing mouse event to PTY")
-			}
-		}
-
-		// Ensure we get focus on click (especially left click)
-		if action == tview.MouseLeftClick || action == tview.MouseLeftDown {
-			setFocus(t)
-		}
-
+	case tview.MouseLeftClick:
+		t.clearSelection()
+		setFocus(t)
+		return true, nil
+	case tview.MouseScrollUp:
+		t.isScrolling = true
+		t.term.ScrollViewport(1)
+		return true, nil
+	case tview.MouseScrollDown:
+		t.isScrolling = true
+		t.term.ScrollViewport(-1)
 		return true, nil
 	}
+	return true, nil
+}
+
+func (t *TerminalView) handlePtyMouse(action tview.MouseAction, event *tcell.EventMouse, relX, relY int, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+	btn := event.Buttons()
+	var buttonCode byte
+
+	switch {
+	case btn&tcell.Button1 != 0:
+		buttonCode = 0
+	case btn&tcell.Button2 != 0:
+		buttonCode = 1
+	case btn&tcell.Button3 != 0:
+		buttonCode = 2
+	case btn&tcell.WheelUp != 0:
+		buttonCode = 64
+	case btn&tcell.WheelDown != 0:
+		buttonCode = 65
+	default:
+		return true, nil
+	}
+
+	if event.Modifiers()&tcell.ModShift != 0 {
+		buttonCode |= 4
+	}
+	if event.Modifiers()&tcell.ModAlt != 0 {
+		buttonCode |= 8
+	}
+	if event.Modifiers()&tcell.ModCtrl != 0 {
+		buttonCode |= 16
+	}
+
+	encoded := []byte{
+		'\x1b', '[', 'M',
+		buttonCode + 32,
+		byte(relX) + 33,
+		byte(relY) + 33,
+	}
+
+	_, err := t.pty.Write(encoded)
+	if err != nil {
+		log.Error().Err(err).Msg("Error writing mouse event to PTY")
+	}
+
+	if action == tview.MouseLeftClick || action == tview.MouseLeftDown {
+		setFocus(t)
+	}
+
+	return true, nil
 }

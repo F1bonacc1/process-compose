@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"unicode/utf8"
 
@@ -1038,4 +1039,71 @@ func (t *AnsiTerminal) IsApplicationCursorKeys() bool {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	return t.applicationCursorKeys
+}
+
+// GetText extracts text from the cell buffer between two positions.
+// Positions are in screen coordinates. Trailing whitespace per line is trimmed.
+// The selection is linear: from (startCol, startRow) to (endCol, endRow).
+func (t *AnsiTerminal) GetText(startCol, startRow, endCol, endRow int) string {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	// Normalize: ensure start is before end
+	if startRow > endRow || (startRow == endRow && startCol > endCol) {
+		startCol, startRow, endCol, endRow = endCol, endRow, startCol, startRow
+	}
+
+	var lines []string
+	for row := startRow; row <= endRow; row++ {
+		colStart := 0
+		colEnd := t.width - 1
+		if row == startRow {
+			colStart = startCol
+		}
+		if row == endRow {
+			colEnd = endCol
+		}
+
+		var line strings.Builder
+		for col := colStart; col <= colEnd; col++ {
+			cell := t.getCellUnlocked(col, row)
+			line.WriteRune(cell.Char)
+		}
+		lines = append(lines, strings.TrimRight(line.String(), " "))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// getCellUnlocked returns a cell without acquiring the lock (caller must hold it).
+func (t *AnsiTerminal) getCellUnlocked(x, y int) Cell {
+	if t.useAltScreen {
+		if y >= 0 && y < t.height && x >= 0 && x < t.width {
+			return t.cells[y][x]
+		}
+		return Cell{Char: ' ', Style: tcell.StyleDefault}
+	}
+
+	if t.viewOffset == 0 {
+		if y >= 0 && y < t.height && x >= 0 && x < t.width {
+			return t.cells[y][x]
+		}
+		return Cell{Char: ' ', Style: tcell.StyleDefault}
+	}
+
+	logicalRow := y - t.viewOffset
+	if logicalRow >= 0 {
+		if logicalRow < t.height && x >= 0 && x < t.width {
+			return t.cells[logicalRow][x]
+		}
+	} else {
+		historyIndex := len(t.history) + logicalRow
+		if historyIndex >= 0 && historyIndex < len(t.history) {
+			line := t.history[historyIndex]
+			if x >= 0 && x < len(line) {
+				return line[x]
+			}
+		}
+	}
+
+	return Cell{Char: ' ', Style: tcell.StyleDefault}
 }

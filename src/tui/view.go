@@ -136,6 +136,7 @@ func newPcView(project app.IProject) *pcView {
 	pv.termView.SetOnEscape(pv.changeFocus)
 	pv.termView.SetOnFocus(func() { pv.updateHelpTextView() })
 	pv.termView.SetOnBlur(func() { pv.updateHelpTextView() })
+	pv.termView.SetOnSelectionChanged(func() { pv.updateHelpTextView() })
 	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
@@ -526,7 +527,10 @@ func (pv *pcView) updateHelpTextView() {
 	defer pv.addFooterLinks()
 	if pv.termView.HasFocus() {
 		exitKey := pv.shortcuts.ShortCutKeys[ActionTermExit].ShortCut
-		pv.shortcuts.addCustomButton(exitKey+"+Esc", "Exit Interactive", pv.helpFooter)
+		pv.shortcuts.addCustomButton(exitKey+",Esc", "Exit Interactive", pv.helpFooter)
+		if pv.termView.HasSelection() {
+			pv.shortcuts.addCustomButton("Enter", "Copy Selection", pv.helpFooter)
+		}
 		return
 	}
 	if pv.logsText.isSearchActive() {
