@@ -204,6 +204,18 @@ func (s *ShortCuts) addToggleButton(action ActionName, flex *tview.Flex, state b
 	s.ShortCutKeys[action].addToggleButton(flex, state, s.style)
 }
 
+func (s *ShortCuts) addCustomButton(shortcut, description string, flex *tview.Flex) {
+	btnText := fmt.Sprintf("%s[%s:%s:]%s[-:-:-] ",
+		shortcut,
+		string(s.style.FgColor),
+		string(s.style.HlColor),
+		description)
+	button := tview.NewButton(btnText)
+	button.SetStyle(tcell.StyleDefault.Background(s.style.ButtonBgColor.Color()).Foreground(s.style.KeyColor.Color()))
+	button.SetActivatedStyle(tcell.StyleDefault.Background(s.style.ButtonBgColor.Color()).Foreground(s.style.KeyColor.Color()))
+	flex.AddItem(button, len(shortcut+description)+1, 1, false)
+}
+
 func (s *ShortCuts) addCategory(category string, flex *tview.Flex) {
 	textView := tview.NewTextView().SetDynamicColors(true)
 	_, _ = fmt.Fprintf(textView, "[%s::b]%s[-:-:-] ",

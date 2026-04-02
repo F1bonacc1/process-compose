@@ -67,6 +67,8 @@ type TerminalView struct {
 	inEscapeMode bool
 	exitKey      tcell.Key
 	onEscape     func()
+	onFocus      func()
+	onBlur       func()
 	isScrolling  bool
 }
 
@@ -87,6 +89,28 @@ func NewTerminalView(app *tview.Application) *TerminalView {
 
 func (t *TerminalView) SetOnEscape(handler func()) {
 	t.onEscape = handler
+}
+
+func (t *TerminalView) SetOnFocus(handler func()) {
+	t.onFocus = handler
+}
+
+func (t *TerminalView) SetOnBlur(handler func()) {
+	t.onBlur = handler
+}
+
+func (t *TerminalView) Focus(delegate func(p tview.Primitive)) {
+	t.Box.Focus(delegate)
+	if t.onFocus != nil {
+		t.onFocus()
+	}
+}
+
+func (t *TerminalView) Blur() {
+	t.Box.Blur()
+	if t.onBlur != nil {
+		t.onBlur()
+	}
 }
 
 func (t *TerminalView) SetExitKey(key tcell.Key) {
