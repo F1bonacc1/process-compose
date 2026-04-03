@@ -1,5 +1,22 @@
 # Release Notes
 
+## [v1.103.0] - 2026-04-03
+
+### New Features
+
+- Added text selection and clipboard copying support in terminal views.
+- Added application cursor key mode (DECCKM) support for interactive terminal processes.
+- Added context-aware help that updates dynamically when the terminal view is focused.
+
+### Bug Fixes
+
+- Fixed extra brackets appearing in text containing ANSI escape sequences, addresses issue #449.
+- Fixed zombie processes not being reaped after exit.
+- Fixed stale terminating states and pipe blocking during process shutdown, addresses issue #450.
+- Fixed missing ANSI escape code support for disabling bold, underline, and reverse text styles in terminal views.
+
+---
+
 ## [v1.100.0] - 2026-03-20
 
 ### New Features
