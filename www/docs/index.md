@@ -2,6 +2,8 @@
 
 Process Compose is a simple and flexible scheduler and orchestrator to manage non-containerized applications.
 
+<img src="https://github.com/F1bonacc1/process-compose/raw/main/imgs/demo.gif" alt="Demo" />
+
 ## Why was it made?
 
 Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
