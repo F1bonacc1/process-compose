@@ -4,6 +4,8 @@
 
 Process Compose is a simple and flexible scheduler and orchestrator to manage non-containerized applications.
 
+<img src="./imgs/demo.gif" alt="Demo" />
+
 **Why?** Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.
 Since it's written in Go, Process Compose is a single binary file and has no other dependencies.
 
@@ -54,6 +56,7 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 - [Recipes](https://github.com/F1bonacc1/process-compose-recipes) Management
 - Scheduled Processes (cron and interval-based)
 - Dependency Graph visualization (CLI, TUI, and API)
+- [MCP Server](https://f1bonacc1.github.io/process-compose/mcp-server/) integration for AI assistants
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 

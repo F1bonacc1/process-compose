@@ -1,0 +1,96 @@
+version: "0.5"
+
+processes:
+  redis:
+    command: |
+      echo "Starting Redis server..."
+      sleep 1
+      echo "Redis ready on port 6379"
+      echo "Accepting connections..."
+      i=0
+      while [ $i -lt 60 ]; do
+        sleep 2
+        i=$((i+1))
+        echo "$(date '+%H:%M:%S') - Handled $((RANDOM % 100 + 50)) requests"
+      done
+    readiness_probe:
+      exec:
+        command: "true"
+      initial_delay_seconds: 2
+      period_seconds: 2
+
+  postgres:
+    command: |
+      echo "Initializing PostgreSQL..."
+      sleep 1
+      echo "Loading configuration..."
+      sleep 1
+      echo "PostgreSQL ready on port 5432"
+      i=0
+      while [ $i -lt 60 ]; do
+        sleep 3
+        i=$((i+1))
+        echo "$(date '+%H:%M:%S') - Active connections: $((RANDOM % 20 + 5))"
+      done
+    readiness_probe:
+      exec:
+        command: "true"
+      initial_delay_seconds: 3
+      period_seconds: 2
+
+  api-server:
+    command: |
+      echo "Connecting to Redis..."
+      sleep 1
+      echo "Connecting to PostgreSQL..."
+      sleep 1
+      echo "API server listening on :8080"
+      i=0
+      while [ $i -lt 60 ]; do
+        sleep 2
+        i=$((i+1))
+        code=$((RANDOM % 2 == 0 ? 200 : 201))
+        echo "$(date '+%H:%M:%S') - GET /api/v1/users - ${code} - $((RANDOM % 50 + 5))ms"
+      done
+    depends_on:
+      redis:
+        condition: process_healthy
+      postgres:
+        condition: process_healthy
+
+  web-app:
+    command: |
+      echo "Building assets..."
+      sleep 2
+      echo "Compiled successfully!"
+      echo "Web app running on http://localhost:3000"
+      i=0
+      while [ $i -lt 60 ]; do
+        sleep 2
+        i=$((i+1))
+        echo "$(date '+%H:%M:%S') - Serving request from $((RANDOM % 255)).$((RANDOM % 255)).$((RANDOM % 255)).$((RANDOM % 255))"
+      done
+    depends_on:
+      api-server:
+        condition: process_started
+
+  scheduler:
+    command: |
+      echo "Scheduler starting..."
+      sleep 1
+      echo "Registered 3 cron jobs"
+      i=0
+      while [ $i -lt 60 ]; do
+        sleep 4
+        i=$((i+1))
+        echo "$(date '+%H:%M:%S') - Running job: cleanup-sessions"
+        sleep 1
+        echo "$(date '+%H:%M:%S') - Job completed in $((RANDOM % 500 + 100))ms"
+      done
+    depends_on:
+      postgres:
+        condition: process_healthy
+
+  lazygit:
+    command: lazygit
+    is_interactive: true
