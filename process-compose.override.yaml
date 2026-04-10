@@ -255,7 +255,8 @@ processes:
     monitor_for: "activity"
     
   claude:
-    command: "claude"
+    command: "claude -r"
     is_interactive: true
     monitor_for: "silence"
     monitor_silence_threshold: 5s
+    disabled: true
