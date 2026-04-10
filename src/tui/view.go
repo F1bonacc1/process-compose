@@ -319,6 +319,10 @@ func (pv *pcView) setShortCutsActions() {
 		pv.showPassIfNeeded()
 	})
 	pv.shortcuts.setAction(ActionDependencyGraph, pv.showGraphDialog)
+	pv.shortcuts.setAction(ActionCommandPalette, func() {
+		cp := newCommandPalette(pv)
+		pv.showDialog(cp, 55, cp.height())
+	})
 	pv.shortcuts.setAction(ActionNamespaceOps, func() {
 		modal := newNamespaceModal(pv)
 		height := modal.Height()

@@ -47,6 +47,7 @@ const (
 	ActionLogPrettyPrint   = ActionName("log_pretty_print")
 	ActionDependencyGraph  = ActionName("dependency_graph")
 	ActionNamespaceOps     = ActionName("namespace_ops")
+	ActionCommandPalette   = ActionName("command_palette")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -82,6 +83,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionDependencyGraph:  tcell.KeyCtrlQ,
 	ActionLogPrettyPrint:   tcell.KeyRune,
 	ActionNamespaceOps:     tcell.KeyRune,
+	ActionCommandPalette:   tcell.KeyRune,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -89,6 +91,7 @@ var defaultShortcutsRunes = map[ActionName]rune{
 	ActionMarkLog:        'm',
 	ActionLogPrettyPrint: 'p',
 	ActionNamespaceOps:   'n',
+	ActionCommandPalette: ':',
 }
 
 var generalActionsOrder = []ActionName{
@@ -125,6 +128,7 @@ var procActionsOrder = []ActionName{
 	ActionNamespaceOps,
 	ActionHideDisabled,
 	ActionDependencyGraph,
+	ActionCommandPalette,
 	ActionQuit,
 }
 
@@ -436,6 +440,9 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionNamespaceOps: {
 				Description: "Namespace Operations",
+			},
+			ActionCommandPalette: {
+				Description: "Command Palette",
 			},
 		},
 	}
