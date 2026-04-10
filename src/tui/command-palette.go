@@ -2,9 +2,13 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/f1bonacc1/process-compose/src/command"
+	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
@@ -17,32 +21,45 @@ const (
 	palettePhaseProcessSelect
 	palettePhaseSignalSelect
 	palettePhaseNumericInput
+	palettePhaseTextInput
 )
+
+type paletteStep struct {
+	Label   string
+	Footer  string
+	Toggles map[string]bool // toggle names with default values, nil if no toggles
+}
 
 type paletteCommand struct {
 	Name        string
 	Description string
 	ArgPhase    palettePhase
+	Steps       []paletteStep // defines multi-step text input sequences
 	Execute     func(cp *commandPalette, arg string)
 }
 
 type commandPalette struct {
 	*tview.Flex
-	view        *pcView
-	input       *tview.InputField
-	list        *tview.List
-	footer      *tview.TextView
-	commands    []paletteCommand
-	filtered    []int
-	phase       palettePhase
-	selectedCmd *paletteCommand
-	targetProc  string
+	view         *pcView
+	input        *tview.InputField
+	list         *tview.List
+	footer       *tview.TextView
+	commands     []paletteCommand
+	filtered     []int
+	phase        palettePhase
+	selectedCmd  *paletteCommand
+	targetProc   string
+	textInputs   map[string]string
+	toggleInputs map[string]bool
+	stepIndex    int
 }
 
 func newCommandPalette(pv *pcView) *commandPalette {
 	cp := &commandPalette{
-		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
-		view: pv,
+		Flex:         tview.NewFlex().SetDirection(tview.FlexRow),
+		view:         pv,
+		textInputs:   make(map[string]string),
+		toggleInputs: make(map[string]bool),
 	}
 
 	cp.commands = cp.buildCommandRegistry()
@@ -121,11 +138,6 @@ func (cp *commandPalette) height() int {
 	return h
 }
 
-func (cp *commandPalette) show() {
-	cp.view.pages.AddPage(PageDialog, createDialogPage(cp, 55, cp.height()), true, true)
-	cp.view.appView.SetFocus(cp.input)
-}
-
 func (cp *commandPalette) close() {
 	cp.view.pages.RemovePage(PageDialog)
 }
@@ -134,6 +146,15 @@ func (cp *commandPalette) handleInput(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyEscape:
 		if cp.phase != palettePhaseCommand {
+			if cp.stepIndex > 0 {
+				cp.stepIndex--
+				cp.goBackToStep()
+				return nil
+			}
+			if cp.phase == palettePhaseNumericInput || cp.phase == palettePhaseSignalSelect {
+				cp.transitionToProcessSelect()
+				return nil
+			}
 			cp.resetToCommandPhase()
 			return nil
 		}
@@ -151,10 +172,28 @@ func (cp *commandPalette) handleInput(event *tcell.EventKey) *tcell.EventKey {
 			cp.list.SetCurrentItem(cur + 1)
 		}
 		return nil
+	case tcell.KeyTab:
+		if cp.phase == palettePhaseTextInput && len(cp.toggleInputs) > 0 {
+			// Toggle all registered toggles (typically just one per step)
+			for k, v := range cp.toggleInputs {
+				cp.toggleInputs[k] = !v
+			}
+			cp.updateToggleFooter()
+			return nil
+		}
+		return event
 	case tcell.KeyEnter:
 		if cp.phase == palettePhaseNumericInput {
 			text := cp.input.GetText()
 			cp.close()
+			cp.selectedCmd.Execute(cp, text)
+			return nil
+		}
+		if cp.phase == palettePhaseTextInput {
+			text := cp.input.GetText()
+			if text == "" {
+				return nil
+			}
 			cp.selectedCmd.Execute(cp, text)
 			return nil
 		}
@@ -175,8 +214,8 @@ func (cp *commandPalette) onInputChanged(text string) {
 		cp.filterByText(text, cp.processItems())
 	case palettePhaseSignalSelect:
 		cp.filterByText(text, cp.signalItems())
-	case palettePhaseNumericInput:
-		// no filtering needed for numeric input
+	case palettePhaseNumericInput, palettePhaseTextInput:
+		// no filtering needed for direct input
 	}
 }
 
@@ -253,6 +292,11 @@ func (cp *commandPalette) onSelect() {
 			cmd.Execute(cp, "")
 			return
 		}
+		if cmd.ArgPhase == palettePhaseTextInput {
+			cp.stepIndex = 0
+			cp.goBackToStep()
+			return
+		}
 		// Commands that need process selection first
 		cp.transitionToProcessSelect()
 
@@ -283,12 +327,6 @@ func (cp *commandPalette) onSelect() {
 		opt := options[cp.filtered[cur]]
 		cp.close()
 		cp.selectedCmd.Execute(cp, strconv.Itoa(opt.Signal))
-
-	case palettePhaseNumericInput:
-		// Enter on numeric input uses the text field value directly
-		text := cp.input.GetText()
-		cp.close()
-		cp.selectedCmd.Execute(cp, text)
 	}
 }
 
@@ -358,10 +396,42 @@ func (cp *commandPalette) transitionToNumericInput() {
 	cp.resizeDialog()
 }
 
+func (cp *commandPalette) goBackToStep() {
+	if cp.selectedCmd == nil || cp.stepIndex >= len(cp.selectedCmd.Steps) {
+		cp.resetToCommandPhase()
+		return
+	}
+	step := cp.selectedCmd.Steps[cp.stepIndex]
+	cp.toggleInputs = make(map[string]bool)
+	for k, v := range step.Toggles {
+		cp.toggleInputs[k] = v
+	}
+	cp.transitionToTextInput(step.Label, step.Footer)
+	if len(cp.toggleInputs) > 0 {
+		cp.updateToggleFooter()
+	}
+}
+
+func (cp *commandPalette) transitionToTextInput(label, footerText string) {
+	cp.phase = palettePhaseTextInput
+	cp.input.SetLabel(label)
+	cp.input.SetText("")
+	cp.input.SetAcceptanceFunc(nil)
+
+	cp.list.Clear()
+	cp.filtered = cp.filtered[:0]
+
+	cp.footer.SetText(footerText)
+	cp.resizeDialog()
+}
+
 func (cp *commandPalette) resetToCommandPhase() {
 	cp.phase = palettePhaseCommand
 	cp.selectedCmd = nil
 	cp.targetProc = ""
+	cp.textInputs = make(map[string]string)
+	cp.toggleInputs = make(map[string]bool)
+	cp.stepIndex = 0
 	cp.input.SetLabel("Command: ")
 	cp.input.SetText("")
 	cp.input.SetAcceptanceFunc(nil)
@@ -375,6 +445,20 @@ func (cp *commandPalette) resetToCommandPhase() {
 
 	cp.footer.SetText("↑/↓: Navigate  Enter: Select  Esc: Cancel")
 	cp.resizeDialog()
+}
+
+func (cp *commandPalette) updateToggleFooter() {
+	var parts []string
+	for k, v := range cp.toggleInputs {
+		hlColor := string(cp.view.styles.Body().SecondaryTextColor)
+		state := fmt.Sprintf("[%s]NO[-]", hlColor)
+		if v {
+			state = fmt.Sprintf("[%s]YES[-]", hlColor)
+		}
+		parts = append(parts, fmt.Sprintf("Tab: %s: %s", k, state))
+	}
+	parts = append(parts, "Enter: Confirm  Esc: Back")
+	cp.footer.SetText(strings.Join(parts, "  "))
 }
 
 func (cp *commandPalette) resizeDialog() {
@@ -460,5 +544,125 @@ func (cp *commandPalette) buildCommandRegistry() []paletteCommand {
 				go cp.view.handleProcessSignaled(cp.targetProc, processSignalOption{Signal: sig})
 			},
 		},
+		{
+			Name:        "Create Process",
+			Description: "Create and start an ephemeral process",
+			ArgPhase:    palettePhaseTextInput,
+			Steps: []paletteStep{
+				{Label: "Name: ", Footer: "Enter process name  Esc: Back"},
+				{Label: "Command: ", Toggles: map[string]bool{"Interactive": false}},
+			},
+			Execute: func(cp *commandPalette, arg string) {
+				switch cp.stepIndex {
+				case 0: // name entered
+					names, _ := cp.view.project.GetLexicographicProcessNames()
+					if slices.Contains(names, arg) {
+						cp.input.SetText("")
+						cp.footer.SetText(fmt.Sprintf("[red]Process %q already exists[-]  Esc: Back", arg))
+						return
+					}
+					cp.textInputs["name"] = arg
+					cp.stepIndex = 1
+					cp.goBackToStep()
+				case 1: // command entered
+					name := cp.textInputs["name"]
+					cmd := arg
+					interactive := cp.toggleInputs["Interactive"]
+					cwd, _ := os.Getwd()
+					cp.close()
+
+					go func() {
+						proj, err := cp.view.buildCurrentProject()
+						if err != nil {
+							cp.view.showError(err.Error())
+							return
+						}
+						shell := command.DefaultShellConfig()
+						proc := types.ProcessConfig{
+							Name:          name,
+							ReplicaName:   name,
+							Command:       cmd,
+							WorkingDir:    cwd,
+							IsInteractive: interactive,
+						}
+						proc.AssignProcessExecutableAndArgs(shell, shell.ElevatedShellArg)
+						proj.Processes[name] = proc
+						_, err = cp.view.project.UpdateProject(proj)
+						if err != nil {
+							cp.view.showError(err.Error())
+							return
+						}
+						cp.view.refreshTableState()
+						cp.view.appView.QueueUpdateDraw(func() {
+							cp.view.fillTableData()
+							cp.view.selectTableProcess(name)
+						})
+					}()
+				}
+			},
+		},
+		{
+			Name:        "Delete Process",
+			Description: "Stop and remove a process",
+			ArgPhase:    palettePhaseProcessSelect,
+			Execute: func(cp *commandPalette, arg string) {
+				// Check reverse dependencies
+				graph, err := cp.view.project.GetDependencyGraph()
+				if err != nil {
+					cp.view.showError(err.Error())
+					return
+				}
+				var dependents []string
+				for nodeName, node := range graph.AllNodes {
+					if nodeName == arg {
+						continue
+					}
+					if _, ok := node.DependsOn[arg]; ok {
+						dependents = append(dependents, nodeName)
+					}
+				}
+				if len(dependents) > 0 {
+					cp.view.showError(fmt.Sprintf("Cannot delete %q: depended on by %s", arg, strings.Join(dependents, ", ")))
+					return
+				}
+
+				go func() {
+					proj, err := cp.view.buildCurrentProject()
+					if err != nil {
+						cp.view.showError(err.Error())
+						return
+					}
+					delete(proj.Processes, arg)
+					_, err = cp.view.project.UpdateProject(proj)
+					if err != nil {
+						cp.view.showError(err.Error())
+						return
+					}
+					cp.view.refreshTableState()
+					cp.view.appView.QueueUpdateDraw(func() {
+						cp.view.loggedProc = ""
+						cp.view.logsText.Clear()
+						cp.view.fillTableData()
+						cp.view.selectFirstEnabledProcess()
+					})
+				}()
+			},
+		},
 	}
+}
+
+func (pv *pcView) buildCurrentProject() (*types.Project, error) {
+	names, err := pv.project.GetLexicographicProcessNames()
+	if err != nil {
+		return nil, err
+	}
+	procs := make(types.Processes, len(names))
+	for _, name := range names {
+		info, err := pv.project.GetProcessInfo(name)
+		if err != nil {
+			return nil, err
+		}
+		procs[name] = *info
+	}
+	return &types.Project{Processes: procs}, nil
 }

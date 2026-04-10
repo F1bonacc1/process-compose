@@ -318,14 +318,19 @@ func (pv *pcView) updateTable(ctx context.Context) {
 	}
 }
 
-func (pv *pcView) updateProcStates(ctx context.Context) {
+func (pv *pcView) refreshTableState() {
 	states, err := pv.project.GetProcessesState()
 	if err != nil {
 		log.Err(err).Msg("failed to get processes state")
+		return
 	}
 	pv.procStatesMtx.Lock()
 	pv.procStates = states
 	pv.procStatesMtx.Unlock()
+}
+
+func (pv *pcView) updateProcStates(ctx context.Context) {
+	pv.refreshTableState()
 	ticker := time.NewTicker(pv.refreshRate)
 	defer ticker.Stop()
 	for {
@@ -334,14 +339,7 @@ func (pv *pcView) updateProcStates(ctx context.Context) {
 			log.Debug().Msg("Table monitoring canceled")
 			return
 		case <-ticker.C:
-			states, err = pv.project.GetProcessesState()
-			if err != nil {
-				log.Err(err).Msg("failed to get processes state")
-				continue
-			}
-			pv.procStatesMtx.Lock()
-			pv.procStates = states
-			pv.procStatesMtx.Unlock()
+			pv.refreshTableState()
 		}
 	}
 }
