@@ -52,6 +52,7 @@ var specialKeyMap = map[tcell.Key][]byte{
 	tcell.KeyEnd:           []byte("\x1b[F"),
 	tcell.KeyDelete:        []byte("\x1b[3~"),
 	tcell.KeyInsert:        []byte("\x1b[2~"),
+	tcell.KeyBacktab:       []byte("\x1b[Z"), // Shift+Tab
 }
 
 type TerminalView struct {
@@ -492,7 +493,13 @@ func (t *TerminalView) handleKeyInput(event *tcell.EventKey) {
 	if event.Key() == tcell.KeyRune {
 		data = []byte(string(event.Rune()))
 	} else {
-		data = t.getSpecialKeySequence(event.Key())
+		mod := event.Modifiers()
+		if mod != 0 {
+			data = t.getModifiedKeySequence(event.Key(), mod)
+		}
+		if data == nil {
+			data = t.getSpecialKeySequence(event.Key())
+		}
 	}
 
 	if len(data) > 0 && t.pty != nil {
@@ -516,6 +523,46 @@ var applicationKeyMap = map[tcell.Key][]byte{
 	tcell.KeyLeft:  []byte("\x1bOD"),
 	tcell.KeyHome:  []byte("\x1bOH"),
 	tcell.KeyEnd:   []byte("\x1bOF"),
+}
+
+// modifiedKeyCSI maps tcell keys to their xterm CSI base sequences for modifier encoding.
+// Format: CSI <code> ; <modifier> <suffix>
+// For arrow keys: CSI 1 ; <modifier> <A-D>
+// For other keys: CSI <code> ; <modifier> ~
+var modifiedKeyCSI = map[tcell.Key]struct {
+	code   string
+	suffix byte
+}{
+	tcell.KeyUp:     {"1", 'A'},
+	tcell.KeyDown:   {"1", 'B'},
+	tcell.KeyRight:  {"1", 'C'},
+	tcell.KeyLeft:   {"1", 'D'},
+	tcell.KeyHome:   {"1", 'H'},
+	tcell.KeyEnd:    {"1", 'F'},
+	tcell.KeyInsert: {"2", '~'},
+	tcell.KeyDelete: {"3", '~'},
+	tcell.KeyPgUp:   {"5", '~'},
+	tcell.KeyPgDn:   {"6", '~'},
+}
+
+// getModifiedKeySequence returns an xterm-style modified key escape sequence.
+// Modifier parameter follows xterm convention: 1 + bitmask (Shift=1, Alt=2, Ctrl=4).
+func (t *TerminalView) getModifiedKeySequence(key tcell.Key, mod tcell.ModMask) []byte {
+	entry, ok := modifiedKeyCSI[key]
+	if !ok {
+		return nil
+	}
+	modParam := 1
+	if mod&tcell.ModShift != 0 {
+		modParam += 1
+	}
+	if mod&tcell.ModAlt != 0 {
+		modParam += 2
+	}
+	if mod&tcell.ModCtrl != 0 {
+		modParam += 4
+	}
+	return fmt.Appendf(nil, "\x1b[%s;%d%c", entry.code, modParam, entry.suffix)
 }
 
 func (t *TerminalView) getSpecialKeySequence(key tcell.Key) []byte {
