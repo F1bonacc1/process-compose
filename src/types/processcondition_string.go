@@ -20,8 +20,9 @@ const _ProcessCondition_name = "ProcessConditionCompletedProcessConditionComplet
 var _ProcessCondition_index = [...]uint8{0, 25, 62, 85, 108, 132}
 
 func (i ProcessCondition) String() string {
-	if i < 0 || i >= ProcessCondition(len(_ProcessCondition_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_ProcessCondition_index)-1 {
 		return "ProcessCondition(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ProcessCondition_name[_ProcessCondition_index[i]:_ProcessCondition_index[i+1]]
+	return _ProcessCondition_name[_ProcessCondition_index[idx]:_ProcessCondition_index[idx+1]]
 }

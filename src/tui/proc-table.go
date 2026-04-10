@@ -55,6 +55,20 @@ func (pv *pcView) fillTableData() {
 		log.Err(err).Msg("failed to sort states")
 		return
 	}
+	// Enrich interactive processes with terminal activity time (more accurate than log buffer)
+	for i := range states.States {
+		s := &states.States[i]
+		if pv.isInteractive(s.Name) {
+			ptyFile := pv.project.GetProcessPty(s.Name)
+			if t := pv.termView.GetLastActivityTime(ptyFile); !t.IsZero() {
+				s.LastActivityTime = &t
+			}
+		}
+	}
+
+	// Update activity/silence monitor notifications
+	pv.monitor.updateNotifications(states.States)
+
 	showPass := false
 	row := 1
 	succeeded := true
@@ -153,6 +167,14 @@ func (pv *pcView) onTableSelectionChange(_, _ int) {
 	if len(name) == 0 {
 		return
 	}
+
+	// Monitor: previous process loses focus, new process gains focus
+	if pv.prevSelectedProc != "" && pv.prevSelectedProc != name {
+		pv.monitor.onProcessUnfocused(pv.prevSelectedProc, pv.getProcessLastActivity(pv.prevSelectedProc))
+	}
+	pv.monitor.onProcessFocused(name)
+	pv.prevSelectedProc = name
+
 	if pv.commandModeType == commandModeDisabled {
 		pv.commandModeType = commandModeOff
 	}
@@ -493,6 +515,19 @@ func getStrForExitCode(state types.ProcessState) string {
 
 func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
 	icon, color := pv.getIconForState(state)
+
+	// Override icon if process has a monitor notification
+	if hasNotif, monType := pv.monitor.getNotification(state.Name); hasNotif {
+		switch monType {
+		case types.MonitorForActivity:
+			icon = "◆"
+			color = pv.styles.ProcTable().FgWarning.Color()
+		case types.MonitorForSilence:
+			icon = "◇"
+			color = pv.styles.ProcTable().FgWarning.Color()
+		}
+	}
+
 	return tableRowValues{
 		icon:      icon,
 		iconColor: color,
@@ -508,6 +543,30 @@ func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
 		restarts:  getStrForRestarts(state.Restarts),
 		exitCode:  getStrForExitCode(state),
 	}
+}
+
+// getProcessLastActivity returns the best-available last activity time for a process.
+// For interactive processes, it checks the terminal view first (more accurate for PTY output).
+func (pv *pcView) getProcessLastActivity(name string) time.Time {
+	// Try terminal view for interactive processes
+	if pv.isInteractive(name) {
+		ptyFile := pv.project.GetProcessPty(name)
+		if t := pv.termView.GetLastActivityTime(ptyFile); !t.IsZero() {
+			return t
+		}
+	}
+	// Fall back to cached process state
+	pv.procStatesMtx.Lock()
+	states := pv.procStates
+	pv.procStatesMtx.Unlock()
+	if states != nil {
+		for _, s := range states.States {
+			if s.Name == name && s.LastActivityTime != nil {
+				return *s.LastActivityTime
+			}
+		}
+	}
+	return time.Time{}
 }
 
 func (pv *pcView) getSelectedProcName() string {

@@ -93,6 +93,7 @@ shortcuts:
 
 `shortcuts.yaml` can contain only the values you wish to change, default values will be used for the rest.  
 For example if you want to replace the default `quit` shortcut to be `F3` instead of `F10` and rename the `process_stop` to be `Terminate`, the configurion will be as follows:
+
 ```yaml
 # $XDG_CONFIG_HOME/process-compose/shortcuts.yaml
 shortcuts:
@@ -171,6 +172,34 @@ style:
   stat_table:
     logoColor: '#0000FF' #blue
 ```
+
+## Process Activity Monitor
+
+Monitor processes for silence or new activity while they are not focused in the TUI. Works with both interactive (PTY) and regular processes (via log output). When the monitored condition is met, a visual indicator appears in the process table icon column:
+
+- `◆` — new **activity** detected (output appeared while unfocused)
+- `◇` — **silence** detected (no output for the configured threshold)
+
+The notification resets when you select the process.
+
+```yaml
+processes:
+  claude-session:
+    command: "claude"
+    is_interactive: true
+    monitor_for: silence            # "activity", "silence", or "none" (default)
+    monitor_silence_threshold: 10s  # default: 5s, only used with "silence"
+  
+  log-watcher:
+    command: "tail -f /var/log/app/errors.log"
+    monitor_for: activity           # notify when new output appears
+```
+
+| Value | Trigger |
+|-------|---------|
+| `none` | No monitoring (default) |
+| `activity` | New output appeared while the process was not selected |
+| `silence` | No output for longer than the threshold while the process is running and not selected |
 
 ## TUI State Settings
 

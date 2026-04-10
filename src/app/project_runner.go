@@ -334,6 +334,13 @@ func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error
 			return nil, fmt.Errorf("can't get state of process %s: no such process", name)
 		}
 	}
+	// Add last activity time from log buffer
+	if procLog, err := p.getProcessLog(name); err == nil {
+		if t := procLog.GetLastWriteTime(); !t.IsZero() {
+			state.LastActivityTime = &t
+		}
+	}
+
 	// Add next run time for scheduled processes
 	if p.processScheduler != nil {
 		nextRun := p.processScheduler.GetNextRunTime(name)

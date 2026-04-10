@@ -19,8 +19,9 @@ const _RestartPolicy_name = "RestartPolicyNoRestartPolicyAlwaysRestartPolicyOnFa
 var _RestartPolicy_index = [...]uint8{0, 15, 34, 56, 82}
 
 func (i RestartPolicy) String() string {
-	if i < 0 || i >= RestartPolicy(len(_RestartPolicy_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_RestartPolicy_index)-1 {
 		return "RestartPolicy(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _RestartPolicy_name[_RestartPolicy_index[i]:_RestartPolicy_index[i+1]]
+	return _RestartPolicy_name[_RestartPolicy_index[idx]:_RestartPolicy_index[idx+1]]
 }

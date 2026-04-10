@@ -61,6 +61,8 @@ type (
 		MCP                     *MCPProcessConfig      `yaml:"mcp,omitempty"`
 		TruncateLog             bool                   `yaml:"truncate_log,omitempty"`
 		DisableCommandRendering bool                   `yaml:"is_template_disabled,omitempty"`
+		MonitorFor              MonitorFor             `yaml:"monitor_for,omitempty" jsonschema:"type=string,enum=none,enum=activity,enum=silence"`
+		MonitorSilenceThreshold time.Duration          `yaml:"monitor_silence_threshold,omitempty"`
 	}
 )
 
@@ -249,6 +251,7 @@ type ProcessState struct {
 	CPU              float64       `json:"cpu"`
 	IsRunning        bool          `json:"is_running"`
 	NextRunTime      *time.Time    `json:"next_run_time,omitempty"`
+	LastActivityTime *time.Time    `json:"last_activity_time,omitempty"`
 }
 
 type ProcessPorts struct {
@@ -463,6 +466,46 @@ func (c ProcessCondition) MarshalYAML() (interface{}, error) {
 		return "process_log_ready", nil
 	default:
 		return nil, fmt.Errorf("invalid process condition: %d", c)
+	}
+}
+
+//go:generate stringer -type=MonitorFor
+type MonitorFor int
+
+const (
+	MonitorForNone     MonitorFor = iota // default - no monitoring
+	MonitorForActivity                   // notify on new output while unfocused
+	MonitorForSilence                    // notify on no output while unfocused
+)
+
+func (m *MonitorFor) UnmarshalYAML(node *yaml.Node) error {
+	var value string
+	if err := node.Decode(&value); err != nil {
+		return err
+	}
+	switch value {
+	case "none", "":
+		*m = MonitorForNone
+	case "activity":
+		*m = MonitorForActivity
+	case "silence":
+		*m = MonitorForSilence
+	default:
+		return fmt.Errorf("invalid monitor_for value: %q", value)
+	}
+	return nil
+}
+
+func (m MonitorFor) MarshalYAML() (interface{}, error) {
+	switch m {
+	case MonitorForNone:
+		return "none", nil
+	case MonitorForActivity:
+		return "activity", nil
+	case MonitorForSilence:
+		return "silence", nil
+	default:
+		return nil, fmt.Errorf("invalid monitor_for value: %d", m)
 	}
 }
 

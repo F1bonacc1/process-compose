@@ -100,6 +100,8 @@ type pcView struct {
 	attentionMessages      chan attentionMessage
 	attentionCancel        context.CancelFunc
 	errTuiStartup          error
+	monitor                *processMonitor
+	prevSelectedProc       string
 }
 
 func newPcView(project app.IProject) *pcView {
@@ -140,6 +142,7 @@ func newPcView(project app.IProject) *pcView {
 	pv.ctxApp, pv.cancelAppFn = context.WithCancel(context.Background())
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
+	pv.monitor = newProcessMonitor()
 	pv.startMonitoring()
 	pv.loadShortcuts()
 	pv.setShortCutsActions()
@@ -175,6 +178,14 @@ func (pv *pcView) loadProcNames() {
 			continue
 		}
 		break
+	}
+	// Initialize activity/silence monitor from process configs
+	for _, name := range pv.procNames {
+		info, err := pv.project.GetProcessInfo(name)
+		if err != nil {
+			continue
+		}
+		pv.monitor.initProcess(name, info.MonitorFor, info.MonitorSilenceThreshold)
 	}
 }
 

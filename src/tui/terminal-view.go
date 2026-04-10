@@ -60,6 +60,7 @@ type TerminalView struct {
 	pty          *os.File
 	term         *AnsiTerminal
 	terminals    map[*os.File]*AnsiTerminal
+	activeReaders map[*os.File]bool // tracks PTYs with running readPty goroutines
 	lock         sync.Mutex
 	isRunning    bool
 	width        int
@@ -84,13 +85,14 @@ type TerminalView struct {
 
 func NewTerminalView(app *tview.Application) *TerminalView {
 	tv := &TerminalView{
-		Box:       tview.NewBox().SetBorder(true),
-		app:       app,
-		term:      NewAnsiTerminal(80, 24),
-		terminals: make(map[*os.File]*AnsiTerminal),
-		width:     80,
-		height:    24,
-		exitKey:   tcell.KeyCtrlA,
+		Box:           tview.NewBox().SetBorder(true),
+		app:           app,
+		term:          NewAnsiTerminal(80, 24),
+		terminals:     make(map[*os.File]*AnsiTerminal),
+		activeReaders: make(map[*os.File]bool),
+		width:         80,
+		height:        24,
+		exitKey:       tcell.KeyCtrlA,
 	}
 	tv.SetTitle("Terminal")
 	tv.SetTitleAlign(tview.AlignCenter)
@@ -269,6 +271,7 @@ func (t *TerminalView) readPty(ptyFile *os.File, term *AnsiTerminal) {
 			if t.pty == ptyFile {
 				t.isRunning = false
 			}
+			delete(t.activeReaders, ptyFile)
 			t.lock.Unlock()
 			return
 		}
@@ -277,14 +280,10 @@ func (t *TerminalView) readPty(ptyFile *os.File, term *AnsiTerminal) {
 			t.lock.Lock()
 			defer t.lock.Unlock()
 
-			// Check if we are still the active PTY
-			if t.pty != ptyFile {
-				return true, false
-			}
-
 			if n > 0 {
 				term.Write(buf[:n])
-				return false, true
+				// Only trigger draw if this is the active PTY
+				return false, t.pty == ptyFile
 			}
 			// Prevent spin loop on 0-byte reads
 			time.Sleep(10 * time.Millisecond)
@@ -339,15 +338,19 @@ func (t *TerminalView) Draw(screen tcell.Screen) {
 	}
 
 	// Start reading PTY on first draw (when we have proper dimensions)
-	// Only start if we haven't already started AND we're running AND we have a PTY
+	// Start reading PTY on first draw (when we have proper dimensions).
+	// Only start if no reader is already running for this PTY.
 	if !t.firstDraw && t.isRunning && t.pty != nil {
 		t.firstDraw = true
 		ptyToRead := t.pty
 		termToUse := t.term
-		// Release lock before starting goroutine to avoid holding it during startup
-		t.lock.Unlock()
-		go t.readPty(ptyToRead, termToUse)
-		t.lock.Lock()
+		if !t.activeReaders[ptyToRead] {
+			t.activeReaders[ptyToRead] = true
+			// Release lock before starting goroutine to avoid holding it during startup
+			t.lock.Unlock()
+			go t.readPty(ptyToRead, termToUse)
+			t.lock.Lock()
+		}
 	}
 
 	if !t.isRunning {
@@ -525,6 +528,21 @@ func (t *TerminalView) getSpecialKeySequence(key tcell.Key) []byte {
 		return seq
 	}
 	return nil
+}
+
+// GetLastActivityTime returns the last write time for a terminal associated with the given PTY.
+// Returns zero time if the PTY has no associated terminal.
+func (t *TerminalView) GetLastActivityTime(ptyFile *os.File) time.Time {
+	if ptyFile == nil {
+		return time.Time{}
+	}
+	t.lock.Lock()
+	term, ok := t.terminals[ptyFile]
+	t.lock.Unlock()
+	if !ok {
+		return time.Time{}
+	}
+	return term.GetLastWriteTime()
 }
 
 func (t *TerminalView) Stop() {

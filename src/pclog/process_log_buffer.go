@@ -2,16 +2,19 @@ package pclog
 
 import (
 	"sync"
+	"sync/atomic"
+	"time"
 )
 
 type ProcessLogBuffer struct {
-	mxBuf     sync.Mutex
-	buffer    []string // fixed-size ring buffer
-	size      int      // capacity
-	head      int      // next write index
-	count     int      // items stored (0..size)
-	mxObs     sync.Mutex
-	observers map[string]LogObserver
+	mxBuf          sync.Mutex
+	buffer         []string // fixed-size ring buffer
+	size           int      // capacity
+	head           int      // next write index
+	count          int      // items stored (0..size)
+	mxObs          sync.Mutex
+	observers      map[string]LogObserver
+	lastWriteNano  atomic.Int64 // activity tracking (lock-free)
 }
 
 const defaultSize = 1000
@@ -27,7 +30,18 @@ func NewLogBuffer(size int) *ProcessLogBuffer {
 	}
 }
 
+// GetLastWriteTime returns the last time data was written to the log buffer.
+// Lock-free: uses atomic load to avoid contention with Write().
+func (b *ProcessLogBuffer) GetLastWriteTime() time.Time {
+	nano := b.lastWriteNano.Load()
+	if nano == 0 {
+		return time.Time{}
+	}
+	return time.Unix(0, nano)
+}
+
 func (b *ProcessLogBuffer) Write(message string) {
+	b.lastWriteNano.Store(time.Now().UnixNano())
 	b.mxBuf.Lock()
 	b.buffer[b.head] = message
 	b.head = (b.head + 1) % b.size

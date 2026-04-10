@@ -321,6 +321,17 @@
         },
         "is_template_disabled": {
           "type": "boolean"
+        },
+        "monitor_for": {
+          "type": "string",
+          "enum": [
+            "none",
+            "activity",
+            "silence"
+          ]
+        },
+        "monitor_silence_threshold": {
+          "type": "integer"
         }
       },
       "type": "object"

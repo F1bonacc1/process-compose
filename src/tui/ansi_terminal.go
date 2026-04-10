@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
@@ -66,6 +68,9 @@ type AnsiTerminal struct {
 
 	// Callback for sending responses back to the PTY
 	responseCallback func([]byte)
+
+	// Activity tracking (atomic to avoid lock contention with polling)
+	lastWriteNano atomic.Int64
 }
 
 const (
@@ -175,6 +180,8 @@ func (t *AnsiTerminal) Resize(width, height int) {
 func (t *AnsiTerminal) Write(data []byte) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
+
+	t.lastWriteNano.Store(time.Now().UnixNano())
 
 	for _, b := range data {
 		if t.parseState == stateNormal {
@@ -1112,4 +1119,14 @@ func (t *AnsiTerminal) getCellUnlocked(x, y int) Cell {
 	}
 
 	return Cell{Char: ' ', Style: tcell.StyleDefault}
+}
+
+// GetLastWriteTime returns the last time data was written to the terminal.
+// Lock-free: uses atomic load to avoid contention with Write().
+func (t *AnsiTerminal) GetLastWriteTime() time.Time {
+	nano := t.lastWriteNano.Load()
+	if nano == 0 {
+		return time.Time{}
+	}
+	return time.Unix(0, nano)
 }
