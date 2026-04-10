@@ -45,6 +45,7 @@ func TestScheduler_New(t *testing.T) {
 	}
 	if s == nil {
 		t.Fatal("New() returned nil scheduler")
+		return
 	}
 	if s.starter != mock {
 		t.Error("New() did not set starter correctly")

@@ -299,7 +299,7 @@ func (pv *pcView) createProcTable() *tview.Table {
 }
 
 func (pv *pcView) updateTable(ctx context.Context) {
-	pv.appView.QueueUpdateDraw(func() {
+	pv.appView.QueueUpdateDraw(func() { //nolint:contextcheck // tview callback doesn't accept context
 		pv.fillTableData()
 		pv.selectFirstEnabledProcess()
 	})
@@ -311,7 +311,7 @@ func (pv *pcView) updateTable(ctx context.Context) {
 			log.Debug().Msg("Table monitoring canceled")
 			return
 		case <-ticker.C:
-			pv.appView.QueueUpdateDraw(func() {
+			pv.appView.QueueUpdateDraw(func() { //nolint:contextcheck // tview callback doesn't accept context
 				pv.fillTableData()
 			})
 		}
