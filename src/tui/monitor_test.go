@@ -199,6 +199,174 @@ func TestMonitorUnregisteredProcess(t *testing.T) {
 	}
 }
 
+func TestMonitorSilenceNoRenotifyAfterAcknowledge(t *testing.T) {
+	m := newProcessMonitor()
+	threshold := 100 * time.Millisecond
+	m.initProcess("proc1", types.MonitorForSilence, threshold)
+
+	// Activity happens (100 visible chars written), then silence
+	activity := time.Now()
+	m.onProcessUnfocused("proc1", activity)
+	states := []types.ProcessState{
+		{Name: "proc1", IsRunning: true, LastActivityTime: &activity, MaxLogicalLine: 100},
+	}
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	hasNotif, _ := m.getNotification("proc1")
+	if !hasNotif {
+		t.Fatal("expected silence notification")
+	}
+
+	// User focuses (acknowledges) then unfocuses without typing.
+	// MaxLogicalLine stays at 100 — no new visible output.
+	m.onProcessFocused("proc1")
+	m.onProcessUnfocused("proc1", activity)
+
+	// Should NOT re-trigger — same max logical line, already acknowledged
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	hasNotif, _ = m.getNotification("proc1")
+	if hasNotif {
+		t.Error("should not re-notify for already-acknowledged silence")
+	}
+}
+
+func TestMonitorSilenceFocusBeforeNotification(t *testing.T) {
+	m := newProcessMonitor()
+	threshold := 100 * time.Millisecond
+	m.initProcess("proc1", types.MonitorForSilence, threshold)
+
+	// Activity happens
+	activity := time.Now()
+	states := []types.ProcessState{
+		{Name: "proc1", IsRunning: true, LastActivityTime: &activity, MaxLogicalLine: 100},
+	}
+	// Update so lastSeenMaxLine is set
+	m.updateNotifications(states)
+
+	// User focuses BEFORE notification fires (within threshold)
+	m.onProcessFocused("proc1")
+	m.onProcessUnfocused("proc1", activity)
+
+	// Should NOT notify — user already looked at this process, max logical line unchanged
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	hasNotif, _ := m.getNotification("proc1")
+	if hasNotif {
+		t.Error("should not notify after user already focused the process")
+	}
+}
+
+func TestMonitorSilenceFocusBeforeFirstUpdate(t *testing.T) {
+	m := newProcessMonitor()
+	threshold := 100 * time.Millisecond
+	m.initProcess("proc1", types.MonitorForSilence, threshold)
+
+	// User focuses BEFORE updateNotifications has ever run
+	// (lastSeenMaxLine is still 0)
+	m.onProcessFocused("proc1")
+	m.onProcessUnfocused("proc1", time.Now())
+
+	// First updateNotifications sees MaxLogicalLine for the first time
+	activity := time.Now()
+	states := []types.ProcessState{
+		{Name: "proc1", IsRunning: true, LastActivityTime: &activity, MaxLogicalLine: 100},
+	}
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	hasNotif, _ := m.getNotification("proc1")
+	if hasNotif {
+		t.Error("should not notify when user focused before first update")
+	}
+}
+
+func TestMonitorSilenceRenotifyAfterNewActivity(t *testing.T) {
+	m := newProcessMonitor()
+	threshold := 100 * time.Millisecond
+	m.initProcess("proc1", types.MonitorForSilence, threshold)
+
+	// Initial silence notification
+	activity := time.Now()
+	m.onProcessUnfocused("proc1", activity)
+	states := []types.ProcessState{
+		{Name: "proc1", IsRunning: true, LastActivityTime: &activity, MaxLogicalLine: 100},
+	}
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	hasNotif, _ := m.getNotification("proc1")
+	if !hasNotif {
+		t.Fatal("expected initial silence notification")
+	}
+
+	// User acknowledges and unfocuses
+	m.onProcessFocused("proc1")
+	m.onProcessUnfocused("proc1", activity)
+
+	// New visible output occurs (max logical line increases)
+	time.Sleep(10 * time.Millisecond)
+	newActivity := time.Now()
+	states[0].LastActivityTime = &newActivity
+	states[0].MaxLogicalLine = 500
+	m.updateNotifications(states)
+
+	// Wait for new silence after the new activity
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	hasNotif, _ = m.getNotification("proc1")
+	if !hasNotif {
+		t.Error("should re-notify after new activity goes silent")
+	}
+}
+
+func TestMonitorSilenceRenotifyAfterSilencePeriod(t *testing.T) {
+	m := newProcessMonitor()
+	threshold := 100 * time.Millisecond
+	m.initProcess("proc1", types.MonitorForSilence, threshold)
+
+	// Initial silence notification
+	activity := time.Now()
+	m.onProcessUnfocused("proc1", activity)
+	states := []types.ProcessState{
+		{Name: "proc1", IsRunning: true, LastActivityTime: &activity, MaxLogicalLine: 100},
+	}
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	hasNotif, _ := m.getNotification("proc1")
+	if !hasNotif {
+		t.Fatal("expected initial silence notification")
+	}
+
+	// User acknowledges and unfocuses
+	m.onProcessFocused("proc1")
+	m.onProcessUnfocused("proc1", activity)
+
+	// Silence continues while acknowledged — multiple ticks pass with
+	// no new output. This must NOT cause maxLineAtSilence to catch up
+	// to lastSeenMaxLine, which would prevent future resets.
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	m.updateNotifications(states)
+	m.updateNotifications(states)
+	hasNotif, _ = m.getNotification("proc1")
+	if hasNotif {
+		t.Fatal("should not re-notify during acknowledged silence")
+	}
+
+	// Now new output arrives (user typed something, process responded)
+	newActivity := time.Now()
+	states[0].LastActivityTime = &newActivity
+	states[0].MaxLogicalLine = 500
+	m.updateNotifications(states)
+
+	// Wait for new silence after the new activity
+	time.Sleep(150 * time.Millisecond)
+	m.updateNotifications(states)
+	hasNotif, _ = m.getNotification("proc1")
+	if !hasNotif {
+		t.Error("should re-notify after new activity goes silent")
+	}
+}
+
 func TestMonitorNotificationSticksUntilFocused(t *testing.T) {
 	m := newProcessMonitor()
 	m.initProcess("proc1", types.MonitorForActivity, 0)

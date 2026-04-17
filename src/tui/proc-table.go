@@ -63,6 +63,7 @@ func (pv *pcView) fillTableData() {
 			if t := pv.termView.GetLastActivityTime(ptyFile); !t.IsZero() {
 				s.LastActivityTime = &t
 			}
+			s.MaxLogicalLine = pv.termView.GetMaxLogicalLine(ptyFile)
 		}
 	}
 

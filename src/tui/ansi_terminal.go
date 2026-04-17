@@ -70,7 +70,9 @@ type AnsiTerminal struct {
 	responseCallback func([]byte)
 
 	// Activity tracking (atomic to avoid lock contention with polling)
-	lastWriteNano atomic.Int64
+	lastWriteNano      atomic.Int64
+	totalLinesScrolled int          // total lines ever scrolled into history (not capped by historySize)
+	maxLogicalLine     atomic.Int64 // max(totalLinesScrolled + cursorY) — only grows on real new output
 }
 
 const (
@@ -180,8 +182,6 @@ func (t *AnsiTerminal) Resize(width, height int) {
 func (t *AnsiTerminal) Write(data []byte) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
-	t.lastWriteNano.Store(time.Now().UnixNano())
 
 	for _, b := range data {
 		if t.parseState == stateNormal {
@@ -617,6 +617,10 @@ func ansiColor256(n int) tcell.Color {
 }
 
 func (t *AnsiTerminal) putChar(ch rune) {
+	t.lastWriteNano.Store(time.Now().UnixNano())
+	if cur := int64(t.totalLinesScrolled + t.cursorY); cur > t.maxLogicalLine.Load() {
+		t.maxLogicalLine.Store(cur)
+	}
 	if t.latentWrap {
 		t.cursorX = 0
 		t.cursorY++
@@ -683,6 +687,7 @@ func (t *AnsiTerminal) scrollUp() {
 	// Save to history if we are scrolling the entire screen (scrollTop == 0)
 	// and not using alternate screen
 	if t.scrollTop == 0 && !t.useAltScreen {
+		t.totalLinesScrolled++
 		// Deep copy the line being scrolled out
 		line := make([]Cell, t.width)
 		copy(line, t.cells[0])
@@ -1119,6 +1124,13 @@ func (t *AnsiTerminal) getCellUnlocked(x, y int) Cell {
 	}
 
 	return Cell{Char: ' ', Style: tcell.StyleDefault}
+}
+
+// GetMaxLogicalLine returns the furthest logical line reached by output.
+// Phantom writes (prompt redraws, status updates) operate in-place and
+// do not advance this value. Only real new output increases it.
+func (t *AnsiTerminal) GetMaxLogicalLine() int64 {
+	return t.maxLogicalLine.Load()
 }
 
 // GetLastWriteTime returns the last time data was written to the terminal.

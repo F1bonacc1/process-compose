@@ -57,30 +57,30 @@ var specialKeyMap = map[tcell.Key][]byte{
 
 type TerminalView struct {
 	*tview.Box
-	app          *tview.Application
-	pty          *os.File
-	term         *AnsiTerminal
-	terminals    map[*os.File]*AnsiTerminal
+	app           *tview.Application
+	pty           *os.File
+	term          *AnsiTerminal
+	terminals     map[*os.File]*AnsiTerminal
 	activeReaders map[*os.File]bool // tracks PTYs with running readPty goroutines
-	lock         sync.Mutex
-	isRunning    bool
-	width        int
-	height       int
-	firstDraw    bool // Track if we've had the first draw with proper dimensions
-	inEscapeMode bool
-	exitKey      tcell.Key
-	onEscape     func()
-	onFocus      func()
-	onBlur       func()
-	isScrolling  bool
+	lock          sync.Mutex
+	isRunning     bool
+	width         int
+	height        int
+	firstDraw     bool // Track if we've had the first draw with proper dimensions
+	inEscapeMode  bool
+	exitKey       tcell.Key
+	onEscape      func()
+	onFocus       func()
+	onBlur        func()
+	isScrolling   bool
 
 	// Selection state
-	isSelecting  bool
-	hasSelection bool
-	selStartCol  int
-	selStartRow  int
-	selEndCol    int
-	selEndRow    int
+	isSelecting        bool
+	hasSelection       bool
+	selStartCol        int
+	selStartRow        int
+	selEndCol          int
+	selEndRow          int
 	onSelectionChanged func()
 }
 
@@ -575,6 +575,20 @@ func (t *TerminalView) getSpecialKeySequence(key tcell.Key) []byte {
 		return seq
 	}
 	return nil
+}
+
+// GetMaxLogicalLine returns the furthest logical line reached in a terminal.
+func (t *TerminalView) GetMaxLogicalLine(ptyFile *os.File) int64 {
+	if ptyFile == nil {
+		return 0
+	}
+	t.lock.Lock()
+	term, ok := t.terminals[ptyFile]
+	t.lock.Unlock()
+	if !ok {
+		return 0
+	}
+	return term.GetMaxLogicalLine()
 }
 
 // GetLastActivityTime returns the last write time for a terminal associated with the given PTY.

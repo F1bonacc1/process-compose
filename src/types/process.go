@@ -252,6 +252,7 @@ type ProcessState struct {
 	IsRunning        bool          `json:"is_running"`
 	NextRunTime      *time.Time    `json:"next_run_time,omitempty"`
 	LastActivityTime *time.Time    `json:"last_activity_time,omitempty"`
+	MaxLogicalLine   int64         `json:"-"` // TUI-only: furthest logical line reached in terminal
 }
 
 type ProcessPorts struct {
