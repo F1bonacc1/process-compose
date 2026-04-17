@@ -75,7 +75,7 @@ coverhtml:
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out
 
-run:
+run: build
 	PC_DEBUG_MODE=1 ./bin/${NAME}${EXT} -e .env
 
 clean:
