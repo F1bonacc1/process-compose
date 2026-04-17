@@ -56,7 +56,7 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 - [Recipes](https://github.com/F1bonacc1/process-compose-recipes) Management
 - Scheduled Processes (cron and interval-based)
 - Dependency Graph visualization (CLI, TUI, and API)
-- [MCP Server](https://f1bonacc1.github.io/process-compose/mcp-server/) integration for AI assistants
+- [MCP Server](https://f1bonacc1.github.io/process-compose/mcp-server/) integration for AI assistants — expose processes as tools/resources and (optionally) the project's own control plane (start/stop/scale/list/logs)
 
 It is heavily inspired by [docker-compose](https://github.com/docker/compose), but without the need for containers. The configuration syntax tries to follow the docker-compose specifications, with a few minor additions and lots of subtractions.
 

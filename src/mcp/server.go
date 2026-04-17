@@ -17,7 +17,13 @@ import (
 type ProcessRunner interface {
 	StartProcess(name string) error
 	StopProcess(name string) error
+	StopProcesses(names []string) (map[string]string, error)
+	RestartProcess(name string) error
+	ScaleProcess(name string, scale int) error
 	GetProcessState(name string) (*types.ProcessState, error)
+	GetProcessesState() (*types.ProcessesState, error)
+	GetProcessPorts(name string) (*types.ProcessPorts, error)
+	GetProjectState(checkMem bool) (*types.ProjectState, error)
 	GetProcessLog(name string, offsetFromEnd, limit int) ([]string, error)
 	GetProcessLogLength(name string) int
 	SetProcessInfo(config *types.ProcessConfig) error

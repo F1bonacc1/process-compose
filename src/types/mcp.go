@@ -9,15 +9,16 @@ import (
 
 // MCPServerConfig defines the top-level MCP server configuration
 type MCPServerConfig struct {
-	Host      string `yaml:"host,omitempty"`
-	Port      int    `yaml:"port,omitempty"`
-	Transport string `yaml:"transport,omitempty"` // Optional: defaults to "sse"
-	Timeout   string `yaml:"timeout,omitempty"`   // Optional: defaults to "5m"
+	Host               string `yaml:"host,omitempty"`
+	Port               int    `yaml:"port,omitempty"`
+	Transport          string `yaml:"transport,omitempty"`            // Optional: defaults to "sse"
+	Timeout            string `yaml:"timeout,omitempty"`              // Optional: defaults to "5m"
+	ExposeControlTools bool   `yaml:"expose_control_tools,omitempty"` // Optional: when true, expose built-in pc_* control tools
 }
 
 // IsEnabled returns true if MCP server is configured
 func (m *MCPServerConfig) IsEnabled() bool {
-	return m != nil && (m.IsStdio() || m.Transport != "" || m.Host != "" || m.Port > 0)
+	return m != nil && (m.IsStdio() || m.Transport != "" || m.Host != "" || m.Port > 0 || m.ExposeControlTools)
 }
 
 // IsSSE returns true if transport is sse (or default)

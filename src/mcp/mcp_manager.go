@@ -30,13 +30,23 @@ func NewMCPManager(runner ProcessRunner, mcpConfig *types.MCPServerConfig, proce
 		}
 	}
 
-	// Only keep the server if there are registered processes
-	if len(server.GetRegisteredProcesses()) == 0 {
-		log.Info().Msg("MCP server configured but no MCP processes found - skipping server start")
+	// Register built-in process-compose control tools if opted in
+	if mcpConfig.ExposeControlTools {
+		if err := server.RegisterControlTools(); err != nil {
+			log.Error().Err(err).Msg("Failed to register MCP control tools")
+		}
+	}
+
+	// Skip server start if nothing is exposed
+	if len(server.GetRegisteredProcesses()) == 0 && !mcpConfig.ExposeControlTools {
+		log.Info().Msg("MCP server configured but no MCP processes or control tools - skipping server start")
 		return nil
 	}
 
-	log.Info().Int("count", len(server.GetRegisteredProcesses())).Msg("MCP server initialized")
+	log.Info().
+		Int("processes", len(server.GetRegisteredProcesses())).
+		Bool("control_tools", mcpConfig.ExposeControlTools).
+		Msg("MCP server initialized")
 
 	return &MCPManager{
 		server: server,
