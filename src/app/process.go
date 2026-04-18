@@ -141,9 +141,20 @@ loop:
 			return 1
 		}
 
-		p.setStartTime(time.Now())
+		now := time.Now()
+		p.setStartTime(now)
 		p.stateMtx.Lock()
 		p.procState.Pid = p.command.Pid()
+		if p.procState.ProcessStartTime == nil {
+			startCopy := now
+			p.procState.ProcessStartTime = &startCopy
+			// Processes without any readiness signal are considered ready as
+			// soon as they start. Probes/log-ready handlers override this later.
+			if p.readyProber == nil && p.procConf.ReadyLogLine == "" {
+				readyCopy := now
+				p.procState.ProcessReadyTime = &readyCopy
+			}
+		}
 		p.metricsProc, err = puproc.NewProcess(int32(p.procState.Pid))
 		if err != nil {
 			log.Err(err).Msgf("Could not find pid %d with name %s", p.procState.Pid, p.getName())
@@ -549,6 +560,13 @@ func (p *Process) onProcessEnd(state string) {
 	p.setState(state)
 	p.updateProcState()
 
+	p.stateMtx.Lock()
+	if p.procState.ProcessEndTime == nil {
+		now := time.Now()
+		p.procState.ProcessEndTime = &now
+	}
+	p.stateMtx.Unlock()
+
 	p.Lock()
 	p.done = true
 	p.Unlock()
@@ -730,6 +748,10 @@ func (p *Process) handleOutput(pipe io.ReadCloser, output string, handler func(m
 		}
 		if p.procConf.ReadyLogLine != "" && p.procState.Health == types.ProcessHealthUnknown && strings.Contains(line, p.procConf.ReadyLogLine) {
 			p.procState.Health = types.ProcessHealthReady
+			if p.procState.ProcessReadyTime == nil {
+				now := time.Now()
+				p.procState.ProcessReadyTime = &now
+			}
 			p.cancelReadyLogFunc(nil)
 		}
 		p.checkElevatedProcOutput(line)
@@ -1063,6 +1085,10 @@ func (p *Process) setProcHealth(health string) {
 	p.stateMtx.Lock()
 	defer p.stateMtx.Unlock()
 	p.procState.Health = health
+	if health == types.ProcessHealthReady && p.procState.ProcessReadyTime == nil {
+		now := time.Now()
+		p.procState.ProcessReadyTime = &now
+	}
 }
 
 // set elevated process password

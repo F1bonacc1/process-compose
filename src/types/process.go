@@ -249,6 +249,17 @@ type ProcessState struct {
 	CPU              float64       `json:"cpu"`
 	IsRunning        bool          `json:"is_running"`
 	NextRunTime      *time.Time    `json:"next_run_time,omitempty"`
+	// ProcessStartTime is the wall-clock time the process (first) entered a
+	// running/launched state. Used by `process-compose analyze critical-chain`.
+	ProcessStartTime *time.Time `json:"process_start_time,omitempty"`
+	// ProcessReadyTime is the wall-clock time the process became ready. For
+	// processes with a readiness probe or a `ready_log_line`, this is set when
+	// the probe succeeds / the line is observed. For processes without any
+	// readiness probe, it equals ProcessStartTime.
+	ProcessReadyTime *time.Time `json:"process_ready_time,omitempty"`
+	// ProcessEndTime is the wall-clock time the process ended (completed,
+	// errored, terminated, or was skipped).
+	ProcessEndTime *time.Time `json:"process_end_time,omitempty"`
 }
 
 type ProcessPorts struct {
