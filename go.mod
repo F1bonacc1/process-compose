@@ -30,7 +30,7 @@ require (
 )
 
 require (
-	github.com/go-co-op/gocron/v2 v2.19.1
+	github.com/go-co-op/gocron/v2 v2.21.0
 	github.com/mark3labs/mcp-go v0.46.0
 )
 
