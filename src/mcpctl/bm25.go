@@ -1,5 +1,15 @@
 package mcpctl
 
+// Hand-rolled Okapi BM25 for search_logs.
+//
+// The Go ecosystem does not have a lightweight, actively maintained BM25
+// package. The closest options are either (a) full-text search engines like
+// blevesearch/bleve, which pull in a large dependency tree we don't need for
+// ranking a few thousand log lines, or (b) small single-maintainer forks with
+// little usage or upkeep. Given BM25 itself is ~100 lines of standard formula,
+// implementing it here keeps go.mod clean and avoids taking on a dependency
+// we'd have to vet and track.
+
 import (
 	"math"
 	"sort"
