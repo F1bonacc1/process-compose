@@ -46,11 +46,18 @@ func NewServer(runner ProcessRunner, cfg *types.MCPCtlServerConfig, processes ty
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// Snapshot the process map so get_dependency_graph can iterate it without
+	// racing any runtime mutation of the project's process set.
+	procSnapshot := make(types.Processes, len(processes))
+	for k, v := range processes {
+		procSnapshot[k] = v
+	}
+
 	s := &Server{
 		mcpServer: server.NewMCPServer("process-compose-mcpctl", "1.0.0"),
 		runner:    runner,
 		config:    cfg,
-		processes: processes,
+		processes: procSnapshot,
 		ctx:       ctx,
 		cancel:    cancel,
 	}

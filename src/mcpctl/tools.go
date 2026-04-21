@@ -325,15 +325,18 @@ func (s *Server) toolRestartProcess(_ context.Context, req mcp.CallToolRequest) 
 func (s *Server) toolGetDependencyGraph(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	graph := types.BuildDependencyGraph(s.processes)
 
+	states, err := s.runner.GetProcessesState()
+	if err != nil {
+		return mcp.NewToolResultErrorf("failed to get processes state: %v", err), nil
+	}
+
 	// Overlay live state in a single pass. graph.Nodes aliases the pointers in
 	// graph.AllNodes, so mutating AllNodes propagates to Nodes automatically.
-	if states, err := s.runner.GetProcessesState(); err == nil {
-		for i := range states.States {
-			st := &states.States[i]
-			if node, ok := graph.AllNodes[st.Name]; ok {
-				node.Status = st.Status
-				node.IsReady = st.Health
-			}
+	for i := range states.States {
+		st := &states.States[i]
+		if node, ok := graph.AllNodes[st.Name]; ok {
+			node.Status = st.Status
+			node.IsReady = st.Health
 		}
 	}
 
