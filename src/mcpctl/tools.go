@@ -23,67 +23,72 @@ const (
 func (s *Server) registerBuiltinTools() {
 	s.mcpServer.AddTool(
 		mcp.NewTool("list_processes",
-			mcp.WithDescription("List all processes managed by process-compose with a summary of their state."),
+			mcp.WithDescription(`List all processes managed by process-compose with their current status, CPU/memory usage, uptime, and restart count. Use this to get an overview of what's running in the local dev environment.`),
 		),
 		s.toolListProcesses,
 	)
 
 	s.mcpServer.AddTool(
 		mcp.NewTool("get_process",
-			mcp.WithDescription("Get detailed status for a single process (status, PID, uptime, CPU, memory, restarts, exit code, namespace, readiness)."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Name of the process.")),
+			mcp.WithDescription(`Get detailed information about a specific process including its command, dependencies, status, and resource usage.`),
+			mcp.WithString("name", mcp.Required(), mcp.Description(`The process name (e.g. "web-server", "chort")`)),
 		),
 		s.toolGetProcess,
 	)
 
 	s.mcpServer.AddTool(
 		mcp.NewTool("get_logs",
-			mcp.WithDescription("Return recent log lines for a process."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Name of the process.")),
-			mcp.WithNumber("lines", mcp.Description(fmt.Sprintf("Number of lines to return from the tail (default %d, cap %d).", defaultGetLogsLines, maxGetLogsLines))),
-			mcp.WithNumber("offset", mcp.Description("Offset from the end of the log buffer (default 0).")),
+			mcp.WithDescription(`Get the most recent log lines from a process (tail). Use this for time-sensitive queries like "what just happened", "latest errors", or "recent output" — it returns only the tail end of the log buffer.`),
+			mcp.WithString("name", mcp.Required(), mcp.Description(`The process name (e.g. "web-server", "chort")`)),
+			mcp.WithNumber("lines", mcp.Description(`Number of recent lines to fetch (default 100, max 1000)`)),
+			mcp.WithNumber("offset", mcp.Description(`Offset from the end of the log buffer (default 0)`)),
 		),
 		s.toolGetLogs,
 	)
 
 	s.mcpServer.AddTool(
 		mcp.NewTool("search_logs",
-			mcp.WithDescription("Search process logs for a query string using BM25 ranking."),
-			mcp.WithString("query", mcp.Required(), mcp.Description("Search query.")),
-			mcp.WithString("name", mcp.Description("Optional process name. If omitted, search across all processes.")),
-			mcp.WithNumber("top_k", mcp.Description(fmt.Sprintf("Number of top results to return (default %d, cap %d).", defaultSearchTopK, maxSearchTopK))),
-			mcp.WithNumber("log_limit", mcp.Description(fmt.Sprintf("Max number of recent log lines to index per process (default %d, cap %d).", defaultSearchLogLimit, maxSearchLogLimit))),
+			mcp.WithDescription(`Search the entire log buffer using BM25 text ranking. Results are ranked by relevance, NOT by time — they may be old or out of chronological order. For recent/latest logs, use get_logs instead.
+
+Examples:
+- Search for errors: query="error failed exception"
+- Search for a specific module: query="GraphQL resolver timeout"
+- Search across all processes: omit the name parameter`),
+			mcp.WithString("query", mcp.Required(), mcp.Description(`Search query (space-separated terms)`)),
+			mcp.WithString("name", mcp.Description(`Process name to search. If omitted, searches all processes.`)),
+			mcp.WithNumber("top_k", mcp.Description(`Number of top results to return (default 20, max 100)`)),
+			mcp.WithNumber("log_limit", mcp.Description(`Max log lines to fetch per process before searching (default 500, max 5000)`)),
 		),
 		s.toolSearchLogs,
 	)
 
 	s.mcpServer.AddTool(
 		mcp.NewTool("start_process",
-			mcp.WithDescription("Start a process by name."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Name of the process.")),
+			mcp.WithDescription(`Start a stopped process managed by process-compose.`),
+			mcp.WithString("name", mcp.Required(), mcp.Description(`The process name to start`)),
 		),
 		s.toolStartProcess,
 	)
 
 	s.mcpServer.AddTool(
 		mcp.NewTool("stop_process",
-			mcp.WithDescription("Stop a running process by name."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Name of the process.")),
+			mcp.WithDescription(`Stop a running process managed by process-compose.`),
+			mcp.WithString("name", mcp.Required(), mcp.Description(`The process name to stop`)),
 		),
 		s.toolStopProcess,
 	)
 
 	s.mcpServer.AddTool(
 		mcp.NewTool("restart_process",
-			mcp.WithDescription("Restart a process by name."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Name of the process.")),
+			mcp.WithDescription(`Restart a process managed by process-compose.`),
+			mcp.WithString("name", mcp.Required(), mcp.Description(`The process name to restart (e.g. "web-server")`)),
 		),
 		s.toolRestartProcess,
 	)
 
 	s.mcpServer.AddTool(
 		mcp.NewTool("get_dependency_graph",
-			mcp.WithDescription("Return the dependency graph of processes along with their current live status."),
+			mcp.WithDescription(`Get the process dependency graph showing which processes depend on which others. Useful for understanding startup order and failure cascading.`),
 		),
 		s.toolGetDependencyGraph,
 	)
