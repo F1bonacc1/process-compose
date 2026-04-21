@@ -19,7 +19,7 @@ const (
 	maxSearchLogLimit     = 5000
 )
 
-// registerBuiltinTools registers the 8 Control MCP tools on the server.
+// registerBuiltinTools registers the Control MCP tools on the server.
 func (s *Server) registerBuiltinTools() {
 	s.mcpServer.AddTool(
 		mcp.NewTool("list_processes",
@@ -88,7 +88,7 @@ func (s *Server) registerBuiltinTools() {
 		s.toolGetDependencyGraph,
 	)
 
-	log.Info().Int("count", 8).Msg("Registered Control MCP tools")
+	log.Info().Msg("Registered Control MCP tools")
 }
 
 // --- Tool handlers ---
@@ -194,11 +194,15 @@ func (s *Server) toolGetLogs(_ context.Context, req mcp.CallToolRequest) (*mcp.C
 	}{Name: name, Lines: logs})
 }
 
+// searchHit is one result from search_logs. ChunkIdx is the line's 0-based
+// index within the log chunk we searched (tail of log_limit lines per
+// process), not an absolute position in the process's log buffer — lines
+// may roll out between calls.
 type searchHit struct {
-	Process string  `json:"process"`
-	LineIdx int     `json:"line_idx"`
-	Score   float64 `json:"score"`
-	Text    string  `json:"text"`
+	Process  string  `json:"process"`
+	ChunkIdx int     `json:"chunk_idx"`
+	Score    float64 `json:"score"`
+	Text     string  `json:"text"`
 }
 
 func (s *Server) toolSearchLogs(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -228,10 +232,10 @@ func (s *Server) toolSearchLogs(_ context.Context, req mcp.CallToolRequest) (*mc
 
 	// Gather log lines per process, tracking which doc belongs to which process.
 	var (
-		docs       [][]string
-		lineTexts  []string
-		lineProcs  []string
-		lineIndex  []int
+		docs      [][]string
+		lineTexts []string
+		lineProcs []string
+		chunkIdxs []int
 	)
 	for _, pname := range procNames {
 		lines, err := s.runner.GetProcessLog(pname, 0, logLimit)
@@ -243,7 +247,7 @@ func (s *Server) toolSearchLogs(_ context.Context, req mcp.CallToolRequest) (*mc
 			docs = append(docs, Tokenize(line))
 			lineTexts = append(lineTexts, line)
 			lineProcs = append(lineProcs, pname)
-			lineIndex = append(lineIndex, i)
+			chunkIdxs = append(chunkIdxs, i)
 		}
 	}
 
@@ -260,10 +264,10 @@ func (s *Server) toolSearchLogs(_ context.Context, req mcp.CallToolRequest) (*mc
 	}
 	for _, h := range hits {
 		out.Hits = append(out.Hits, searchHit{
-			Process: lineProcs[h.DocID],
-			LineIdx: lineIndex[h.DocID],
-			Score:   h.Score,
-			Text:    lineTexts[h.DocID],
+			Process:  lineProcs[h.DocID],
+			ChunkIdx: chunkIdxs[h.DocID],
+			Score:    h.Score,
+			Text:     lineTexts[h.DocID],
 		})
 	}
 	return mcp.NewToolResultJSON(out)
