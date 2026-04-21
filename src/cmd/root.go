@@ -247,7 +247,8 @@ func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner, project 
 		return err
 	}
 
-	// Keep project running if MCP server is active, so we don't exit if all processes are disabled/MCP
+	// Keep project running if either MCP server is active so we don't exit
+	// when all processes are disabled/MCP-wrapped.
 	if mcpManager != nil {
 		*pcFlags.KeepProjectOn = true
 	}
@@ -256,6 +257,10 @@ func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner, project 
 	// process-wrapping MCP above; runs on its own port with its own lifecycle.
 	mcpCtlManager := mcpctl.NewManager(runner, project.MCPCtlServer, project.Processes)
 	if err := mcpCtlManager.Start(); err != nil {
+		// Unwind the already-started mcp server so we don't leak it.
+		if stopErr := mcpManager.Stop(); stopErr != nil {
+			log.Error().Err(stopErr).Msg("Failed to stop MCP server during mcpctl startup error")
+		}
 		return err
 	}
 	if mcpCtlManager != nil {
