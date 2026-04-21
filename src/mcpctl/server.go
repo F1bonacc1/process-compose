@@ -76,9 +76,15 @@ func (s *Server) Start() error {
 	}
 
 	addr := fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
-	log.Info().
-		Str("address", addr).
-		Msg("Starting Control MCP server with SSE transport")
+	if !isLoopbackHost(s.config.Host) {
+		log.Warn().
+			Str("address", addr).
+			Msg("Control MCP server is binding to a non-loopback address; it exposes unauthenticated process control")
+	} else {
+		log.Info().
+			Str("address", addr).
+			Msg("Starting Control MCP server with SSE transport")
+	}
 
 	s.sseServer = server.NewSSEServer(s.mcpServer)
 	go func() {
@@ -89,6 +95,15 @@ func (s *Server) Start() error {
 	}()
 
 	return nil
+}
+
+// isLoopbackHost returns true if the bind address is loopback.
+func isLoopbackHost(host string) bool {
+	switch host {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	}
+	return false
 }
 
 // Stop tears down the server. For SSE, we call sseServer.Shutdown so the
