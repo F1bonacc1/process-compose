@@ -6,7 +6,9 @@ package mcpctl
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/types"
@@ -73,7 +75,8 @@ func (s *Server) Start() error {
 
 	s.sseServer = server.NewSSEServer(s.mcpServer)
 	go func() {
-		if err := s.sseServer.Start(addr); err != nil {
+		err := s.sseServer.Start(addr)
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error().Err(err).Msg("Control MCP SSE server error")
 		}
 	}()
