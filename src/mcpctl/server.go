@@ -7,19 +7,11 @@ package mcpctl
 import (
 	"context"
 	"fmt"
-	"io"
-	stdLog "log"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
-)
-
-// Transport names used in MCPCtlServerConfig.
-const (
-	TransportSSE   = "sse"
-	TransportStdio = "stdio"
 )
 
 // ProcessRunner is the subset of *app.ProjectRunner used by the Control MCP tools.
@@ -41,8 +33,6 @@ type Server struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
 	sseServer *server.SSEServer
-	stdin     io.Reader
-	stdout    io.Writer
 }
 
 // NewServer constructs a Control MCP server and registers its tools.
@@ -67,51 +57,15 @@ func NewServer(runner ProcessRunner, cfg *types.MCPCtlServerConfig, processes ty
 	return s
 }
 
-// SetStdio sets stdin/stdout for the stdio transport.
-func (s *Server) SetStdio(stdin io.Reader, stdout io.Writer) {
-	s.stdin = stdin
-	s.stdout = stdout
-}
-
-// Start starts the server with the configured transport.
+// Start starts the SSE server.
 func (s *Server) Start() error {
 	if s == nil || s.config == nil || !s.config.IsEnabled() {
 		return nil
 	}
-
-	log.Info().
-		Str("transport", s.config.Transport).
-		Msg("Starting Control MCP server")
-
-	if s.config.IsStdio() {
-		return s.startStdio()
-	}
-	if s.config.IsSSE() {
-		return s.startSSE()
-	}
-	return fmt.Errorf("unknown mcpctl transport: %s (only %q and %q are supported)", s.config.Transport, TransportSSE, TransportStdio)
-}
-
-func (s *Server) startStdio() error {
-	if s.stdin == nil || s.stdout == nil {
-		return fmt.Errorf("mcpctl stdio transport requires stdin and stdout to be set")
+	if !s.config.IsSSE() {
+		return fmt.Errorf("unsupported mcpctl transport: %s", s.config.Transport)
 	}
 
-	log.Info().Msg("Starting Control MCP server with stdio transport")
-
-	stdioServer := server.NewStdioServer(s.mcpServer)
-	stdioServer.SetErrorLogger(stdLog.New(io.Discard, "", 0))
-
-	go func() {
-		if err := stdioServer.Listen(s.ctx, s.stdin, s.stdout); err != nil {
-			log.Error().Err(err).Msg("Control MCP stdio server error")
-		}
-	}()
-
-	return nil
-}
-
-func (s *Server) startSSE() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
 	log.Info().
 		Str("address", addr).

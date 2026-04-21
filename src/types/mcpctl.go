@@ -6,10 +6,7 @@ import (
 	"time"
 )
 
-const (
-	mcpCtlTransportSSE   = "sse"
-	mcpCtlTransportStdio = "stdio"
-)
+const mcpCtlTransportSSE = "sse"
 
 // MCPCtlServerConfig defines the configuration for the Control MCP server,
 // which exposes tools for introspecting and controlling process-compose itself
@@ -25,53 +22,40 @@ type MCPCtlServerConfig struct {
 }
 
 // IsEnabled returns true if the Control MCP server is configured.
+//
+// An empty block (mcpctl_server: {}) is treated as disabled — a user must
+// set at least one field to opt in. Mirrors MCPServerConfig.IsEnabled.
 func (m *MCPCtlServerConfig) IsEnabled() bool {
-	return m != nil && (m.IsStdio() || m.Transport != "" || m.Host != "" || m.Port > 0)
+	return m != nil && (m.Transport != "" || m.Host != "" || m.Port > 0)
 }
 
-// IsSSE returns true if transport is sse (or default).
+// IsSSE returns true if transport is sse (or default). Only SSE is supported.
 func (m *MCPCtlServerConfig) IsSSE() bool {
 	if m == nil {
 		return false
 	}
-	return m.Transport == "" || m.Transport == mcpCtlTransportSSE
-}
-
-// IsStdio returns true if transport is stdio.
-func (m *MCPCtlServerConfig) IsStdio() bool {
-	if m == nil {
-		return false
-	}
-	return m.getTransport() == mcpCtlTransportStdio
-}
-
-func (m *MCPCtlServerConfig) getTransport() string {
-	if m == nil || m.Transport == "" {
-		return mcpCtlTransportSSE
-	}
-	return strings.ToLower(m.Transport)
+	return m.Transport == "" || strings.ToLower(m.Transport) == mcpCtlTransportSSE
 }
 
 // Validate checks if the Control MCP server configuration is valid.
+//
+// Only SSE transport is supported. Under `up`, stdio is already owned by the
+// TUI or the sibling mcp_server stdio transport, so mcpctl over stdio has no
+// practical place to send its traffic.
 func (m *MCPCtlServerConfig) Validate() error {
 	if m == nil {
 		return nil
 	}
 
-	transport := m.getTransport()
-	if transport != mcpCtlTransportSSE && transport != mcpCtlTransportStdio {
-		return fmt.Errorf("invalid mcpctl_server transport: %s (must be %q or %q)", m.Transport, mcpCtlTransportSSE, mcpCtlTransportStdio)
-	}
-
-	if transport == mcpCtlTransportStdio {
-		return nil
+	if m.Transport != "" && strings.ToLower(m.Transport) != mcpCtlTransportSSE {
+		return fmt.Errorf("invalid mcpctl_server transport: %s (only %q is supported)", m.Transport, mcpCtlTransportSSE)
 	}
 
 	if m.Host == "" {
-		return fmt.Errorf("mcpctl_server SSE transport requires host")
+		return fmt.Errorf("mcpctl_server requires host")
 	}
 	if m.Port <= 0 {
-		return fmt.Errorf("mcpctl_server SSE transport requires a valid port")
+		return fmt.Errorf("mcpctl_server requires a valid port")
 	}
 
 	return nil

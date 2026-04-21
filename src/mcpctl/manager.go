@@ -1,8 +1,6 @@
 package mcpctl
 
 import (
-	"io"
-
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
 )
@@ -43,12 +41,4 @@ func (m *Manager) Stop() error {
 		return nil
 	}
 	return m.server.Stop()
-}
-
-// SetStdio sets stdin/stdout for the stdio transport.
-func (m *Manager) SetStdio(stdin io.Reader, stdout io.Writer) {
-	if m == nil || m.server == nil {
-		return
-	}
-	m.server.SetStdio(stdin, stdout)
 }
