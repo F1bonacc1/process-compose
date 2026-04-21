@@ -7,8 +7,7 @@ import (
 	"unicode"
 )
 
-// Default Okapi BM25 parameters. These match the `okapibm25` TS reference used
-// by the prior prototype in repl-it-web PR #74337.
+// Default Okapi BM25 parameters.
 const (
 	DefaultK1 = 1.5
 	DefaultB  = 0.75
