@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 	"strings"
-	"time"
 )
 
 const mcpCtlTransportSSE = "sse"
@@ -18,7 +17,6 @@ type MCPCtlServerConfig struct {
 	Host      string `yaml:"host,omitempty"`
 	Port      int    `yaml:"port,omitempty"`
 	Transport string `yaml:"transport,omitempty"` // Optional: defaults to "sse"
-	Timeout   string `yaml:"timeout,omitempty"`   // Optional: defaults to "5m"
 }
 
 // IsEnabled returns true if the Control MCP server is configured.
@@ -59,13 +57,4 @@ func (m *MCPCtlServerConfig) Validate() error {
 	}
 
 	return nil
-}
-
-// GetTimeout returns the timeout duration for the Control MCP server.
-// Returns 0 if not set (caller should use default).
-func (m *MCPCtlServerConfig) GetTimeout() (time.Duration, error) {
-	if m == nil || m.Timeout == "" {
-		return 0, nil
-	}
-	return time.ParseDuration(m.Timeout)
 }
