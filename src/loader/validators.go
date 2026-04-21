@@ -210,6 +210,16 @@ func validateMCPConfig(p *types.Project) error {
 		}
 	}
 
+	// Validate Control MCP server configuration
+	if p.MCPCtlServer != nil {
+		if err := p.MCPCtlServer.Validate(); err != nil {
+			if p.IsStrict {
+				return err
+			}
+			log.Error().Err(err).Msg("Control MCP server configuration invalid")
+		}
+	}
+
 	// Validate MCP process configurations
 	for name, proc := range p.Processes {
 		if proc.IsMCP() {

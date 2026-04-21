@@ -19,6 +19,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/loader"
 	"github.com/f1bonacc1/process-compose/src/mcp"
+	"github.com/f1bonacc1/process-compose/src/mcpctl"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/f1bonacc1/process-compose/src/updater"
 	"github.com/rs/zerolog"
@@ -251,6 +252,16 @@ func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner, project 
 		*pcFlags.KeepProjectOn = true
 	}
 
+	// Create and start Control MCP server if enabled. Independent from the
+	// process-wrapping MCP above; runs on its own port with its own lifecycle.
+	mcpCtlManager := mcpctl.NewManager(runner, project.MCPCtlServer, project.Processes)
+	if err := mcpCtlManager.Start(); err != nil {
+		return err
+	}
+	if mcpCtlManager != nil {
+		*pcFlags.KeepProjectOn = true
+	}
+
 	server, err := startHttpServerIfEnabled(useLogger, runner)
 	if err != nil {
 		return err
@@ -263,6 +274,9 @@ func waitForProjectAndServer(useLogger bool, runner *app.ProjectRunner, project 
 	// Stop MCP server
 	if err := mcpManager.Stop(); err != nil {
 		log.Error().Err(err).Msg("Failed to stop MCP server")
+	}
+	if err := mcpCtlManager.Stop(); err != nil {
+		log.Error().Err(err).Msg("Failed to stop Control MCP server")
 	}
 
 	if server != nil {
