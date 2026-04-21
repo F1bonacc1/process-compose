@@ -7,11 +7,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Manager handles the Control MCP server lifecycle, mirroring the shape of
-// src/mcp.MCPManager but entirely independent from it.
+// Manager handles the Control MCP server lifecycle.
 type Manager struct {
 	server *Server
-	runner ProcessRunner
 }
 
 // NewManager constructs a Control MCP manager. Returns nil if cfg is nil or
@@ -28,10 +26,7 @@ func NewManager(runner ProcessRunner, cfg *types.MCPCtlServerConfig, processes t
 
 	log.Info().Msg("Control MCP server initialized")
 
-	return &Manager{
-		server: srv,
-		runner: runner,
-	}
+	return &Manager{server: srv}
 }
 
 // Start starts the Control MCP server.

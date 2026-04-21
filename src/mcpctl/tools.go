@@ -318,71 +318,20 @@ func (s *Server) toolRestartProcess(_ context.Context, req mcp.CallToolRequest) 
 	return mcp.NewToolResultText(fmt.Sprintf("restarted %s", name)), nil
 }
 
-type depLink struct {
-	Name           string             `json:"name"`
-	Status         string             `json:"process_status"`
-	IsReady        string             `json:"is_ready"`
-	DependencyType string             `json:"dependency_type"`
-	DependsOn      map[string]depLink `json:"depends_on,omitempty"`
-}
-
-type depNodeJSON struct {
-	Name      string             `json:"name"`
-	Status    string             `json:"process_status"`
-	IsReady   string             `json:"is_ready"`
-	DependsOn map[string]depLink `json:"depends_on,omitempty"`
-}
-
 func (s *Server) toolGetDependencyGraph(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	graph := types.BuildDependencyGraph(s.processes)
 
-	// Overlay live state onto each node in AllNodes.
-	for name, node := range graph.AllNodes {
-		if st, err := s.runner.GetProcessState(name); err == nil && st != nil {
-			node.Status = st.Status
-			node.IsReady = st.Health
-		}
-	}
-
-	nodes := make(map[string]depNodeJSON, len(graph.Nodes))
-	for name, node := range graph.Nodes {
-		nodes[name] = toDepNodeJSON(node)
-	}
-
-	return mcp.NewToolResultJSON(struct {
-		Nodes map[string]depNodeJSON `json:"nodes"`
-	}{Nodes: nodes})
-}
-
-func toDepNodeJSON(node *types.DependencyNode) depNodeJSON {
-	out := depNodeJSON{
-		Name:    node.Name,
-		Status:  node.Status,
-		IsReady: node.IsReady,
-	}
-	if len(node.DependsOn) > 0 {
-		out.DependsOn = make(map[string]depLink, len(node.DependsOn))
-		for depName, link := range node.DependsOn {
-			out.DependsOn[depName] = toDepLink(link)
-		}
-	}
-	return out
-}
-
-func toDepLink(link types.DependencyLink) depLink {
-	out := depLink{
-		DependencyType: link.Type,
-	}
-	if link.DependencyNode != nil {
-		out.Name = link.Name
-		out.Status = link.Status
-		out.IsReady = link.IsReady
-		if len(link.DependsOn) > 0 {
-			out.DependsOn = make(map[string]depLink, len(link.DependsOn))
-			for depName, sub := range link.DependsOn {
-				out.DependsOn[depName] = toDepLink(sub)
+	// Overlay live state in a single pass. graph.Nodes aliases the pointers in
+	// graph.AllNodes, so mutating AllNodes propagates to Nodes automatically.
+	if states, err := s.runner.GetProcessesState(); err == nil {
+		for i := range states.States {
+			st := &states.States[i]
+			if node, ok := graph.AllNodes[st.Name]; ok {
+				node.Status = st.Status
+				node.IsReady = st.Health
 			}
 		}
 	}
-	return out
+
+	return mcp.NewToolResultJSON(graph)
 }

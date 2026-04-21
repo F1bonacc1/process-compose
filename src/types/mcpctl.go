@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+const (
+	mcpCtlTransportSSE   = "sse"
+	mcpCtlTransportStdio = "stdio"
+)
+
 // MCPCtlServerConfig defines the configuration for the Control MCP server,
 // which exposes tools for introspecting and controlling process-compose itself
 // (list/get/start/stop/restart processes, read logs, search logs, dependency graph).
@@ -29,7 +34,7 @@ func (m *MCPCtlServerConfig) IsSSE() bool {
 	if m == nil {
 		return false
 	}
-	return m.Transport == "" || m.Transport == "sse"
+	return m.Transport == "" || m.Transport == mcpCtlTransportSSE
 }
 
 // IsStdio returns true if transport is stdio.
@@ -37,12 +42,12 @@ func (m *MCPCtlServerConfig) IsStdio() bool {
 	if m == nil {
 		return false
 	}
-	return m.getTransport() == "stdio"
+	return m.getTransport() == mcpCtlTransportStdio
 }
 
 func (m *MCPCtlServerConfig) getTransport() string {
 	if m == nil || m.Transport == "" {
-		return "sse"
+		return mcpCtlTransportSSE
 	}
 	return strings.ToLower(m.Transport)
 }
@@ -54,11 +59,11 @@ func (m *MCPCtlServerConfig) Validate() error {
 	}
 
 	transport := m.getTransport()
-	if transport != "sse" && transport != "stdio" {
-		return fmt.Errorf("invalid mcpctl_server transport: %s (must be 'sse' or 'stdio')", m.Transport)
+	if transport != mcpCtlTransportSSE && transport != mcpCtlTransportStdio {
+		return fmt.Errorf("invalid mcpctl_server transport: %s (must be %q or %q)", m.Transport, mcpCtlTransportSSE, mcpCtlTransportStdio)
 	}
 
-	if transport == "stdio" {
+	if transport == mcpCtlTransportStdio {
 		return nil
 	}
 
