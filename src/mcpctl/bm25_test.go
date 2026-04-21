@@ -78,10 +78,11 @@ func TestScoreEmptyCorpus(t *testing.T) {
 
 func TestTopNCapsResultsAndTieBreaks(t *testing.T) {
 	// Two identical docs produce identical scores; tie-break must be deterministic.
+	// Build token slices directly to avoid the dupword linter flagging the test source.
 	docs := [][]string{
-		Tokenize("error error error"),
-		Tokenize("error error error"),
-		Tokenize("nothing here"),
+		{"error", "error", "error"},
+		{"error", "error", "error"},
+		{"nothing", "here"},
 	}
 	c := NewCorpus(docs, 0, 0)
 	hits := c.TopN(Tokenize("error"), 2)
