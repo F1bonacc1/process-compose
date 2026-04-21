@@ -71,9 +71,6 @@ func (s *Server) Start() error {
 	if s == nil || s.config == nil || !s.config.IsEnabled() {
 		return nil
 	}
-	if !s.config.IsSSE() {
-		return fmt.Errorf("unsupported mcpctl transport: %s", s.config.Transport)
-	}
 
 	addr := fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
 	if !isLoopbackHost(s.config.Host) {

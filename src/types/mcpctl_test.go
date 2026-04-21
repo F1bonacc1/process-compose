@@ -1,8 +1,6 @@
 package types
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestMCPCtlServerConfigIsEnabled(t *testing.T) {
 	cases := []struct {
@@ -14,8 +12,7 @@ func TestMCPCtlServerConfigIsEnabled(t *testing.T) {
 		{"empty block", &MCPCtlServerConfig{}, false},
 		{"port only", &MCPCtlServerConfig{Port: 11001}, true},
 		{"host only", &MCPCtlServerConfig{Host: "localhost"}, true},
-		{"transport only", &MCPCtlServerConfig{Transport: "sse"}, true},
-		{"fully populated", &MCPCtlServerConfig{Host: "localhost", Port: 11001, Transport: "sse"}, true},
+		{"fully populated", &MCPCtlServerConfig{Host: "localhost", Port: 11001}, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -33,14 +30,10 @@ func TestMCPCtlServerConfigValidate(t *testing.T) {
 		wantErr bool
 	}{
 		{"nil", nil, false},
-		{"valid sse", &MCPCtlServerConfig{Host: "localhost", Port: 11001, Transport: "sse"}, false},
-		{"sse default transport", &MCPCtlServerConfig{Host: "localhost", Port: 11001}, false},
-		{"uppercase sse accepted", &MCPCtlServerConfig{Host: "localhost", Port: 11001, Transport: "SSE"}, false},
-		{"stdio rejected", &MCPCtlServerConfig{Transport: "stdio", Host: "localhost", Port: 11001}, true},
-		{"unknown transport rejected", &MCPCtlServerConfig{Transport: "websocket", Host: "localhost", Port: 11001}, true},
+		{"valid", &MCPCtlServerConfig{Host: "localhost", Port: 11001}, false},
 		{"missing host", &MCPCtlServerConfig{Port: 11001}, true},
 		{"missing port", &MCPCtlServerConfig{Host: "localhost"}, true},
-		{"zero port", &MCPCtlServerConfig{Host: "localhost", Port: 0, Transport: "sse"}, true},
+		{"zero port", &MCPCtlServerConfig{Host: "localhost", Port: 0}, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
