@@ -8,7 +8,7 @@ require (
 	github.com/alecthomas/chroma/v2 v2.23.1
 	github.com/creack/pty v1.1.24
 	github.com/drone/envsubst v1.0.3
-	github.com/f1bonacc1/glippy v1.1.0
+	github.com/f1bonacc1/glippy v1.2.0
 	github.com/f1bonacc1/go-health/v2 v2.1.6
 	github.com/f1bonacc1/netstat v1.0.2
 	github.com/fatih/color v1.19.0

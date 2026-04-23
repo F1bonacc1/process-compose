@@ -101,10 +101,14 @@ func (pv *pcView) createLogSelectionTextArea() {
 		switch event.Key() {
 		case tcell.KeyCR:
 			text, start, _ := pv.logsTextArea.GetSelection()
-			err := glippy.Set(text)
+			method, err := glippy.SetWithMethod(text)
 			if err != nil {
 				log.Err(err).Msg("failed to set clipboard")
 				pv.attentionMessage(fmt.Sprintf("Failed to copy to clipboard: %s", err.Error()), 5*time.Second, true)
+			} else if method == glippy.MethodOSC52 {
+				pv.attentionMessage("Copied via OSC 52 (terminal must allow OSC 52)", 3*time.Second, false)
+			} else {
+				pv.attentionMessage("Copied to clipboard", 2*time.Second, false)
 			}
 			pv.logsTextArea.Select(start, start)
 		case tcell.KeyEsc:
