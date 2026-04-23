@@ -7,8 +7,8 @@ import (
 
 const (
 	//UrlPath for retrieving the latest release version
-	// UrlPath = "https://api.github.com/repos/f1bonacc1/process-compose/releases/latest"
-	UrlPath = "https://shr.pn/process-compose-latest"
+	UrlPath = "https://api.github.com/repos/f1bonacc1/process-compose/releases/latest"
+	// UrlPath = "https://shr.pn/process-compose-latest"
 )
 
 type Release struct {
