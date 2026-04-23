@@ -747,11 +747,9 @@ func (p *Process) handleOutput(pipe io.ReadCloser, output string, handler func(m
 			break
 		}
 		if p.procConf.ReadyLogLine != "" && p.procState.Health == types.ProcessHealthUnknown && strings.Contains(line, p.procConf.ReadyLogLine) {
-			p.procState.Health = types.ProcessHealthReady
-			if p.procState.ProcessReadyTime == nil {
-				now := time.Now()
-				p.procState.ProcessReadyTime = &now
-			}
+			// setProcHealth takes stateMtx, updates Health and (for Ready)
+			// records ProcessReadyTime atomically.
+			p.setProcHealth(types.ProcessHealthReady)
 			p.cancelReadyLogFunc(nil)
 		}
 		p.checkElevatedProcOutput(line)

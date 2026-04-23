@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
-// analyzeCmd represents the analyze command group.
+// analyzeCmd represents the analyze command group. It has no Run of its own;
+// Cobra auto-prints help when a parent command with no Run is invoked without
+// a subcommand.
 var analyzeCmd = &cobra.Command{
 	Use:   "analyze",
 	Short: "Analyze startup timing and dependency information",
@@ -16,12 +16,6 @@ through the dependency graph.
 
 Available subcommands:
   critical-chain    Print the dependency chains ordered by startup time.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			_ = cmd.Help()
-			os.Exit(0)
-		}
-	},
 }
 
 func init() {

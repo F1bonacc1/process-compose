@@ -2,14 +2,23 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"math"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
+
+// unreadySortOrder is the sort-key returned for processes that never became
+// ready (or have no recorded state). Using the maximum duration means these
+// processes float to the top of the critical-chain listing, mirroring
+// systemd-analyze which puts the slowest/stuck paths first.
+const unreadySortOrder = time.Duration(math.MaxInt64)
 
 var analyzeCriticalChainCmd = &cobra.Command{
 	Use:   "critical-chain [process...]",
@@ -71,8 +80,16 @@ func runAnalyzeCriticalChain(cmd *cobra.Command, args []string) {
 		for _, name := range args {
 			node, ok := graph.AllNodes[name]
 			if !ok {
-				fmt.Fprintf(os.Stderr, "unknown process (or process has no dependencies): %s\n", name)
-				os.Exit(1)
+				// The graph only contains processes that participate in a
+				// dependency edge. If the name refers to an isolated process
+				// that is still known to the project, synthesize a bare node
+				// so its timings are still rendered.
+				if _, exists := stateByName[name]; exists {
+					node = &types.DependencyNode{Name: name}
+				} else {
+					fmt.Fprintf(os.Stderr, "unknown process: %s\n", name)
+					os.Exit(1)
+				}
 			}
 			roots = append(roots, node)
 		}
@@ -95,37 +112,58 @@ func runAnalyzeCriticalChain(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	sort.Slice(roots, func(i, j int) bool {
-		ai := readyOffsetForSort(stateByName[roots[i].Name], projectState.StartTime)
-		aj := readyOffsetForSort(stateByName[roots[j].Name], projectState.StartTime)
-		if ai == aj {
-			return roots[i].Name < roots[j].Name
-		}
-		return ai > aj
-	})
+	renderCriticalChain(os.Stdout, projectState, roots, stateByName)
+}
 
-	// Header
+// renderCriticalChain writes the critical-chain report for the given roots to
+// w. Split out from runAnalyzeCriticalChain so it can be unit-tested without a
+// running server.
+func renderCriticalChain(
+	w io.Writer,
+	projectState *types.ProjectState,
+	roots []*types.DependencyNode,
+	stateByName map[string]*types.ProcessState,
+) {
 	green := color.New(color.FgGreen).SprintFunc()
-	fmt.Println("The time when unit became ready is printed after the \"@\" character.")
-	fmt.Println("The time the unit took to become ready is printed after the \"+\" character.")
-	fmt.Println()
-	fmt.Printf("%s: %s\n", green("Project"), projectState.ProjectName)
-	fmt.Printf("%s: %s\n", green("Started"), projectState.StartTime.Format(time.RFC3339))
-	fmt.Printf("%s: %s\n", green("Up time"), projectState.UpTime.Round(time.Millisecond))
-	fmt.Println()
+	fmt.Fprintln(w, "The time when unit became ready is printed after the \"@\" character.")
+	fmt.Fprintln(w, "The time the unit took to become ready is printed after the \"+\" character.")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "%s: %s\n", green("Project"), projectState.ProjectName)
+	fmt.Fprintf(w, "%s: %s\n", green("Started"), projectState.StartTime.Format(time.RFC3339))
+	fmt.Fprintf(w, "%s: %s\n", green("Up time"), projectState.UpTime.Round(time.Millisecond))
+	fmt.Fprintln(w)
+
+	sortRootsByReadyTime(roots, stateByName, projectState.StartTime)
 
 	for i, root := range roots {
 		last := i == len(roots)-1
-		printCriticalChain(root, stateByName, projectState.StartTime, "", true, last)
+		printCriticalChain(w, root, stateByName, projectState.StartTime, "", true, last)
 	}
 }
 
+// sortRootsByReadyTime sorts nodes in-place by descending ready-time (slowest
+// first); ties are broken by ascending name.
+func sortRootsByReadyTime(
+	nodes []*types.DependencyNode,
+	stateByName map[string]*types.ProcessState,
+	projectStart time.Time,
+) {
+	sort.Slice(nodes, func(i, j int) bool {
+		ai := readyOffsetForSort(stateByName[nodes[i].Name], projectStart)
+		aj := readyOffsetForSort(stateByName[nodes[j].Name], projectStart)
+		if ai == aj {
+			return nodes[i].Name < nodes[j].Name
+		}
+		return ai > aj
+	})
+}
+
 // readyOffsetForSort returns the duration from project start until the process
-// became ready. Processes that never became ready sort to the top (return
-// max duration) so the "slowest" chain is printed first.
+// became ready. Processes that never became ready return unreadySortOrder so
+// the "slowest" / stuck chain is printed first.
 func readyOffsetForSort(s *types.ProcessState, projectStart time.Time) time.Duration {
 	if s == nil {
-		return time.Duration(1<<62 - 1)
+		return unreadySortOrder
 	}
 	if s.ProcessReadyTime != nil {
 		return s.ProcessReadyTime.Sub(projectStart)
@@ -133,10 +171,11 @@ func readyOffsetForSort(s *types.ProcessState, projectStart time.Time) time.Dura
 	if s.ProcessStartTime != nil {
 		return s.ProcessStartTime.Sub(projectStart)
 	}
-	return time.Duration(1<<62 - 1)
+	return unreadySortOrder
 }
 
 func printCriticalChain(
+	w io.Writer,
 	node *types.DependencyNode,
 	stateByName map[string]*types.ProcessState,
 	projectStart time.Time,
@@ -158,7 +197,7 @@ func printCriticalChain(
 	}
 
 	line := formatNodeLine(node, stateByName[node.Name], projectStart)
-	fmt.Printf("%s%s%s\n", prefix, branch, line)
+	fmt.Fprintf(w, "%s%s%s\n", prefix, branch, line)
 
 	// Sort dependencies by when they became ready (latest first), mirroring
 	// systemd-analyze critical-chain.
@@ -168,17 +207,10 @@ func printCriticalChain(
 			deps = append(deps, link.DependencyNode)
 		}
 	}
-	sort.Slice(deps, func(i, j int) bool {
-		ai := readyOffsetForSort(stateByName[deps[i].Name], projectStart)
-		aj := readyOffsetForSort(stateByName[deps[j].Name], projectStart)
-		if ai == aj {
-			return deps[i].Name < deps[j].Name
-		}
-		return ai > aj
-	})
+	sortRootsByReadyTime(deps, stateByName, projectStart)
 
 	for i, dep := range deps {
-		printCriticalChain(dep, stateByName, projectStart, nextPrefix, false, i == len(deps)-1)
+		printCriticalChain(w, dep, stateByName, projectStart, nextPrefix, false, i == len(deps)-1)
 	}
 }
 
@@ -233,15 +265,7 @@ func formatNodeLine(
 		}
 	}
 
-	// Join with spaces.
-	out := ""
-	for i, p := range parts {
-		if i > 0 {
-			out += " "
-		}
-		out += p
-	}
-	return out
+	return strings.Join(parts, " ")
 }
 
 // formatOffset formats a duration representing "time since project start".
