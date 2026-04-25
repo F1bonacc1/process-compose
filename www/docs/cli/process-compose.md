@@ -44,6 +44,7 @@ process-compose [flags]
 
 ### SEE ALSO
 
+* [process-compose analyze](process-compose_analyze.md)	 - Analyze startup timing and dependency information
 * [process-compose attach](process-compose_attach.md)	 - Attach the Process Compose TUI Remotely to a Running Process Compose Server
 * [process-compose completion](process-compose_completion.md)	 - Generate the autocompletion script for the specified shell
 * [process-compose down](process-compose_down.md)	 - Stops all the running processes and terminates the Process Compose

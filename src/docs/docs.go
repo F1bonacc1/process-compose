@@ -73,6 +73,156 @@ const docTemplate = `{
                 }
             }
         },
+        "/namespace/restart/{name}": {
+            "post": {
+                "description": "Restarts the namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Restart a namespace",
+                "operationId": "RestartNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Restarted Namespace Name",
+                        "schema": {
+                            "$ref": "#/definitions/api.NameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/namespace/start/{name}": {
+            "post": {
+                "description": "Starts the namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Start a namespace",
+                "operationId": "StartNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Started Namespace Name",
+                        "schema": {
+                            "$ref": "#/definitions/api.NameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/namespace/stop/{name}": {
+            "post": {
+                "description": "Stops the namespace",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Stop a namespace",
+                "operationId": "StopNamespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stopped Namespace Name",
+                        "schema": {
+                            "$ref": "#/definitions/api.NameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/namespaces": {
+            "get": {
+                "description": "Retrieves all unique namespaces",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Namespace"
+                ],
+                "summary": "Get all namespaces",
+                "operationId": "GetNamespaces",
+                "responses": {
+                    "200": {
+                        "description": "Namespaces List",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/process": {
             "post": {
                 "description": "Update process",
@@ -399,6 +549,52 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "Scaled Process Name",
+                        "schema": {
+                            "$ref": "#/definitions/api.NameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/process/signal/{name}/{signal}": {
+            "patch": {
+                "description": "Sends a POSIX signal to the process",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Signal a process",
+                "operationId": "SendSignal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Process Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Signal Number",
+                        "name": "signal",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Signaled Process Name",
                         "schema": {
                             "$ref": "#/definitions/api.NameResponse"
                         }
@@ -897,6 +1093,29 @@ const docTemplate = `{
                 }
             }
         },
+        "time.Duration": {
+            "type": "integer",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
+        },
         "types.DependencyGraph": {
             "type": "object",
             "properties": {
@@ -1004,6 +1223,70 @@ const docTemplate = `{
                 }
             }
         },
+        "types.MCPArgument": {
+            "type": "object",
+            "properties": {
+                "default": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.MCPArgumentType"
+                }
+            }
+        },
+        "types.MCPArgumentType": {
+            "type": "string",
+            "enum": [
+                "string",
+                "number",
+                "boolean",
+                "integer"
+            ],
+            "x-enum-varnames": [
+                "MCPArgTypeString",
+                "MCPArgTypeNumber",
+                "MCPArgTypeBoolean",
+                "MCPArgTypeInteger"
+            ]
+        },
+        "types.MCPProcessConfig": {
+            "type": "object",
+            "properties": {
+                "arguments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.MCPArgument"
+                    }
+                },
+                "timeout": {
+                    "description": "Optional: overrides global timeout",
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.MCPProcessType"
+                }
+            }
+        },
+        "types.MCPProcessType": {
+            "type": "string",
+            "enum": [
+                "tool",
+                "resource"
+            ],
+            "x-enum-varnames": [
+                "MCPProcessTypeTool",
+                "MCPProcessTypeResource"
+            ]
+        },
         "types.MemoryState": {
             "type": "object",
             "properties": {
@@ -1020,6 +1303,24 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "types.MonitorFor": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "MonitorForActivity": "notify on new output while unfocused",
+                "MonitorForNone": "default - no monitoring",
+                "MonitorForSilence": "notify on no output while unfocused"
+            },
+            "x-enum-varnames": [
+                "MonitorForNone",
+                "MonitorForActivity",
+                "MonitorForSilence"
+            ]
         },
         "types.ProcessCondition": {
             "type": "integer",
@@ -1059,6 +1360,9 @@ const docTemplate = `{
                 "disableAnsiColors": {
                     "type": "boolean"
                 },
+                "disableCommandRendering": {
+                    "type": "boolean"
+                },
                 "disableDotEnv": {
                     "type": "boolean"
                 },
@@ -1070,6 +1374,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "envFile": {
+                    "type": "string"
                 },
                 "environment": {
                     "type": "array",
@@ -1114,6 +1421,15 @@ const docTemplate = `{
                 "loggerConfig": {
                     "$ref": "#/definitions/types.LoggerConfig"
                 },
+                "mcp": {
+                    "$ref": "#/definitions/types.MCPProcessConfig"
+                },
+                "monitorFor": {
+                    "$ref": "#/definitions/types.MonitorFor"
+                },
+                "monitorSilenceThreshold": {
+                    "$ref": "#/definitions/time.Duration"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1146,6 +1462,9 @@ const docTemplate = `{
                 },
                 "shutDownParams": {
                     "$ref": "#/definitions/types.ShutDownParams"
+                },
+                "truncateLog": {
+                    "type": "boolean"
                 },
                 "vars": {
                     "$ref": "#/definitions/types.Vars"
@@ -1211,6 +1530,9 @@ const docTemplate = `{
                 "is_running": {
                     "type": "boolean"
                 },
+                "last_activity_time": {
+                    "type": "string"
+                },
                 "mem": {
                     "type": "integer"
                 },
@@ -1228,6 +1550,18 @@ const docTemplate = `{
                 },
                 "pid": {
                     "type": "integer"
+                },
+                "process_end_time": {
+                    "description": "ProcessEndTime is the wall-clock time the process ended (completed,\nerrored, terminated, or was skipped).",
+                    "type": "string"
+                },
+                "process_ready_time": {
+                    "description": "ProcessReadyTime is the wall-clock time the process became ready. For\nprocesses with a readiness probe or a ` + "`" + `ready_log_line` + "`" + `, this is set when\nthe probe succeeds / the line is observed. For processes without any\nreadiness probe, it equals ProcessStartTime.",
+                    "type": "string"
+                },
+                "process_start_time": {
+                    "description": "ProcessStartTime is the wall-clock time the process (first) entered a\nrunning/launched state. Used by ` + "`" + `process-compose analyze critical-chain` + "`" + `.",
+                    "type": "string"
                 },
                 "restarts": {
                     "type": "integer"

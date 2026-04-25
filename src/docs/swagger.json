@@ -110,6 +110,29 @@
                 },
                 "type": "object"
             },
+            "time.Duration": {
+                "enum": [
+                    -9223372036854776000,
+                    9223372036854776000,
+                    1,
+                    1000,
+                    1000000,
+                    1000000000,
+                    60000000000,
+                    3600000000000
+                ],
+                "type": "integer",
+                "x-enum-varnames": [
+                    "minDuration",
+                    "maxDuration",
+                    "Nanosecond",
+                    "Microsecond",
+                    "Millisecond",
+                    "Second",
+                    "Minute",
+                    "Hour"
+                ]
+            },
             "types.DependencyGraph": {
                 "properties": {
                     "nodes": {
@@ -217,6 +240,70 @@
                 },
                 "type": "object"
             },
+            "types.MCPArgument": {
+                "properties": {
+                    "default": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "required": {
+                        "type": "boolean"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/types.MCPArgumentType"
+                    }
+                },
+                "type": "object"
+            },
+            "types.MCPArgumentType": {
+                "enum": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "integer"
+                ],
+                "type": "string",
+                "x-enum-varnames": [
+                    "MCPArgTypeString",
+                    "MCPArgTypeNumber",
+                    "MCPArgTypeBoolean",
+                    "MCPArgTypeInteger"
+                ]
+            },
+            "types.MCPProcessConfig": {
+                "properties": {
+                    "arguments": {
+                        "items": {
+                            "$ref": "#/components/schemas/types.MCPArgument"
+                        },
+                        "type": "array"
+                    },
+                    "timeout": {
+                        "description": "Optional: overrides global timeout",
+                        "type": "string"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/types.MCPProcessType"
+                    }
+                },
+                "type": "object"
+            },
+            "types.MCPProcessType": {
+                "enum": [
+                    "tool",
+                    "resource"
+                ],
+                "type": "string",
+                "x-enum-varnames": [
+                    "MCPProcessTypeTool",
+                    "MCPProcessTypeResource"
+                ]
+            },
             "types.MemoryState": {
                 "properties": {
                     "allocated": {
@@ -233,6 +320,24 @@
                     }
                 },
                 "type": "object"
+            },
+            "types.MonitorFor": {
+                "enum": [
+                    0,
+                    1,
+                    2
+                ],
+                "type": "integer",
+                "x-enum-comments": {
+                    "MonitorForActivity": "notify on new output while unfocused",
+                    "MonitorForNone": "default - no monitoring",
+                    "MonitorForSilence": "notify on no output while unfocused"
+                },
+                "x-enum-varnames": [
+                    "MonitorForNone",
+                    "MonitorForActivity",
+                    "MonitorForSilence"
+                ]
             },
             "types.ProcessCondition": {
                 "enum": [
@@ -271,6 +376,9 @@
                     "disableAnsiColors": {
                         "type": "boolean"
                     },
+                    "disableCommandRendering": {
+                        "type": "boolean"
+                    },
                     "disableDotEnv": {
                         "type": "boolean"
                     },
@@ -282,6 +390,9 @@
                             "type": "string"
                         },
                         "type": "array"
+                    },
+                    "envFile": {
+                        "type": "string"
                     },
                     "environment": {
                         "items": {
@@ -326,6 +437,15 @@
                     "loggerConfig": {
                         "$ref": "#/components/schemas/types.LoggerConfig"
                     },
+                    "mcp": {
+                        "$ref": "#/components/schemas/types.MCPProcessConfig"
+                    },
+                    "monitorFor": {
+                        "$ref": "#/components/schemas/types.MonitorFor"
+                    },
+                    "monitorSilenceThreshold": {
+                        "$ref": "#/components/schemas/time.Duration"
+                    },
                     "name": {
                         "type": "string"
                     },
@@ -358,6 +478,9 @@
                     },
                     "shutDownParams": {
                         "$ref": "#/components/schemas/types.ShutDownParams"
+                    },
+                    "truncateLog": {
+                        "type": "boolean"
                     },
                     "vars": {
                         "$ref": "#/components/schemas/types.Vars"
@@ -423,6 +546,9 @@
                     "is_running": {
                         "type": "boolean"
                     },
+                    "last_activity_time": {
+                        "type": "string"
+                    },
                     "mem": {
                         "type": "integer"
                     },
@@ -440,6 +566,18 @@
                     },
                     "pid": {
                         "type": "integer"
+                    },
+                    "process_end_time": {
+                        "description": "ProcessEndTime is the wall-clock time the process ended (completed,\nerrored, terminated, or was skipped).",
+                        "type": "string"
+                    },
+                    "process_ready_time": {
+                        "description": "ProcessReadyTime is the wall-clock time the process became ready. For\nprocesses with a readiness probe or a `ready_log_line`, this is set when\nthe probe succeeds / the line is observed. For processes without any\nreadiness probe, it equals ProcessStartTime.",
+                        "type": "string"
+                    },
+                    "process_start_time": {
+                        "description": "ProcessStartTime is the wall-clock time the process (first) entered a\nrunning/launched state. Used by `process-compose analyze critical-chain`.",
+                        "type": "string"
                     },
                     "restarts": {
                         "type": "integer"
@@ -654,6 +792,182 @@
                 "summary": "Liveness Check",
                 "tags": [
                     "Liveness"
+                ]
+            }
+        },
+        "/namespace/restart/{name}": {
+            "post": {
+                "description": "Restarts the namespace",
+                "operationId": "RestartNamespace",
+                "parameters": [
+                    {
+                        "description": "Namespace Name",
+                        "in": "path",
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.NameResponse"
+                                }
+                            }
+                        },
+                        "description": "Restarted Namespace Name"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Restart a namespace",
+                "tags": [
+                    "Namespace"
+                ]
+            }
+        },
+        "/namespace/start/{name}": {
+            "post": {
+                "description": "Starts the namespace",
+                "operationId": "StartNamespace",
+                "parameters": [
+                    {
+                        "description": "Namespace Name",
+                        "in": "path",
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.NameResponse"
+                                }
+                            }
+                        },
+                        "description": "Started Namespace Name"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Start a namespace",
+                "tags": [
+                    "Namespace"
+                ]
+            }
+        },
+        "/namespace/stop/{name}": {
+            "post": {
+                "description": "Stops the namespace",
+                "operationId": "StopNamespace",
+                "parameters": [
+                    {
+                        "description": "Namespace Name",
+                        "in": "path",
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.NameResponse"
+                                }
+                            }
+                        },
+                        "description": "Stopped Namespace Name"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Stop a namespace",
+                "tags": [
+                    "Namespace"
+                ]
+            }
+        },
+        "/namespaces": {
+            "get": {
+                "description": "Retrieves all unique namespaces",
+                "operationId": "GetNamespaces",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        },
+                        "description": "Namespaces List"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Get all namespaces",
+                "tags": [
+                    "Namespace"
                 ]
             }
         },
@@ -1055,6 +1369,61 @@
                     }
                 },
                 "summary": "Scale a process to a given replicas count",
+                "tags": [
+                    "Process"
+                ]
+            }
+        },
+        "/process/signal/{name}/{signal}": {
+            "patch": {
+                "description": "Sends a POSIX signal to the process",
+                "operationId": "SendSignal",
+                "parameters": [
+                    {
+                        "description": "Process Name",
+                        "in": "path",
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Signal Number",
+                        "in": "path",
+                        "name": "signal",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.NameResponse"
+                                }
+                            }
+                        },
+                        "description": "Signaled Process Name"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Signal a process",
                 "tags": [
                     "Process"
                 ]

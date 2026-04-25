@@ -1,0 +1,39 @@
+## process-compose analyze
+
+Analyze startup timing and dependency information
+
+### Synopsis
+
+Analyze inspects a running process-compose instance to provide insight
+into how long each process took to start up and how those times relate
+through the dependency graph.
+
+Available subcommands:
+  critical-chain    Print the dependency chains ordered by startup time.
+
+### Options
+
+```
+  -h, --help   help for analyze
+```
+
+### Options inherited from parent commands
+
+```
+      --address string       address to listen on (env: PC_ADDRESS) (default "localhost")
+  -L, --log-file string      Specify the log file path (env: PC_LOG_FILE) (default "/tmp/process-compose-<user>.log")
+      --log-no-color         disable color output in the log file (env: PC_LOG_NO_COLOR)
+      --no-server            disable HTTP server (env: PC_NO_SERVER)
+      --ordered-shutdown     shut down processes in reverse dependency order
+  -p, --port int             port number (env: PC_PORT_NUM) (default 8080)
+      --read-only            enable read-only mode (env: PC_READ_ONLY)
+      --token-file string    path to a file containing the API token (env: PC_API_TOKEN_PATH)
+  -u, --unix-socket string   path to unix socket (env: PC_SOCKET_PATH) (default "/tmp/process-compose-<pid>.sock")
+  -U, --use-uds              use unix domain sockets instead of tcp
+```
+
+### SEE ALSO
+
+* [process-compose](process-compose.md)	 - Processes scheduler and orchestrator
+* [process-compose analyze critical-chain](process-compose_analyze_critical-chain.md)	 - Print the critical process startup chain
+
