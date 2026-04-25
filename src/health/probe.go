@@ -9,28 +9,28 @@ import (
 )
 
 type Probe struct {
-	Exec             *ExecProbe `yaml:"exec,omitempty"`
-	HttpGet          *HttpProbe `yaml:"http_get,omitempty"`
-	InitialDelay     int        `yaml:"initial_delay_seconds,omitempty"`
-	PeriodSeconds    int        `yaml:"period_seconds,omitempty"`
-	TimeoutSeconds   int        `yaml:"timeout_seconds,omitempty"`
-	SuccessThreshold int        `yaml:"success_threshold,omitempty"`
-	FailureThreshold int        `yaml:"failure_threshold,omitempty"`
+	Exec             *ExecProbe `yaml:"exec,omitempty" json:"exec,omitempty"`
+	HttpGet          *HttpProbe `yaml:"http_get,omitempty" json:"httpGet,omitempty"`
+	InitialDelay     int        `yaml:"initial_delay_seconds,omitempty" json:"initialDelay,omitempty"`
+	PeriodSeconds    int        `yaml:"period_seconds,omitempty" json:"periodSeconds,omitempty"`
+	TimeoutSeconds   int        `yaml:"timeout_seconds,omitempty" json:"timeoutSeconds,omitempty"`
+	SuccessThreshold int        `yaml:"success_threshold,omitempty" json:"successThreshold,omitempty"`
+	FailureThreshold int        `yaml:"failure_threshold,omitempty" json:"failureThreshold,omitempty"`
 }
 
 type ExecProbe struct {
-	Command    string `yaml:"command,omitempty"`
-	WorkingDir string `yaml:"working_dir,omitempty"`
+	Command    string `yaml:"command,omitempty" json:"command,omitempty"`
+	WorkingDir string `yaml:"working_dir,omitempty" json:"workingDir,omitempty"`
 }
 
 type HttpProbe struct {
-	Host       string            `yaml:"host,omitempty"`
-	Path       string            `yaml:"path,omitempty"`
-	Scheme     string            `yaml:"scheme,omitempty"`
-	Port       string            `yaml:"port,omitempty"`
-	NumPort    int               `yaml:"num_port,omitempty"`
-	Headers    map[string]string `yaml:"headers,omitempty"`
-	StatusCode int               `yaml:"status_code,omitempty"`
+	Host       string            `yaml:"host,omitempty" json:"host,omitempty"`
+	Path       string            `yaml:"path,omitempty" json:"path,omitempty"`
+	Scheme     string            `yaml:"scheme,omitempty" json:"scheme,omitempty"`
+	Port       string            `yaml:"port,omitempty" json:"port,omitempty"`
+	NumPort    int               `yaml:"num_port,omitempty" json:"numPort,omitempty"`
+	Headers    map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
+	StatusCode int               `yaml:"status_code,omitempty" json:"statusCode,omitempty"`
 }
 
 func (h *HttpProbe) getUrl() (*url.URL, error) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/gin-gonic/gin"
 )
@@ -143,6 +144,100 @@ func TestGetProcessInfo_NotFound(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", w.Code)
 	}
+}
+
+// Regression for issue #457: ProcessConfig and its nested types must marshal as
+// camelCase to match the documented Swagger contract. Any PascalCase key
+// (the Go default when no json tag exists) leaking into the response means a
+// new field was added without a matching json tag.
+func TestGetProcessInfo_JSONFieldCasing(t *testing.T) {
+	mock := &mockProject{
+		getProcessInfoFn: func(name string) (*types.ProcessConfig, error) {
+			return &types.ProcessConfig{
+				Name:        name,
+				Command:     "echo hi",
+				Environment: types.Environment{"FOO=bar"},
+				WorkingDir:  "/tmp",
+				ShutDownParams: types.ShutDownParams{
+					ShutDownCommand: "true",
+					ShutDownTimeout: 5,
+					ParentOnly:      true,
+				},
+				RestartPolicy: types.RestartPolicyConfig{
+					BackoffSeconds: 1,
+					MaxRestarts:    2,
+					ExitOnEnd:      true,
+				},
+				LivenessProbe: &health.Probe{
+					HttpGet: &health.HttpProbe{
+						Host:       "127.0.0.1",
+						Port:       "8080",
+						NumPort:    8080,
+						StatusCode: 200,
+					},
+					InitialDelay:  1,
+					PeriodSeconds: 5,
+				},
+				LoggerConfig: &types.LoggerConfig{
+					DisableJSON:   true,
+					NoColor:       true,
+					AddTimestamp:  true,
+					FlushEachLine: true,
+				},
+			}, nil
+		},
+	}
+	r := setupRouter(mock)
+	w := performRequest(r, http.MethodGet, "/process/info/web", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal(w.Body.Bytes(), &top); err != nil {
+		t.Fatalf("decode top: %v\nbody: %s", err, w.Body.String())
+	}
+
+	// Every key on every level must start with a lowercase letter. A leaked
+	// PascalCase field (e.g. "Environment") is what we are guarding against.
+	var assertCamel func(t *testing.T, path string, raw json.RawMessage)
+	assertCamel = func(t *testing.T, path string, raw json.RawMessage) {
+		var obj map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &obj); err != nil {
+			return // not an object
+		}
+		for k, v := range obj {
+			if k == "" {
+				t.Errorf("%s: empty key", path)
+				continue
+			}
+			if c := k[0]; c >= 'A' && c <= 'Z' {
+				t.Errorf("%s.%s: key starts with uppercase (PascalCase leak)", path, k)
+			}
+			assertCamel(t, path+"."+k, v)
+		}
+	}
+	for k, v := range top {
+		if c := k[0]; c >= 'A' && c <= 'Z' {
+			t.Errorf("$.%s: key starts with uppercase (PascalCase leak)", k)
+		}
+		assertCamel(t, "$."+k, v)
+	}
+
+	// Spot-check the specific fields called out in the issue.
+	for _, want := range []string{"environment", "workingDir", "shutDownParams", "restartPolicy", "livenessProbe", "loggerConfig"} {
+		if _, ok := top[want]; !ok {
+			t.Errorf("expected key %q in response, got keys: %v", want, keys(top))
+		}
+	}
+}
+
+func keys(m map[string]json.RawMessage) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
 }
 
 // --- GetProcesses ---
