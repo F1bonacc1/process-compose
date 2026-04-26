@@ -703,7 +703,7 @@ func (p *Process) getProcResources(proc *puproc.Process) (int64, float64) {
 		//	Msg("Error retrieving memory stats")
 		return -1, -1
 	}
-	cpuPercent, err := proc.CPUPercentWithContext(context.Background())
+	cpuPercent, err := proc.PercentWithContext(context.Background(), 0)
 	if err != nil {
 		log.Err(err).
 			Str("process", p.getName()).
