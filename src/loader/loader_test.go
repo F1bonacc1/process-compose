@@ -182,8 +182,8 @@ func TestLoadFileWithExtendProject(t *testing.T) {
 		}
 	}
 	for _, proc := range opts.projects[1].Processes {
-		if proc.WorkingDir != "" {
-			t.Errorf("expected empty, got %s", proc.WorkingDir)
+		if proc.WorkingDir != expected {
+			t.Errorf("expected %s, got %s", expected, proc.WorkingDir)
 		}
 	}
 }
