@@ -1,5 +1,25 @@
 # Release Notes
 
+## [v1.110.0] - 2026-05-01
+
+### New Features
+
+- Added [process activity and silence monitoring](https://f1bonacc1.github.io/process-compose/tui/#process-activity-monitor) in the TUI, with deduplication of silence notifications.
+- Added a process state push-notification stream over WebSocket, plus a [`process-compose process monitor`](https://f1bonacc1.github.io/process-compose/cli/process-compose_process_monitor/) CLI subcommand to subscribe to it, addresses issue #470.
+- Added a [command palette](https://f1bonacc1.github.io/process-compose/tui/#command-palette) to the TUI for process management - start, stop, restart, scale, signal, create, and delete.
+- Added a [`process-compose analyze critical-chain`](https://f1bonacc1.github.io/process-compose/cli/process-compose_analyze_critical-chain/) subcommand that prints a tree of processes with startup timings, in the spirit of `systemd-analyze critical-chain`, by Ryan Mulligan.
+- Added [built-in MCP control tools](https://f1bonacc1.github.io/process-compose/mcp-server/#built-in-control-tools) (`pc_*`) so MCP clients can manage the running project, opt-in via `expose_control_tools: true`.
+- Added Shift+Tab support and xterm-style modifier key sequence encoding in the terminal view.
+- Added OSC 52 clipboard status notifications via the glippy v1.2.0 upgrade.
+
+### Bug Fixes
+
+- Fixed daemons being included in total CPU and RAM calculations.
+- Fixed process CPU metric retrieval to use `PercentWithContext` with interval 0, addresses issue #471.
+- Fixed the casing mismatch between Swagger docs (lower) and the REST API (capital), addresses issue #457.
+
+---
+
 ## [v1.103.0] - 2026-04-03
 
 ### New Features
