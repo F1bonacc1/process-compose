@@ -1475,6 +1475,41 @@
                 ]
             }
         },
+        "/process/states/ws": {
+            "get": {
+                "description": "Upgrades HTTP to WebSocket and streams JSON events. On connect, an event with snapshot=true is sent for every (filtered) process; subsequently, every Status or Health transition (and final exit info) produces one event.",
+                "operationId": "StatesStream",
+                "parameters": [
+                    {
+                        "description": "Comma-separated process names to subscribe to. If omitted, subscribes to all processes.",
+                        "in": "query",
+                        "name": "name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    }
+                },
+                "summary": "Stream process state changes over WebSocket",
+                "tags": [
+                    "Process"
+                ]
+            }
+        },
         "/process/stop/{name}": {
             "patch": {
                 "description": "Sends kill signal to the process",

@@ -650,6 +650,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/process/states/ws": {
+            "get": {
+                "description": "Upgrades HTTP to WebSocket and streams JSON events. On connect, an event with snapshot=true is sent for every (filtered) process; subsequently, every Status or Health transition (and final exit info) produces one event.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Process"
+                ],
+                "summary": "Stream process state changes over WebSocket",
+                "operationId": "StatesStream",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Comma-separated process names to subscribe to. If omitted, subscribes to all processes.",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/process/stop/{name}": {
             "patch": {
                 "description": "Sends kill signal to the process",

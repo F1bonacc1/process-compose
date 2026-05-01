@@ -54,3 +54,4 @@ Check the [Documentation](launcher.md) for more advanced use cases.
 - Scheduled Processes (cron and interval-based)
 - Dependency Graph visualization (CLI, TUI, and API)
 - [MCP Server](mcp-server.md) integration for AI assistants — expose processes as tools/resources and (optionally) the project's own control plane (start/stop/scale/list/logs)
+- Processes Monitor (Push Notifications)

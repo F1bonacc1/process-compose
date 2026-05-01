@@ -83,7 +83,13 @@ type Process struct {
 	refRate              time.Duration
 	withRecursiveMetrics bool
 	processTree          *ProcessTree
+	publishState         StatePublisher
 }
+
+// StatePublisher is invoked from Process whenever the observable state of
+// the process changes. It is supplied by the owner (typically ProjectRunner)
+// and may be nil — Process treats that as a no-op.
+type StatePublisher func(ev types.ProcessStateEvent)
 
 func NewProcess(opts ...ProcOpts) *Process {
 	proc := &Process{
@@ -557,7 +563,7 @@ func (p *Process) onProcessEnd(state string) {
 	if p.readyProber != nil {
 		p.readyCancelFn()
 	}
-	p.setState(state)
+	p.setStateNoPublish(state)
 	p.updateProcState()
 
 	p.stateMtx.Lock()
@@ -565,7 +571,11 @@ func (p *Process) onProcessEnd(state string) {
 		now := time.Now()
 		p.procState.ProcessEndTime = &now
 	}
+	ev := p.snapshotEventLocked()
 	p.stateMtx.Unlock()
+	// Single publish carrying the terminal Status, final IsRunning=false
+	// (set by updateProcState), final ExitCode, and ProcessEndTime.
+	p.publishLocked(ev)
 
 	p.Lock()
 	p.done = true
@@ -815,9 +825,38 @@ func (p *Process) isOneOfStates(states ...string) bool {
 
 func (p *Process) setState(state string) {
 	p.stateMtx.Lock()
+	p.procState.Status = state
+	p.onStateChange(state)
+	ev := p.snapshotEventLocked()
+	p.stateMtx.Unlock()
+	p.publishLocked(ev)
+}
+
+// setStateNoPublish sets the state without firing a publish. Use this when
+// the caller will publish a single, more complete event afterwards (e.g.
+// onProcessEnd, which also finalises ProcessEndTime and IsRunning).
+func (p *Process) setStateNoPublish(state string) {
+	p.stateMtx.Lock()
 	defer p.stateMtx.Unlock()
 	p.procState.Status = state
 	p.onStateChange(state)
+}
+
+// snapshotEventLocked builds a self-contained ProcessStateEvent from the
+// current procState. Caller must hold stateMtx.
+func (p *Process) snapshotEventLocked() types.ProcessStateEvent {
+	stateCopy := *p.procState
+	return types.ProcessStateEvent{State: stateCopy}
+}
+
+// publishLocked sends the event to the registered publisher, if any. The
+// caller must NOT hold stateMtx (the broadcaster fans out under its own
+// mutex; observers should not call back into Process, but holding stateMtx
+// here would be unnecessary contention).
+func (p *Process) publishLocked(ev types.ProcessStateEvent) {
+	if p.publishState != nil {
+		p.publishState(ev)
+	}
 }
 
 func (p *Process) getState() *types.ProcessState {
@@ -848,9 +887,13 @@ func (p *Process) getStatusName() string {
 
 func (p *Process) setStateAndRun(state string, runnable func() error) error {
 	p.stateMtx.Lock()
-	defer p.stateMtx.Unlock()
 	p.procState.Status = state
 	p.onStateChange(state)
+	ev := p.snapshotEventLocked()
+	defer func() {
+		p.stateMtx.Unlock()
+		p.publishLocked(ev)
+	}()
 	return runnable()
 }
 
@@ -1081,11 +1124,20 @@ func (p *Process) setExitCodeLocked(code int) {
 
 func (p *Process) setProcHealth(health string) {
 	p.stateMtx.Lock()
-	defer p.stateMtx.Unlock()
+	prev := p.procState.Health
 	p.procState.Health = health
 	if health == types.ProcessHealthReady && p.procState.ProcessReadyTime == nil {
 		now := time.Now()
 		p.procState.ProcessReadyTime = &now
+	}
+	changed := prev != health
+	var ev types.ProcessStateEvent
+	if changed {
+		ev = p.snapshotEventLocked()
+	}
+	p.stateMtx.Unlock()
+	if changed {
+		p.publishLocked(ev)
 	}
 }
 

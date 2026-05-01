@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/api"
+	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
@@ -245,3 +246,10 @@ func (p *PcClient) GetDependencyGraph() (*types.DependencyGraph, error) {
 func (p *PcClient) GetNamespaces() ([]string, error) {
 	return p.getNamespaces()
 }
+
+// RegisterStateObserver is a no-op for the remote client. The state-stream
+// WebSocket endpoint can be consumed via the dedicated SubscribeProcessStates
+// helper (see state_stream.go); the IProject hooks are reserved for
+// in-process use.
+func (p *PcClient) RegisterStateObserver(_ app.StateObserver)   {}
+func (p *PcClient) UnregisterStateObserver(_ app.StateObserver) {}

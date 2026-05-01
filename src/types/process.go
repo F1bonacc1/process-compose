@@ -276,6 +276,18 @@ type ProcessesState struct {
 	States []ProcessState `json:"data"`
 }
 
+// ProcessStateEvent is published whenever a process's observable state
+// (Status, Health, or terminal exit info) changes. It is also emitted as a
+// snapshot for every existing process when a subscriber first connects.
+type ProcessStateEvent struct {
+	// Snapshot is true for events emitted as part of the initial replay on
+	// subscribe, false for live transitions.
+	Snapshot bool `json:"snapshot,omitempty"`
+	// State is a self-contained copy of the process state at the moment of
+	// the event.
+	State ProcessState `json:"state"`
+}
+
 func (p *ProcessesState) IsReady() bool {
 	for _, state := range p.States {
 		if !state.IsReady() {

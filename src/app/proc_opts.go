@@ -99,3 +99,9 @@ func withProcessTree(tree *ProcessTree) ProcOpts {
 		p.processTree = tree
 	}
 }
+
+func withStatePublisher(publish StatePublisher) ProcOpts {
+	return func(p *Process) {
+		p.publishState = publish
+	}
+}

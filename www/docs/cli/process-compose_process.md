@@ -29,6 +29,7 @@ Execute operations on the available processes
 * [process-compose process get](process-compose_process_get.md)	 - Get a process state
 * [process-compose process list](process-compose_process_list.md)	 - List available processes
 * [process-compose process logs](process-compose_process_logs.md)	 - Fetch the logs of a process(es). For multiple processes, separate them with a comma (proc1,proc2)
+* [process-compose process monitor](process-compose_process_monitor.md)	 - Subscribe to process state changes and print them as they happen
 * [process-compose process ports](process-compose_process_ports.md)	 - Get the ports that a process is listening on
 * [process-compose process restart](process-compose_process_restart.md)	 - Restart a process
 * [process-compose process scale](process-compose_process_scale.md)	 - Scale a process to a given count

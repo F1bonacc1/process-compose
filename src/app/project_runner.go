@@ -66,6 +66,7 @@ type ProjectRunner struct {
 	procCompleteChannel  chan int
 	processTree          *ProcessTree
 	processScheduler     *scheduler.Scheduler
+	stateBroadcaster     *ProcessStateBroadcaster
 }
 
 // RestartCall represents an in-flight restart operation
@@ -83,6 +84,47 @@ func (p *ProjectRunner) init() {
 	p.initProcessLogs()
 	p.initRestartCoalescing()
 	p.processTree = NewProcessTree(p.refRate)
+	p.stateBroadcaster = NewProcessStateBroadcaster(p.snapshotProcessStates)
+}
+
+// snapshotProcessStates returns the current state of every process. Used by
+// the state broadcaster to deliver an initial snapshot to new subscribers.
+// Errors from per-process lookups are logged and the offending process is
+// skipped so the snapshot remains best-effort consistent.
+func (p *ProjectRunner) snapshotProcessStates() []types.ProcessState {
+	states, err := p.GetProcessesState()
+	if err != nil || states == nil {
+		log.Err(err).Msg("Failed to snapshot process states for broadcaster")
+		return nil
+	}
+	return states.States
+}
+
+// RegisterStateObserver registers an observer that receives an initial
+// snapshot of every process followed by every state change.
+func (p *ProjectRunner) RegisterStateObserver(o StateObserver) {
+	if p.stateBroadcaster == nil {
+		return
+	}
+	p.stateBroadcaster.SubscribeWithSnapshot(o)
+}
+
+// UnregisterStateObserver stops delivery to the given observer.
+func (p *ProjectRunner) UnregisterStateObserver(o StateObserver) {
+	if p.stateBroadcaster == nil {
+		return
+	}
+	p.stateBroadcaster.Unsubscribe(o)
+}
+
+// publishProcessState is the publish callback injected into each Process. It
+// is safe to call before the broadcaster has been wired up (during early
+// initialization) — events are simply dropped.
+func (p *ProjectRunner) publishProcessState(ev types.ProcessStateEvent) {
+	if p.stateBroadcaster == nil {
+		return
+	}
+	p.stateBroadcaster.Publish(ev)
 }
 
 func (p *ProjectRunner) Run() error {
@@ -219,6 +261,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withRefRate(p.refRate),
 		withRecursiveMetrics(p.withRecursiveMetrics),
 		withProcessTree(p.processTree),
+		withStatePublisher(p.publishProcessState),
 	)
 	p.addRunningProcess(process)
 	go func(proc *Process) {

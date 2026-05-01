@@ -78,6 +78,21 @@ process-compose process restart [PROCESS] #restarts one of the available process
 
 Restart will wait `process.availability.backoff_seconds` seconds between `stop` and `start` of the process. If not configured the default value is 1s.
 
+#### Process Monitor (Push Notifications)
+
+Subscribe to a push stream of process state changes — no polling. Emits an initial snapshot on connect, then live events for every Status / Health transition and final exit info.
+
+```shell
+process-compose process monitor                    # all processes, text output
+process-compose process monitor myproc other       # filter to specific processes (server-side)
+process-compose process monitor -o json | jq       # JSON-lines for tooling
+process-compose process monitor --no-snapshot      # only live changes, skip initial snapshot
+```
+
+Unknown process names produce a stderr warning but the subscription proceeds (useful if a process is added later).
+
+Under the hood this is a WebSocket at `/process/states/ws` that emits `ProcessStateEvent` JSON frames. The endpoint accepts an optional `?name=p1,p2` query for server-side filtering, works over both TCP and UDS, and shares the same authentication as the REST API.
+
 > :bulb: New remote commands are added constantly. For full list run:
 
 ```shell
