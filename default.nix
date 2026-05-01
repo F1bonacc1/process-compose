@@ -4,7 +4,7 @@ let pkg = "github.com/f1bonacc1/process-compose/src/config";
 in
 (buildGoModule.override { go = pkgs.go_1_26; }) rec {
   pname = "process-compose";
-  version = "1.103.0";
+  version = "1.110.0";
   env.CGO_ENABLED = 0;
 
   src = lib.cleanSource ./.;
