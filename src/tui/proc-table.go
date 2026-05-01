@@ -93,8 +93,12 @@ func (pv *pcView) fillTableData() {
 		setRowValues(pv.procTable, row, rowVals)
 		if state.IsRunning {
 			runningProcCount += 1
-			totalMem += state.Mem
-			totalCPU += state.CPU
+			if state.Mem > 0 {
+				totalMem += state.Mem
+			}
+			if state.CPU > 0 {
+				totalCPU += state.CPU
+			}
 		}
 		selectedRow, _ := pv.procTable.GetSelection()
 		if selectedRow == row && pv.isPassModeNeeded(&state) {
