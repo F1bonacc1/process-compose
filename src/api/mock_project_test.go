@@ -3,7 +3,6 @@ package api
 import (
 	"os"
 
-	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
 )
@@ -268,5 +267,5 @@ func (m *mockProject) GetDependencyGraph() (*types.DependencyGraph, error) {
 	return nil, nil
 }
 
-func (m *mockProject) RegisterStateObserver(_ app.StateObserver)   {}
-func (m *mockProject) UnregisterStateObserver(_ app.StateObserver) {}
+func (m *mockProject) RegisterStateObserver(_ types.StateObserver)   {}
+func (m *mockProject) UnregisterStateObserver(_ types.StateObserver) {}

@@ -44,6 +44,6 @@ type IProject interface {
 	GetFullProcessEnvironment(proc *types.ProcessConfig) []string
 	GetDependencyGraph() (*types.DependencyGraph, error)
 
-	RegisterStateObserver(observer StateObserver)
-	UnregisterStateObserver(observer StateObserver)
+	RegisterStateObserver(observer types.StateObserver)
+	UnregisterStateObserver(observer types.StateObserver)
 }

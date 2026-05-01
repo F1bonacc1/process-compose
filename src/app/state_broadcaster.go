@@ -6,27 +6,18 @@ import (
 	"github.com/f1bonacc1/process-compose/src/types"
 )
 
-// StateObserver consumes process state events. Implementations must be
-// safe for concurrent calls; Notify is invoked while the broadcaster's
-// mutex is held, so observers should not block on slow I/O.
-type StateObserver interface {
-	// Notify is called for every event delivered to this observer. If the
-	// observer cannot accept the event (e.g. its buffer is full), it should
-	// drop or close itself rather than block.
-	Notify(ev types.ProcessStateEvent)
-	// UniqueID identifies this observer for subscribe/unsubscribe.
-	UniqueID() string
-}
-
 // SnapshotFunc returns the current state of all processes for the initial
 // replay on subscribe.
 type SnapshotFunc func() []types.ProcessState
 
 // ProcessStateBroadcaster fans out ProcessStateEvent values to subscribed
 // observers. It mirrors the pclog.ProcessLogBuffer subscribe/fanout pattern.
+//
+// The StateObserver contract lives in the types package so consumers (api,
+// client, tui) can implement it without importing app.
 type ProcessStateBroadcaster struct {
 	mx        sync.Mutex
-	observers map[string]StateObserver
+	observers map[string]types.StateObserver
 	snapshot  SnapshotFunc
 }
 
@@ -35,13 +26,13 @@ type ProcessStateBroadcaster struct {
 // the initial state of all processes; pass nil to disable snapshotting.
 func NewProcessStateBroadcaster(snapshot SnapshotFunc) *ProcessStateBroadcaster {
 	return &ProcessStateBroadcaster{
-		observers: map[string]StateObserver{},
+		observers: map[string]types.StateObserver{},
 		snapshot:  snapshot,
 	}
 }
 
 // Subscribe registers an observer for future events only.
-func (b *ProcessStateBroadcaster) Subscribe(o StateObserver) {
+func (b *ProcessStateBroadcaster) Subscribe(o types.StateObserver) {
 	b.mx.Lock()
 	defer b.mx.Unlock()
 	b.observers[o.UniqueID()] = o
@@ -50,7 +41,7 @@ func (b *ProcessStateBroadcaster) Subscribe(o StateObserver) {
 // SubscribeWithSnapshot delivers a snapshot event for every current process,
 // then registers the observer. Both happen under one lock so no live events
 // can sneak in between the snapshot and the subscription.
-func (b *ProcessStateBroadcaster) SubscribeWithSnapshot(o StateObserver) {
+func (b *ProcessStateBroadcaster) SubscribeWithSnapshot(o types.StateObserver) {
 	b.mx.Lock()
 	defer b.mx.Unlock()
 	if b.snapshot != nil {
@@ -62,7 +53,7 @@ func (b *ProcessStateBroadcaster) SubscribeWithSnapshot(o StateObserver) {
 }
 
 // Unsubscribe removes an observer. Safe to call multiple times.
-func (b *ProcessStateBroadcaster) Unsubscribe(o StateObserver) {
+func (b *ProcessStateBroadcaster) Unsubscribe(o types.StateObserver) {
 	b.mx.Lock()
 	defer b.mx.Unlock()
 	delete(b.observers, o.UniqueID())
@@ -81,5 +72,5 @@ func (b *ProcessStateBroadcaster) Publish(ev types.ProcessStateEvent) {
 func (b *ProcessStateBroadcaster) Close() {
 	b.mx.Lock()
 	defer b.mx.Unlock()
-	b.observers = map[string]StateObserver{}
+	b.observers = map[string]types.StateObserver{}
 }

@@ -102,7 +102,7 @@ func (p *ProjectRunner) snapshotProcessStates() []types.ProcessState {
 
 // RegisterStateObserver registers an observer that receives an initial
 // snapshot of every process followed by every state change.
-func (p *ProjectRunner) RegisterStateObserver(o StateObserver) {
+func (p *ProjectRunner) RegisterStateObserver(o types.StateObserver) {
 	if p.stateBroadcaster == nil {
 		return
 	}
@@ -110,7 +110,7 @@ func (p *ProjectRunner) RegisterStateObserver(o StateObserver) {
 }
 
 // UnregisterStateObserver stops delivery to the given observer.
-func (p *ProjectRunner) UnregisterStateObserver(o StateObserver) {
+func (p *ProjectRunner) UnregisterStateObserver(o types.StateObserver) {
 	if p.stateBroadcaster == nil {
 		return
 	}

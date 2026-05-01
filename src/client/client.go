@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/api"
-	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/config"
 	"github.com/f1bonacc1/process-compose/src/pclog"
 	"github.com/f1bonacc1/process-compose/src/types"
@@ -251,5 +250,5 @@ func (p *PcClient) GetNamespaces() ([]string, error) {
 // WebSocket endpoint can be consumed via the dedicated SubscribeProcessStates
 // helper (see state_stream.go); the IProject hooks are reserved for
 // in-process use.
-func (p *PcClient) RegisterStateObserver(_ app.StateObserver)   {}
-func (p *PcClient) UnregisterStateObserver(_ app.StateObserver) {}
+func (p *PcClient) RegisterStateObserver(_ types.StateObserver)   {}
+func (p *PcClient) UnregisterStateObserver(_ types.StateObserver) {}

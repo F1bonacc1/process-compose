@@ -16,7 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// stateWsObserver adapts a buffered channel into an app.StateObserver. It
+// stateWsObserver adapts a buffered channel into a types.StateObserver. It
 // drops the connection on backpressure: if the channel is full, Notify
 // signals the writer goroutine to disconnect rather than blocking the
 // broadcaster.

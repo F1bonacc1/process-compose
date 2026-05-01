@@ -288,6 +288,22 @@ type ProcessStateEvent struct {
 	State ProcessState `json:"state"`
 }
 
+// StateObserver consumes process state events. Implementations must be safe
+// for concurrent calls; Notify is invoked while the broadcaster's mutex is
+// held, so observers should not block on slow I/O.
+//
+// The interface lives next to ProcessStateEvent so consumers (api, client,
+// tui) can implement and reference it without importing the heavier app
+// package.
+type StateObserver interface {
+	// Notify is called for every event delivered to this observer. If the
+	// observer cannot accept the event (e.g. its buffer is full), it should
+	// drop or close itself rather than block.
+	Notify(ev ProcessStateEvent)
+	// UniqueID identifies this observer for subscribe/unsubscribe.
+	UniqueID() string
+}
+
 func (p *ProcessesState) IsReady() bool {
 	for _, state := range p.States {
 		if !state.IsReady() {
