@@ -48,7 +48,8 @@ PC_DEBUG_MODE=1 ./bin/process-compose -e .env
 | `client/` | HTTP client for remote API communication |
 | `health/` | Liveness/readiness probe implementations (HTTP, exec) |
 | `scheduler/` | Cron/interval-based process scheduling via `gocron/v2` |
-| `mcp/` | Model Context Protocol server, tools, and resources |
+| `mcp/` | MCP server that wraps user-defined processes as MCP tools/resources |
+| `mcpctl/` | Control MCP server — exposes tools for agents to introspect and control process-compose itself (list/get/start/stop/restart, logs, dep graph); independent from `mcp/` |
 | `pclog/` | Process log buffers with rotation and ANSI color tracking |
 | `command/` | Shell command execution abstraction (cross-platform, PTY support) |
 | `admitter/` | Namespace-based process filtering |
