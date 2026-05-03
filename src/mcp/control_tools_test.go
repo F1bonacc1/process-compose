@@ -38,9 +38,12 @@ type fakeRunner struct {
 	logOffset      int
 	logLimit       int
 	logResult      []string
+	logResultsByName map[string][]string
 	logErr         error
 	truncCalled    string
 	truncErr       error
+	graphResult    *types.DependencyGraph
+	graphErr       error
 }
 
 func (f *fakeRunner) StartProcess(name string) error {
@@ -80,7 +83,13 @@ func (f *fakeRunner) GetProcessLog(name string, offsetFromEnd, limit int) ([]str
 	f.logName = name
 	f.logOffset = offsetFromEnd
 	f.logLimit = limit
+	if f.logResultsByName != nil {
+		return f.logResultsByName[name], f.logErr
+	}
 	return f.logResult, f.logErr
+}
+func (f *fakeRunner) GetDependencyGraph() (*types.DependencyGraph, error) {
+	return f.graphResult, f.graphErr
 }
 func (f *fakeRunner) GetProcessLogLength(_ string) int       { return 0 }
 func (f *fakeRunner) SetProcessInfo(_ *types.ProcessConfig) error { return nil }
@@ -423,5 +432,160 @@ func TestRegisterControlTools(t *testing.T) {
 	s := newTestServer(runner)
 	if err := s.RegisterControlTools(); err != nil {
 		t.Fatalf("RegisterControlTools failed: %v", err)
+	}
+}
+
+func TestProcessLogsSearch(t *testing.T) {
+	t.Run("ranks single process", func(t *testing.T) {
+		runner := &fakeRunner{
+			getStateResult: &types.ProcessState{Name: "web"},
+			logResultsByName: map[string][]string{
+				"web": {
+					"INFO server starting",
+					"ERROR database connection failed",
+					"INFO request served",
+				},
+			},
+		}
+		s := newTestServer(runner)
+		res, _ := s.handleProcessLogsSearch(context.Background(), callRequest(map[string]any{
+			"query": "database error",
+			"name":  "web",
+		}))
+		if resultIsError(res) {
+			t.Fatalf("unexpected tool error: %s", resultText(res))
+		}
+		var got logSearchResult
+		if err := json.Unmarshal([]byte(resultText(res)), &got); err != nil {
+			t.Fatalf("result not valid JSON: %v", err)
+		}
+		if got.Query != "database error" {
+			t.Errorf("query echo wrong: %q", got.Query)
+		}
+		if len(got.Hits) == 0 {
+			t.Fatal("expected at least one hit")
+		}
+		if !strings.Contains(got.Hits[0].Text, "database connection failed") {
+			t.Errorf("expected DB error line ranked first, got %q", got.Hits[0].Text)
+		}
+		if got.Hits[0].Process != "web" || got.Hits[0].ChunkIdx != 1 {
+			t.Errorf("hit metadata wrong: process=%q chunk_idx=%d", got.Hits[0].Process, got.Hits[0].ChunkIdx)
+		}
+	})
+
+	t.Run("searches all processes when name omitted", func(t *testing.T) {
+		runner := &fakeRunner{
+			listResult: &types.ProcessesState{States: []types.ProcessState{
+				{Name: "a"}, {Name: "b"},
+			}},
+			logResultsByName: map[string][]string{
+				"a": {"alpha banana"},
+				"b": {"banana cherry"},
+			},
+		}
+		s := newTestServer(runner)
+		res, _ := s.handleProcessLogsSearch(context.Background(), callRequest(map[string]any{
+			"query": "banana",
+		}))
+		if resultIsError(res) {
+			t.Fatalf("unexpected tool error: %s", resultText(res))
+		}
+		var got logSearchResult
+		_ = json.Unmarshal([]byte(resultText(res)), &got)
+		if len(got.Hits) != 2 {
+			t.Errorf("expected 2 hits across processes, got %d", len(got.Hits))
+		}
+		seen := map[string]bool{}
+		for _, h := range got.Hits {
+			seen[h.Process] = true
+		}
+		if !seen["a"] || !seen["b"] {
+			t.Errorf("expected hits from both a and b, got %+v", got.Hits)
+		}
+	})
+
+	t.Run("missing query", func(t *testing.T) {
+		s := newTestServer(&fakeRunner{})
+		res, _ := s.handleProcessLogsSearch(context.Background(), callRequest(map[string]any{}))
+		if !resultIsError(res) {
+			t.Fatal("expected tool error for missing query")
+		}
+	})
+
+	t.Run("unknown process", func(t *testing.T) {
+		runner := &fakeRunner{getStateErr: errors.New("no such process")}
+		s := newTestServer(runner)
+		res, _ := s.handleProcessLogsSearch(context.Background(), callRequest(map[string]any{
+			"query": "x",
+			"name":  "ghost",
+		}))
+		if !resultIsError(res) {
+			t.Fatal("expected tool error for unknown process")
+		}
+	})
+
+	t.Run("clamps top_k and log_limit", func(t *testing.T) {
+		runner := &fakeRunner{
+			getStateResult:   &types.ProcessState{Name: "web"},
+			logResultsByName: map[string][]string{"web": {"hello"}},
+		}
+		s := newTestServer(runner)
+		_, _ = s.handleProcessLogsSearch(context.Background(), callRequest(map[string]any{
+			"query":     "hello",
+			"name":      "web",
+			"top_k":     float64(99999),
+			"log_limit": float64(99999),
+		}))
+		if runner.logLimit != searchMaxLogLimit {
+			t.Errorf("expected log_limit clamped to %d, got %d", searchMaxLogLimit, runner.logLimit)
+		}
+	})
+}
+
+func TestProjectDependencyGraph(t *testing.T) {
+	t.Run("returns runner graph", func(t *testing.T) {
+		graph := &types.DependencyGraph{
+			Nodes: map[string]*types.DependencyNode{
+				"web": {Name: "web", Status: "Running"},
+				"db":  {Name: "db", Status: "Running"},
+			},
+		}
+		runner := &fakeRunner{graphResult: graph}
+		s := newTestServer(runner)
+		res, _ := s.handleProjectDependencyGraph(context.Background(), callRequest(nil))
+		if resultIsError(res) {
+			t.Fatalf("unexpected tool error: %s", resultText(res))
+		}
+		if !strings.Contains(resultText(res), `"web"`) || !strings.Contains(resultText(res), `"db"`) {
+			t.Errorf("expected web and db nodes in payload, got %s", resultText(res))
+		}
+	})
+
+	t.Run("runner error", func(t *testing.T) {
+		runner := &fakeRunner{graphErr: errors.New("boom")}
+		s := newTestServer(runner)
+		res, _ := s.handleProjectDependencyGraph(context.Background(), callRequest(nil))
+		if !resultIsError(res) {
+			t.Fatal("expected tool error from runner failure")
+		}
+		if !strings.Contains(resultText(res), "boom") {
+			t.Errorf("expected error text to include runner err, got %q", resultText(res))
+		}
+	})
+}
+
+func TestClampInt(t *testing.T) {
+	cases := []struct {
+		in, fallback, max, want int
+	}{
+		{0, 20, 100, 20},
+		{-5, 20, 100, 20},
+		{50, 20, 100, 50},
+		{500, 20, 100, 100},
+	}
+	for _, c := range cases {
+		if got := clampInt(c.in, c.fallback, c.max); got != c.want {
+			t.Errorf("clampInt(%d,%d,%d) = %d, want %d", c.in, c.fallback, c.max, got, c.want)
+		}
 	}
 }
