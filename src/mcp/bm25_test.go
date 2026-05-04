@@ -13,7 +13,8 @@ func TestTokenize(t *testing.T) {
 		{"ERROR: failed to connect", []string{"error", "failed", "to", "connect"}},
 		{"   ", nil},
 		{"", nil},
-		{"foo-bar_baz", []string{"foobarbaz"}},
+		{"foo-bar_baz", []string{"foo", "bar", "baz"}},
+		{"req=12345 status=ok", []string{"req", "12345", "status", "ok"}},
 	}
 	for _, tc := range cases {
 		got := Tokenize(tc.in)

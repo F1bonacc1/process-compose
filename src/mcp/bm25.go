@@ -149,27 +149,15 @@ func (c *Corpus) TopN(query []string, n int) []Hit {
 	return hits
 }
 
-// Tokenize lowercases the string, splits on whitespace, and strips non-alphanumeric
-// characters. Empty tokens are discarded. Sufficient for log-line search.
+// Tokenize lowercases the string and splits on every non-alphanumeric rune,
+// so "foo-bar_baz" yields ["foo", "bar", "baz"]. Empty tokens are discarded.
+// Splitting (rather than stripping) lets queries match individual segments of
+// hyphenated identifiers, error codes, and process names that appear all over
+// log lines.
 func Tokenize(s string) []string {
-	fields := strings.Fields(strings.ToLower(s))
-	out := make([]string, 0, len(fields))
-	for _, f := range fields {
-		clean := stripNonAlnum(f)
-		if clean != "" {
-			out = append(out, clean)
-		}
-	}
-	return out
-}
-
-func stripNonAlnum(s string) string {
-	var b strings.Builder
-	b.Grow(len(s))
-	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
+	lower := strings.ToLower(s)
+	fields := strings.FieldsFunc(lower, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	})
+	return fields
 }
