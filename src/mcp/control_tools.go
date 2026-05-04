@@ -104,9 +104,9 @@ func (s *Server) registerProcessControlTools() {
 
 	s.addTool(
 		mcp.NewTool(controlToolPrefix+"process_logs_search",
-			mcp.WithDescription(`Search process log buffers using BM25 text ranking. Results are ranked by relevance, NOT by time, and may be old or out of chronological order. For the latest output of a single process use pc_process_logs instead.
+			mcp.WithDescription(fmt.Sprintf(`Search process log buffers using BM25 text ranking. Results are ranked by relevance, NOT by time, and may be old or out of chronological order. For the latest output of a single process use %sprocess_logs instead.
 
-Each hit includes chunk_idx (0 = oldest line in the searched window, higher = more recent), so sort hits by chunk_idx descending if you need recency. Process log lines pass through verbatim — timestamps appear in 'text' only when the process itself emits them.`),
+Each hit includes chunk_idx (0 = oldest line in the searched window, higher = more recent), so sort hits by chunk_idx descending if you need recency. Process log lines pass through verbatim — timestamps appear in 'text' only when the process itself emits them.`, controlToolPrefix)),
 			mcp.WithString("query", mcp.Description("Search query (space-separated terms)"), mcp.Required()),
 			mcp.WithString("name", mcp.Description("Process name to search. If omitted, searches every process.")),
 			mcp.WithNumber("top_k", mcp.Description("Number of top results to return (default 20, max 100)")),
