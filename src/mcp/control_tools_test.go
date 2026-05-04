@@ -13,37 +13,37 @@ import (
 
 // fakeRunner records calls and returns canned data for test assertions.
 type fakeRunner struct {
-	startCalled    string
-	startErr       error
-	stopCalled     []string
-	stopResult     map[string]string
-	stopErr        error
-	restartCalled  string
-	restartErr     error
-	scaleCalled    string
-	scaleValue     int
-	scaleErr       error
-	getStateName   string
-	getStateResult *types.ProcessState
-	getStateErr    error
-	listResult     *types.ProcessesState
-	listErr        error
-	portsName      string
-	portsResult    *types.ProcessPorts
-	portsErr       error
-	projectMem     bool
-	projectResult  *types.ProjectState
-	projectErr     error
-	logName        string
-	logOffset      int
-	logLimit       int
-	logResult      []string
+	startCalled      string
+	startErr         error
+	stopCalled       []string
+	stopResult       map[string]string
+	stopErr          error
+	restartCalled    string
+	restartErr       error
+	scaleCalled      string
+	scaleValue       int
+	scaleErr         error
+	getStateName     string
+	getStateResult   *types.ProcessState
+	getStateErr      error
+	listResult       *types.ProcessesState
+	listErr          error
+	portsName        string
+	portsResult      *types.ProcessPorts
+	portsErr         error
+	projectMem       bool
+	projectResult    *types.ProjectState
+	projectErr       error
+	logName          string
+	logOffset        int
+	logLimit         int
+	logResult        []string
 	logResultsByName map[string][]string
-	logErr         error
-	truncCalled    string
-	truncErr       error
-	graphResult    *types.DependencyGraph
-	graphErr       error
+	logErr           error
+	truncCalled      string
+	truncErr         error
+	graphResult      *types.DependencyGraph
+	graphErr         error
 }
 
 func (f *fakeRunner) StartProcess(name string) error {
@@ -91,7 +91,7 @@ func (f *fakeRunner) GetProcessLog(name string, offsetFromEnd, limit int) ([]str
 func (f *fakeRunner) GetDependencyGraph() (*types.DependencyGraph, error) {
 	return f.graphResult, f.graphErr
 }
-func (f *fakeRunner) GetProcessLogLength(_ string) int       { return 0 }
+func (f *fakeRunner) GetProcessLogLength(_ string) int            { return 0 }
 func (f *fakeRunner) SetProcessInfo(_ *types.ProcessConfig) error { return nil }
 func (f *fakeRunner) TruncateProcessLogs(name string) error {
 	f.truncCalled = name
