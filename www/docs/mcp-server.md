@@ -258,6 +258,8 @@ The `pc_` prefix avoids collisions with user-defined tools — it is safe to hav
 
 The MCP server can host both kinds of tools at once — user-defined process tools (from per-process `mcp:` blocks) and the built-in `pc_*` control tools.
 
+`pc_process_logs_search` caps total work at 50,000 log lines per call. When `log_limit × <process count>` would exceed that, each process's budget is reduced to a fair share (most-recent lines kept) and the response includes `"truncated": true`.
+
 ## Complete Examples
 
 ### Log Analysis Tool
