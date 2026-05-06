@@ -106,7 +106,7 @@ func (s *Server) registerProcessControlTools() {
 		mcp.NewTool(controlToolPrefix+"process_logs_search",
 			mcp.WithDescription(fmt.Sprintf(`Search process log buffers using BM25 text ranking. Results are ranked by relevance, NOT by time, and may be old or out of chronological order. For the latest output of a single process use %sprocess_logs instead.
 
-Each hit includes chunk_idx (0 = oldest line in the searched window, higher = more recent), so sort hits by chunk_idx descending if you need recency. Process log lines pass through verbatim — timestamps appear in 'text' only when the process itself emits them.`, controlToolPrefix)),
+Each hit includes chunk_idx (0 = oldest line in the searched window, higher = more recent), so sort hits by chunk_idx descending if you need recency. Process log lines pass through verbatim — timestamps appear in 'text' only when the process itself emits them. 'truncated': true means the per-process line budget was reduced below log_limit to bound total work.`, controlToolPrefix)),
 			mcp.WithString("query", mcp.Description("Search query (space-separated terms)"), mcp.Required()),
 			mcp.WithString("name", mcp.Description("Process name to search. If omitted, searches every process.")),
 			mcp.WithNumber("top_k", mcp.Description("Number of top results to return (default 20, max 100)")),
@@ -323,6 +323,11 @@ const (
 	searchMaxTopK         = 100
 	searchDefaultLogLimit = 500
 	searchMaxLogLimit     = 5000
+	// searchMaxCorpusLines bounds the total lines tokenized and scored across
+	// all processes in one search. When log_limit * N > this, each process's
+	// budget is reduced to a fair share (most-recent lines kept) and the
+	// result is flagged truncated.
+	searchMaxCorpusLines = 50000
 )
 
 // logSearchHit is one entry in the pc_process_logs_search result. ChunkIdx is
@@ -337,8 +342,9 @@ type logSearchHit struct {
 }
 
 type logSearchResult struct {
-	Query string         `json:"query"`
-	Hits  []logSearchHit `json:"hits"`
+	Query     string         `json:"query"`
+	Truncated bool           `json:"truncated,omitempty"`
+	Hits      []logSearchHit `json:"hits"`
 }
 
 func (s *Server) handleProcessLogsSearch(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -354,6 +360,17 @@ func (s *Server) handleProcessLogsSearch(_ context.Context, req mcp.CallToolRequ
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 
+	perProcCap := logLimit
+	if n := len(procNames); n > 0 {
+		if share := searchMaxCorpusLines / n; share < perProcCap {
+			perProcCap = share
+		}
+	}
+	if perProcCap < 1 {
+		perProcCap = 1
+	}
+	truncated := perProcCap < logLimit
+
 	var (
 		docs      [][]string
 		lineTexts []string
@@ -361,7 +378,7 @@ func (s *Server) handleProcessLogsSearch(_ context.Context, req mcp.CallToolRequ
 		chunkIdxs []int
 	)
 	for _, pname := range procNames {
-		lines, err := s.runner.GetProcessLog(pname, 0, logLimit)
+		lines, err := s.runner.GetProcessLog(pname, 0, perProcCap)
 		if err != nil {
 			log.Warn().Err(err).Str("process", pname).Msg("pc_process_logs_search: skipping process")
 			continue
@@ -377,7 +394,7 @@ func (s *Server) handleProcessLogsSearch(_ context.Context, req mcp.CallToolRequ
 	corpus := NewCorpus(docs, 0, 0)
 	hits := corpus.TopN(Tokenize(query), topK)
 
-	result := logSearchResult{Query: query, Hits: make([]logSearchHit, 0, len(hits))}
+	result := logSearchResult{Query: query, Truncated: truncated, Hits: make([]logSearchHit, 0, len(hits))}
 	for _, h := range hits {
 		result.Hits = append(result.Hits, logSearchHit{
 			Process:  lineProcs[h.DocID],
