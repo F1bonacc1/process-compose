@@ -101,6 +101,19 @@ func (s *Server) registerProcessControlTools() {
 		),
 		s.handleProcessLogsTruncate,
 	)
+
+	s.addTool(
+		mcp.NewTool(controlToolPrefix+"process_logs_search",
+			mcp.WithDescription(fmt.Sprintf(`Search process log buffers using BM25 text ranking. Results are ranked by relevance, NOT by time, and may be old or out of chronological order. For the latest output of a single process use %sprocess_logs instead.
+
+Each hit includes chunk_idx (0 = oldest line in the searched window, higher = more recent), so sort hits by chunk_idx descending if you need recency. Process log lines pass through verbatim — timestamps appear in 'text' only when the process itself emits them. 'truncated': true means the per-process line budget was reduced below log_limit to bound total work.`, controlToolPrefix)),
+			mcp.WithString("query", mcp.Description("Search query (space-separated terms)"), mcp.Required()),
+			mcp.WithString("name", mcp.Description("Process name to search. If omitted, searches every process.")),
+			mcp.WithNumber("top_k", mcp.Description("Number of top results to return (default 20, max 100)")),
+			mcp.WithNumber("log_limit", mcp.Description("Max log lines to fetch per process before searching (default 500, max 5000)")),
+		),
+		s.handleProcessLogsSearch,
+	)
 }
 
 // ---- project.* tools ------------------------------------------------------
@@ -119,6 +132,13 @@ func (s *Server) registerProjectControlTools() {
 			mcp.WithDescription("Check whether all processes are ready. Returns ready=true only when every process is ready."),
 		),
 		s.handleProjectIsReady,
+	)
+
+	s.addTool(
+		mcp.NewTool(controlToolPrefix+"project_dependency_graph",
+			mcp.WithDescription("Return the project dependency graph: each node carries the process name, current status, readiness, and a depends_on map of upstream processes with their startup conditions (process_started, process_healthy, process_completed, process_log_ready). Useful for diagnosing why a process is stuck Pending."),
+		),
+		s.handleProjectDependencyGraph,
 	)
 }
 
@@ -295,4 +315,131 @@ func (s *Server) handleProjectIsReady(_ context.Context, _ mcp.CallToolRequest) 
 		NotReady: notReady,
 	}
 	return mcp.NewToolResultJSON(result)
+}
+
+// Default and max bounds for pc_process_logs_search.
+const (
+	searchDefaultTopK     = 20
+	searchMaxTopK         = 100
+	searchDefaultLogLimit = 500
+	searchMaxLogLimit     = 5000
+	// searchMaxCorpusLines bounds the total lines tokenized and scored across
+	// all processes in one search. When log_limit * N > this, each process's
+	// budget is reduced to a fair share (most-recent lines kept) and the
+	// result is flagged truncated.
+	searchMaxCorpusLines = 50000
+)
+
+// logSearchHit is one entry in the pc_process_logs_search result. ChunkIdx is
+// the line's 0-based index within the per-process tail we searched, not an
+// absolute position in the underlying ring buffer — lines may roll out
+// between calls.
+type logSearchHit struct {
+	Process  string  `json:"process"`
+	ChunkIdx int     `json:"chunk_idx"`
+	Score    float64 `json:"score"`
+	Text     string  `json:"text"`
+}
+
+type logSearchResult struct {
+	Query     string         `json:"query"`
+	Truncated bool           `json:"truncated,omitempty"`
+	Hits      []logSearchHit `json:"hits"`
+}
+
+func (s *Server) handleProcessLogsSearch(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	query, err := req.RequireString("query")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+	topK := clampInt(req.GetInt("top_k", searchDefaultTopK), searchDefaultTopK, searchMaxTopK)
+	logLimit := clampInt(req.GetInt("log_limit", searchDefaultLogLimit), searchDefaultLogLimit, searchMaxLogLimit)
+
+	procNames, err := s.searchTargetNames(req.GetString("name", ""))
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	perProcCap := logLimit
+	if n := len(procNames); n > 0 {
+		if share := searchMaxCorpusLines / n; share < perProcCap {
+			perProcCap = share
+		}
+	}
+	if perProcCap < 1 {
+		perProcCap = 1
+	}
+	truncated := perProcCap < logLimit
+
+	var (
+		docs      [][]string
+		lineTexts []string
+		lineProcs []string
+		chunkIdxs []int
+	)
+	for _, pname := range procNames {
+		lines, err := s.runner.GetProcessLog(pname, 0, perProcCap)
+		if err != nil {
+			log.Warn().Err(err).Str("process", pname).Msg("pc_process_logs_search: skipping process")
+			continue
+		}
+		for i, line := range lines {
+			docs = append(docs, Tokenize(line))
+			lineTexts = append(lineTexts, line)
+			lineProcs = append(lineProcs, pname)
+			chunkIdxs = append(chunkIdxs, i)
+		}
+	}
+
+	corpus := NewCorpus(docs, 0, 0)
+	hits := corpus.TopN(Tokenize(query), topK)
+
+	result := logSearchResult{Query: query, Truncated: truncated, Hits: make([]logSearchHit, 0, len(hits))}
+	for _, h := range hits {
+		result.Hits = append(result.Hits, logSearchHit{
+			Process:  lineProcs[h.DocID],
+			ChunkIdx: chunkIdxs[h.DocID],
+			Score:    h.Score,
+			Text:     lineTexts[h.DocID],
+		})
+	}
+	return mcp.NewToolResultJSON(result)
+}
+
+// searchTargetNames returns just `name` when provided (and known), otherwise
+// every known process name from the runner.
+func (s *Server) searchTargetNames(name string) ([]string, error) {
+	if name != "" {
+		if _, err := s.runner.GetProcessState(name); err != nil {
+			return nil, fmt.Errorf("unknown process %q: %w", name, err)
+		}
+		return []string{name}, nil
+	}
+	states, err := s.runner.GetProcessesState()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list processes: %w", err)
+	}
+	names := make([]string, 0, len(states.States))
+	for _, st := range states.States {
+		names = append(names, st.Name)
+	}
+	return names, nil
+}
+
+func clampInt(v, fallback, max int) int {
+	if v <= 0 {
+		v = fallback
+	}
+	if v > max {
+		v = max
+	}
+	return v
+}
+
+func (s *Server) handleProjectDependencyGraph(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	graph, err := s.runner.GetDependencyGraph()
+	if err != nil {
+		return mcp.NewToolResultErrorf("failed to get dependency graph: %v", err), nil
+	}
+	return mcp.NewToolResultJSON(graph)
 }

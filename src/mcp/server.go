@@ -28,6 +28,7 @@ type ProcessRunner interface {
 	GetProcessLogLength(name string) int
 	SetProcessInfo(config *types.ProcessConfig) error
 	TruncateProcessLogs(name string) error
+	GetDependencyGraph() (*types.DependencyGraph, error)
 }
 
 // Server wraps the MCP server and integrates with process-compose
