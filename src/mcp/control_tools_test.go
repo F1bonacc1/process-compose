@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -538,6 +539,42 @@ func TestProcessLogsSearch(t *testing.T) {
 		}))
 		if runner.logLimit != searchMaxLogLimit {
 			t.Errorf("expected log_limit clamped to %d, got %d", searchMaxLogLimit, runner.logLimit)
+		}
+	})
+
+	t.Run("truncates when fair share is below log_limit", func(t *testing.T) {
+		// 20 procs * log_limit=5000 = 100k requested, well over the 50k cap.
+		// Fair share collapses to 50000/20 = 2500 per proc, which is below
+		// the requested log_limit, so the result must be flagged truncated.
+		const n = 20
+		states := make([]types.ProcessState, 0, n)
+		logsByName := map[string][]string{}
+		for i := range n {
+			name := fmt.Sprintf("p%d", i)
+			states = append(states, types.ProcessState{Name: name})
+			logsByName[name] = []string{"hello world"}
+		}
+		runner := &fakeRunner{
+			listResult:       &types.ProcessesState{States: states},
+			logResultsByName: logsByName,
+		}
+		s := newTestServer(runner)
+		res, _ := s.handleProcessLogsSearch(context.Background(), callRequest(map[string]any{
+			"query":     "hello",
+			"log_limit": float64(searchMaxLogLimit),
+		}))
+		if resultIsError(res) {
+			t.Fatalf("unexpected tool error: %s", resultText(res))
+		}
+		var got logSearchResult
+		if err := json.Unmarshal([]byte(resultText(res)), &got); err != nil {
+			t.Fatalf("result not valid JSON: %v", err)
+		}
+		if !got.Truncated {
+			t.Errorf("expected truncated=true with %d procs and log_limit=%d", n, searchMaxLogLimit)
+		}
+		if want := searchMaxCorpusLines / n; runner.logLimit != want {
+			t.Errorf("expected per-proc limit %d, got %d", want, runner.logLimit)
 		}
 	})
 }
