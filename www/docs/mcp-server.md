@@ -247,8 +247,10 @@ When enabled, the MCP server starts even if no process has an `mcp:` section, an
 | `pc_process_ports` | Get TCP/UDP ports a process is listening on | `name: string` |
 | `pc_process_logs` | Fetch the most recent log lines (one-shot) | `name: string`, `tail: integer` (default 100), `offset_from_end: integer` (default 0) |
 | `pc_process_logs_truncate` | Truncate the log buffer for a process | `name: string` |
+| `pc_process_logs_search` | Search log buffers using BM25 ranking across one or all processes | `query: string`, `name: string` (optional, all if omitted), `top_k: integer` (default 20, max 100), `log_limit: integer` (default 500, max 5000) |
 | `pc_project_state` | Get overall project state (uptime, counts, optional memory) | `with_memory: boolean` (default false) |
 | `pc_project_is_ready` | Check whether all processes are ready | _none_ |
+| `pc_project_dependency_graph` | Get the project dependency graph (nodes, statuses, upstream conditions) | _none_ |
 
 The `pc_` prefix avoids collisions with user-defined tools — it is safe to have a user process named `start` alongside `pc_process_start`.
 
