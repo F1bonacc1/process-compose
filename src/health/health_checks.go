@@ -52,7 +52,14 @@ func New(name string, probe Probe, env []string, shellConfig command.ShellConfig
 		}
 		return p, err
 	}
-	return nil, fmt.Errorf("no probes [http_get, exec] configured for %s", name)
+	if probe.Grpc != nil {
+		err := p.addProber(p.getGrpcChecker)
+		if err != nil {
+			return nil, err
+		}
+		return p, err
+	}
+	return nil, fmt.Errorf("no probes [http_get, exec, grpc] configured for %s", name)
 }
 
 func (p *Prober) Start() {
@@ -132,6 +139,14 @@ func (p *Prober) getHttpChecker() (health.ICheckable, error) {
 		return nil, err
 	}
 	return checker, nil
+}
+
+func (p *Prober) getGrpcChecker() (health.ICheckable, error) {
+	return &grpcChecker{
+		address: p.probe.Grpc.getAddress(),
+		service: p.probe.Grpc.Service,
+		timeout: p.probe.TimeoutSeconds,
+	}, nil
 }
 
 func (p *Prober) getExecChecker() (health.ICheckable, error) {
