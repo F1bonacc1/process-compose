@@ -559,17 +559,35 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			t.Errorf("runningProcesses = %d, want %d", runningProcesses, want)
 		}
 		//read file and validate the shutdown order
-		scanner := bufio.NewScanner(file)
-		order := make([]string, 0)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.Contains(line, "exit") {
-				order = append(order, line)
-			}
-		}
 		//the order if first D or C exits is not defined
 		wantOrder1 := []string{"B: exit", "D: exit", "C: exit", "A: exit"}
 		wantOrder2 := []string{"B: exit", "C: exit", "D: exit", "A: exit"}
+
+		// ShutDownProject waits for processes to exit, but each process's
+		// stdout-reader goroutine is abandoned at shutdown (process.go:233) and
+		// may still be flushing the trap output to the log file. Poll for the
+		// expected content instead of reading once — on slower runners (macOS CI)
+		// the flush can lag behind ShutDownProject's return.
+		var order []string
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			if _, err := file.Seek(0, 0); err != nil {
+				t.Error(err.Error())
+				return
+			}
+			order = order[:0]
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.Contains(line, "exit") {
+					order = append(order, line)
+				}
+			}
+			if slices.Equal(order, wantOrder1) || slices.Equal(order, wantOrder2) {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
 		if !slices.Equal(order, wantOrder1) && !slices.Equal(order, wantOrder2) {
 			t.Errorf("content = %v, want %v or %v", order, wantOrder1, wantOrder2)
 			return
