@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -471,10 +470,15 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 
 func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("Skipping on Windows due to bash-specific fixture (trap/sleep)")
+		t.Skip("Skipping on Windows: fixture uses bash and POSIX shell redirection")
 	}
 	fixture1 := filepath.Join("..", "..", "fixtures-code", "process-compose-shutdown-inorder.yaml")
 	t.Run("Single Proc with deps", func(t *testing.T) {
+		// The fixture's shutdown.command appends to this file. Using a fresh
+		// path per run avoids cross-test contamination; t.Setenv restores the
+		// previous value on cleanup.
+		shutdownLog := filepath.Join(t.TempDir(), "shutdown_order.log")
+		t.Setenv("PC_TEST_SHUTDOWN_LOG", shutdownLog)
 
 		project, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture1},
@@ -502,28 +506,19 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 				t.Errorf("process %s is disabled", name)
 			}
 		}
-		file, err := os.CreateTemp(t.TempDir(), "pc_log.*.log")
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		defer os.Remove(file.Name())
-		project.LogLocation = file.Name()
-		project.LoggerConfig = &types.LoggerConfig{
-			FieldsOrder:     []string{"message"},
-			DisableJSON:     true,
-			TimestampFormat: "",
-			NoMetadata:      true,
-			FlushEachLine:   true,
-			NoColor:         true,
-		}
 		go func() {
 			err := runner.Run()
 			if err != nil {
 				t.Error(err.Error())
 			}
 		}()
-		time.Sleep(10 * time.Millisecond)
+		// Wait for all processes to reach Running before triggering shutdown;
+		// shutdown.command relies only on shutDown() being invoked in order, not
+		// on signal-delivery races, but we still need the runner to have started
+		// all processes before ShutDownProject is meaningful.
+		for _, name := range []string{"procA", "procB", "procC", "procD"} {
+			waitForProcessState(t, runner, name, types.ProcessStateRunning, 5*time.Second)
+		}
 		states, err := runner.GetProcessesState()
 		if err != nil {
 			t.Error(err.Error())
@@ -534,7 +529,6 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
 		}
 
-		time.Sleep(10 * time.Millisecond)
 		err = runner.ShutDownProject()
 		if err != nil {
 			t.Error(err.Error())
@@ -554,18 +548,33 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 		if runningProcesses != want {
 			t.Errorf("runningProcesses = %d, want %d", runningProcesses, want)
 		}
-		//read file and validate the shutdown order
-		scanner := bufio.NewScanner(file)
-		order := make([]string, 0)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.Contains(line, "exit") {
-				order = append(order, line)
-			}
-		}
-		//the order if first D or C exits is not defined
+		// Read the shutdown-order file written by each process's
+		// shutdown.command. C and D shut down in parallel, so either order
+		// between them is acceptable.
 		wantOrder1 := []string{"B: exit", "D: exit", "C: exit", "A: exit"}
 		wantOrder2 := []string{"B: exit", "C: exit", "D: exit", "A: exit"}
+
+		// Poll briefly: shutdown.command writes happen during ShutDownProject
+		// and should be on disk by now, but tolerate small fs lag on slow CI.
+		var order []string
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			data, readErr := os.ReadFile(shutdownLog)
+			if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
+				t.Error(readErr.Error())
+				return
+			}
+			order = order[:0]
+			for line := range strings.SplitSeq(strings.TrimRight(string(data), "\n"), "\n") {
+				if line != "" {
+					order = append(order, line)
+				}
+			}
+			if slices.Equal(order, wantOrder1) || slices.Equal(order, wantOrder2) {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
 		if !slices.Equal(order, wantOrder1) && !slices.Equal(order, wantOrder2) {
 			t.Errorf("content = %v, want %v or %v", order, wantOrder1, wantOrder2)
 			return
@@ -1411,6 +1420,12 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 		t.Error("No restart waiters should remain after all requests completed")
 		return
 	}
+
+	// The last restart may still be transitioning (Terminating → Launching →
+	// Running). Wait briefly for the post-restart state to stabilize instead of
+	// racing it — on slower runners (e.g. macOS) the underlying `sleep 2` of an
+	// earlier launch can complete before we sample the state.
+	waitForProcessState(t, runner, testProcess, types.ProcessStateRunning, 5*time.Second)
 
 	// Verify exactly one process is running after all concurrent restarts
 	state, err := runner.GetProcessState(testProcess)
