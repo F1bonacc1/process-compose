@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -471,10 +470,15 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 
 func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("Skipping on Windows due to bash-specific fixture (trap/sleep)")
+		t.Skip("Skipping on Windows: fixture uses bash and POSIX shell redirection")
 	}
 	fixture1 := filepath.Join("..", "..", "fixtures-code", "process-compose-shutdown-inorder.yaml")
 	t.Run("Single Proc with deps", func(t *testing.T) {
+		// The fixture's shutdown.command appends to this file. Using a fresh
+		// path per run avoids cross-test contamination; t.Setenv restores the
+		// previous value on cleanup.
+		shutdownLog := filepath.Join(t.TempDir(), "shutdown_order.log")
+		t.Setenv("PC_TEST_SHUTDOWN_LOG", shutdownLog)
 
 		project, err := loader.Load(&loader.LoaderOptions{
 			FileNames: []string{fixture1},
@@ -502,30 +506,16 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 				t.Errorf("process %s is disabled", name)
 			}
 		}
-		file, err := os.CreateTemp(t.TempDir(), "pc_log.*.log")
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-		defer os.Remove(file.Name())
-		project.LogLocation = file.Name()
-		project.LoggerConfig = &types.LoggerConfig{
-			FieldsOrder:     []string{"message"},
-			DisableJSON:     true,
-			TimestampFormat: "",
-			NoMetadata:      true,
-			FlushEachLine:   true,
-			NoColor:         true,
-		}
 		go func() {
 			err := runner.Run()
 			if err != nil {
 				t.Error(err.Error())
 			}
 		}()
-		// Wait for all processes to be Running so their bash trap handlers are
-		// installed before we send SIGTERM; otherwise the "exit" lines are never
-		// emitted and the shutdown-order assertion fails.
+		// Wait for all processes to reach Running before triggering shutdown;
+		// shutdown.command relies only on shutDown() being invoked in order, not
+		// on signal-delivery races, but we still need the runner to have started
+		// all processes before ShutDownProject is meaningful.
 		for _, name := range []string{"procA", "procB", "procC", "procD"} {
 			waitForProcessState(t, runner, name, types.ProcessStateRunning, 5*time.Second)
 		}
@@ -558,28 +548,25 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 		if runningProcesses != want {
 			t.Errorf("runningProcesses = %d, want %d", runningProcesses, want)
 		}
-		//read file and validate the shutdown order
-		//the order if first D or C exits is not defined
+		// Read the shutdown-order file written by each process's
+		// shutdown.command. C and D shut down in parallel, so either order
+		// between them is acceptable.
 		wantOrder1 := []string{"B: exit", "D: exit", "C: exit", "A: exit"}
 		wantOrder2 := []string{"B: exit", "C: exit", "D: exit", "A: exit"}
 
-		// ShutDownProject waits for processes to exit, but each process's
-		// stdout-reader goroutine is abandoned at shutdown (process.go:233) and
-		// may still be flushing the trap output to the log file. Poll for the
-		// expected content instead of reading once — on slower runners (macOS CI)
-		// the flush can lag behind ShutDownProject's return.
+		// Poll briefly: shutdown.command writes happen during ShutDownProject
+		// and should be on disk by now, but tolerate small fs lag on slow CI.
 		var order []string
 		deadline := time.Now().Add(5 * time.Second)
 		for time.Now().Before(deadline) {
-			if _, err := file.Seek(0, 0); err != nil {
-				t.Error(err.Error())
+			data, readErr := os.ReadFile(shutdownLog)
+			if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
+				t.Error(readErr.Error())
 				return
 			}
 			order = order[:0]
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.Contains(line, "exit") {
+			for line := range strings.SplitSeq(strings.TrimRight(string(data), "\n"), "\n") {
+				if line != "" {
 					order = append(order, line)
 				}
 			}
