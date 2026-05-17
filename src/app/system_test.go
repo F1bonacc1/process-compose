@@ -523,7 +523,12 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 				t.Error(err.Error())
 			}
 		}()
-		time.Sleep(10 * time.Millisecond)
+		// Wait for all processes to be Running so their bash trap handlers are
+		// installed before we send SIGTERM; otherwise the "exit" lines are never
+		// emitted and the shutdown-order assertion fails.
+		for _, name := range []string{"procA", "procB", "procC", "procD"} {
+			waitForProcessState(t, runner, name, types.ProcessStateRunning, 5*time.Second)
+		}
 		states, err := runner.GetProcessesState()
 		if err != nil {
 			t.Error(err.Error())
@@ -534,7 +539,6 @@ func TestSystem_TestProcListShutsDownInOrder(t *testing.T) {
 			t.Errorf("len(states.States) = %d, want %d", len(states.States), want)
 		}
 
-		time.Sleep(10 * time.Millisecond)
 		err = runner.ShutDownProject()
 		if err != nil {
 			t.Error(err.Error())
@@ -1411,6 +1415,12 @@ func TestSystem_ConcurrentRestartRaceCondition(t *testing.T) {
 		t.Error("No restart waiters should remain after all requests completed")
 		return
 	}
+
+	// The last restart may still be transitioning (Terminating → Launching →
+	// Running). Wait briefly for the post-restart state to stabilize instead of
+	// racing it — on slower runners (e.g. macOS) the underlying `sleep 2` of an
+	// earlier launch can complete before we sample the state.
+	waitForProcessState(t, runner, testProcess, types.ProcessStateRunning, 5*time.Second)
 
 	// Verify exactly one process is running after all concurrent restarts
 	state, err := runner.GetProcessState(testProcess)

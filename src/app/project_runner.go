@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/command"
@@ -65,7 +66,7 @@ type ProjectRunner struct {
 	withRecursiveMetrics bool
 	procCompleteChannel  chan int
 	processTree          *ProcessTree
-	processScheduler     *scheduler.Scheduler
+	processScheduler     atomic.Pointer[scheduler.Scheduler]
 	stateBroadcaster     *ProcessStateBroadcaster
 }
 
@@ -160,24 +161,25 @@ func (p *ProjectRunner) Run() error {
 	log.Debug().Msgf("Spinning up %d processes. Order: %q", len(runOrder), nameOrder)
 
 	// Initialize and start scheduler for scheduled processes
-	p.processScheduler, err = scheduler.New(p)
+	sched, err := scheduler.New(p)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create scheduler")
 	} else {
+		p.processScheduler.Store(sched)
 		for name, proc := range p.project.Processes {
 			if proc.Schedule != nil && proc.Schedule.IsScheduled() {
-				if err := p.processScheduler.AddProcess(name, proc.Schedule); err != nil {
+				if err := sched.AddProcess(name, proc.Schedule); err != nil {
 					log.Error().Err(err).Msgf("Failed to schedule process %s", name)
 				} else if proc.Disabled {
-					if err := p.processScheduler.PauseProcess(name); err != nil {
+					if err := sched.PauseProcess(name); err != nil {
 						log.Error().Err(err).Msgf("Failed to pause schedule for disabled process %s", name)
 					}
 				}
 			}
 		}
-		p.processScheduler.Start()
+		sched.Start()
 		defer func() {
-			if err := p.processScheduler.Stop(); err != nil {
+			if err := sched.Stop(); err != nil {
 				log.Error().Err(err).Msg("Failed to stop scheduler gracefully")
 			}
 		}()
@@ -210,7 +212,7 @@ func (p *ProjectRunner) Run() error {
 					log.Debug().Msgf("Skipping project completion: %d restart(s) in progress", pendingRestarts)
 					continue
 				}
-				if p.processScheduler == nil || len(p.processScheduler.GetScheduledProcesses()) == 0 {
+				if s := p.processScheduler.Load(); s == nil || len(s.GetScheduledProcesses()) == 0 {
 					log.Info().Msg("Project completed")
 					p.exitCodeMutex.Lock()
 					exitCode := p.exitCode
@@ -385,8 +387,8 @@ func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error
 	}
 
 	// Add next run time for scheduled processes
-	if p.processScheduler != nil {
-		nextRun := p.processScheduler.GetNextRunTime(name)
+	if s := p.processScheduler.Load(); s != nil {
+		nextRun := s.GetNextRunTime(name)
 		state.NextRunTime = nextRun
 		if nextRun != nil {
 			if !state.IsRunning {
@@ -500,8 +502,8 @@ func (p *ProjectRunner) StartProcess(name string) error {
 	if processConfig, ok := p.project.Processes[name]; ok {
 		p.runProcess(&processConfig)
 		// Resume schedule if it was paused (e.g. initially disabled)
-		if p.processScheduler != nil && p.processScheduler.IsScheduled(name) {
-			if err := p.processScheduler.ResumeProcess(name); err != nil {
+		if s := p.processScheduler.Load(); s != nil && s.IsScheduled(name) {
+			if err := s.ResumeProcess(name); err != nil {
 				log.Error().Err(err).Msgf("Failed to resume schedule for process %s", name)
 			}
 		}
@@ -524,7 +526,8 @@ func (p *ProjectRunner) StopProcess(name string) error {
 		}
 	} else {
 		// If not running, check if it's scheduled. If so, we'll just pause the schedule.
-		if p.processScheduler == nil || !p.processScheduler.IsScheduled(name) {
+		sched := p.processScheduler.Load()
+		if sched == nil || !sched.IsScheduled(name) {
 			if _, ok := p.project.Processes[name]; !ok {
 				log.Error().Msgf("Process %s does not exist", name)
 				return fmt.Errorf("process %s does not exist", name)
@@ -535,8 +538,8 @@ func (p *ProjectRunner) StopProcess(name string) error {
 	}
 
 	// Pause schedule if it was running or scheduled
-	if p.processScheduler != nil && p.processScheduler.IsScheduled(name) {
-		if pauseErr := p.processScheduler.PauseProcess(name); pauseErr != nil {
+	if sched := p.processScheduler.Load(); sched != nil && sched.IsScheduled(name) {
+		if pauseErr := sched.PauseProcess(name); pauseErr != nil {
 			log.Error().Err(pauseErr).Msgf("Failed to pause schedule for process %s", name)
 			if err == nil {
 				err = pauseErr
