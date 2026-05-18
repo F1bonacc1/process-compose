@@ -47,7 +47,13 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	mergedProject.FileNames = opts.FileNames
+	// Record the original user-supplied file list, not opts.FileNames —
+	// loadExtendProject mutates opts.FileNames in place when it resolves an
+	// `extends:` directive. Persisting the mutated slice onto the long-lived
+	// project poisons subsequent Load() calls (e.g. ReloadProject reuses
+	// p.project.FileNames as input), causing loadExtendProject's Contains
+	// check to fire on entries the loader itself inserted on the prior pass.
+	mergedProject.FileNames = fileNames
 	mergedProject.EnvFileNames = opts.EnvFileNames
 	mergedProject.IsTuiDisabled = opts.isTuiDisabled || mergedProject.IsTuiDisabled
 	mergedProject.IsOrderedShutdown = opts.isOrderedShutdown || mergedProject.IsOrderedShutdown
