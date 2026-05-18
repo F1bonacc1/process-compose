@@ -31,7 +31,7 @@ require (
 
 require (
 	github.com/go-co-op/gocron/v2 v2.21.1
-	github.com/mark3labs/mcp-go v0.50.0
+	github.com/mark3labs/mcp-go v0.54.0
 )
 
 require (
