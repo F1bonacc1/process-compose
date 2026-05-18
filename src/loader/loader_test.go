@@ -187,3 +187,36 @@ func TestLoadFileWithExtendProject(t *testing.T) {
 		}
 	}
 }
+
+// TestLoad_ReloadAfterExtends locks in the fix for the reload-after-extends
+// bug: Load() must persist the user-supplied FileNames on the returned project,
+// not the slice that loadExtendProject mutates while resolving `extends:`.
+// ProjectRunner.ReloadProject reuses project.FileNames as input to the next
+// Load(); if the extends target leaks into that slice, the Contains check in
+// loadExtendProject false-fires on the loader's own bookkeeping.
+func TestLoad_ReloadAfterExtends(t *testing.T) {
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-with-extends.yaml")
+
+	opts1 := &LoaderOptions{
+		FileNames:        []string{fixture},
+		IsInternalLoader: true,
+	}
+	project1, err := Load(opts1)
+	if err != nil {
+		t.Fatalf("initial load failed: %v", err)
+	}
+	if len(project1.FileNames) != 1 || project1.FileNames[0] != fixture {
+		t.Fatalf("project.FileNames = %v, want [%s]", project1.FileNames, fixture)
+	}
+
+	// Mimic ProjectRunner.ReloadProject: feed the previous project's FileNames
+	// as the next Load's input. Before the fix this fails with
+	// "project ... is already specified in files to load".
+	opts2 := &LoaderOptions{
+		FileNames:        project1.FileNames,
+		IsInternalLoader: true,
+	}
+	if _, err := Load(opts2); err != nil {
+		t.Fatalf("reload after extends failed: %v", err)
+	}
+}
