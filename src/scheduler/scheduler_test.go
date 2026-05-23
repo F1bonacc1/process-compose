@@ -273,3 +273,77 @@ func TestScheduler_PauseResume(t *testing.T) {
 		t.Error("GetNextRunTime() should return non-nil for resumed process")
 	}
 }
+
+func TestScheduler_RemoveProcess(t *testing.T) {
+	mock := &mockProcessStarter{}
+	s, _ := New(mock)
+	s.Start()
+	defer func() { _ = s.Stop() }()
+
+	config := &types.ScheduleConfig{Interval: "1h"}
+	_ = s.AddProcess("test-remove", config)
+
+	if !s.IsScheduled("test-remove") {
+		t.Fatal("Setup: AddProcess should have registered the process")
+	}
+
+	if err := s.RemoveProcess("test-remove"); err != nil {
+		t.Errorf("RemoveProcess() returned error: %v", err)
+	}
+
+	if s.IsScheduled("test-remove") {
+		t.Error("RemoveProcess() should remove entry from schedules map")
+	}
+	if s.GetNextRunTime("test-remove") != nil {
+		t.Error("GetNextRunTime() should return nil for removed process")
+	}
+}
+
+func TestScheduler_RemoveProcess_Unknown(t *testing.T) {
+	mock := &mockProcessStarter{}
+	s, _ := New(mock)
+
+	if err := s.RemoveProcess("never-added"); err != nil {
+		t.Errorf("RemoveProcess() on unknown process should be a no-op, got: %v", err)
+	}
+}
+
+func TestScheduler_RemoveProcess_AlreadyPaused(t *testing.T) {
+	mock := &mockProcessStarter{}
+	s, _ := New(mock)
+	s.Start()
+	defer func() { _ = s.Stop() }()
+
+	config := &types.ScheduleConfig{Interval: "1h"}
+	_ = s.AddProcess("test-paused-remove", config)
+	_ = s.PauseProcess("test-paused-remove")
+
+	if err := s.RemoveProcess("test-paused-remove"); err != nil {
+		t.Errorf("RemoveProcess() on paused process returned error: %v", err)
+	}
+	if s.IsScheduled("test-paused-remove") {
+		t.Error("RemoveProcess() should clean up the entry even when already paused")
+	}
+}
+
+// TestScheduler_RemoveProcess_GocronAlreadyShutdown verifies the tolerance for
+// the gocron.ErrJobNotFound case — the entry must be removed from our tracking
+// map even if gocron has already lost the underlying job (e.g. due to a
+// previous Stop or a race window). The caller's intent is "make this name
+// unscheduled" and both paths should achieve that.
+func TestScheduler_RemoveProcess_GocronAlreadyShutdown(t *testing.T) {
+	mock := &mockProcessStarter{}
+	s, _ := New(mock)
+	s.Start()
+
+	config := &types.ScheduleConfig{Interval: "1h"}
+	_ = s.AddProcess("test-shutdown-remove", config)
+	_ = s.Stop() // gocron jobs are wiped on shutdown
+
+	if err := s.RemoveProcess("test-shutdown-remove"); err != nil {
+		t.Errorf("RemoveProcess() after Stop should tolerate ErrJobNotFound, got: %v", err)
+	}
+	if s.IsScheduled("test-shutdown-remove") {
+		t.Error("RemoveProcess() should clean up the entry even after scheduler Stop")
+	}
+}

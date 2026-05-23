@@ -121,6 +121,62 @@ func TestCompareProcessConfigs(t *testing.T) {
 			},
 			expected: false,
 		},
+		{
+			name: "inequal process configs — schedule cron differs",
+			p: &ProcessConfig{
+				Name:     "test",
+				Command:  "cmd",
+				Schedule: &ScheduleConfig{Cron: "0 8 * * *"},
+			},
+			another: &ProcessConfig{
+				Name:     "test",
+				Command:  "cmd",
+				Schedule: &ScheduleConfig{Cron: "0 9 * * *"},
+			},
+			expected: false,
+		},
+		{
+			name: "inequal process configs — schedule run_on_start differs",
+			p: &ProcessConfig{
+				Name:     "test",
+				Command:  "cmd",
+				Schedule: &ScheduleConfig{Interval: "1h", RunOnStart: false},
+			},
+			another: &ProcessConfig{
+				Name:     "test",
+				Command:  "cmd",
+				Schedule: &ScheduleConfig{Interval: "1h", RunOnStart: true},
+			},
+			expected: false,
+		},
+		{
+			name: "inequal process configs — schedule added (nil vs set)",
+			p: &ProcessConfig{
+				Name:     "test",
+				Command:  "cmd",
+				Schedule: nil,
+			},
+			another: &ProcessConfig{
+				Name:     "test",
+				Command:  "cmd",
+				Schedule: &ScheduleConfig{Cron: "0 8 * * *"},
+			},
+			expected: false,
+		},
+		{
+			name: "equal process configs — identical schedules",
+			p: &ProcessConfig{
+				Name:     "test",
+				Command:  "cmd",
+				Schedule: &ScheduleConfig{Cron: "0 8 * * *", MaxConcurrent: 1},
+			},
+			another: &ProcessConfig{
+				Name:     "test",
+				Command:  "cmd",
+				Schedule: &ScheduleConfig{Cron: "0 8 * * *", MaxConcurrent: 1},
+			},
+			expected: true,
+		},
 	}
 
 	for _, tt := range tests {

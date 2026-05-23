@@ -967,6 +967,121 @@ func TestUpdateProject(t *testing.T) {
 	}
 }
 
+// TestUpdateProject_ScheduledProcess covers the scheduled-process paths
+// through UpdateProject: add, schedule-change, and remove. Pre-fix, adding a
+// scheduled process via UpdateProject would (1) fire it immediately even with
+// run_on_start: false and (2) never call processScheduler.AddProcess — so
+// next_run_time stayed nil and the cron was silently dropped forever. The
+// existing TestUpdateProject above does not exercise scheduled namespaces.
+func TestUpdateProject_ScheduledProcess(t *testing.T) {
+	regular := "regular-proc"
+	scheduled := "scheduled-proc"
+	shell := command.DefaultShellConfig()
+	p, err := NewProjectRunner(&ProjectOpts{
+		project: &types.Project{
+			ShellConfig: shell,
+			Processes: map[string]types.ProcessConfig{
+				regular: {
+					Name:        regular,
+					ReplicaName: regular,
+					Executable:  shell.ShellCommand,
+					Args:        []string{shell.ShellArgument, "sleep 5"},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	go func() {
+		if err := p.Run(); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	}()
+	time.Sleep(100 * time.Millisecond)
+
+	// Add a scheduled-cron process via UpdateProject.
+	project := &types.Project{
+		ShellConfig: shell,
+		Processes: map[string]types.ProcessConfig{
+			regular: {
+				Name:        regular,
+				ReplicaName: regular,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "sleep 5"},
+			},
+			scheduled: {
+				Name:        scheduled,
+				ReplicaName: scheduled,
+				Executable:  shell.ShellCommand,
+				Args:        []string{shell.ShellArgument, "echo scheduled"},
+				Schedule: &types.ScheduleConfig{
+					Cron: "0 8 * * *",
+				},
+			},
+		},
+	}
+	status, err := p.UpdateProject(project)
+	if err != nil {
+		t.Fatalf("UpdateProject(add scheduled) returned error: %v", err)
+	}
+	if status[scheduled] != types.ProcessUpdateAdded {
+		t.Errorf("Scheduled process status is %s want %s", status[scheduled], types.ProcessUpdateAdded)
+	}
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify the scheduler was actually registered (regression for the bug
+	// where addProcessAndRun never called processScheduler.AddProcess).
+	sched := p.processScheduler.Load()
+	if sched == nil {
+		t.Fatal("processScheduler should be initialized")
+	}
+	if !sched.IsScheduled(scheduled) {
+		t.Error("Scheduled process should be registered with the scheduler")
+	}
+
+	// Update the schedule's cron expression. Pre-fix, Compare omitted the
+	// Schedule field and treated this as a no-op (status would be missing
+	// from the result map).
+	project.Processes[scheduled] = types.ProcessConfig{
+		Name:        scheduled,
+		ReplicaName: scheduled,
+		Executable:  shell.ShellCommand,
+		Args:        []string{shell.ShellArgument, "echo scheduled"},
+		Schedule: &types.ScheduleConfig{
+			Cron: "0 9 * * *",
+		},
+	}
+	status, err = p.UpdateProject(project)
+	if err != nil {
+		t.Fatalf("UpdateProject(change cron) returned error: %v", err)
+	}
+	if status[scheduled] != types.ProcessUpdateUpdated {
+		t.Errorf("Schedule change should be detected as Updated, got %s", status[scheduled])
+	}
+	time.Sleep(100 * time.Millisecond)
+	if !sched.IsScheduled(scheduled) {
+		t.Error("Scheduled process should remain registered after a schedule change")
+	}
+
+	// Remove the scheduled process. Pre-fix, removeProcess did not call
+	// scheduler.RemoveProcess so the entry stayed in the schedules map.
+	project = &types.Project{
+		ShellConfig: shell,
+		Processes: map[string]types.ProcessConfig{
+			regular: project.Processes[regular],
+		},
+	}
+	_, err = p.UpdateProject(project)
+	if err != nil {
+		t.Fatalf("UpdateProject(remove scheduled) returned error: %v", err)
+	}
+	time.Sleep(100 * time.Millisecond)
+	if sched.IsScheduled(scheduled) {
+		t.Error("Removed scheduled process should be deregistered from the scheduler")
+	}
+}
+
 func assertProcessStatus(t *testing.T, proc *Process, procName string, wantStatus string) {
 	t.Helper()
 	if proc == nil {
