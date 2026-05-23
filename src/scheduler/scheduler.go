@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -175,6 +176,35 @@ func (s *Scheduler) PauseProcess(name string) error {
 		return err
 	}
 	return nil
+}
+
+// RemoveProcess fully removes a scheduled process — both its gocron job and
+// its entry in the scheduler's tracking map. Use this when a process is being
+// deleted from the project. To temporarily disable a process's schedule while
+// keeping the entry tracked (so ResumeProcess can re-arm it later), use
+// PauseProcess instead.
+//
+// If gocron's internal job table no longer has the job (e.g. it was already
+// shut down, or a race window between NewJob and the next scheduler tick),
+// we still clean up our tracking map and treat the absence as success — the
+// caller's intent is "make this process unscheduled" which both paths achieve.
+func (s *Scheduler) RemoveProcess(name string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	entry, ok := s.schedules[name]
+	if !ok {
+		return nil
+	}
+	var err error
+	if entry.Job != nil {
+		if rmErr := s.gocronScheduler.RemoveJob(entry.Job.ID()); rmErr != nil && !errors.Is(rmErr, gocron.ErrJobNotFound) {
+			err = rmErr
+		}
+		entry.Job = nil
+	}
+	delete(s.schedules, name)
+	log.Debug().Msgf("Removed scheduled process %s", name)
+	return err
 }
 
 // ResumeProcess resumes a paused scheduled job.

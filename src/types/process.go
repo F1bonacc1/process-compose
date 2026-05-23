@@ -139,7 +139,8 @@ func (p *ProcessConfig) Compare(another *ProcessConfig) bool {
 		!reflect.DeepEqual(p.DependsOn, another.DependsOn) ||
 		!reflect.DeepEqual(p.RestartPolicy, another.RestartPolicy) ||
 		!reflect.DeepEqual(p.Environment, another.Environment) ||
-		!reflect.DeepEqual(p.Args, another.Args) {
+		!reflect.DeepEqual(p.Args, another.Args) ||
+		!reflect.DeepEqual(p.Schedule, another.Schedule) {
 		//diffs := compareStructs(*p, *another)
 		//log.Warn().Msgf("Structs are different: %s", diffs)
 		return false

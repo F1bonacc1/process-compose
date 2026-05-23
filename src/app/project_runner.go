@@ -1199,6 +1199,11 @@ func (p *ProjectRunner) removeProcess(name string) error {
 	p.procConfMutex.Lock()
 	delete(p.project.Processes, name)
 	p.procConfMutex.Unlock()
+	if sched := p.processScheduler.Load(); sched != nil {
+		if err := sched.RemoveProcess(name); err != nil {
+			log.Err(err).Msgf("Failed to remove schedule for process %s", name)
+		}
+	}
 	running := p.getRunningProcess(name)
 	if running != nil {
 		err := running.shutDownNoRestart()
@@ -1220,6 +1225,22 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	p.project.Processes[proc.ReplicaName] = proc
 	p.procConfMutex.Unlock()
 	p.initProcessLog(proc.ReplicaName)
+	// Scheduled processes must be registered with the scheduler instead of
+	// being run immediately. Matches the startup-loop behavior in Run(): the
+	// scheduler owns lifecycle for any process with a Schedule, and
+	// runProcess is skipped for them.
+	if proc.Schedule != nil && proc.Schedule.IsScheduled() {
+		if sched := p.processScheduler.Load(); sched != nil {
+			if err := sched.AddProcess(proc.ReplicaName, proc.Schedule); err != nil {
+				log.Err(err).Msgf("Failed to schedule process %s", proc.ReplicaName)
+			} else if proc.Disabled {
+				if err := sched.PauseProcess(proc.ReplicaName); err != nil {
+					log.Err(err).Msgf("Failed to pause schedule for disabled process %s", proc.ReplicaName)
+				}
+			}
+		}
+		return
+	}
 	if !proc.IsDeferred() {
 		p.runProcess(&proc)
 	}
