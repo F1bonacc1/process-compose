@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/pclog"
@@ -136,9 +137,8 @@ func (api *PcApi) handleStateStream(ws *websocket.Conn, observer *stateWsObserve
 	var writeMu sync.Mutex
 	writeJSON := func(ev types.ProcessStateEvent) error {
 		writeMu.Lock()
-		api.wsMtx.Lock()
+		_ = ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
 		err := ws.WriteJSON(&ev)
-		api.wsMtx.Unlock()
 		writeMu.Unlock()
 		return err
 	}

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
 	"github.com/f1bonacc1/process-compose/src/pclog"
@@ -81,7 +82,14 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 				if isChannelClosed {
 					return 0, nil
 				}
-				logChan <- msg
+				// Non-blocking send: if the subscriber's WriteJSON is stuck
+				// (e.g. TCP send buffer full because the client stopped
+				// reading), dropping the line here is far better than
+				// blocking the producer and deadlocking the buffer.
+				select {
+				case logChan <- msg:
+				default:
+				}
 				return len(message), nil
 			},
 			endOffset)
@@ -107,9 +115,11 @@ func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclo
 	for {
 		select {
 		case msg, open := <-logChan:
-			api.wsMtx.Lock()
+			// handleLog is the sole writer on this ws.Conn; no global
+			// mutex needed. Setting a write deadline guards against a
+			// half-dead peer whose TCP send buffer never drains.
+			_ = ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			err := ws.WriteJSON(&msg)
-			api.wsMtx.Unlock()
 			if err != nil {
 				if errors.Is(err, net.ErrClosed) {
 					return

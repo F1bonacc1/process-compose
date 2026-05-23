@@ -50,9 +50,16 @@ func (b *ProcessLogBuffer) Write(message string) {
 	}
 	b.mxBuf.Unlock()
 
+	// Snapshot observers under the lock, then fan out without holding it.
+	// Holding mxObs across observer.WriteString lets a slow/blocked observer
+	// stall every other Write and any new GetLogsAndSubscribe on this buffer.
 	b.mxObs.Lock()
-	defer b.mxObs.Unlock()
+	snapshot := make([]LogObserver, 0, len(b.observers))
 	for _, observer := range b.observers {
+		snapshot = append(snapshot, observer)
+	}
+	b.mxObs.Unlock()
+	for _, observer := range snapshot {
 		_, _ = observer.WriteString(message)
 	}
 }
