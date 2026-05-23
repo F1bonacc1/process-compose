@@ -296,6 +296,9 @@ func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
 						process.ReplicaName, k, exitCode)
 				}
 			case types.ProcessConditionHealthy:
+				if proc.procConf.ReadinessProbe == nil && proc.procConf.LivenessProbe == nil {
+					return fmt.Errorf("health dependency defined in '%s' but no health check exists in '%s'", process.ReplicaName, k)
+				}
 				log.Info().Msgf("%s is waiting for %s to be healthy", process.ReplicaName, k)
 				ready := proc.waitUntilReady()
 				if !ready {
@@ -479,10 +482,14 @@ func (p *ProjectRunner) getDoneProcess(name string) *Process {
 }
 
 func (p *ProjectRunner) getDoneOrRunningProcess(name string) *Process {
-	if doneProc := p.getDoneProcess(name); doneProc != nil {
-		return doneProc
+	// Prefer the currently running process over a stale done entry.
+	// After UpdateProcess / Restart replaces a process, the old object lingers
+	// in doneProcesses with an already-cancelled procReadyCtx; returning it
+	// would cause downstream waitUntilReady to spuriously fail ("aborted").
+	if runningProc := p.getRunningProcess(name); runningProc != nil {
+		return runningProc
 	}
-	return p.getRunningProcess(name)
+	return p.getDoneProcess(name)
 }
 
 func (p *ProjectRunner) removeRunningProcess(process *Process) int {
@@ -1219,6 +1226,11 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	p.procConfMutex.Lock()
 	p.project.Processes[proc.ReplicaName] = proc
 	p.procConfMutex.Unlock()
+	// Drop any stale done entry left by a previous incarnation; otherwise
+	// new dependents would still see the old, cancelled Process object.
+	p.doneProcMutex.Lock()
+	delete(p.doneProcesses, proc.ReplicaName)
+	p.doneProcMutex.Unlock()
 	p.initProcessLog(proc.ReplicaName)
 	if !proc.IsDeferred() {
 		p.runProcess(&proc)
