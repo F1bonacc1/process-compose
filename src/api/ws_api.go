@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/f1bonacc1/process-compose/src/app"
@@ -46,6 +47,7 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 	}
 
 	done := make(chan struct{})
+	wsWriteMtx := &sync.Mutex{}
 	if follow {
 		go handleIncoming(ws, done)
 	}
@@ -56,6 +58,32 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 		logChan := make(chan LogMessage, 256)
 		chanCloseMtx := &sync.Mutex{}
 		isChannelClosed := false
+		closeLogChan := func() {
+			chanCloseMtx.Lock()
+			defer chanCloseMtx.Unlock()
+			if !isChannelClosed {
+				close(logChan)
+				isChannelClosed = true
+			}
+		}
+		dropped := &atomic.Uint64{}
+		warnedOnce := &atomic.Bool{}
+		enqueue := func(msg LogMessage) bool {
+			chanCloseMtx.Lock()
+			defer chanCloseMtx.Unlock()
+			if isChannelClosed {
+				return false
+			}
+			select {
+			case logChan <- msg:
+			default:
+				dropped.Add(1)
+				if warnedOnce.CompareAndSwap(false, true) {
+					log.Warn().Str("process", processName).Msg("ws subscriber backpressured; dropping log lines")
+				}
+			}
+			return true
+		}
 		connector := pclog.NewConnector(
 			func(messages []string) {
 				for _, message := range messages {
@@ -63,13 +91,10 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 						Message:     message,
 						ProcessName: processName,
 					}
-					logChan <- msg
+					enqueue(msg)
 				}
 				if !follow {
-					chanCloseMtx.Lock()
-					defer chanCloseMtx.Unlock()
-					close(logChan)
-					isChannelClosed = true
+					closeLogChan()
 				}
 			},
 			func(message string) (n int, err error) {
@@ -77,23 +102,13 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 					Message:     message,
 					ProcessName: processName,
 				}
-				chanCloseMtx.Lock()
-				defer chanCloseMtx.Unlock()
-				if isChannelClosed {
+				if !enqueue(msg) {
 					return 0, nil
-				}
-				// Non-blocking send: if the subscriber's WriteJSON is stuck
-				// (e.g. TCP send buffer full because the client stopped
-				// reading), dropping the line here is far better than
-				// blocking the producer and deadlocking the buffer.
-				select {
-				case logChan <- msg:
-				default:
 				}
 				return len(message), nil
 			},
 			endOffset)
-		go api.handleLog(ws, processName, connector, logChan, done)
+		go api.handleLog(ws, processName, connector, logChan, done, wsWriteMtx, dropped, closeLogChan)
 
 		err = api.project.GetLogsAndSubscribe(processName, connector)
 		if err != nil {
@@ -104,7 +119,22 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 
 }
 
-func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclog.Connector, logChan chan LogMessage, done chan struct{}) {
+func (api *PcApi) handleLog(
+	ws *websocket.Conn,
+	procName string,
+	connector *pclog.Connector,
+	logChan chan LogMessage,
+	done chan struct{},
+	wsWriteMtx *sync.Mutex,
+	dropped *atomic.Uint64,
+	closeLogChan func(),
+) {
+	defer func() {
+		if count := dropped.Load(); count > 0 {
+			log.Warn().Str("process", procName).Uint64("dropped", count).
+				Msg("ws subscriber disconnected after dropped lines")
+		}
+	}()
 	defer func(project app.IProject, name string, observer pclog.LogObserver) {
 		err := project.UnSubscribeLogger(name, observer)
 		if err != nil {
@@ -115,11 +145,15 @@ func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclo
 	for {
 		select {
 		case msg, open := <-logChan:
-			// handleLog is the sole writer on this ws.Conn; no global
-			// mutex needed. Setting a write deadline guards against a
-			// half-dead peer whose TCP send buffer never drains.
+			if !open {
+				return
+			}
+			// Serialize writes per ws.Conn. Multiple process streams share the
+			// same connection when the request contains comma-separated names.
+			wsWriteMtx.Lock()
 			_ = ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			err := ws.WriteJSON(&msg)
+			wsWriteMtx.Unlock()
 			if err != nil {
 				if errors.Is(err, net.ErrClosed) {
 					return
@@ -127,12 +161,9 @@ func (api *PcApi) handleLog(ws *websocket.Conn, procName string, connector *pclo
 				log.Err(err).Msg("Failed to write to socket")
 				return
 			}
-			if !open {
-				return
-			}
 		case <-done:
 			log.Warn().Msg("Socket closed remotely")
-			close(logChan)
+			closeLogChan()
 			return
 		}
 
