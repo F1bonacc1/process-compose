@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 	"strconv"
-	"sync"
 
 	"github.com/f1bonacc1/process-compose/src/types"
 
@@ -28,7 +27,6 @@ import (
 
 type PcApi struct {
 	project app.IProject
-	wsMtx   sync.Mutex
 }
 
 func NewPcApi(project app.IProject) *PcApi {
