@@ -288,6 +288,40 @@ func Test_cloneReplicas(t *testing.T) {
 	}
 }
 
+func Test_cloneReplicas_DependsOn(t *testing.T) {
+	p := &types.Project{
+		Processes: types.Processes{
+			"p0": {
+				Name:      "p0",
+				Replicas:  2,
+				DependsOn: types.DependsOnConfig{"p1": {Condition: types.ProcessConditionStarted}},
+			},
+			"p1": {
+				Name: "p1",
+			},
+			"p2": {
+				Name:      "p2",
+				DependsOn: types.DependsOnConfig{"p1": {Condition: types.ProcessConditionStarted}, "p0-1": {Condition: types.ProcessConditionHealthy}},
+			},
+		},
+	}
+	assignDefaultProcessValues(p)
+	cloneReplicas(p)
+
+	for _, replicaName := range []string{"p0-0", "p0-1"} {
+		if _, ok := p.Processes[replicaName].DependsOn["p1"]; !ok {
+			t.Errorf("%s should depend on p1", replicaName)
+		}
+	}
+
+	if _, ok := p.Processes["p2"].DependsOn["p1"]; !ok {
+		t.Error("p2 should depend on p1")
+	}
+	if p.Processes["p2"].DependsOn["p0-1"].Condition != types.ProcessConditionHealthy {
+		t.Errorf("p2's dependency on p0-1 should be Healthy, got %v", p.Processes["p2"].DependsOn["p0-1"].Condition)
+	}
+}
+
 func Test_renderTemplates(t *testing.T) {
 	procNoWorkingDir := "noWorkingDir"
 

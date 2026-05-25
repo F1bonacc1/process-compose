@@ -98,6 +98,7 @@ func copyWorkingDirToProbes(p *types.Project) {
 }
 
 func cloneReplicas(p *types.Project) {
+	groupReplicas := make(map[string][]string)
 	procsToAdd := make([]types.ProcessConfig, 0)
 	procsToDel := make([]string, 0)
 	for name, proc := range p.Processes {
@@ -109,6 +110,7 @@ func cloneReplicas(p *types.Project) {
 			newProc.ReplicaNum = replica
 			repName := newProc.CalculateReplicaName()
 			newProc.ReplicaName = repName
+			groupReplicas[name] = append(groupReplicas[name], repName)
 			if proc.Replicas == 1 {
 				// Even if replicas == 1, we use newProc to ensure
 				// it has its own memory separate from any other references.
@@ -124,6 +126,28 @@ func cloneReplicas(p *types.Project) {
 	for _, proc := range procsToAdd {
 		p.Processes[proc.ReplicaName] = proc
 	}
+
+	// dependency rewrite when replicas are present
+	for name, proc := range p.Processes {
+		if len(proc.DependsOn) == 0 {
+			continue
+		}
+		newDependsOn := make(types.DependsOnConfig)
+		for depName, depConf := range proc.DependsOn {
+			if replicas, ok := groupReplicas[depName]; ok && len(replicas) > 1 {
+				for _, replicaName := range replicas {
+					// if the user explicitly addressed this replica, dont overwrite it
+					if _, exists := proc.DependsOn[replicaName]; !exists {
+						newDependsOn[replicaName] = depConf
+					}
+				}
+			} else {
+				newDependsOn[depName] = depConf
+			}
+		}
+		proc.DependsOn = newDependsOn
+		p.Processes[name] = proc
+	}
 }
 
 func cloneProcess(proc *types.ProcessConfig) *types.ProcessConfig {
@@ -131,9 +155,21 @@ func cloneProcess(proc *types.ProcessConfig) *types.ProcessConfig {
 	newProc := *proc
 
 	// 2. DEEP COPY the Vars Map
-	maps.Copy(newProc.Vars, proc.Vars)
+	newProc.Vars = maps.Clone(proc.Vars)
 
-	// 3. DEEP COPY the Environment Slices
+	// 3. DEEP COPY the DependsOn Map
+	if proc.DependsOn != nil {
+		newProc.DependsOn = make(types.DependsOnConfig)
+		for k, v := range proc.DependsOn {
+			newDep := v
+			if v.Extensions != nil {
+				newDep.Extensions = maps.Clone(v.Extensions)
+			}
+			newProc.DependsOn[k] = newDep
+		}
+	}
+
+	// 4. DEEP COPY the Environment Slices
 	newProc.Environment = slices.Clone(proc.Environment)
 	newProc.Args = slices.Clone(proc.Args)
 	newProc.Entrypoint = slices.Clone(proc.Entrypoint)
