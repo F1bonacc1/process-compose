@@ -35,6 +35,7 @@ const (
 	EnvVarNamePort             = "PC_PORT_NUM"
 	EnvVarNameTui              = "PC_DISABLE_TUI"
 	EnvVarNameConfig           = "PC_CONFIG_FILES"
+	EnvVarNameNamespace        = "PC_NAMESPACES"
 	EnvVarNameShortcuts        = "PC_SHORTCUTS_FILES"
 	EnvVarNameRecipes          = "PC_RECIPE_FILES"
 	EnvVarNameNoServer         = "PC_NO_SERVER"

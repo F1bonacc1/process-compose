@@ -136,7 +136,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(pcFlags.Address, "address", "", *pcFlags.Address, "address to listen on (env: "+config.EnvVarNameAddress+")")
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
 	rootCmd.Flags().StringArrayVarP(&opts.EnvFileNames, "env", "e", []string{".env"}, "path to env files to load")
-	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
+	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", config.GetNamespaceDefault(), "run only specified namespaces (default all, env: "+config.EnvVarNameNamespace+")")
 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.IsReadOnlyMode, "read-only", *pcFlags.IsReadOnlyMode, "enable read-only mode (env: "+config.EnvVarReadOnlyMode+")")
 	rootCmd.Flags().BoolVar(pcFlags.DisableDotEnv, "disable-dotenv", *pcFlags.DisableDotEnv, "disable .env file loading (env: "+config.EnvVarDisableDotEnv+"=1)")

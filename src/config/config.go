@@ -206,6 +206,14 @@ func GetConfigDefault() []string {
 	return []string{}
 }
 
+func GetNamespaceDefault() []string {
+	val, found := os.LookupEnv(EnvVarNameNamespace)
+	if found {
+		return strings.Split(val, ",")
+	}
+	return []string{}
+}
+
 func CreateProcCompHome() string {
 	if env := os.Getenv(pcConfigEnv); env != "" {
 		return env

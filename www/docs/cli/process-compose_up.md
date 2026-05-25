@@ -26,7 +26,7 @@ process-compose up [PROCESS...] [flags]
   -d, --hide-disabled            hide disabled processes (env: PC_HIDE_DISABLED_PROC)
       --keep-project             keep the project running even after all processes exit
       --logs-truncate            truncate process logs buffer on startup
-  -n, --namespace stringArray    run only specified namespaces (default all)
+  -n, --namespace stringArray    run only specified namespaces (default all, env: PC_NAMESPACES)
       --no-deps                  don't start dependent processes
       --recursive-metrics        collect metrics recursively (env: PC_RECURSIVE_METRICS)
   -r, --ref-rate duration        TUI refresh interval in seconds or as a Go duration string (e.g. 1s) (default 1)
@@ -56,4 +56,3 @@ process-compose up [PROCESS...] [flags]
 ### SEE ALSO
 
 * [process-compose](process-compose.md)	 - Processes scheduler and orchestrator
-

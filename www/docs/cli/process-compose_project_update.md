@@ -11,7 +11,7 @@ process-compose project update [flags]
 ```
   -f, --config stringArray      path to config files to load (env: PC_CONFIG_FILES)
   -h, --help                    help for update
-  -n, --namespace stringArray   run only specified namespaces (default all)
+  -n, --namespace stringArray   run only specified namespaces (default all, env: PC_NAMESPACES)
   -v, --verbose                 verbose output
 ```
 
@@ -33,4 +33,3 @@ process-compose project update [flags]
 ### SEE ALSO
 
 * [process-compose project](process-compose_project.md)	 - Execute operations on a running Process Compose project
-
