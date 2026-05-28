@@ -29,6 +29,7 @@ pub mod env {
     pub const PORT_NUM: &str = "PC_PORT_NUM";
     pub const DISABLE_TUI: &str = "PC_DISABLE_TUI";
     pub const CONFIG_FILES: &str = "PC_CONFIG_FILES";
+    pub const NAMESPACES: &str = "PC_NAMESPACES";
     pub const SHORTCUTS_FILES: &str = "PC_SHORTCUTS_FILES";
     pub const NO_SERVER: &str = "PC_NO_SERVER";
     pub const SOCKET_PATH: &str = "PC_SOCKET_PATH";

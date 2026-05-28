@@ -59,8 +59,8 @@ pub struct ProcessComposeFlagsUp {
     #[builder(default = false)]
     pub logs_truncate: bool,
 
-    /// Run only specified namespaces (default: all)
-    #[arg(long = "namespace")]
+    /// Run only specified namespaces (default: all, env: PC_NAMESPACES)
+    #[arg(long = "namespace", env = env::NAMESPACES)]
     #[builder(default = Vec::new())]
     pub namespaces: Vec<String>,
 
