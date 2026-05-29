@@ -85,7 +85,8 @@ processes:
     command: "/some/other/binary"
     depends_on:
       # set the defaults for the group
-      consumer: process_healthy
+      consumer:
+        condition: process_healthy
 
       # override a single instance
       consumer-0: process_started
