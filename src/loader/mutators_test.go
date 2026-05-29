@@ -360,7 +360,7 @@ func Test_cloneReplicas_DependsOn(t *testing.T) {
 		t.Errorf("t2 should depend on p0 and it should be Started, got %+v", condition)
 	}
 	if p.Processes["t2"].DependsOn["p1-0"].Condition != types.ProcessConditionHealthy {
-		condition := p.Processes["t2"].DependsOn["p0"].Condition
+		condition := p.Processes["t2"].DependsOn["p1-0"].Condition
 		t.Errorf("t2 should depend on p1-0 and it should be Healthy, got %+v", condition)
 	}
 
