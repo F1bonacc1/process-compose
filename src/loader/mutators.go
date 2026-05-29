@@ -158,7 +158,7 @@ func cloneProcess(proc *types.ProcessConfig) *types.ProcessConfig {
 	newProc.Vars = maps.Clone(proc.Vars)
 
 	// 3. DEEP COPY the DependsOn Map
-	proc.DependsOn = cloneDependencies(proc.DependsOn)
+	newProc.DependsOn = cloneDependencies(proc.DependsOn)
 
 	// 4. DEEP COPY the Environment Slices
 	newProc.Environment = slices.Clone(proc.Environment)
