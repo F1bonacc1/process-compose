@@ -138,11 +138,11 @@ func cloneReplicas(p *types.Project) {
 				for _, replicaName := range replicas {
 					// if the user explicitly addressed this replica, dont overwrite it
 					if _, exists := proc.DependsOn[replicaName]; !exists {
-						newDependsOn[replicaName] = depConf
+						newDependsOn[replicaName] = cloneDependency(depConf)
 					}
 				}
 			} else {
-				newDependsOn[depName] = depConf
+				newDependsOn[depName] = cloneDependency(depConf)
 			}
 		}
 		proc.DependsOn = newDependsOn
@@ -158,16 +158,7 @@ func cloneProcess(proc *types.ProcessConfig) *types.ProcessConfig {
 	newProc.Vars = maps.Clone(proc.Vars)
 
 	// 3. DEEP COPY the DependsOn Map
-	if proc.DependsOn != nil {
-		newProc.DependsOn = make(types.DependsOnConfig)
-		for k, v := range proc.DependsOn {
-			newDep := v
-			if v.Extensions != nil {
-				newDep.Extensions = maps.Clone(v.Extensions)
-			}
-			newProc.DependsOn[k] = newDep
-		}
-	}
+	proc.DependsOn = cloneDependencies(proc.DependsOn)
 
 	// 4. DEEP COPY the Environment Slices
 	newProc.Environment = slices.Clone(proc.Environment)
@@ -175,6 +166,25 @@ func cloneProcess(proc *types.ProcessConfig) *types.ProcessConfig {
 	newProc.Entrypoint = slices.Clone(proc.Entrypoint)
 
 	return &newProc
+}
+
+func cloneDependencies(deps types.DependsOnConfig) types.DependsOnConfig {
+	if deps == nil {
+		return nil
+	}
+	newDeps := make(types.DependsOnConfig, len(deps))
+	for k, v := range deps {
+		newDeps[k] = cloneDependency(v)
+	}
+	return newDeps
+}
+
+func cloneDependency(dep types.ProcessDependency) types.ProcessDependency {
+	newDep := dep
+	if dep.Extensions != nil {
+		newDep.Extensions = maps.Clone(dep.Extensions)
+	}
+	return newDep
 }
 
 func assignExecutableAndArgs(p *types.Project) {
