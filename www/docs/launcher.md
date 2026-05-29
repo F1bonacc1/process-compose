@@ -42,6 +42,52 @@ processes:
     replicas: 2
 ```
 
+When replicas are present (`processes.process_name.replicas > 1`), other processes can depended on the group (`process-name`) or some of its children (`process-name-N` where `N` is a value between 0 and the number of `replicas` minus one).
+
+```yaml
+processes:
+  consumer:
+    command: "/some/binary"
+    replicas: 2
+
+  # Older versions (<= v1.110.0) require the dependencies to be manually expanded
+  producer:
+    command: "/some/other/binary"
+    depends_on:
+      consumer-0: process_healthy
+      consumer-1: process_healthy
+```
+
+```yaml
+processes:
+  consumer:
+    command: "/some/binary"
+    replicas: 2
+
+  # Newer versions (> v1.110.0) allow the group name to be used directly
+  producer:
+    command: "/some/other/binary"
+    depends_on:
+      consumer: process_healthy
+```
+
+```yaml
+processes:
+  consumer:
+    command: "/some/binary"
+    replicas: 2
+
+  # Also we can set conditions for each instance in the group independently
+  producer:
+    command: "/some/other/binary"
+    depends_on:
+      # set the defaults for the group
+      consumer: process_healthy
+
+      # override a single instance
+      consumer-0: process_started
+```
+
 To scale a process on the fly CLI:
 
 ```shell
@@ -101,7 +147,7 @@ processes:
      echo 'Preparing...'
       sleep 1
       echo 'I am ready to accept connections now'
-    ready_log_line: "ready to accept connections" # equal to *.ready to accept connections.*\n regex    
+    ready_log_line: "ready to accept connections" # equal to *.ready to accept connections.*\n regex
 ```
 
 > :bulb: `ready_log_line` and readiness probe are incompatible and can't be used at the same time.
