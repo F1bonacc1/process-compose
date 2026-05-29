@@ -292,33 +292,89 @@ func Test_cloneReplicas_DependsOn(t *testing.T) {
 	p := &types.Project{
 		Processes: types.Processes{
 			"p0": {
-				Name:      "p0",
-				Replicas:  2,
-				DependsOn: types.DependsOnConfig{"p1": {Condition: types.ProcessConditionStarted}},
+				Name: "p0",
 			},
 			"p1": {
-				Name: "p1",
+				Name:     "p1",
+				Replicas: 2,
 			},
-			"p2": {
-				Name:      "p2",
-				DependsOn: types.DependsOnConfig{"p1": {Condition: types.ProcessConditionStarted}, "p0-1": {Condition: types.ProcessConditionHealthy}},
+			"t0": {
+				Name: "t0",
+				DependsOn: types.DependsOnConfig{
+					"p0": {Condition: types.ProcessConditionStarted},
+				},
+			},
+			"t1": {
+				Name: "t1",
+				DependsOn: types.DependsOnConfig{
+					"p1": {Condition: types.ProcessConditionHealthy},
+				},
+			},
+			"t2": {
+				Name: "t2",
+				DependsOn: types.DependsOnConfig{
+					"p0":   {Condition: types.ProcessConditionStarted},
+					"p1-0": {Condition: types.ProcessConditionHealthy},
+				},
+			},
+			"t3": {
+				Name: "t3",
+				DependsOn: types.DependsOnConfig{
+					"p1":   {Condition: types.ProcessConditionStarted},
+					"p1-1": {Condition: types.ProcessConditionHealthy},
+				},
 			},
 		},
 	}
 	assignDefaultProcessValues(p)
 	cloneReplicas(p)
 
-	for _, replicaName := range []string{"p0-0", "p0-1"} {
-		if _, ok := p.Processes[replicaName].DependsOn["p1"]; !ok {
-			t.Errorf("%s should depend on p1", replicaName)
-		}
+	// depends on p0, no expansion needed
+	if len(p.Processes["t0"].DependsOn) != 1 {
+		t.Errorf("t0 should depend on a single process")
+	}
+	if _, ok := p.Processes["t0"].DependsOn["p0"]; !ok {
+		t.Errorf("t0 should depend on p0")
 	}
 
-	if _, ok := p.Processes["p2"].DependsOn["p1"]; !ok {
-		t.Error("p2 should depend on p1")
+	// depends on p1, expansion is needed
+	if len(p.Processes["t1"].DependsOn) != 2 {
+		t.Errorf("t1 should depend on exactly 2 processes")
 	}
-	if p.Processes["p2"].DependsOn["p0-1"].Condition != types.ProcessConditionHealthy {
-		t.Errorf("p2's dependency on p0-1 should be Healthy, got %v", p.Processes["p2"].DependsOn["p0-1"].Condition)
+	if _, ok := p.Processes["t1"].DependsOn["p1-0"]; !ok {
+		t.Errorf("t1 should depend on p1-0")
+	}
+	if _, ok := p.Processes["t1"].DependsOn["p1-1"]; !ok {
+		t.Errorf("t1 should depend on p1-1")
+	}
+
+	// depends on p0 and p1-0, explicitly
+	if len(p.Processes["t2"].DependsOn) != 2 {
+		t.Errorf("t2 should depend on exactly 2 processes")
+	}
+	if _, ok := p.Processes["t2"].DependsOn["p0"]; !ok {
+		t.Errorf("t2 should depend on p0")
+	}
+	if p.Processes["t2"].DependsOn["p0"].Condition != types.ProcessConditionStarted {
+		condition := p.Processes["t2"].DependsOn["p0"].Condition
+		t.Errorf("t2 should depend on p0 and it should be Started, got %+v", condition)
+	}
+	if p.Processes["t2"].DependsOn["p1-0"].Condition != types.ProcessConditionHealthy {
+		condition := p.Processes["t2"].DependsOn["p0"].Condition
+		t.Errorf("t2 should depend on p1-0 and it should be Healthy, got %+v", condition)
+	}
+
+	// depends on p1, with an override for p1-1
+	if len(p.Processes["t3"].DependsOn) != 2 {
+		t.Errorf("t3 should depend on exactly 2 processes")
+	}
+	if p.Processes["t3"].DependsOn["p1-0"].Condition != types.ProcessConditionStarted {
+		condition := p.Processes["t3"].DependsOn["p1-0"].Condition
+		t.Errorf("t3 should depend on p1-0 and it should be Started, got %v", condition)
+	}
+	if p.Processes["t3"].DependsOn["p1-1"].Condition != types.ProcessConditionHealthy {
+		condition := p.Processes["t3"].DependsOn["p1-1"].Condition
+		t.Errorf("t3's dependency on p1-1 should be Healthy, got %v", condition)
 	}
 }
 
