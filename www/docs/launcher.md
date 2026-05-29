@@ -89,7 +89,8 @@ processes:
         condition: process_healthy
 
       # override a single instance
-      consumer-0: process_started
+      consumer-0:
+        condition: process_started
 ```
 
 To scale a process on the fly CLI:
