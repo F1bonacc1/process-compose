@@ -54,8 +54,10 @@ processes:
   producer:
     command: "/some/other/binary"
     depends_on:
-      consumer-0: process_healthy
-      consumer-1: process_healthy
+      consumer-0:
+        condition: process_healthy
+      consumer-1:
+        condition: process_healthy
 ```
 
 ```yaml
