@@ -42,7 +42,7 @@ processes:
     replicas: 2
 ```
 
-When replicas are present (`processes.process_name.replicas > 1`), other processes can depended on the group (`process-name`) or some of its children (`process-name-N` where `N` is a value between 0 and the number of `replicas` minus one).
+When replicas are present (`processes.process_name.replicas > 1`), other processes can depend on the group (`process-name`) or specific replicas (`process-name-N` where `N` is a value between 0 and the number of `replicas` minus one).
 
 ```yaml
 processes:
