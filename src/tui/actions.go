@@ -20,6 +20,7 @@ const (
 	ActionFollowLog        = ActionName("log_follow")
 	ActionWrapLog          = ActionName("log_wrap")
 	ActionLogSelection     = ActionName("log_select")
+	ActionLogCopy          = ActionName("log_copy")
 	ActionProcessStart     = ActionName("process_start")
 	ActionProcessScale     = ActionName("process_scale")
 	ActionProcessInfo      = ActionName("process_info")
@@ -56,6 +57,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionFollowLog:        tcell.KeyF5,
 	ActionWrapLog:          tcell.KeyF6,
 	ActionLogSelection:     tcell.KeyCtrlS,
+	ActionLogCopy:          tcell.KeyCR,
 	ActionProcessScale:     tcell.KeyF2,
 	ActionProcessInfo:      tcell.KeyF3,
 	ActionProcessSignal:    tcell.KeyCtrlX,
@@ -344,9 +346,12 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionLogSelection: {
 				ToggleDescription: map[bool]string{
-					true:  "Select On",
-					false: "Select Off",
+					true:  "Enable Select",
+					false: "Disable Select",
 				},
+			},
+			ActionLogCopy: {
+				Description: "Copy Selection",
 			},
 			ActionLogPrettyPrint: {
 				ToggleDescription: map[bool]string{

@@ -47,6 +47,30 @@ processes:
 
 > :bulb: Too long log lines (above 2^16 bytes long) can cause the log collector to hang.
 
+## Copying Logs to the Clipboard
+
+Toggle **selection mode** with `Ctrl+S` (`Enable Select` in the footer). The log pane then becomes selectable and there are two ways to copy:
+
+- **Mouse:** drag to highlight — releasing the mouse copies the selection automatically (copy-on-select), no key press required.
+- **Keyboard:** highlight with `Shift`+arrows and press `Enter` to copy.
+
+Press `Esc` to leave selection mode.
+
+Process Compose copies through your system clipboard when available and falls back to the [OSC 52](https://www.reddit.com/r/vim/comments/k1ydpn/a_guide_on_how_to_copy_text_from_anywhere/) terminal escape sequence otherwise (your terminal must allow OSC 52). A status message confirms which method was used.
+
+The keyboard copy key is configurable via the `log_copy` shortcut — for example, rebind it to `y` for a Vim-style yank:
+
+```yaml
+# $XDG_CONFIG_HOME/process-compose/shortcuts.yaml
+shortcuts:
+  log_select:
+    shortcut: Ctrl-S # toggle selection mode
+  log_copy:
+    shortcut: Enter  # copy the current selection (default)
+```
+
+> :bulb: `Ctrl+C` cannot be used to copy because it is reserved for quitting Process Compose (and for forwarding `SIGINT` to a focused interactive process).
+
 ## Command Palette
 
 Press `:` to open the command palette — a searchable list of available actions. Type to filter, use arrow keys to navigate, and press `Enter` to select.
