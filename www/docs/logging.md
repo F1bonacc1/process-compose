@@ -103,3 +103,21 @@ processes:
 ```
 
 This will allow you to spot any issues with the processes execution, without leaving the `process-compose` TUI.
+
+### Client commands and `PC_LOG_FILE`
+
+`PC_LOG_FILE` (or `--log-file`) sets the log path for whatever `process-compose`
+command you're running, server or client. If you export it globally in your
+shell, a client command like `list` or `attach` will open and truncate the
+same file your detached server is writing to, wiping out whatever was logged
+so far.
+
+Keep the two paths separate if you're doing both in the same shell:
+
+```shell
+process-compose up --detached --log-file .pc/logs/process-compose.log
+
+PC_LOG_FILE=.pc/logs/process-compose-client.log process-compose list
+```
+
+Background: [#318](https://github.com/F1bonacc1/process-compose/issues/318)
