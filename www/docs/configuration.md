@@ -491,6 +491,15 @@ process-compose -n ns1 -n ns3
 # will start only ns1 and ns3. ns2 namespace won't run and won't be visible in the TUI
 ```
 
+When scoping to a subset of namespaces, any `depends_on` entry that points to a process outside the selected namespaces is automatically pruned. This lets you start just part of the stack (for example, when its dependencies are already running elsewhere) without the selected processes hanging on dependencies that will never start. Dependencies *within* the selected namespaces are still honored, so intra-namespace startup ordering is preserved.
+
+If you would rather fail fast than silently drop a cross-namespace dependency, add `--strict-namespace` (env: `PC_STRICT_NAMESPACE`). Instead of pruning, `process-compose` will exit with an error describing every dependency that cannot be satisfied by the selected namespaces:
+
+```shell
+process-compose -n ns1 --strict-namespace
+# errors if any process in ns1 depends on a process outside ns1
+```
+
 ### Namespace Operations
 
 You can perform bulk operations on namespaces using the CLI or TUI.

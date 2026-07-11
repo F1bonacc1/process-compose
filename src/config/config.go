@@ -215,6 +215,11 @@ func GetNamespaceDefault() []string {
 	return []string{}
 }
 
+func GetStrictNamespaceDefault() bool {
+	val, found := os.LookupEnv(EnvVarStrictNamespace)
+	return found && val != "" && strings.ToLower(val) != "false"
+}
+
 func CreateProcCompHome() string {
 	if env := os.Getenv(pcConfigEnv); env != "" {
 		return env

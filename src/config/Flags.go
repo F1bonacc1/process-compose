@@ -36,6 +36,7 @@ const (
 	EnvVarNameTui              = "PC_DISABLE_TUI"
 	EnvVarNameConfig           = "PC_CONFIG_FILES"
 	EnvVarNameNamespace        = "PC_NAMESPACES"
+	EnvVarStrictNamespace      = "PC_STRICT_NAMESPACE"
 	EnvVarNameShortcuts        = "PC_SHORTCUTS_FILES"
 	EnvVarNameRecipes          = "PC_RECIPE_FILES"
 	EnvVarNameNoServer         = "PC_NO_SERVER"

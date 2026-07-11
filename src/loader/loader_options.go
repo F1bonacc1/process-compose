@@ -18,6 +18,7 @@ type LoaderOptions struct {
 	isTuiDisabled     bool
 	DryRun            bool
 	isOrderedShutdown bool
+	StrictNamespace   bool
 }
 
 func (o *LoaderOptions) AddAdmitter(adm ...admitter.Admitter) {

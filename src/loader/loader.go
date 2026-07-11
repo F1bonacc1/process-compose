@@ -103,7 +103,9 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		validateMCPConfig,
 		validateProject,
 	)
-	admitProcesses(opts, mergedProject)
+	if _, admitErr := admitProcesses(opts, mergedProject); admitErr != nil {
+		return mergedProject, admitErr
+	}
 	return mergedProject, err
 }
 
@@ -132,9 +134,9 @@ func loadExtendProject(p *types.Project, opts *LoaderOptions, file string, index
 	return nil
 }
 
-func admitProcesses(opts *LoaderOptions, p *types.Project) *types.Project {
+func admitProcesses(opts *LoaderOptions, p *types.Project) (*types.Project, error) {
 	if opts.admitters == nil {
-		return p
+		return p, nil
 	}
 	for _, process := range p.Processes {
 		for _, adm := range opts.admitters {
@@ -144,7 +146,40 @@ func admitProcesses(opts *LoaderOptions, p *types.Project) *types.Project {
 			}
 		}
 	}
-	return p
+	if err := pruneDanglingDependencies(opts, p); err != nil {
+		return p, err
+	}
+	return p, nil
+}
+
+// pruneDanglingDependencies handles depends_on entries that reference processes
+// which are no longer part of the project (e.g. because they were pruned by an
+// admission policy such as namespace scoping). Without this, a retained process
+// would wait forever for a dependency that will never start.
+//
+// In strict mode it instead returns an error describing every unsatisfiable
+// dependency, so that scoping the project (e.g. to a namespace) fails loudly
+// rather than silently dropping cross-scope dependencies.
+func pruneDanglingDependencies(opts *LoaderOptions, p *types.Project) error {
+	var unsatisfied []string
+	for name, process := range p.Processes {
+		for depName := range process.DependsOn {
+			if _, ok := p.Processes[depName]; ok {
+				continue
+			}
+			if opts.StrictNamespace {
+				unsatisfied = append(unsatisfied, fmt.Sprintf("'%s' -> '%s'", name, depName))
+				continue
+			}
+			log.Info().Msgf("Dependency '%s' of process '%s' was pruned because it is not part of the project", depName, name)
+			delete(process.DependsOn, depName)
+		}
+	}
+	if len(unsatisfied) > 0 {
+		slices.Sort(unsatisfied)
+		return fmt.Errorf("unsatisfiable dependencies after scoping the project: %s", strings.Join(unsatisfied, ", "))
+	}
+	return nil
 }
 
 func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project, error) {

@@ -34,6 +34,7 @@ process-compose [flags]
       --shortcuts stringArray    paths to shortcut config files to load (env: PC_SHORTCUTS_FILES) (default [/home/<user>/.config/process-compose/shortcuts.yml])
       --slow-ref-rate duration   Slow(er) refresh interval for resources (CPU, RAM) in seconds or as a Go duration string (e.g. 1s). The value should be higher than --ref-rate (default 1)
   -S, --sort string              sort column name. legal values (case insensitive): [AGE, CPU, EXIT, HEALTH, MEM, NAME, NAMESPACE, PID, RESTARTS, STATUS] (default "NAME")
+      --strict-namespace         fail if a scoped process depends on a process outside the selected namespaces instead of pruning it (env: PC_STRICT_NAMESPACE)
       --theme string             select process compose theme (default "Default")
       --token-file string        path to a file containing the API token (env: PC_API_TOKEN_PATH)
   -t, --tui                      enable TUI (disable with -t=false) (env: PC_DISABLE_TUI) (default true)
