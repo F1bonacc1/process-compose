@@ -7,6 +7,7 @@ import (
 
 type Commander interface {
 	Stop(sig int, _parentOnly bool) error
+	IsAlive(parentOnly bool) bool
 	SetCmdArgs()
 	Start() error
 	Run() error

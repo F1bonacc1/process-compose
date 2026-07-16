@@ -477,21 +477,35 @@ func (p *Process) stopProcess(withNoRestart bool) error {
 }
 
 func (p *Process) forceKillOnTimeout() error {
-	p.mtxStopFn.Lock()
-	p.waitForStoppedCtx, p.waitForStoppedFn = context.WithTimeout(context.Background(), time.Duration(p.procConf.ShutDownParams.ShutDownTimeout)*time.Second)
-	p.mtxStopFn.Unlock()
-	<-p.waitForStoppedCtx.Done()
-	err := p.waitForStoppedCtx.Err()
-	switch {
-	case errors.Is(err, context.Canceled):
+	timeout := time.Duration(p.procConf.ShutDownParams.ShutDownTimeout) * time.Second
+	if p.waitForCommandExit(timeout, p.procConf.ShutDownParams.ParentOnly) {
 		return nil
-	case errors.Is(err, context.DeadlineExceeded):
-		log.Debug().Msgf("process failed to shut down within %d seconds, sending %d", p.procConf.ShutDownParams.ShutDownTimeout, syscall.SIGKILL)
-		return p.command.Stop(int(syscall.SIGKILL), false)
-	default:
-		log.Error().Err(err).Msgf("terminating %s with timeout %d failed", p.getName(), p.procConf.ShutDownParams.ShutDownTimeout)
+	}
+
+	log.Debug().Msgf("process failed to shut down within %d seconds, sending %d", p.procConf.ShutDownParams.ShutDownTimeout, syscall.SIGKILL)
+	if err := p.command.Stop(int(syscall.SIGKILL), false); err != nil {
 		return err
 	}
+	if p.waitForCommandExit(timeout, false) {
+		return nil
+	}
+	return fmt.Errorf("process group for %s is still running after SIGKILL", p.getName())
+}
+
+func (p *Process) waitForCommandExit(timeout time.Duration, parentOnly bool) bool {
+	deadline := time.NewTimer(timeout)
+	defer deadline.Stop()
+	poll := time.NewTicker(20 * time.Millisecond)
+	defer poll.Stop()
+
+	for p.command.IsAlive(parentOnly) {
+		select {
+		case <-deadline.C:
+			return !p.command.IsAlive(parentOnly)
+		case <-poll.C:
+		}
+	}
+	return true
 }
 
 func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
