@@ -25,7 +25,7 @@ processes:
       period_seconds: 2
       timeout_seconds: 5
       success_threshold: 1
-      failure_threshold: 3
+      fail_after_seconds: 4
 ```
 
 ## Readiness Probe
@@ -46,10 +46,12 @@ processes:
         path: "/"
         port: 80
       initial_delay_seconds: 5
+      startup_period_seconds: 1
       period_seconds: 10
       timeout_seconds: 5
       success_threshold: 1
-      failure_threshold: 3
+      startup_fail_after_seconds: 60
+      fail_after_seconds: 20
 ```
 
 Each probe type (`liveness_probe` or `readiness_probe`) can be configured to use one of the 2 mutually exclusive modes:
@@ -68,10 +70,16 @@ Each probe type (`liveness_probe` or `readiness_probe`) can be configured to use
 Probes have a number of fields that you can use to control the behavior of liveness and readiness checks more precisely:
 
 - `initial_delay_seconds`: Number of seconds after the container has started before liveness or readiness probes are initiated. Defaults to 0 seconds. The minimum value is 0.
-- `period_seconds`: How often (in seconds) to perform the probe. Defaults to 10 seconds. The minimum value is 1.
+- `period_seconds`: How often (in seconds) to perform the probe while the service is healthy, after the first success. Defaults to 10 seconds. The minimum value is 1.
+- `startup_period_seconds`: How often (in seconds) to perform the probe until it first succeeds. This allows faster detection of readiness for quick-starting processes while keeping a longer steady-state `period_seconds` afterwards. Defaults to 1 second. The minimum value is 1.
+- `unhealthy_period_seconds`: How often (in seconds) to perform the probe while the process is unhealthy, after it had previously become healthy. This allows faster detection of recovery. Defaults to `period_seconds`. The minimum value is 1.
 - `timeout_seconds`: Number of seconds after which the probe times out. Defaults to 1 second. The minimum value is 1.
 - `success_threshold`: Minimum consecutive successes for the probe to be considered successful after failing. Defaults to 1. Must be 1 for liveness and startup Probes. The minimum value is 1. **Note**: this value is not respected and was added as a placeholder for future implementation.
-- `failure_threshold`: When a probe fails, Process Compose will try `failure_threshold` times before giving up. Giving up in case of readiness probe means restarting the process. In case of liveness probe and `is_daemon` set to `true` the daemon will be considered stopped. Process Compose will follow the availability configuration to decide if restart is needed.  Defaults to 3. The minimum value is 1.
+- `fail_after_seconds`: Wall-clock budget for a consecutive-failure streak after the probe has first succeeded. The budget starts at the first failed check and resets on any success. Defaults to `2 × period_seconds` (20 seconds with the default 10-second period). If the legacy `failure_threshold` is explicitly set, it defaults to `(failure_threshold - 1) × period_seconds` instead. An explicit value overrides both. Minimum 1; 0 or omitted derives the default.
+- `startup_fail_after_seconds`: Wall-clock budget while the probe has never succeeded. Defaults to `fail_after_seconds`. Minimum 1; 0 or omitted derives the default.
+- `failure_threshold`: Legacy field, still supported but superseded by `fail_after_seconds` ([#573](https://github.com/F1bonacc1/process-compose/issues/573)). When it is explicitly set and `fail_after_seconds` is unset, process-compose derives `fail_after_seconds` as `(failure_threshold - 1) × period_seconds`, using the effective `period_seconds` (which defaults to 10). A `failure_threshold` of 1 derives 0 for `fail_after_seconds`, making the first steady-state failure fatal; do not replace it with `fail_after_seconds: 0`, because 0 is treated as unset and derives the default budget instead.
+
+The `*_period_seconds` fields are polling intervals; the `*_fail_after_seconds` fields are deadlines. The legacy count-to-budget translation preserves the old deadline only when each check completes within `period_seconds`. If a check can run longer (for example `timeout_seconds > period_seconds`), the old count advanced once per completed check and could allow a longer deadline; the wall-clock budget is measured from the first failed check and can give up earlier.
 
 ## Auto Restart if not Healthy
 
