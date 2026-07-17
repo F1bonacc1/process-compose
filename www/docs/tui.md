@@ -10,6 +10,7 @@ TUI Allows you to:
 - Edit processes' configuration
 - Review process dependency graph (`Ctrl+Q`)
 - Command palette for quick actions (`:`)
+- Open the selected process in a web browser (`o`)
 
 TUI is the default run mode, but it's possible to disable it:
 
@@ -68,6 +69,15 @@ Available commands:
 **Delete Process** removes the process from the running project. It will refuse to delete a process that other processes depend on. The process is not removed from `process-compose.yaml`.
 
 Multi-step commands support `Esc` to go back to the previous step.
+
+## Open in Browser
+
+Press `o` to open the selected process in your default web browser. The URL is derived, in order:
+
+1. From the process's `readiness_probe.http_get` (`scheme://host:port/path`). An empty host defaults to `127.0.0.1` and an empty scheme defaults to `http`.
+2. Otherwise, from the first discovered TCP port of the process (`http://127.0.0.1:<port>/`).
+
+If neither is available, a non-fatal error is shown and nothing is opened.
 
 ## Shortcuts Configuration
 

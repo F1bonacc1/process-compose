@@ -48,6 +48,7 @@ const (
 	ActionDependencyGraph  = ActionName("dependency_graph")
 	ActionNamespaceOps     = ActionName("namespace_ops")
 	ActionCommandPalette   = ActionName("command_palette")
+	ActionProcOpenURL      = ActionName("open_url")
 )
 
 var defaultShortcuts = map[ActionName]tcell.Key{
@@ -84,6 +85,7 @@ var defaultShortcuts = map[ActionName]tcell.Key{
 	ActionLogPrettyPrint:   tcell.KeyRune,
 	ActionNamespaceOps:     tcell.KeyRune,
 	ActionCommandPalette:   tcell.KeyRune,
+	ActionProcOpenURL:      tcell.KeyRune,
 }
 
 var defaultShortcutsRunes = map[ActionName]rune{
@@ -92,6 +94,7 @@ var defaultShortcutsRunes = map[ActionName]rune{
 	ActionLogPrettyPrint: 'p',
 	ActionNamespaceOps:   'n',
 	ActionCommandPalette: ':',
+	ActionProcOpenURL:    'o',
 }
 
 var generalActionsOrder = []ActionName{
@@ -117,6 +120,7 @@ var procActionsOrder = []ActionName{
 	ActionProcFilter,
 	ActionProcessScale,
 	ActionProcessInfo,
+	ActionProcOpenURL,
 	ActionProcessSignal,
 	ActionProcessStart,
 	ActionProcessScreen,
@@ -443,6 +447,9 @@ func newShortCuts() *ShortCuts {
 			},
 			ActionCommandPalette: {
 				Description: "Command Palette",
+			},
+			ActionProcOpenURL: {
+				Description: "Open in Browser",
 			},
 		},
 	}
