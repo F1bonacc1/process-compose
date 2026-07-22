@@ -21,6 +21,7 @@ will start them and their dependencies only`,
 
 func init() {
 	rootCmd.AddCommand(upCmd)
+	upCmd.ValidArgsFunction = completeProcessNamesFromConfig(false)
 
 	nsAdmitter := &admitter.NamespaceAdmitter{}
 	opts.AddAdmitter(nsAdmitter)
