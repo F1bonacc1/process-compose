@@ -57,9 +57,14 @@ func completeProcessNamesFromConfig(single bool) func(*cobra.Command, []string, 
 // `process` subcommands (start/stop/restart), which act on a live project; this
 // also surfaces dynamically scaled replica names.
 func completeProcessNamesFromServer(single bool) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
-	return func(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	return func(cmd *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 		if single && len(args) != 0 {
 			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		// Normally done in PersistentPreRun so that --unix-socket implies -U; but
+		// during completion PreRun runs before flag parsing, so we must do it here.
+		if isUnixSocketMode(cmd) {
+			*pcFlags.IsUnixSocket = true
 		}
 		// Names only, no descriptions. TODO: consider adding process
 		// descriptions to the server's `/processes` response.
