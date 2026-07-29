@@ -36,6 +36,13 @@ var (
 		Use:   "process-compose",
 		Short: "Processes scheduler and orchestrator",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Client-mode invocations log to a separate file so they don't
+			// truncate the log of a running server. GetClientLogFilePath
+			// still honors PC_LOG_FILE, so only an explicit --log-file needs
+			// to be checked here.
+			if !cmd.Flags().Changed(flagLogFile) && (isClientCmd(cmd) || *pcFlags.IsDetachedWithTui) {
+				*pcFlags.LogFile = config.GetClientLogFilePath()
+			}
 			logFile = setupLogger()
 			log.Info().Msgf("Process Compose %s", config.Version)
 			if isUnixSocketMode(cmd) {
@@ -137,7 +144,7 @@ func init() {
 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
 	rootCmd.Flags().StringArrayVarP(&opts.EnvFileNames, "env", "e", []string{".env"}, "path to env files to load")
 	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", config.GetNamespaceDefault(), "run only specified namespaces (default all, env: "+config.EnvVarNameNamespace+")")
-	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
+	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, flagLogFile, "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.IsReadOnlyMode, "read-only", *pcFlags.IsReadOnlyMode, "enable read-only mode (env: "+config.EnvVarReadOnlyMode+")")
 	rootCmd.Flags().BoolVar(pcFlags.DisableDotEnv, "disable-dotenv", *pcFlags.DisableDotEnv, "disable .env file loading (env: "+config.EnvVarDisableDotEnv+"=1)")
 	rootCmd.Flags().BoolVar(pcFlags.IsTuiFullScreen, "tui-fs", *pcFlags.IsTuiFullScreen, "enable TUI full screen (env: "+config.EnvVarTuiFullScreen+"=1)")
@@ -282,6 +289,22 @@ func getClient() *client.PcClient {
 		return client.NewUdsClient(*pcFlags.UnixSocketPath, *pcFlags.LogLength)
 	}
 	return client.NewTcpClient(*pcFlags.Address, *pcFlags.PortNum, *pcFlags.LogLength)
+}
+
+// clientModeAnnotation marks commands that act as clients of a running
+// process-compose server; they log to a separate file (see PersistentPreRun).
+const clientModeAnnotation = "pc-client-mode"
+
+// isClientCmd reports whether the resolved command talks to a running
+// process-compose server instead of starting one. Commands opt in with the
+// clientModeAnnotation; subcommands inherit it from any annotated parent.
+func isClientCmd(cmd *cobra.Command) bool {
+	for c := cmd; c != nil; c = c.Parent() {
+		if _, ok := c.Annotations[clientModeAnnotation]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 func isUnixSocketMode(cmd *cobra.Command) bool {

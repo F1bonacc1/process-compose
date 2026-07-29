@@ -8,9 +8,10 @@ import (
 )
 
 var namespaceCmd = &cobra.Command{
-	Use:     "namespace",
-	Short:   "Perform operations on a namespace (start, stop, restart, list)",
-	Aliases: []string{"ns"},
+	Use:         "namespace",
+	Short:       "Perform operations on a namespace (start, stop, restart, list)",
+	Aliases:     []string{"ns"},
+	Annotations: map[string]string{clientModeAnnotation: "true"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			_ = cmd.Help()

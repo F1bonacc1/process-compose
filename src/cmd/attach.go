@@ -6,8 +6,9 @@ import (
 
 // attachCmd represents the attach command
 var attachCmd = &cobra.Command{
-	Use:   "attach",
-	Short: "Attach the Process Compose TUI Remotely to a Running Process Compose Server",
+	Use:         "attach",
+	Short:       "Attach the Process Compose TUI Remotely to a Running Process Compose Server",
+	Annotations: map[string]string{clientModeAnnotation: "true"},
 	Run: func(cmd *cobra.Command, args []string) {
 		startTui(getClient(), false)
 	},

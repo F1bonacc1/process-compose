@@ -9,8 +9,9 @@ import (
 
 // projectCmd represents the project command
 var projectCmd = &cobra.Command{
-	Use:   "project",
-	Short: "Execute operations on a running Process Compose project",
+	Use:         "project",
+	Short:       "Execute operations on a running Process Compose project",
+	Annotations: map[string]string{clientModeAnnotation: "true"},
 }
 
 func init() {

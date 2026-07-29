@@ -16,6 +16,7 @@ const (
 	flagTheme   = "theme"
 	flagReverse = "reverse"
 	flagSort    = "sort"
+	flagLogFile = "log-file"
 )
 
 func init() {

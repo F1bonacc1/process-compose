@@ -18,7 +18,7 @@ var infoCmd = &cobra.Command{
 func printInfo() {
 	format := "%-15s %s\n"
 	fmt.Println("Process Compose")
-	fmt.Printf(format, "Logs:", config.GetLogFilePath())
+	fmt.Printf(format, "Logs:", *pcFlags.LogFile)
 
 	path := config.GetShortCutsPaths(nil)
 	if len(path) > 0 {

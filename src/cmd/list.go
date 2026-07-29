@@ -14,9 +14,10 @@ import (
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
-	Use:     "list",
-	Short:   "List available processes",
-	Aliases: []string{"ls"},
+	Use:         "list",
+	Short:       "List available processes",
+	Aliases:     []string{"ls"},
+	Annotations: map[string]string{clientModeAnnotation: "true"},
 	Run: func(cmd *cobra.Command, args []string) {
 		states, err := getClient().GetRemoteProcessesState()
 		if err != nil {

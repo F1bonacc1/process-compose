@@ -8,8 +8,9 @@ import (
 
 // downCmd represents the down command
 var downCmd = &cobra.Command{
-	Use:   "down",
-	Short: "Stops all the running processes and terminates the Process Compose",
+	Use:         "down",
+	Short:       "Stops all the running processes and terminates the Process Compose",
+	Annotations: map[string]string{clientModeAnnotation: "true"},
 	Run: func(cmd *cobra.Command, args []string) {
 		err := getClient().ShutDownProject()
 		if err != nil {

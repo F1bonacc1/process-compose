@@ -6,9 +6,10 @@ import (
 
 // processCmd represents the process command
 var processCmd = &cobra.Command{
-	Use:   "process",
-	Short: "Execute operations on the available processes",
-	Args:  cobra.MinimumNArgs(1),
+	Use:         "process",
+	Short:       "Execute operations on the available processes",
+	Args:        cobra.MinimumNArgs(1),
+	Annotations: map[string]string{clientModeAnnotation: "true"},
 }
 
 func init() {
