@@ -84,6 +84,31 @@ log_configuration:
 
 Default log location: `/tmp/process-compose-$USER.log`
 
+### Client Commands and `PC_LOG_FILE`
+
+Client commands (`down`, `attach`, `list`, `process`, `project`, `namespace`) write to
+their own log file so they don't overwrite the log of a running `process-compose`
+server. By default that's `/tmp/process-compose-$USER-client.log`, next to the
+server's `/tmp/process-compose-$USER.log`.
+
+`PC_LOG_FILE` (and `--log-file`) sets the path for every `process-compose`
+invocation, server and client alike. Since each invocation truncates its log file
+on open, exporting `PC_LOG_FILE` in your shell points both at the same file, and
+the next client command starts it over.
+
+To use custom locations, give the server and the clients separate paths:
+
+```shell
+process-compose up --detached --log-file .pc/logs/process-compose.log
+
+export PC_LOG_FILE=.pc/logs/process-compose-client.log
+process-compose list
+```
+
+The explicit `--log-file` on `up` takes precedence over `PC_LOG_FILE`, so the
+server keeps `process-compose.log` while client commands log to
+`process-compose-client.log`.
+
 By default, the internal log file contains ANSI color codes. You can disable color output using the `--log-no-color` flag or the `PC_LOG_NO_COLOR` environment variable.
 
 ```bash
