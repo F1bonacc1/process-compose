@@ -32,6 +32,12 @@ func TokenAuthMiddleware(token string) gin.HandlerFunc {
 // InitRoutes initialize routing information
 func InitRoutes(useLogger bool, handler *PcApi) *gin.Engine {
 	r := gin.New()
+	// Match routes against the raw (still percent-encoded) path so that
+	// process names containing "/" (sent as %2F) reach the :name param
+	// instead of splitting the route. Only kicks in when the request path
+	// actually contains percent-encoding, so plain names route as before.
+	r.UseRawPath = true
+	r.UnescapePathValues = true
 	if useLogger {
 		r.Use(gin.Logger())
 	}

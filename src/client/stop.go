@@ -3,19 +3,18 @@ package client
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
 func (p *PcClient) stopProcess(name string) error {
-	url := fmt.Sprintf("http://%s/process/stop/%s", p.address, name)
+	url := fmt.Sprintf("http://%s/process/stop/%s", p.address, escapePathSegment(name))
 	return p.doAction(http.MethodPatch, url, fmt.Sprintf("stop process %s", name))
 }
 
 func (p *PcClient) sendSignal(name string, sig int) error {
-	url := fmt.Sprintf("http://%s/process/signal/%s/%d", p.address, name, sig)
+	url := fmt.Sprintf("http://%s/process/signal/%s/%d", p.address, escapePathSegment(name), sig)
 	return p.doAction(http.MethodPatch, url, fmt.Sprintf("send signal %s", name))
 }
 
@@ -45,10 +44,5 @@ func (p *PcClient) stopProcesses(names []string) (map[string]string, error) {
 
 		return stopped, nil
 	}
-	var respErr pcError
-	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-		log.Err(err).Msgf("failed to decode err stop processes %v", names)
-		return nil, err
-	}
-	return nil, errors.New(respErr.Error)
+	return nil, parseErrorResponse(resp, fmt.Sprintf("stop processes %v", names))
 }

@@ -6,6 +6,6 @@ import (
 )
 
 func (p *PcClient) startProcess(name string) error {
-	url := fmt.Sprintf("http://%s/process/start/%s", p.address, name)
+	url := fmt.Sprintf("http://%s/process/start/%s", p.address, escapePathSegment(name))
 	return p.doAction(http.MethodPost, url, fmt.Sprintf("start process %s", name))
 }

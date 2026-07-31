@@ -2,12 +2,12 @@ package client
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	neturl "net/url"
 	"os"
+	"strconv"
 	"sync/atomic"
 
 	"github.com/f1bonacc1/process-compose/src/api"
@@ -36,7 +36,11 @@ func NewLogClient(address, socketPath string) *LogClient {
 
 func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, fn func(api.LogMessage)) (done chan struct{}, err error) {
 
-	url := fmt.Sprintf("ws://%s/process/logs/ws?name=%s&offset=%d&follow=%v", l.address, name, offset, follow)
+	q := neturl.Values{}
+	q.Set("name", name)
+	q.Set("offset", strconv.Itoa(offset))
+	q.Set("follow", strconv.FormatBool(follow))
+	url := fmt.Sprintf("ws://%s/process/logs/ws?%s", l.address, q.Encode())
 	log.Info().Msgf("Connecting to %s", url)
 
 	dialer := websocket.DefaultDialer
@@ -110,7 +114,7 @@ func (l *LogClient) readLogs(done chan struct{}, ws *websocket.Conn, follow bool
 }
 
 func (p *PcClient) truncateProcessLogs(name string) error {
-	url := fmt.Sprintf("http://%s/process/logs/%s", p.address, name)
+	url := fmt.Sprintf("http://%s/process/logs/%s", p.address, escapePathSegment(name))
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return err
@@ -124,10 +128,5 @@ func (p *PcClient) truncateProcessLogs(name string) error {
 		return nil
 	}
 
-	var respErr pcError
-	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-		log.Error().Msgf("failed to truncate process %s logs, response: %v", name, err)
-		return err
-	}
-	return errors.New(respErr.Error)
+	return parseErrorResponse(resp, fmt.Sprintf("truncate process %s logs", name))
 }

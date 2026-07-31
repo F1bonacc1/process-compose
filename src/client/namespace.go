@@ -2,26 +2,22 @@ package client
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-
-	"github.com/rs/zerolog/log"
 )
 
 func (p *PcClient) startNamespace(name string) error {
-	u := fmt.Sprintf("http://%s/namespace/start/%s", p.address, url.PathEscape(name))
+	u := fmt.Sprintf("http://%s/namespace/start/%s", p.address, escapePathSegment(name))
 	return p.doAction(http.MethodPost, u, fmt.Sprintf("start namespace %s", name))
 }
 
 func (p *PcClient) stopNamespace(name string) error {
-	u := fmt.Sprintf("http://%s/namespace/stop/%s", p.address, url.PathEscape(name))
+	u := fmt.Sprintf("http://%s/namespace/stop/%s", p.address, escapePathSegment(name))
 	return p.doAction(http.MethodPost, u, fmt.Sprintf("stop namespace %s", name))
 }
 
 func (p *PcClient) restartNamespace(name string) error {
-	u := fmt.Sprintf("http://%s/namespace/restart/%s", p.address, url.PathEscape(name))
+	u := fmt.Sprintf("http://%s/namespace/restart/%s", p.address, escapePathSegment(name))
 	return p.doAction(http.MethodPost, u, fmt.Sprintf("restart namespace %s", name))
 }
 
@@ -34,12 +30,7 @@ func (p *PcClient) getNamespaces() ([]string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var respErr pcError
-		if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-			log.Error().Msgf("failed to decode get namespaces response: %v", err)
-			return nil, err
-		}
-		return nil, errors.New(respErr.Error)
+		return nil, parseErrorResponse(resp, "get namespaces")
 	}
 
 	var namespaces []string

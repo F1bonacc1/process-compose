@@ -6,6 +6,6 @@ import (
 )
 
 func (p *PcClient) scaleProcess(name string, scale int) error {
-	url := fmt.Sprintf("http://%s/process/scale/%s/%d", p.address, name, scale)
+	url := fmt.Sprintf("http://%s/process/scale/%s/%d", p.address, escapePathSegment(name), scale)
 	return p.doAction(http.MethodPatch, url, fmt.Sprintf("scale process %s", name))
 }

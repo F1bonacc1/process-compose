@@ -3,7 +3,6 @@ package client
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog/log"
@@ -72,12 +71,7 @@ func (p *PcClient) updateProject(project *types.Project) (map[string]string, err
 
 		return status, nil
 	}
-	var respErr pcError
-	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-		log.Err(err).Msg("failed to decode err update project")
-		return nil, err
-	}
-	return nil, errors.New(respErr.Error)
+	return nil, parseErrorResponse(resp, "update project")
 }
 
 func (p *PcClient) reloadProject() (map[string]string, error) {
@@ -98,10 +92,5 @@ func (p *PcClient) reloadProject() (map[string]string, error) {
 
 		return status, nil
 	}
-	var respErr pcError
-	if err = json.NewDecoder(resp.Body).Decode(&respErr); err != nil {
-		log.Err(err).Msg("failed to decode err update project")
-		return nil, err
-	}
-	return nil, errors.New(respErr.Error)
+	return nil, parseErrorResponse(resp, "reload project")
 }

@@ -19,35 +19,7 @@ func init() {
 }
 
 func setupRouter(mock *mockProject) *gin.Engine {
-	handler := NewPcApi(mock)
-	r := gin.New()
-
-	r.GET("/live", handler.IsAlive)
-	r.GET("/processes", handler.GetProcesses)
-	r.GET("/process/:name", handler.GetProcess)
-	r.GET("/process/info/:name", handler.GetProcessInfo)
-	r.POST("/process", handler.UpdateProcess)
-	r.GET("/process/ports/:name", handler.GetProcessPorts)
-	r.GET("/process/logs/:name/:endOffset/:limit", handler.GetProcessLogs)
-	r.DELETE("/process/logs/:name", handler.TruncateProcessLogs)
-	r.PATCH("/process/stop/:name", handler.StopProcess)
-	r.PATCH("/processes/stop", handler.StopProcesses)
-	r.POST("/process/start/:name", handler.StartProcess)
-	r.POST("/process/restart/:name", handler.RestartProcess)
-	r.POST("/process/send-keys/:name", handler.SendProcessKeys)
-	r.POST("/project/stop", handler.ShutDownProject)
-	r.POST("/project", handler.UpdateProject)
-	r.POST("/project/configuration", handler.ReloadProject)
-	r.GET("/project/name", handler.GetProjectName)
-	r.GET("/project/state", handler.GetProjectState)
-	r.POST("/namespace/start/:name", handler.StartNamespace)
-	r.POST("/namespace/stop/:name", handler.StopNamespace)
-	r.POST("/namespace/restart/:name", handler.RestartNamespace)
-	r.GET("/namespaces", handler.GetNamespaces)
-	r.PATCH("/process/scale/:name/:scale", handler.ScaleProcess)
-	r.GET("/graph", handler.GetDependencyGraph)
-
-	return r
+	return InitRoutes(false, NewPcApi(mock))
 }
 
 func performRequest(r *gin.Engine, method, path string, body string) *httptest.ResponseRecorder {
@@ -490,6 +462,60 @@ func TestRestartProcess_Error(t *testing.T) {
 	w := performRequest(r, http.MethodPost, "/process/restart/web", "")
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestRestartProcess_NameWithSlash(t *testing.T) {
+	var gotName string
+	mock := &mockProject{
+		restartProcessFn: func(name string) error {
+			gotName = name
+			return nil
+		},
+	}
+	r := setupRouter(mock)
+	w := performRequest(r, http.MethodPost, "/process/restart/%40scope%2Fpkg", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	if gotName != "@scope/pkg" {
+		t.Fatalf("expected process name %q, got %q", "@scope/pkg", gotName)
+	}
+}
+
+func TestGetProcess_NameWithSlashAndPlus(t *testing.T) {
+	var gotName string
+	mock := &mockProject{
+		getProcessStateFn: func(name string) (*types.ProcessState, error) {
+			gotName = name
+			return &types.ProcessState{Name: name}, nil
+		},
+	}
+	r := setupRouter(mock)
+	w := performRequest(r, http.MethodGet, "/process/a%2Bb%2Fc", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	if gotName != "a+b/c" {
+		t.Fatalf("expected process name %q, got %q", "a+b/c", gotName)
+	}
+}
+
+func TestStopProcess_NameWithSlash(t *testing.T) {
+	var gotName string
+	mock := &mockProject{
+		stopProcessFn: func(name string) error {
+			gotName = name
+			return nil
+		},
+	}
+	r := setupRouter(mock)
+	w := performRequest(r, http.MethodPatch, "/process/stop/%40scope%2Fpkg", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	if gotName != "@scope/pkg" {
+		t.Fatalf("expected process name %q, got %q", "@scope/pkg", gotName)
 	}
 }
 
