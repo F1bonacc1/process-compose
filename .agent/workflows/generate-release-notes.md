@@ -21,7 +21,7 @@ If the release notes doc already describes the final behavior, don't document th
 Bullet each item at the start of the line with `-`.
 End each bullet with a period.
 
-If the change was made by someone other than Eugene Berger note it at the end of the bullet point as ", by XXX."
+If the change was made by someone other than Eugene Berger note it at the end of the bullet point using their GitHub handle (not real name) as ", by @github_handle."
 If the change addresses an issue, include the issue number in the bullet point as ", addresses issue #XXX.". The fixed issues are mentioned in the git commit message.
 ALWAYS check every commit message in the release range for issue references (e.g. `Issue #XXX`, `#XXX`, `addresses #XXX`, `fixes #XXX`, `closes #XXX`) and include them in the corresponding bullet — do not skip this step. If a single bullet covers multiple commits, aggregate all referenced issues for that bullet.
 The release caption should be `## [v1.Y.0] - YYYY-MM-DD` where `v1.Y.0` is the new version and `YYYY-MM-DD` is the date of the release.
