@@ -358,8 +358,8 @@ func TestProjectRunner_getNamespaceProcesses(t *testing.T) {
 		{
 			name: "DefaultNamespace",
 			processes: map[string]types.ProcessConfig{
-				"p1": {Name: "p1", ReplicaName: "p1", Namespace: "default"},
-				"p2": {Name: "p2", ReplicaName: "p2", Namespace: "other"},
+				"p1": {Name: "p1", ReplicaName: "p1", Namespace: types.Namespaces{"default"}},
+				"p2": {Name: "p2", ReplicaName: "p2", Namespace: types.Namespaces{"other"}},
 				"p3": {Name: "p3", ReplicaName: "p3"}, // default implied
 			},
 			namespace: "default",
@@ -369,8 +369,8 @@ func TestProjectRunner_getNamespaceProcesses(t *testing.T) {
 		{
 			name: "OtherNamespace",
 			processes: map[string]types.ProcessConfig{
-				"p1": {Name: "p1", ReplicaName: "p1", Namespace: "default"},
-				"p2": {Name: "p2", ReplicaName: "p2", Namespace: "other"},
+				"p1": {Name: "p1", ReplicaName: "p1", Namespace: types.Namespaces{"default"}},
+				"p2": {Name: "p2", ReplicaName: "p2", Namespace: types.Namespaces{"other"}},
 			},
 			namespace: "other",
 			want:      []string{"p2"},
@@ -379,7 +379,7 @@ func TestProjectRunner_getNamespaceProcesses(t *testing.T) {
 		{
 			name: "EmptyNamespaceSameAsDefault",
 			processes: map[string]types.ProcessConfig{
-				"p1": {Name: "p1", ReplicaName: "p1", Namespace: "default"},
+				"p1": {Name: "p1", ReplicaName: "p1", Namespace: types.Namespaces{"default"}},
 			},
 			namespace: "",
 			want:      []string{"p1"},
@@ -388,10 +388,30 @@ func TestProjectRunner_getNamespaceProcesses(t *testing.T) {
 		{
 			name: "RespectDependencyOrder",
 			processes: map[string]types.ProcessConfig{
-				"p1": {Name: "p1", ReplicaName: "p1", Namespace: "ns1"},
-				"p2": {Name: "p2", ReplicaName: "p2", Namespace: "ns1", DependsOn: types.DependsOnConfig{"p1": {}}},
+				"p1": {Name: "p1", ReplicaName: "p1", Namespace: types.Namespaces{"ns1"}},
+				"p2": {Name: "p2", ReplicaName: "p2", Namespace: types.Namespaces{"ns1"}, DependsOn: types.DependsOnConfig{"p1": {}}},
 			},
 			namespace: "ns1",
+			want:      []string{"p1", "p2"},
+			depsOrder: []string{"p1", "p2"},
+		},
+		{
+			name: "MultiNamespaceFirst",
+			processes: map[string]types.ProcessConfig{
+				"p1": {Name: "p1", ReplicaName: "p1", Namespace: types.Namespaces{"ns1", "ns2"}},
+				"p2": {Name: "p2", ReplicaName: "p2", Namespace: types.Namespaces{"ns2"}},
+			},
+			namespace: "ns1",
+			want:      []string{"p1"},
+			depsOrder: []string{"p1", "p2"},
+		},
+		{
+			name: "MultiNamespaceSecond",
+			processes: map[string]types.ProcessConfig{
+				"p1": {Name: "p1", ReplicaName: "p1", Namespace: types.Namespaces{"ns1", "ns2"}},
+				"p2": {Name: "p2", ReplicaName: "p2", Namespace: types.Namespaces{"ns2"}},
+			},
+			namespace: "ns2",
 			want:      []string{"p1", "p2"},
 			depsOrder: []string{"p1", "p2"},
 		},

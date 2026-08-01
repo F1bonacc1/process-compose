@@ -180,16 +180,14 @@ func (nm *namespaceModal) getNamespacesAndOptions() ([]string, []string) {
 	stats := make(map[string]*nsStat)
 
 	for _, state := range states.States {
-		ns := state.Namespace
-		if ns == "" {
-			ns = types.DefaultNamespace
-		}
-		if _, ok := stats[ns]; !ok {
-			stats[ns] = &nsStat{}
-		}
-		stats[ns].total++
-		if state.IsRunning {
-			stats[ns].running++
+		for _, ns := range state.Namespace.OrDefault() {
+			if _, ok := stats[ns]; !ok {
+				stats[ns] = &nsStat{}
+			}
+			stats[ns].total++
+			if state.IsRunning {
+				stats[ns].running++
+			}
 		}
 	}
 

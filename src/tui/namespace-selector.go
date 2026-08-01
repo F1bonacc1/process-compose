@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 	"slices"
@@ -63,7 +64,9 @@ func (pv *pcView) getSortedNsList() ([]string, error) {
 	}
 	nsList := make(map[string]struct{})
 	for _, state := range states.States {
-		nsList[state.Namespace] = struct{}{}
+		for _, ns := range state.Namespace.OrDefault() {
+			nsList[ns] = struct{}{}
+		}
 	}
 	var nsListSorted []string
 	for ns := range nsList {
@@ -73,14 +76,10 @@ func (pv *pcView) getSortedNsList() ([]string, error) {
 	return nsListSorted, nil
 }
 
-func (pv *pcView) isNsSelected(ns string) bool {
+func (pv *pcView) isNsSelected(ns types.Namespaces) bool {
 	pv.selectedNsMtx.Lock()
 	defer pv.selectedNsMtx.Unlock()
-	if pv.selectedNs == AllNS || pv.selectedNs == ns {
-		return true
-	}
-
-	return false
+	return pv.selectedNs == AllNS || ns.Contains(pv.selectedNs)
 }
 
 func (pv *pcView) setSelectedNs(ns string) {

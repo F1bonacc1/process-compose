@@ -19,8 +19,8 @@ func PrintStatesAsTable(states []types.ProcessState) {
 		if len(state.Name) > tableColWidth[1] {
 			tableColWidth[1] = len(state.Name)
 		}
-		if len(state.Namespace) > tableColWidth[2] {
-			tableColWidth[2] = len(state.Namespace)
+		if len(state.Namespace.String()) > tableColWidth[2] {
+			tableColWidth[2] = len(state.Namespace.String())
 		}
 		if len(state.Status) > tableColWidth[3] {
 			tableColWidth[3] = len(state.Status)
@@ -50,7 +50,7 @@ func PrintStatesAsTable(states []types.ProcessState) {
 	for _, state := range states {
 		fmt.Printf("%-*d   ", tableColWidth[0], state.Pid)
 		fmt.Printf("%-*s   ", tableColWidth[1], state.Name)
-		fmt.Printf("%-*s   ", tableColWidth[2], state.Namespace)
+		fmt.Printf("%-*s   ", tableColWidth[2], state.Namespace.String())
 		fmt.Printf("%-*s   ", tableColWidth[3], state.Status)
 		fmt.Printf("%-*s   ", tableColWidth[4], state.SystemTime)
 		fmt.Printf("%-*s   ", tableColWidth[5], state.Health)

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -860,6 +861,64 @@ func TestUpdateProcess_BadJSON(t *testing.T) {
 	w := performRequest(r, http.MethodPost, "/process", `not json`)
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestUpdateProcess_NamespaceUnion(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want types.Namespaces
+	}{
+		{name: "string", body: `{"name":"web","command":"echo hi","namespace":"a"}`, want: types.Namespaces{"a"}},
+		{name: "array", body: `{"name":"web","command":"echo hi","namespace":["a","b"]}`, want: types.Namespaces{"a", "b"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got types.Namespaces
+			mock := &mockProject{
+				updateProcessFn: func(p *types.ProcessConfig) error {
+					got = p.Namespace
+					return nil
+				},
+			}
+			r := setupRouter(mock)
+			w := performRequest(r, http.MethodPost, "/process", tt.body)
+			if w.Code != http.StatusOK {
+				t.Fatalf("expected 200, got %d", w.Code)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("bound namespace = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetProcess_NamespaceSerialization(t *testing.T) {
+	tests := []struct {
+		name string
+		ns   types.Namespaces
+		want string
+	}{
+		{name: "single namespace stays a string", ns: types.Namespaces{"default"}, want: `"namespace":"default"`},
+		{name: "multiple namespaces become an array", ns: types.Namespaces{"a", "b"}, want: `"namespace":["a","b"]`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &mockProject{
+				getProcessStateFn: func(name string) (*types.ProcessState, error) {
+					return &types.ProcessState{Name: name, Namespace: tt.ns}, nil
+				},
+			}
+			r := setupRouter(mock)
+			w := performRequest(r, http.MethodGet, "/process/web", "")
+			if w.Code != http.StatusOK {
+				t.Fatalf("expected 200, got %d", w.Code)
+			}
+			if !strings.Contains(w.Body.String(), tt.want) {
+				t.Errorf("response %s should contain %s", w.Body.String(), tt.want)
+			}
+		})
 	}
 }
 

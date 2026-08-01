@@ -122,14 +122,14 @@ func (pv *pcView) fillTableData() {
 
 	if pv.procCountCell != nil {
 		nsLbl := ""
-		if !pv.isNsSelected(AllNS) {
+		if pv.getSelectedNs() != AllNS {
 			nsLbl = " (" + pv.getSelectedNs() + ")"
 		}
 		pv.procCountCell.SetText(fmt.Sprintf("%d/%d%s", runningProcCount, len(pv.procNames), nsLbl))
 	}
 	if pv.procMemCpuCell != nil {
 		nsLbl := ""
-		if !pv.isNsSelected(AllNS) {
+		if pv.getSelectedNs() != AllNS {
 			nsLbl = " (" + pv.getSelectedNs() + ")"
 		}
 		pv.procMemCpuCell.SetText(fmt.Sprintf("%s | %s%s", getStrForMem(totalMem, true), getStrForCPU(totalCPU, true), nsLbl))
@@ -540,7 +540,7 @@ func (pv *pcView) getTableRowValues(state types.ProcessState) tableRowValues {
 		fgColor:   color,
 		pid:       strconv.Itoa(state.Pid),
 		name:      state.Name,
-		ns:        state.Namespace,
+		ns:        state.Namespace.String(),
 		status:    types.DisplayProcessStatus(state),
 		age:       state.SystemTime,
 		health:    state.Health,

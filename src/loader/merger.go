@@ -16,6 +16,13 @@ type specials struct {
 var processSpecials = &specials{
 	m: map[reflect.Type]func(dst, src reflect.Value) error{
 		reflect.TypeFor[types.Environment](): mergeSlice(toEnvVarMap, toEnvVarSlice),
+		// namespaces are overridden as a whole, not appended to
+		reflect.TypeFor[types.Namespaces](): func(dst, src reflect.Value) error {
+			if src.Len() > 0 {
+				dst.Set(src)
+			}
+			return nil
+		},
 	},
 }
 

@@ -221,6 +221,32 @@ func Test_mergeProcess(t *testing.T) {
 	}
 }
 
+func Test_mergeProcess_NamespaceOverridesNotAppends(t *testing.T) {
+	tests := []struct {
+		name     string
+		base     types.Namespaces
+		override types.Namespaces
+		want     types.Namespaces
+	}{
+		{name: "override replaces", base: types.Namespaces{"a"}, override: types.Namespaces{"b"}, want: types.Namespaces{"b"}},
+		{name: "override replaces list", base: types.Namespaces{"a", "b"}, override: types.Namespaces{"c"}, want: types.Namespaces{"c"}},
+		{name: "empty override keeps base", base: types.Namespaces{"a", "b"}, override: nil, want: types.Namespaces{"a", "b"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			base := &types.ProcessConfig{Name: "p", Namespace: tt.base}
+			override := &types.ProcessConfig{Name: "p", Namespace: tt.override}
+			got, err := mergeProcess(base, override)
+			if err != nil {
+				t.Fatalf("mergeProcess() error = %v", err)
+			}
+			if !reflect.DeepEqual(got.Namespace, tt.want) {
+				t.Errorf("mergeProcess() namespace = %#v, want %#v", got.Namespace, tt.want)
+			}
+		})
+	}
+}
+
 func Test_merge(t *testing.T) {
 	type args struct {
 		opts *LoaderOptions

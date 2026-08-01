@@ -42,7 +42,7 @@ type (
 		ShutDownParams          ShutDownParams      `yaml:"shutdown,omitempty" json:"shutDownParams"`
 		DisableAnsiColors       bool                `yaml:"disable_ansi_colors,omitempty" json:"disableAnsiColors,omitempty"`
 		WorkingDir              string              `yaml:"working_dir,omitempty" json:"workingDir,omitempty"`
-		Namespace               string              `yaml:"namespace,omitempty" json:"namespace,omitempty"`
+		Namespace               Namespaces          `yaml:"namespace,omitempty" json:"namespace,omitempty"`
 		Replicas                int                 `yaml:"replicas,omitempty" json:"replicas,omitempty"`
 		Extensions              map[string]any      `yaml:",inline" json:"extensions,omitempty"`
 		Description             string              `yaml:"description,omitempty" json:"description,omitempty"`
@@ -138,7 +138,7 @@ func (p *ProcessConfig) Compare(another *ProcessConfig) bool {
 		p.DisableAnsiColors != another.DisableAnsiColors ||
 		p.EnvFile != another.EnvFile ||
 		p.WorkingDir != another.WorkingDir ||
-		p.Namespace != another.Namespace ||
+		!p.Namespace.Equal(another.Namespace) ||
 		p.Replicas != another.Replicas ||
 		p.Description != another.Description ||
 		p.IsForeground != another.IsForeground ||
@@ -240,7 +240,7 @@ func compareStructs(a, b any) []string {
 func NewProcessState(proc *ProcessConfig) *ProcessState {
 	state := &ProcessState{
 		Name:             proc.ReplicaName,
-		Namespace:        proc.Namespace,
+		Namespace:        proc.Namespace.OrDefault(),
 		Status:           ProcessStatePending,
 		SystemTime:       PlaceHolderValue,
 		Age:              time.Duration(0),
@@ -264,7 +264,7 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 
 type ProcessState struct {
 	Name             string        `json:"name"`
-	Namespace        string        `json:"namespace"`
+	Namespace        Namespaces    `json:"namespace" swaggertype:"array,string"`
 	Status           string        `json:"status"`
 	SystemTime       string        `json:"system_time"`
 	Age              time.Duration `json:"age" swaggertype:"primitive,integer"`

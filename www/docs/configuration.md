@@ -493,6 +493,37 @@ process-compose -n ns1 -n ns3
 
 If a process in a selected namespace `depends_on` a process from a namespace that was not selected, that dependency is pruned: the process starts without waiting for its excluded dependency (a warning is logged at startup). This makes it possible to start a subset of the stack when its dependencies are already running elsewhere.
 
+### Multiple Namespaces
+
+A process can belong to multiple namespaces, similar to docker-compose profiles. This is useful when teams share one large configuration and common dependencies should be part of several selectable groups:
+
+```yaml
+processes:
+  billing_api:
+    command: "./billing_api"
+    namespace: ["billing"]
+
+  auth_api:
+    command: "./auth_api"
+    namespace: auth # a single namespace can be a plain string
+
+  database:
+    command: "./run_db"
+    namespace: ["billing", "auth"] # needed by both teams
+```
+
+```shell
+process-compose -n billing
+# starts billing_api and database
+
+process-compose -n auth
+# starts auth_api and database
+```
+
+A process is selected by `-n <namespace>` if the namespace is **any** of its namespaces. The same applies to namespace operations: `process-compose namespace stop billing` will stop `database`, even though it also belongs to the `auth` namespace.
+
+When merging multiple configuration files (or using `extends`), a non-empty `namespace` in the override **replaces** the base value, it is not appended to it.
+
 ### Namespace Operations
 
 You can perform bulk operations on namespaces using the CLI or TUI.

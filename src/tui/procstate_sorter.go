@@ -107,10 +107,10 @@ func getSorter(sortBy ColumnID, states *types.ProcessesState) sortFn {
 		}
 	case ProcessStateNamespace:
 		return func(i, j int) bool {
-			if states.States[i].Namespace == states.States[j].Namespace {
+			if states.States[i].Namespace.String() == states.States[j].Namespace.String() {
 				return states.States[i].Name < states.States[j].Name
 			} else {
-				return states.States[i].Namespace < states.States[j].Namespace
+				return states.States[i].Namespace.String() < states.States[j].Namespace.String()
 			}
 		}
 	case ProcessStateStatus:

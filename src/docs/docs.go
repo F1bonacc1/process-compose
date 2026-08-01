@@ -1528,7 +1528,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "namespace": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "originalConfig": {
                     "type": "string"
@@ -1640,7 +1643,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "namespace": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "next_run_time": {
                     "type": "string"

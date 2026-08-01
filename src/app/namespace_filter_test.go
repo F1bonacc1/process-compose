@@ -2,6 +2,8 @@ package app
 
 import (
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -12,7 +14,12 @@ import (
 
 func loadNamespaceFixture(t *testing.T, namespaces ...string) *types.Project {
 	t.Helper()
-	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-namespace-deps.yaml")
+	return loadFixtureWithNamespaces(t, "process-compose-namespace-deps.yaml", namespaces...)
+}
+
+func loadFixtureWithNamespaces(t *testing.T, fixtureName string, namespaces ...string) *types.Project {
+	t.Helper()
+	fixture := filepath.Join("..", "..", "fixtures-code", fixtureName)
 	opts := &loader.LoaderOptions{
 		FileNames: []string{fixture},
 	}
@@ -111,6 +118,71 @@ func TestNamespaceFilter_StartExcludedProcessFails(t *testing.T) {
 	}
 	if err := runner.StartProcess("bar"); err == nil {
 		t.Fatal("starting an excluded process should fail")
+	}
+}
+
+func TestNamespaceFilter_MultiNamespace(t *testing.T) {
+	// -n foo admits the multi-namespace process and prunes the others
+	project := loadFixtureWithNamespaces(t, "process-compose-multi-namespace.yaml", "foo")
+	if len(project.Processes) != 1 {
+		t.Fatalf("expected only foo to be admitted, got %v", project.Processes)
+	}
+	if _, ok := project.Processes["foo"]; !ok {
+		t.Fatal("foo should be admitted via its first namespace")
+	}
+
+	// -n foobar admits every process that lists it
+	project = loadFixtureWithNamespaces(t, "process-compose-multi-namespace.yaml", "foobar")
+	if len(project.Processes) != 2 {
+		t.Fatalf("expected foo and bar to be admitted, got %v", project.Processes)
+	}
+	if _, ok := project.Processes["baz"]; ok {
+		t.Fatal("baz should be pruned when selecting foobar")
+	}
+
+	// a namespace no process belongs to prunes everything
+	project = loadFixtureWithNamespaces(t, "process-compose-multi-namespace.yaml", "unknown")
+	if len(project.Processes) != 0 {
+		t.Fatalf("expected no admitted processes, got %v", project.Processes)
+	}
+}
+
+func TestNamespaceFilter_MultiNamespaceProjectOps(t *testing.T) {
+	project := loadFixtureWithNamespaces(t, "process-compose-multi-namespace.yaml")
+
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project:         project,
+		processesToRun:  []string{},
+		mainProcessArgs: []string{},
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	namespaces, err := runner.GetNamespaces()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	want := []string{"bar", "baz", "foo", "foobar"}
+	if !reflect.DeepEqual(namespaces, want) {
+		t.Errorf("GetNamespaces() = %v, want %v", namespaces, want)
+	}
+
+	procs, err := runner.getNamespaceProcesses("foobar")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	slices.Sort(procs)
+	if !reflect.DeepEqual(procs, []string{"bar", "foo"}) {
+		t.Errorf("getNamespaceProcesses(foobar) = %v, want [bar foo]", procs)
+	}
+
+	procs, err = runner.getNamespaceProcesses("baz")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if !reflect.DeepEqual(procs, []string{"baz"}) {
+		t.Errorf("getNamespaceProcesses(baz) = %v, want [baz]", procs)
 	}
 }
 

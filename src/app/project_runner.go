@@ -614,11 +614,7 @@ func (p *ProjectRunner) getNamespaceProcesses(namespace string) ([]string, error
 	var nsProcs []string
 	for _, name := range allNames {
 		if proc, ok := p.project.Processes[name]; ok {
-			procNs := proc.Namespace
-			if procNs == "" {
-				procNs = types.DefaultNamespace
-			}
-			if procNs == namespace {
+			if proc.Namespace.Contains(namespace) {
 				nsProcs = append(nsProcs, name)
 			}
 		}
@@ -637,11 +633,9 @@ func (p *ProjectRunner) GetNamespaces() ([]string, error) {
 
 	nsMap := make(map[string]struct{})
 	for _, state := range states.States {
-		ns := state.Namespace
-		if ns == "" {
-			ns = types.DefaultNamespace
+		for _, ns := range state.Namespace.OrDefault() {
+			nsMap[ns] = struct{}{}
 		}
-		nsMap[ns] = struct{}{}
 	}
 
 	namespaces := make([]string, 0, len(nsMap))
@@ -827,9 +821,7 @@ func (p *ProjectRunner) SetProcessInfo(config *types.ProcessConfig) error {
 	if config.Name == "" {
 		return fmt.Errorf("process name is required")
 	}
-	if config.Namespace == "" {
-		config.Namespace = types.DefaultNamespace
-	}
+	config.Namespace = config.Namespace.Normalized()
 	p.project.Processes[config.Name] = *config
 	return nil
 }

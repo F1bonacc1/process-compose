@@ -43,7 +43,7 @@ var logsCmd = &cobra.Command{
 				log.Fatal().Err(err).Msg("failed to list processes")
 			}
 			for _, state := range states.States {
-				if state.Namespace == *pcFlags.Namespace {
+				if state.Namespace.Contains(*pcFlags.Namespace) {
 					processes = append(processes, state.Name)
 				}
 			}

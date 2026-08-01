@@ -1,0 +1,14 @@
+version: "0.5"
+
+processes:
+  foo:
+    command: "echo foo"
+    namespace: ["foo", "foobar"]
+
+  bar:
+    command: "echo bar"
+    namespace: ["bar", "foobar"]
+
+  baz:
+    command: "echo baz"
+    namespace: "baz"

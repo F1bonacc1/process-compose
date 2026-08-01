@@ -186,6 +186,20 @@
       },
       "type": "object"
     },
+    "Namespaces": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      ],
+      "description": "Namespace(s) the process belongs to (string or list of strings, default: \"default\")"
+    },
     "Probe": {
       "properties": {
         "exec": {
@@ -272,7 +286,7 @@
           "type": "string"
         },
         "namespace": {
-          "type": "string"
+          "$ref": "#/$defs/Namespaces"
         },
         "replicas": {
           "type": "integer"

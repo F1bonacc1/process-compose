@@ -461,7 +461,10 @@
                         "type": "string"
                     },
                     "namespace": {
-                        "type": "string"
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
                     },
                     "originalConfig": {
                         "type": "string"
@@ -573,7 +576,10 @@
                         "type": "string"
                     },
                     "namespace": {
-                        "type": "string"
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
                     },
                     "next_run_time": {
                         "type": "string"

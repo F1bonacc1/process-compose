@@ -37,7 +37,7 @@ func Test_assignDefaultProcessValues(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assignDefaultProcessValues(tt.args.p)
 			for _, p := range tt.args.p.Processes {
-				if p.Namespace == "" {
+				if len(p.Namespace) == 0 {
 					t.Error("Expected namespace to be set")
 				}
 				if p.Replicas == 0 {

@@ -50,9 +50,7 @@ func assignDefaultProcessValues(p *types.Project) {
 		p.Processes = make(map[string]types.ProcessConfig)
 	}
 	for name, proc := range p.Processes {
-		if proc.Namespace == "" {
-			proc.Namespace = types.DefaultNamespace
-		}
+		proc.Namespace = proc.Namespace.Normalized()
 		if proc.Replicas == 0 {
 			proc.Replicas = 1
 		}
