@@ -1,0 +1,26 @@
+version: "0.5"
+
+# Profile style configuration: `up customer-api` starts only the customer
+# surface, the admin namespace is meant to be started later on demand.
+processes:
+  shared-db:
+    command: "echo shared-db"
+    namespace: "infra"
+
+  customer-api:
+    command: "sleep 30"
+    namespace: "customer"
+
+  admin-api:
+    command: "echo admin-api"
+    namespace: "admin"
+    depends_on:
+      shared-db:
+        condition: process_completed_successfully
+
+  admin-ui:
+    command: "echo admin-ui"
+    namespace: "admin"
+    depends_on:
+      admin-api:
+        condition: process_completed_successfully

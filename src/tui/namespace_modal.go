@@ -223,12 +223,15 @@ func (nm *namespaceModal) executeOperation(namespace string, operation namespace
 		log.Error().Msgf("Unknown operation: %s", operation)
 		return
 	}
+	// Stop the progress animation before reporting the result
+	cancel()
 
 	if err != nil {
 		log.Err(err).Msgf("Failed to %s namespace %s", operation, namespace)
-	} else {
-		log.Info().Msgf("Namespace %s %sed", namespace, operation)
+		nm.view.showError(fmt.Sprintf("Failed to %s namespace '%s': %s", operation, namespace, err.Error()))
+		return
 	}
+	log.Info().Msgf("Namespace %s %sed", namespace, operation)
 }
 
 func (nm *namespaceModal) StylesChanged(s *config.Styles) {

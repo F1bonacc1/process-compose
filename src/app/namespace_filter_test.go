@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/f1bonacc1/process-compose/src/admitter"
 	"github.com/f1bonacc1/process-compose/src/loader"
@@ -213,5 +214,84 @@ func TestNamespaceFilter_SurvivesProjectUpdate(t *testing.T) {
 	foo := runner.project.Processes["foo"]
 	if len(foo.DependsOn) != 0 {
 		t.Fatalf("foo's pruned dependency should stay pruned after update, got %v", foo.DependsOn)
+	}
+}
+
+// TestNamespaceOps_StartExcludedFromUpSelection covers issue #528: processes
+// left out of an `up <process>...` selection are only disabled, not removed,
+// so a namespace operation must still be able to start them later.
+func TestNamespaceOps_StartExcludedFromUpSelection(t *testing.T) {
+	project := loadFixtureWithNamespaces(t, "process-compose-namespace-profiles.yaml")
+
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project:         project,
+		processesToRun:  []string{"customer-api"},
+		mainProcessArgs: []string{},
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	for _, name := range []string{"admin-api", "admin-ui", "shared-db"} {
+		if !runner.project.Processes[name].Disabled {
+			t.Fatalf("%s should be disabled by the `up customer-api` selection", name)
+		}
+	}
+
+	// The admin namespace is resolvable even though all of its members are
+	// disabled - this is what used to fail with "no processes assigned".
+	adminProcs, err := runner.getNamespaceProcesses("admin")
+	if err != nil {
+		t.Fatalf("getNamespaceProcesses(admin) error: %v", err)
+	}
+	if !reflect.DeepEqual(adminProcs, []string{"admin-api", "admin-ui"}) {
+		t.Errorf("getNamespaceProcesses(admin) = %v, want [admin-api admin-ui]", adminProcs)
+	}
+	infraProcs, err := runner.getNamespaceProcesses("infra")
+	if err != nil {
+		t.Fatalf("getNamespaceProcesses(infra) error: %v", err)
+	}
+	if !reflect.DeepEqual(infraProcs, []string{"shared-db"}) {
+		t.Errorf("getNamespaceProcesses(infra) = %v, want [shared-db]", infraProcs)
+	}
+
+	runErr := make(chan error, 1)
+	go func() {
+		runErr <- runner.Run()
+	}()
+	defer func() {
+		_ = runner.ShutDownProject()
+		<-runErr
+	}()
+
+	waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
+
+	if err := runner.StartNamespace("admin"); err != nil {
+		t.Fatalf("StartNamespace(admin) error: %v", err)
+	}
+	waitForProcessState(t, runner, "admin-api", types.ProcessStateCompleted, 10*time.Second)
+	waitForProcessState(t, runner, "admin-ui", types.ProcessStateCompleted, 10*time.Second)
+
+	// shared-db is a dependency of admin-api, but it lives in another
+	// namespace - a namespace operation must not start it as a side effect.
+	dbState, err := runner.GetProcessState("shared-db")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if dbState.Status != types.ProcessStateDisabled {
+		t.Errorf("shared-db: status = %s, want %s (dependency outside the started namespace)",
+			dbState.Status, types.ProcessStateDisabled)
+	}
+
+	// Stopping the admin namespace leaves the customer surface alone.
+	if err := runner.StopNamespace("admin"); err != nil {
+		t.Fatalf("StopNamespace(admin) error: %v", err)
+	}
+	customerState, err := runner.GetProcessState("customer-api")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if !customerState.IsRunning {
+		t.Errorf("customer-api: status = %s, want it to keep running", customerState.Status)
 	}
 }

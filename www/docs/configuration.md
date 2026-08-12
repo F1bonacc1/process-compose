@@ -410,6 +410,8 @@ This command will:
 
 **Note:** If TUI or TUI client is being used, you can trigger the original files reload with the `Ctrl+L` shortcut.
 
+**Note:** An update or a reload preserves the process selection the project was started with. Processes excluded by `process-compose up <process>...` or by `--namespace` stay excluded, they are not started by the update. If a process named on the command line no longer exists in the updated configuration, it is dropped from the selection and removed from the project.
+
 ### Process Edit
 
 To edit a single process:
@@ -527,6 +529,18 @@ When merging multiple configuration files (or using `extends`), a non-empty `nam
 ### Namespace Operations
 
 You can perform bulk operations on namespaces using the CLI or TUI.
+
+A namespace operation acts on **every configured member** of the namespace, including processes that are not running: processes left out of an `up <process>...` selection, and processes marked `disabled: true`. This makes it possible to define a catalog of services, start a small surface initially, and add a related surface later:
+
+```shell
+process-compose up customer-api
+# in another terminal - starts admin-api and admin-ui, which were not part of the initial selection
+process-compose namespace start admin
+```
+
+Namespace operations act on the namespace's own members only. A `depends_on` target that belongs to a different namespace is neither started nor stopped as a side effect, so stopping one namespace won't take down a database shared with another. A member whose dependency isn't running starts without waiting for it (an error is logged), the same way a cross-namespace dependency is pruned when starting a subset of namespaces with `-n`.
+
+[Foreground processes](launcher.md#foreground-processes) are the exception: they can only be started manually from the TUI, so they are skipped by namespace operations. A namespace that contains nothing else is still listed, but operating on it reports that it has only foreground processes.
 
 #### CLI Commands
 

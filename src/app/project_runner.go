@@ -55,6 +55,8 @@ type ProjectRunner struct {
 	exitCodeMutex        sync.Mutex
 	exitCode             int
 	projectState         *types.ProjectState
+	processesToRun       []string
+	noDeps               bool
 	mainProcess          string
 	mainProcessArgs      []string
 	isTuiOn              bool
@@ -66,6 +68,7 @@ type ProjectRunner struct {
 	refRate              time.Duration
 	withRecursiveMetrics bool
 	procCompleteChannel  chan int
+	updatesInFlight      atomic.Int32
 	processTree          *ProcessTree
 	processScheduler     atomic.Pointer[scheduler.Scheduler]
 	stateBroadcaster     *ProcessStateBroadcaster
@@ -212,6 +215,10 @@ func (p *ProjectRunner) Run() error {
 				p.restartMutex.Unlock()
 				if pendingRestarts > 0 {
 					log.Debug().Msgf("Skipping project completion: %d restart(s) in progress", pendingRestarts)
+					continue
+				}
+				if updates := p.updatesInFlight.Load(); updates > 0 {
+					log.Debug().Msgf("Skipping project completion: %d update(s) in progress", updates)
 					continue
 				}
 				if s := p.processScheduler.Load(); s == nil || len(s.GetScheduledProcesses()) == 0 {
@@ -601,26 +608,54 @@ func (p *ProjectRunner) StopProcesses(names []string) (map[string]string, error)
 	return stopped, nil
 }
 
+// getNamespaceProcesses returns the namespace's processes in dependency order.
+// Processes that are disabled - by `disabled: true` or by exclusion from an
+// `up <process>...` selection - are included: a namespace operation is an
+// explicit request, just like `process start <name>`, which also ignores the
+// flag. Foreground processes are skipped, they can only run in the TUI.
+// Only the namespace's own members are returned - a dependency belonging to
+// another namespace is never started or stopped as a side effect.
 func (p *ProjectRunner) getNamespaceProcesses(namespace string) ([]string, error) {
 	if namespace == "" {
 		namespace = types.DefaultNamespace
 	}
-	// Use dependency order to ensuring correct order for bulk operations
-	allNames, err := p.project.GetDependenciesOrderNames()
-	if err != nil {
-		return nil, err
+	members := []string{}
+	foreground := 0
+	for name, proc := range p.project.Processes {
+		if !proc.Namespace.Contains(namespace) {
+			continue
+		}
+		if proc.IsForeground {
+			foreground++
+			continue
+		}
+		members = append(members, name)
+	}
+	if len(members) == 0 {
+		if foreground > 0 {
+			return nil, fmt.Errorf("namespace %s has only foreground processes, which are excluded from namespace operations", namespace)
+		}
+		return nil, fmt.Errorf("namespace %s not found (no processes assigned)", namespace)
+	}
+	// Map iteration order is random - sort to keep the dependency walk deterministic
+	slices.Sort(members)
+	isMember := make(map[string]bool, len(members))
+	for _, name := range members {
+		isMember[name] = true
 	}
 
-	var nsProcs []string
-	for _, name := range allNames {
-		if proc, ok := p.project.Processes[name]; ok {
-			if proc.Namespace.Contains(namespace) {
-				nsProcs = append(nsProcs, name)
-			}
+	// Walk the dependency closure to get the correct order for bulk operations,
+	// then keep only the members - a dependency in another namespace can still
+	// order two members relative to each other.
+	nsProcs := []string{}
+	err := p.project.WithProcesses(members, func(proc types.ProcessConfig) error {
+		if isMember[proc.ReplicaName] {
+			nsProcs = append(nsProcs, proc.ReplicaName)
 		}
-	}
-	if len(nsProcs) == 0 {
-		return nil, fmt.Errorf("namespace %s not found (no processes assigned)", namespace)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return nsProcs, nil
 }
@@ -1238,12 +1273,12 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	}
 }
 
-func (p *ProjectRunner) selectRunningProcesses(procList []string) error {
+func selectRunningProcesses(project *types.Project, procList []string) error {
 	if len(procList) == 0 {
 		return nil
 	}
 	newProcMap := types.Processes{}
-	err := p.project.WithProcesses(procList, func(process types.ProcessConfig) error {
+	err := project.WithProcesses(procList, func(process types.ProcessConfig) error {
 		if process.IsForeground {
 			return nil
 		}
@@ -1254,22 +1289,22 @@ func (p *ProjectRunner) selectRunningProcesses(procList []string) error {
 		log.Err(err).Msgf("Failed select processes")
 		return err
 	}
-	for name, proc := range p.project.Processes {
+	for name, proc := range project.Processes {
 		if _, ok := newProcMap[name]; !ok {
 			proc.Disabled = true
 		} else {
 			proc.Disabled = false
 		}
-		p.project.Processes[name] = proc
+		project.Processes[name] = proc
 	}
 	return nil
 }
 
-func (p *ProjectRunner) selectRunningProcessesNoDeps(procList []string) error {
+func selectRunningProcessesNoDeps(project *types.Project, procList []string) error {
 	if len(procList) == 0 {
 		return nil
 	}
-	for name, proc := range p.project.Processes {
+	for name, proc := range project.Processes {
 		found := slices.Contains(procList, proc.Name)
 		if !found {
 			proc.Disabled = true
@@ -1277,10 +1312,51 @@ func (p *ProjectRunner) selectRunningProcessesNoDeps(procList []string) error {
 			proc.DependsOn = types.DependsOnConfig{}
 			proc.Disabled = false
 		}
-		p.project.Processes[name] = proc
+		project.Processes[name] = proc
 	}
 
 	return nil
+}
+
+// applySelection narrows project to the `up <process>...` selection by
+// disabling everything that wasn't selected.
+func (p *ProjectRunner) applySelection(project *types.Project) error {
+	if p.noDeps {
+		return selectRunningProcessesNoDeps(project, p.processesToRun)
+	}
+	return selectRunningProcesses(project, p.processesToRun)
+}
+
+// reapplySelection re-applies the `up <process>...` selection to a freshly
+// loaded project, so that a reload or an update doesn't resurrect - and start -
+// the processes the user left out. Unlike the initial selection, a name that
+// the new configuration no longer defines is dropped instead of failing the
+// whole update: that process is about to be removed from the project anyway.
+func (p *ProjectRunner) reapplySelection(project *types.Project) error {
+	if len(p.processesToRun) == 0 {
+		return nil
+	}
+	selected := make([]string, 0, len(p.processesToRun))
+	for _, name := range p.processesToRun {
+		if _, err := project.GetProcesses(name); err != nil {
+			log.Info().Msgf("Selected process %s is no longer defined, dropping it from the selection", name)
+			continue
+		}
+		selected = append(selected, name)
+	}
+	if len(selected) == 0 {
+		// Nothing of the original selection survived. Keep the remaining
+		// processes deferred rather than starting the entire project.
+		for name, proc := range project.Processes {
+			proc.Disabled = true
+			project.Processes[name] = proc
+		}
+		return nil
+	}
+	if p.noDeps {
+		return selectRunningProcessesNoDeps(project, selected)
+	}
+	return selectRunningProcesses(project, selected)
 }
 
 func (p *ProjectRunner) GetLogLength() int {
@@ -1338,6 +1414,8 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 	runner := &ProjectRunner{
 		project:              opts.project,
 		admitters:            opts.admitters,
+		processesToRun:       opts.processesToRun,
+		noDeps:               opts.noDeps,
 		mainProcess:          opts.mainProcess,
 		mainProcessArgs:      opts.mainProcessArgs,
 		isTuiOn:              opts.isTuiOn,
@@ -1362,12 +1440,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		runner.projectState.ProjectName = name
 	}
 
-	if opts.noDeps {
-		err = runner.selectRunningProcessesNoDeps(opts.processesToRun)
-	} else {
-		err = runner.selectRunningProcesses(opts.processesToRun)
-	}
-	if err != nil {
+	if err = runner.applySelection(runner.project); err != nil {
 		return nil, err
 	}
 	runner.projectState.ProcessNum = len(runner.project.Processes)
@@ -1376,10 +1449,39 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 	return runner, nil
 }
 
+// beginUpdate marks a project or process update as in flight. An update stops
+// and restarts processes, so while one is running the project must not mistake
+// a momentarily empty running set for "all processes are done". Returns the
+// function that ends the update.
+func (p *ProjectRunner) beginUpdate() func() {
+	p.updatesInFlight.Add(1)
+	return func() {
+		if p.updatesInFlight.Add(-1) != 0 {
+			return
+		}
+		// The update may have removed the last running process for good -
+		// re-trigger the completion check that was suppressed while it ran.
+		p.runProcMutex.Lock()
+		running := len(p.runningProcesses)
+		p.runProcMutex.Unlock()
+		if running == 0 {
+			select {
+			case p.procCompleteChannel <- 0:
+			default:
+			}
+		}
+	}
+}
+
 func (p *ProjectRunner) UpdateProject(project *types.Project) (map[string]string, error) {
-	// Re-apply the load-time admission policies (e.g. --namespace) so that
-	// excluded processes don't get resurrected by a project reload or update.
+	defer p.beginUpdate()()
+	// Re-apply the load-time admission policies (e.g. --namespace) and the
+	// `up <process>...` selection so that excluded processes don't get
+	// resurrected - and started - by a project reload or update.
 	admitter.ApplyToProject(project, p.admitters)
+	if err := p.reapplySelection(project); err != nil {
+		return nil, err
+	}
 	newProcs := make(map[string]types.ProcessConfig)
 	delProcs := make(map[string]types.ProcessConfig)
 	updatedProcs := make(map[string]types.ProcessConfig)
@@ -1456,6 +1558,7 @@ func (p *ProjectRunner) ReloadProject() (map[string]string, error) {
 	return status, nil
 }
 func (p *ProjectRunner) UpdateProcess(updated *types.ProcessConfig) error {
+	defer p.beginUpdate()()
 	isScaleChanged := false
 	validateProbes(updated.LivenessProbe)
 	validateProbes(updated.ReadinessProbe)

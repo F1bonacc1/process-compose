@@ -38,6 +38,21 @@ func waitForProcessState(t *testing.T, runner *ProjectRunner, name string, wantS
 	t.Errorf("process %s: want %s, got %s (after %v)", name, wantStatus, state.Status, timeout)
 }
 
+// waitForProcessLaunched waits until the runner has launched the process.
+// Unlike waitForProcessState it only consults the running processes registry,
+// so it can be used right after Run() is kicked off in a goroutine.
+func waitForProcessLaunched(t *testing.T, runner *ProjectRunner, name string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if runner.getRunningProcess(name) != nil {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("process %s was not launched within %v", name, timeout)
+}
+
 func getFixtures() []string {
 	matches, err := filepath.Glob("../../fixtures/process-compose-*.yaml")
 	if err != nil {
@@ -593,6 +608,182 @@ func TestSystem_TestProcListToRun(t *testing.T) {
 					t.Errorf("process %s is not disabled", name)
 				}
 			}
+		}
+	})
+}
+
+// TestSystem_TestUpdateKeepsProjectAlive makes sure that updating the only
+// running process doesn't shut the project down: the update stops it before
+// starting it again, and that momentary gap must not be read as "all processes
+// are done".
+func TestSystem_TestUpdateKeepsProjectAlive(t *testing.T) {
+	fixture := filepath.Join("..", "..", "fixtures-code", "process-compose-namespace-profiles.yaml")
+	load := func() *types.Project {
+		project, err := loader.Load(&loader.LoaderOptions{FileNames: []string{fixture}})
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		return project
+	}
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project:         load(),
+		processesToRun:  []string{"customer-api"},
+		mainProcessArgs: []string{},
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	runErr := make(chan error, 1)
+	go func() {
+		runErr <- runner.Run()
+	}()
+	waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
+
+	// Change the only running process so the update has to restart it.
+	updated := load()
+	proc := updated.Processes["customer-api"]
+	proc.Command = "sleep 31"
+	updated.Processes["customer-api"] = proc
+	if _, err := runner.UpdateProject(updated); err != nil {
+		t.Fatal(err.Error())
+	}
+
+	select {
+	case err := <-runErr:
+		t.Fatalf("the project completed during the update: %v", err)
+	case <-time.After(time.Second):
+	}
+	waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
+
+	_ = runner.ShutDownProject()
+	<-runErr
+}
+
+// TestSystem_TestProcListToRunSurvivesReload makes sure a config reload doesn't
+// resurrect - and start - the processes left out of an `up <process>...`
+// selection. A reload loads the project from disk without the selection, so it
+// has to be re-applied on update, the same way the admission policies are.
+func TestSystem_TestProcListToRunSurvivesReload(t *testing.T) {
+	assertOnlySelectedEnabled := func(t *testing.T, runner *ProjectRunner, selected string) {
+		t.Helper()
+		for name, proc := range runner.project.Processes {
+			if proc.Disabled == (name == selected) {
+				t.Errorf("process %s: disabled = %v after reload, want %v", name, proc.Disabled, name != selected)
+			}
+		}
+		for _, name := range []string{"admin-api", "admin-ui", "shared-db"} {
+			state, err := runner.GetProcessState(name)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+			if state.IsRunning {
+				t.Errorf("process %s was started by the reload", name)
+			}
+		}
+	}
+
+	t.Run("Selection is kept", func(t *testing.T) {
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         loadFixtureWithNamespaces(t, "process-compose-namespace-profiles.yaml"),
+			processesToRun:  []string{"customer-api"},
+			mainProcessArgs: []string{},
+		})
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		runErr := make(chan error, 1)
+		go func() {
+			runErr <- runner.Run()
+		}()
+		defer func() {
+			_ = runner.ShutDownProject()
+			<-runErr
+		}()
+		waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
+
+		// A reload loads the project from disk - nothing is disabled there.
+		reloaded := loadFixtureWithNamespaces(t, "process-compose-namespace-profiles.yaml")
+		status, err := runner.UpdateProject(reloaded)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		if len(status) != 0 {
+			t.Errorf("reload changed %v, want no changes", status)
+		}
+		assertOnlySelectedEnabled(t, runner, "customer-api")
+	})
+
+	t.Run("Selection is kept with no deps", func(t *testing.T) {
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         loadFixtureWithNamespaces(t, "process-compose-namespace-profiles.yaml"),
+			processesToRun:  []string{"customer-api"},
+			mainProcessArgs: []string{},
+			noDeps:          true,
+		})
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		runErr := make(chan error, 1)
+		go func() {
+			runErr <- runner.Run()
+		}()
+		defer func() {
+			_ = runner.ShutDownProject()
+			<-runErr
+		}()
+		waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
+
+		reloaded := loadFixtureWithNamespaces(t, "process-compose-namespace-profiles.yaml")
+		status, err := runner.UpdateProject(reloaded)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		if len(status) != 0 {
+			t.Errorf("reload changed %v, want no changes", status)
+		}
+		assertOnlySelectedEnabled(t, runner, "customer-api")
+	})
+
+	t.Run("Selected process removed from the config", func(t *testing.T) {
+		runner, err := NewProjectRunner(&ProjectOpts{
+			project:         loadFixtureWithNamespaces(t, "process-compose-namespace-profiles.yaml"),
+			processesToRun:  []string{"customer-api"},
+			mainProcessArgs: []string{},
+		})
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		runErr := make(chan error, 1)
+		go func() {
+			runErr <- runner.Run()
+		}()
+		defer func() {
+			_ = runner.ShutDownProject()
+		}()
+		waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
+
+		// The only selected process is gone - the reload must drop it instead
+		// of failing, and must not start the rest of the project.
+		reloaded := loadFixtureWithNamespaces(t, "process-compose-namespace-profiles.yaml")
+		delete(reloaded.Processes, "customer-api")
+		status, err := runner.UpdateProject(reloaded)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		if status["customer-api"] != types.ProcessUpdateRemoved {
+			t.Errorf("customer-api: status = %q, want %q", status["customer-api"], types.ProcessUpdateRemoved)
+		}
+		for name, proc := range runner.project.Processes {
+			if !proc.Disabled {
+				t.Errorf("process %s should stay disabled after its selection was removed", name)
+			}
+		}
+		// Nothing is left to run - the project has to complete on its own and
+		// not hang waiting for a process that will never start.
+		select {
+		case <-runErr:
+		case <-time.After(10 * time.Second):
+			t.Error("project did not complete after its last running process was removed")
 		}
 	})
 }
