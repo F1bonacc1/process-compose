@@ -1,0 +1,131 @@
+{
+  "number": 6,
+  "slug": "tui",
+  "title": "The Terminal Interface in Depth",
+  "subtitle": "Finding things, reading logs, and changing a running stack",
+  "beats": [
+    {
+      "narration": "The terminal interface is where you'll spend most of your time, and most of it isn't discoverable by clicking around. This video is the tour. Finding processes, working with logs, acting on a running stack, and changing config without restarting anything.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 6",
+        "title": "The Terminal Interface in Depth",
+        "subtitle": "Finding things, reading logs, and changing a running stack"
+      }
+    },
+    {
+      "narration": "Start with F1. It's context aware, so it shows what's available where you are, and it's the fastest way to check a key you've half remembered. Everything I'm about to show is in here.",
+      "visual": { "type": "tui", "frame": "06-help", "caption": "F1: the full shortcut list, grouped by context" }
+    },
+    {
+      "narration": "Two panes, and Tab moves between them. When the table has focus the arrow keys move between processes. When the log pane has focus they scroll the log. F8 makes the table full screen, F4 does the same for the log. It's worth getting used to Tab early, because a few keys behave differently depending on which side you're on.",
+      "visual": { "type": "tui", "frame": "04-table-focus", "caption": "Tab moves focus between the process table and the log pane" }
+    },
+    {
+      "narration": "Sorting is hidden in plain sight. Look at the column headers: each one has a capital letter in brackets. That letter is the key. Press N to sort by name, S for status, M for memory, R for restarts. Press the same key again to reverse it, and a small arrow appears in the header so you can see which way it's pointing.",
+      "visual": {
+        "type": "keys",
+        "heading": "Sort keys, from the column headers",
+        "columns": 2,
+        "items": [
+          { "key": "P", "body": "PID" },
+          { "key": "N", "body": "NAME" },
+          { "key": "C", "body": "NAMESPACE" },
+          { "key": "S", "body": "STATUS" },
+          { "key": "A", "body": "AGE" },
+          { "key": "H", "body": "HEALTH" },
+          { "key": "M", "body": "MEM" },
+          { "key": "U", "body": "CPU" },
+          { "key": "R", "body": "RESTARTS" },
+          { "key": "E", "body": "EXIT CODE" }
+        ],
+        "note": "Press again to reverse. Your choice is remembered in settings.yaml between runs."
+      }
+    },
+    {
+      "narration": "For finding a process, slash filters the table as you type. On a stack of nine this is convenience. On a stack of forty it's the difference between using the tool and scrolling past what you were looking for.",
+      "visual": { "type": "tui", "frame": "10-process-filter", "caption": "/ filters the table live. Escape clears it" }
+    },
+    {
+      "narration": "Control G filters by namespace instead, so you can look at just the backend, or just the frontend, without the rest of the project in the way.",
+      "visual": { "type": "tui", "frame": "12-ns-filter", "caption": "Ctrl-G scopes the whole view to one namespace" }
+    },
+    {
+      "narration": "Now logs. F5 stops the log following new lines, which you want the moment you're trying to read something on a chatty process. F6 toggles wrapping for long lines. And if your service logs structured JSON, p pretty prints it, which turns an unreadable single line into something with shape.",
+      "visual": { "type": "tui", "frame": "15-log-fullscreen", "caption": "F4 maximizes the log. F5 stops it scrolling away from you" }
+    },
+    {
+      "narration": "Control F searches inside the log, with options for case sensitivity and regular expressions. Control N and control P step through the matches. Control K clears the buffer, which is genuinely useful right before you reproduce something, so what you see afterwards is only the reproduction.",
+      "visual": { "type": "tui", "frame": "16-log-search", "caption": "Ctrl-F, with case sensitivity and regex options" }
+    },
+    {
+      "narration": "Two more log keys. Control S turns on selection mode so you can copy text out. And m drops a marker line, so when you're comparing runs you can see exactly where the previous one ended.",
+      "visual": {
+        "type": "keys",
+        "heading": "Log pane",
+        "items": [
+          { "key": "F4", "body": "maximize and restore" },
+          { "key": "F5", "body": "follow or stop following" },
+          { "key": "F6", "body": "wrap long lines" },
+          { "key": "p", "body": "pretty print JSON" },
+          { "key": "Ctrl-S", "body": "selection mode, for copying" },
+          { "key": "Ctrl-F", "body": "find, with regex and case options" },
+          { "key": "Ctrl-N / Ctrl-P", "body": "next and previous match" },
+          { "key": "Ctrl-K", "body": "clear the buffer" },
+          { "key": "m", "body": "drop a marker line" }
+        ]
+      }
+    },
+    {
+      "narration": "F3 shows what a process actually is. Not what you wrote in the file, what it resolved to after environment expansion and templating. When a command isn't doing what you expect, this is the first place to look, because it shows you the string that really ran.",
+      "visual": { "type": "tui", "frame": "05-process-info", "caption": "F3: the resolved configuration, after expansion and templating" }
+    },
+    {
+      "narration": "F2 scales a process up or down while everything is running. Type a number, and you get that many replicas. No restart of anything else.",
+      "visual": { "type": "tui", "frame": "13-scale-form", "caption": "F2: change the replica count on a running process" }
+    },
+    {
+      "narration": "Control X sends a signal, from a list, with the numbers and a short description of each. Being able to send a user signal one to a process to make it reopen its log files, or a quit to get a Go stack dump, without leaving the interface, saves a surprising amount of tab switching.",
+      "visual": { "type": "tui", "frame": "14-signal-dialog", "caption": "Ctrl-X: POSIX signals with their numbers and meanings" }
+    },
+    {
+      "narration": "The command palette is on the colon key, in the way a lot of editors do it. Start, stop, restart, scale, send signal, and two you can't get to any other way: create a process, and delete one. Create makes an ephemeral process that isn't in your file, which is a good way to try something before you commit to writing it down.",
+      "visual": { "type": "tui", "frame": "08-command-palette", "caption": ": opens the command palette" }
+    },
+    {
+      "narration": "Two keys change config without stopping the project. Control E opens the selected process in your editor, and applies the change when you save it. Control L reloads the whole configuration from disk. Control E is worth being clear about: it edits the running copy, not your file. Nothing is written back, so if you land on something you want to keep, copy it into the YAML yourself.",
+      "visual": {
+        "type": "callout",
+        "tone": "warn",
+        "heading": "Ctrl-E edits the running project, not your file",
+        "body": "Changes take effect immediately and are lost on exit. If the YAML you type does not parse, it reverts and reopens the editor with the error at the top."
+      }
+    },
+    {
+      "narration": "Control Q is the dependency graph we saw last time, live, with each process's current state. n opens namespace operations, so you can start, stop or restart a whole namespace at once. And control T switches themes, of which there are twelve built in, including the Catppuccin and Solarized sets.",
+      "visual": { "type": "tui", "frame": "09-theme-selector", "caption": "Ctrl-T. The choice persists in settings.yaml" }
+    },
+    {
+      "narration": "Namespace operations are more useful than they look. If your compose file covers the whole company's stack, being able to stop everything in the frontend namespace while leaving the backend up is how you keep one file instead of five.",
+      "visual": { "type": "tui", "frame": "11-namespace-ops", "caption": "n: start, stop or restart every process in a namespace" }
+    },
+    {
+      "narration": "Finally, none of these keys are fixed. There's a shortcuts file in your config directory where you can rebind any action, and you can point at a different one with a flag or an environment variable. So if F9 for stop doesn't fit your hands, change it.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "~/.config/process-compose/shortcuts.yaml",
+        "code": "shortcuts:\n  process_start:\n    shortcut: F7\n  process_stop:\n    shortcut: F9\n  log_find:\n    shortcut: Ctrl-F",
+        "caption": "Override with --shortcuts, or PC_SHORTCUTS_FILES"
+      }
+    },
+    {
+      "narration": "One last thing worth knowing: your theme, your sort column and its direction are saved in a settings file and come back next time. Except in read only mode, where nothing is persisted at all. Next video is configuration: environment variables, the expansion rule that trips everyone up once, templates, and merging files.",
+      "visual": {
+        "type": "bigtext",
+        "text": "Next: environment variables and templating",
+        "sub": "Precedence, the dollar sign trap, Go templates, and merging config files"
+      }
+    }
+  ]
+}

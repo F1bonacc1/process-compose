@@ -1,0 +1,100 @@
+{
+  "number": 1,
+  "slug": "what-it-is",
+  "title": "What Process Compose Is",
+  "subtitle": "And the problem it actually solves",
+  "beats": [
+    {
+      "narration": "Process Compose runs several programs at once on one machine. Not containers, just processes. In this series I'll cover what it does, how to configure it, and where it stops being the right tool.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 1",
+        "title": "What Process Compose Is",
+        "subtitle": "And the problem it actually solves"
+      }
+    },
+    {
+      "narration": "Here's the situation it's built for. You clone a repo, and the readme tells you to start the database, wait for it, run the migrations, start the API, start a worker, and the frontend won't do anything useful until the API is up. So you open five terminal tabs. You start them in the right order, from memory. Twenty minutes later one of them has died and you haven't noticed, because its tab is behind three others.",
+      "visual": { "type": "diagram", "name": "tabs" }
+    },
+    {
+      "narration": "What you want is fairly modest. Start these programs. Start them in the right order. Wait until each one is actually ready, not just launched. Restart the ones that fall over. Put the output in one place. And when you're done, shut all of it down cleanly.",
+      "visual": {
+        "type": "points",
+        "heading": "What you actually need",
+        "items": [
+          { "lead": "Order", "body": "the API should not start before the migrations finish" },
+          { "lead": "Readiness", "body": "launched is not the same as ready to serve traffic" },
+          { "lead": "Recovery", "body": "restart what crashes, with a backoff, up to a limit" },
+          { "lead": "One view", "body": "all the logs and all the states on one screen" },
+          { "lead": "Clean exit", "body": "one keystroke stops everything, in order" }
+        ]
+      }
+    },
+    {
+      "narration": "The usual answer is Docker Compose, and if your stack is already containerized, use it. But containerizing a program purely to control its startup order is a lot of ceremony. You end up maintaining Dockerfiles, volume mounts and network definitions for code that runs fine as a local binary. The project's readme puts it plainly.",
+      "visual": {
+        "type": "quote",
+        "text": "Because sometimes you just don't want to deal with docker files, volume definitions, networks and docker registries.",
+        "source": "README.md"
+      }
+    },
+    {
+      "narration": "Process Compose is a single Go binary with no runtime dependencies. You describe your processes in a YAML file and run one command. This is a complete, working config. Two processes, and the second one waits for the first to finish before it starts.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "version: \"0.5\"\n\nprocesses:\n  hello:\n    command: echo 'Hello World'\n  pc:\n    command: echo 'From Process Compose'\n    depends_on:\n      hello:\n        condition: process_completed",
+        "highlight": [8, 9, 10]
+      }
+    },
+    {
+      "narration": "Run it and you get a terminal interface. Every process with its state, how long it has been up, whether its health check passes, memory, CPU, restart count and exit code. Logs for the selected row sit underneath. This is the demo project I'll use for the rest of the series: a small link shortener with a migration step, an API, two workers, a mail relay and a static frontend.",
+      "visual": { "type": "tui", "frame": "03-running", "caption": "Nine processes across three namespaces, all real" }
+    },
+    {
+      "narration": "It is worth being clear about scope. This is a single machine orchestrator. It is aimed at local development, at running a stack in continuous integration, and at bundling a handful of services on one box. It does not schedule across hosts, and it is not trying to replace systemd for long lived production services. If you need a cluster, this is not that.",
+      "visual": {
+        "type": "compare",
+        "before": {
+          "title": "Good fit",
+          "items": [
+            "Local dev stacks with real ordering rules",
+            "Integration tests in CI that need dependencies up first",
+            "A few services on one VM or one dev box",
+            "Anything you would otherwise run in five tmux panes"
+          ]
+        },
+        "after": {
+          "title": "Reach for something else",
+          "items": [
+            "Scheduling work across many machines",
+            "Long lived production services with system integration",
+            "Container image build and distribution",
+            "Anything that needs cluster networking"
+          ]
+        }
+      }
+    },
+    {
+      "narration": "Over the next nine videos I'll go through installation and a first config, dependency conditions, health checks, restart and shutdown behaviour, the terminal interface in detail, environment and templating, namespaces and replicas, the REST API, and using it in continuous integration. Next up, installing it and writing a config from scratch.",
+      "visual": {
+        "type": "points",
+        "heading": "The series",
+        "compact": true,
+        "items": [
+          { "lead": "2", "body": "Install it and write your first config" },
+          { "lead": "3", "body": "Dependencies and startup order" },
+          { "lead": "4", "body": "Health checks that mean something" },
+          { "lead": "5", "body": "Restart policies and clean shutdown" },
+          { "lead": "6", "body": "The terminal interface in depth" },
+          { "lead": "7", "body": "Environment variables and templating" },
+          { "lead": "8", "body": "Namespaces, replicas and schedules" },
+          { "lead": "9", "body": "The CLI and the REST API" },
+          { "lead": "10", "body": "CI pipelines and the MCP server" }
+        ]
+      }
+    }
+  ]
+}

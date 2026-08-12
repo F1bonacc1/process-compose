@@ -1,0 +1,154 @@
+{
+  "number": 9,
+  "slug": "cli-api",
+  "title": "The CLI and the REST API",
+  "subtitle": "Driving a running project from outside the interface",
+  "beats": [
+    {
+      "narration": "The terminal interface is a client. Underneath it there's a server with an HTTP API, and everything the interface can do, a script can do too. That's what this video is about: running without the interface, and controlling a project from somewhere else.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 9",
+        "title": "The CLI and the REST API",
+        "subtitle": "Driving a running project from outside the interface"
+      }
+    },
+    {
+      "narration": "Every time you run it, you get two things: a supervisor running your processes, and an HTTP server on port eight thousand and eighty. The interface talks to that server. So does the command line. So can you.",
+      "visual": { "type": "diagram", "name": "clientserver" }
+    },
+    {
+      "narration": "First, running without the interface. The t flag set to false gives you plain interleaved output on standard out, prefixed with the process name. That's the mode you want in continuous integration, or any time output is going into a log file rather than onto a screen.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose up -t=false",
+        "output": "[migrate ] applied 0001_create_links\n[migrate ] applied 0002_create_hits\n[migrate ] schema up to date, 3 migrations total\n[api     ] 14:21:12 linkstash api starting, pid 20241\n[api     ] 14:21:14 listening on http://0.0.0.0:8110\n[worker-0] 14:21:16 [w0] worker replica 0 online, pid 20257",
+        "caption": "Same thing: PC_DISABLE_TUI, or is_tui_disabled in the config"
+      }
+    },
+    {
+      "narration": "Or detach it entirely. The project runs in the background, and you get your terminal back. You can reconnect later with attach, which gives you the full interface against the already running project. The flame in the corner turns into a lightning bolt so you can tell you're attached rather than owning it.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose up -D          # detached, no interface\nprocess-compose attach          # reconnect later\nprocess-compose down            # stop everything",
+        "output": ""
+      }
+    },
+    {
+      "narration": "Now the process commands. List gives you the state of everything, and there are output formats for scripts as well as for people.",
+      "visual": { "type": "cmdframe", "command": "process-compose process list -o wide", "frame": "20-cli-list" }
+    },
+    {
+      "narration": "Start, stop, restart and scale do what they say, by name. Stop takes more than one name. These are the same operations as the function keys, which means anything you do by hand you can also put in a script.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose process start worker\nprocess-compose process stop worker-0 worker-1\nprocess-compose process restart api\nprocess-compose process scale worker 4",
+        "output": ""
+      }
+    },
+    {
+      "narration": "Logs from outside, with a tail count and a follow flag, the way you'd expect. There's a raw flag too, if you want the output without the added metadata.",
+      "visual": { "type": "cmdframe", "command": "process-compose process logs worker-0 -n 12", "frame": "24-cli-logs", "caption": "Add -f to follow, --raw-log for no metadata" }
+    },
+    {
+      "narration": "Ports tells you what a process is actually listening on, which is more useful than it sounds when a service picks its own port or you're running several replicas.",
+      "visual": { "type": "cmdframe", "command": "process-compose process ports api", "frame": "27-cli-ports" }
+    },
+    {
+      "narration": "At the project level, state gives you the overview: name, uptime, how many processes and how many are running, and which files it was built from.",
+      "visual": { "type": "cmdframe", "command": "process-compose project state", "frame": "23-cli-state" }
+    },
+    {
+      "narration": "This next one deserves its own beat. Is ready, with the wait flag, blocks until every process in the project is up and healthy, then exits. That single command is the answer to a whole family of shell scripts that poll in a loop. Start the stack detached, wait for it to be ready, then run your tests.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose up -D\nprocess-compose project is-ready --wait\n./run-integration-tests.sh",
+        "output": "",
+        "caption": "No polling loop, no arbitrary sleep"
+      }
+    },
+    {
+      "narration": "Project update reloads the configuration into the running project. Change your YAML, run it, and the processes that changed get restarted while everything else stays up.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose project update -f process-compose.yaml",
+        "output": ""
+      }
+    },
+    {
+      "narration": "Behind all of that is a documented HTTP API. Open the server in a browser and you get Swagger. There are about thirty endpoints, covering everything we've just done plus a dependency graph endpoint and two WebSocket streams.",
+      "visual": {
+        "type": "table",
+        "heading": "A sample of the REST API",
+        "columns": ["method", "path", "what it does"],
+        "rows": [
+          ["GET", "/processes", "state of every process"],
+          ["GET", "/process/:name", "state of one"],
+          ["POST", "/process/start/:name", "start it"],
+          ["PATCH", "/process/stop/:name", "stop it"],
+          ["PATCH", "/process/scale/:name/:scale", "change replica count"],
+          ["GET", "/process/logs/:name/:endOffset/:limit", "a slice of the log buffer"],
+          ["GET", "/project/state", "project overview"],
+          ["GET", "/graph", "the dependency graph"],
+          ["GET", "/process/logs/ws", "log stream over WebSocket"],
+          ["GET", "/process/states/ws", "state change stream"]
+        ]
+      }
+    },
+    {
+      "narration": "The state stream is the interesting one. Rather than polling for changes, you subscribe and get pushed an event whenever a process changes state. That's what the monitor command uses, and it's what you'd build a dashboard or a desktop notification on.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose process monitor api worker-0 -o json",
+        "output": "{\"name\":\"api\",\"status\":\"Running\",\"health\":\"Ready\",\"snapshot\":true}\n{\"name\":\"worker-0\",\"status\":\"Running\",\"snapshot\":true}\n{\"name\":\"api\",\"status\":\"Restarting\",\"health\":\"Not Ready\"}",
+        "caption": "Pushed on change, not polled"
+      }
+    },
+    {
+      "narration": "An open HTTP port that can start processes deserves a moment of thought. There's token authentication: set a token, at least twenty characters, and every request needs it in a header. Set it from an environment variable or read it from a file so it isn't in your shell history.",
+      "visual": {
+        "type": "cmd",
+        "command": "export PC_API_TOKEN=\"$(openssl rand -hex 24)\"\nprocess-compose up -D\n\ncurl -H \"X-PC-Token-Key: $PC_API_TOKEN\" localhost:8080/processes",
+        "output": "",
+        "caption": "Or --token-file / PC_API_TOKEN_PATH to keep it off the command line"
+      }
+    },
+    {
+      "narration": "Better still, if nothing remote needs to reach it, don't open a TCP port at all. Use a Unix domain socket, which gets you file system permissions instead of network access. Or turn the server off completely with no server, if you just want the supervisor.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose up -U -u /tmp/pc.sock\nprocess-compose attach -U -u /tmp/pc.sock\n\nprocess-compose up --no-server",
+        "output": ""
+      }
+    },
+    {
+      "narration": "One more flag worth knowing: read only. It disables every mutating operation and stops the interface persisting your theme and sort settings. Useful when you're attaching to something shared and would rather not be the person who stopped the wrong process.",
+      "visual": {
+        "type": "callout",
+        "tone": "info",
+        "heading": "--read-only",
+        "body": "No start, stop, restart, scale or config edits, and no writes to settings.yaml. A safe way to attach to a project you do not own."
+      }
+    },
+    {
+      "narration": "Because the API has an OpenAPI description, clients can be generated from it. There's a Rust crate in the repository that does exactly that, including a typed builder for the config file itself. If you're driving Process Compose from another program, that's a reasonable place to start.",
+      "visual": {
+        "type": "points",
+        "heading": "Talking to it from code",
+        "items": [
+          { "lead": "OpenAPI", "body": "the Swagger description is served by the running project" },
+          { "lead": "Rust", "body": "the process-compose-client crate in crates/, with typed config and a generated HTTP client" },
+          { "lead": "WebSocket", "body": "log and state streams for anything that needs live updates" }
+        ]
+      }
+    },
+    {
+      "narration": "Last video: putting this in a continuous integration pipeline so a test run brings up its own dependencies, and the MCP server, which lets an AI assistant see and control your stack.",
+      "visual": {
+        "type": "bigtext",
+        "text": "Next: CI pipelines and the MCP server",
+        "sub": "Tests with real dependencies, and exposing processes as tools"
+      }
+    }
+  ]
+}

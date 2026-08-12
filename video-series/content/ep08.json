@@ -1,0 +1,140 @@
+{
+  "number": 8,
+  "slug": "namespaces-replicas",
+  "title": "Namespaces, Replicas and Schedules",
+  "subtitle": "Slicing a large project, running copies, and timed work",
+  "beats": [
+    {
+      "narration": "Once a compose file covers more than a handful of processes, you want to run part of it rather than all of it. That's namespaces. Then two features that come up alongside: running several copies of a process, and running something on a timer.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 8",
+        "title": "Namespaces, Replicas and Schedules",
+        "subtitle": "Slicing a large project, running copies, and timed work"
+      }
+    },
+    {
+      "narration": "A namespace is a label on a process. Everything without one lands in a namespace called default. The demo project uses three: backend, frontend and tools. You can see them in the namespace column.",
+      "visual": { "type": "tui", "frame": "03-running", "caption": "backend, frontend and tools, in the NAMESPACE column" }
+    },
+    {
+      "narration": "The point is selection. Pass the namespace flag and you start only those processes. You can pass it more than once, or set an environment variable instead, which is handy in a shell profile when you always work on the same part of the system.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose -n backend\nprocess-compose -n backend -n tools\nPC_NAMESPACES=backend process-compose",
+        "output": "# first:  only the backend processes\n# second: backend and tools\n# third:  same as the first, from the environment"
+      }
+    },
+    {
+      "narration": "As of the most recent release, a process can be in more than one namespace. Write a single name as a plain string, or a list. This is the same idea as profiles in Docker Compose. The rule is: a process starts if any one of its namespaces was selected.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  billing_api:\n    command: \"./billing_api\"\n    namespace: [\"billing\"]\n\n  auth_api:\n    command: \"./auth_api\"\n    namespace: auth            # a single one can be a plain string\n\n  database:\n    command: \"./run_db\"\n    namespace: [\"billing\", \"auth\"]   # needed by both teams",
+        "highlight": [12]
+      }
+    },
+    {
+      "narration": "That example is the reason the feature exists. Two teams, one shared database. The billing team starts the billing namespace and gets their API and the database. The auth team starts theirs and gets their API and the same database definition. Neither team maintains a duplicate.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose -n billing\nprocess-compose -n auth",
+        "output": "# billing_api + database\n# auth_api    + database"
+      }
+    },
+    {
+      "narration": "There's a sensible bit of behaviour when you select a subset. If a process you started depends on something that was excluded, that dependency edge is dropped and you get a warning, rather than the whole thing hanging forever on a process that is never going to start.",
+      "visual": {
+        "type": "callout",
+        "tone": "info",
+        "heading": "Dependencies across an excluded namespace",
+        "body": "Edges pointing at processes outside your selection are pruned, with a warning in the log. Your subset starts instead of waiting on something that will never run."
+      }
+    },
+    {
+      "narration": "Namespaces are also a unit you can act on. From the command line you can list them, and start, stop or restart a whole one. In the interface, n opens the same operations.",
+      "visual": { "type": "cmdframe", "command": "process-compose namespace list", "frame": "26-cli-namespaces", "caption": "Also: namespace start, namespace stop, namespace restart" }
+    },
+    {
+      "narration": "Which looks like this. Pick an operation, pick a namespace, and everything in it moves together. Restarting just the backend while your frontend keeps running is a very ordinary thing to want, and this is how you get it.",
+      "visual": { "type": "tui", "frame": "11-namespace-ops", "caption": "n: operations on a whole namespace" }
+    },
+    {
+      "narration": "Now replicas. Set a number, and you get that many copies. They're named after the process with a zero padded suffix, so worker becomes worker dash zero and worker dash one. Each copy is a separate process with its own logs, its own state, and its own row.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "worker:\n  command: \"python3 ./services/worker.py\"\n  replicas: 2\n  depends_on:\n    api:\n      condition: process_healthy",
+        "highlight": [3]
+      }
+    },
+    {
+      "narration": "The thing that bites first is ports. Two copies of the same server cannot bind the same port, so the second one dies immediately and restarts forever. The fix is the replica number we saw last time: build the port out of it, and each copy gets its own.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "server:\n  command: \"python3 -m http.server 404{{.PC_REPLICA_NUM}}\"\n  replicas: 2\n  readiness_probe:\n    http_get:\n      host: \"127.0.0.1\"\n      port: \"404{{.PC_REPLICA_NUM}}\"",
+        "highlight": [2, 7],
+        "caption": "Replica 0 binds 4040, replica 1 binds 4041"
+      }
+    },
+    {
+      "narration": "Depending on a replicated process works the way you'd hope. Name the group, and the condition applies to every copy. If you need something more specific, you can set a default for the group and then override one instance by name.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "producer:\n  command: \"/some/other/binary\"\n  depends_on:\n    consumer:            # the default for every replica\n      condition: process_healthy\n    consumer-0:          # override one instance\n      condition: process_started",
+        "highlight": [4, 6]
+      }
+    },
+    {
+      "narration": "You can change the count while everything is running. F2 in the interface, or the scale command from another terminal. Scaling down stops the highest numbered copies, scaling up starts new ones, and nothing else is disturbed.",
+      "visual": { "type": "tui", "frame": "13-scale-form", "caption": "F2, or: process-compose process scale worker 4" }
+    },
+    {
+      "narration": "Last topic: scheduled processes. Some work belongs on a timer rather than running continuously. A nightly cleanup, a cache warm, a database compaction. You get two ways to express it: a cron expression, or a plain interval.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "vacuum:\n  command: \"sqlite3 ./data/linkstash.db 'VACUUM;'\"\n  schedule:\n    interval: \"30s\"\n    run_on_start: false\n\nnightly-report:\n  command: \"./generate-report\"\n  schedule:\n    cron: \"0 2 * * *\"\n    timezone: \"Europe/Berlin\"\n    max_concurrent: 1",
+        "highlight": [4, 10, 11]
+      }
+    },
+    {
+      "narration": "Max concurrent is the field that saves you. It defaults to one, which means if a run is still going when the next one is due, the next one is skipped rather than piling up on top of it. That is almost always what you want for a job that occasionally runs long.",
+      "visual": {
+        "type": "points",
+        "heading": "Schedule fields",
+        "items": [
+          { "lead": "cron", "body": "a five field cron expression. Takes precedence if you set both" },
+          { "lead": "interval", "body": "a plain duration, like 30s or 10m" },
+          { "lead": "timezone", "body": "for cron, so 2am means 2am where you are" },
+          { "lead": "run_on_start", "body": "also fire once immediately at startup" },
+          { "lead": "max_concurrent", "body": "defaults to 1, so overlapping runs are skipped" }
+        ]
+      }
+    },
+    {
+      "narration": "A scheduled process shows a status of scheduled rather than running, and F3 tells you when it will next fire. Stopping it pauses the schedule, and starting it again resumes it. One limitation to know: you cannot scale a scheduled process. Setting replicas above one is a configuration error.",
+      "visual": {
+        "type": "callout",
+        "tone": "warn",
+        "heading": "Scheduled processes cannot be scaled",
+        "body": "replicas above 1 on a scheduled process is a validation error under is_strict, and a warning otherwise. Use max_concurrent to control overlap instead."
+      }
+    },
+    {
+      "narration": "Next video we leave the interface entirely. Process Compose is a server as well as a client, so you can drive a running project from scripts, from another terminal, or over HTTP.",
+      "visual": {
+        "type": "bigtext",
+        "text": "Next: the CLI and the REST API",
+        "sub": "Headless mode, attaching, and controlling a project over HTTP"
+      }
+    }
+  ]
+}

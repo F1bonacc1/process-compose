@@ -1,0 +1,166 @@
+{
+  "number": 5,
+  "slug": "restart-shutdown",
+  "title": "Restart Policies and Clean Shutdown",
+  "subtitle": "What happens when something exits, and how to stop it properly",
+  "beats": [
+    {
+      "narration": "Processes exit. Sometimes that's a crash, sometimes it's the whole point, and sometimes it's you pressing a key. This video is about telling Process Compose which is which, and about stopping things in a way they can survive.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 5",
+        "title": "Restart Policies and Clean Shutdown",
+        "subtitle": "What happens when something exits, and how to stop it properly"
+      }
+    },
+    {
+      "narration": "Everything lives in the availability block, and the first field is restart. Four values. No is the default: it exits, and that's the end of it. Always brings it back regardless of exit code. On failure brings it back only on a non zero exit. Exit on failure is different in kind, and I'll come to it.",
+      "visual": {
+        "type": "table",
+        "heading": "availability.restart",
+        "columns": ["value", "behaviour", "typical use"],
+        "rows": [
+          ["\"no\"", "never restarted, this is the default", "migrations, seeds, one shot tasks"],
+          ["always", "restarted on any exit, zero or not", "long running services"],
+          ["on_failure", "restarted only on a non zero exit", "jobs that legitimately finish"],
+          ["exit_on_failure", "the whole project shuts down", "preflight checks, CI gates"]
+        ]
+      }
+    },
+    {
+      "narration": "Note the quotes around no. In YAML, an unquoted no is the boolean false, and that's not what this field wants. Quote it and move on.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "migrate:\n  command: \"python3 ./services/migrate.py\"\n  availability:\n    restart: \"no\"      # quoted. bare no is a YAML boolean",
+        "highlight": [4]
+      }
+    },
+    {
+      "narration": "Two fields control the loop. Backoff seconds is the wait before trying again, and the minimum is one second whatever you write. Max restarts caps the attempts, and zero means unlimited, which is also the default. So a service with restart always and nothing else will retry forever, once a second, for as long as you leave it running.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "worker:\n  command: \"python3 ./services/worker.py\"\n  availability:\n    restart: always\n    backoff_seconds: 2\n    max_restarts: 10     # 0, the default, means unlimited",
+        "highlight": [5, 6]
+      }
+    },
+    {
+      "narration": "That default is worth thinking about for a second. A misconfigured service that dies on startup will sit there restarting every second, filling your log buffer, for the rest of the afternoon. Putting a ceiling on it turns an infinite loop into a process that stops and shows you a failed state, which is much easier to notice.",
+      "visual": { "type": "tui", "frame": "17-after-stop", "caption": "The RESTARTS column is where a crash loop becomes visible" }
+    },
+    {
+      "narration": "Now exit on failure, and its two relatives. These don't restart anything, they end the whole project. Exit on failure means that if this process fails, Process Compose shuts everything down and exits with that process's exit code. Exit on end does the same when the process finishes at all, successfully or not. Exit on skipped covers the case where the process never ran because a dependency didn't come up.",
+      "visual": {
+        "type": "points",
+        "heading": "Ending the whole project",
+        "items": [
+          { "lead": "exit_on_failure", "body": "this process fails, so everything stops with its exit code" },
+          { "lead": "exit_on_end", "body": "this process finishes at all, so everything stops. Implies exit_on_failure" },
+          { "lead": "exit_on_skipped", "body": "this process never ran because a dependency failed" }
+        ],
+        "note": "This is the mechanism that makes Process Compose usable as a CI test harness."
+      }
+    },
+    {
+      "narration": "That third one is the shape of a test run in continuous integration. Bring up the dependencies, wait until they're healthy, run the tests, and let the test process's exit code become the exit code of the whole thing. We'll build this out properly in the last video.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  tests:\n    command: tests-run\n    availability:\n      exit_on_end: true\n    depends_on:\n      redis:\n        condition: process_healthy\n      postgres:\n        condition: process_healthy",
+        "highlight": [4, 5]
+      }
+    },
+    {
+      "narration": "Next problem. Some programs exit non zero as their normal, correct response to being asked to stop. A process that traps an interrupt and exits one hundred and thirty is doing exactly the right thing, but by default that reads as a failure, so it gets restarted and your status column goes red on a clean shutdown.",
+      "visual": {
+        "type": "compare",
+        "before": {
+          "title": "Without an allowlist",
+          "items": [
+            "You press F9",
+            "Process traps SIGINT and exits 130",
+            "130 is non zero, so it counts as a failure",
+            "on_failure restarts it",
+            "Final state: Failed"
+          ]
+        },
+        "after": {
+          "title": "With success_exit_codes",
+          "items": [
+            "You press F9",
+            "Process traps SIGINT and exits 130",
+            "130 is allowlisted, so it counts as success",
+            "No restart",
+            "Final state: Completed"
+          ]
+        }
+      }
+    },
+    {
+      "narration": "Success exit codes is a per process allowlist of extra codes to treat as a clean exit. It's modelled on systemd's success exit status. Here's the pattern from the docs, for a dev server that expects to be interrupted.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  quarkus:\n    command: \"./mvnw quarkus:dev\"\n    success_exit_codes: [130]   # 130 == 128 + SIGINT\n    shutdown:\n      signal: 2                 # send SIGINT, not SIGTERM",
+        "highlight": [4, 6]
+      }
+    },
+    {
+      "narration": "Which brings us to shutdown. By default a process gets a term signal and then some time to deal with it. The shutdown block lets you change all of that. Signal takes a number, so two for interrupt, fifteen for terminate. Timeout seconds is how long to wait before it gets killed outright.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "api:\n  command: \"python3 ./services/api.py\"\n  shutdown:\n    signal: 15            # SIGTERM, the default\n    timeout_seconds: 5    # then it gets killed\n    parent_only: false    # signal the whole process group",
+        "highlight": [4, 5, 6]
+      }
+    },
+    {
+      "narration": "Parent only matters more than it sounds. Your command usually runs under a shell, so what you're really starting is a shell that starts your program. By default the signal goes to the whole process group, which is what you want. Set parent only to true when the child manages its own children and you don't want to interrupt that.",
+      "visual": { "type": "diagram", "name": "signals" }
+    },
+    {
+      "narration": "For anything that won't be talked to with signals, there's a shutdown command instead. This is how you stop things you didn't really start, like a database that forks away from you, or a container.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "nginx:\n  command: \"docker run -d --rm -p80:80 --name nginx_test nginx\"\n  is_daemon: true\n  shutdown:\n    command: \"docker stop nginx_test\"\n    signal: 15\n    timeout_seconds: 5",
+        "highlight": [3, 5]
+      }
+    },
+    {
+      "narration": "That example shows the daemon flag too. Set it when your command starts something and then returns, rather than staying in the foreground. Process Compose then knows not to treat that immediate exit as the service ending. Daemons are stopped through their shutdown command, so if you mark something as a daemon, give it one.",
+      "visual": {
+        "type": "callout",
+        "tone": "info",
+        "heading": "is_daemon",
+        "body": "For commands that fork and return. The process you launched exits immediately, but the service is still running, so a shutdown command is how you stop it. Pair it with restart: always."
+      }
+    },
+    {
+      "narration": "One more, for interactive processes. If a process is holding a real terminal, a signal may not be the right way to end it. Send keys types into it instead. Stopping a vim session by sending colon q is a small thing, but it means an editor in your stack shuts down as cleanly as everything else.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "my-vim:\n  command: vim process-compose.yaml\n  is_interactive: true\n  shutdown:\n    send_keys: \":q\\r\"",
+        "highlight": [5],
+        "caption": "Prefer single quotes in YAML for escape sequences like '\\x03'"
+      }
+    },
+    {
+      "narration": "To summarise: restart says whether it comes back, backoff and max restarts stop a crash loop being infinite, the exit on family ends the project deliberately, success exit codes stops a clean signal exit looking like a crash, and the shutdown block decides how it's asked to stop. Next video we go through the terminal interface properly.",
+      "visual": {
+        "type": "bigtext",
+        "text": "Next: the terminal interface in depth",
+        "sub": "Search, filter, scale, signals, themes, and editing config while it runs"
+      }
+    }
+  ]
+}

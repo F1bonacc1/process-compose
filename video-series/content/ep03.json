@@ -1,0 +1,162 @@
+{
+  "number": 3,
+  "slug": "dependencies",
+  "title": "Dependencies and Startup Order",
+  "subtitle": "Five conditions, and when each one is right",
+  "beats": [
+    {
+      "narration": "Startup order is the reason most people find this tool. In this video: the five conditions you can wait on, how to pick between them, and how to see the graph you've actually built rather than the one you think you've built.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 3",
+        "title": "Dependencies and Startup Order",
+        "subtitle": "Five conditions, and when each one is right"
+      }
+    },
+    {
+      "narration": "Let's start with the thing we're trying to replace. Sleeping for a fixed number of seconds. It's in every start script I've ever inherited. The problem isn't that it's ugly, it's that the number is always wrong. Too short on a cold cache or a loaded CI runner, and it fails. Too long, and you pay for it on every single run for the rest of the project's life.",
+      "visual": {
+        "type": "compare",
+        "before": {
+          "title": "What we're replacing",
+          "code": "./start-db.sh &\nsleep 5          # hope that was enough\n./migrate.sh\nsleep 2          # ...and that\n./api &\nsleep 3\n./worker &"
+        },
+        "after": {
+          "title": "What we want instead",
+          "code": "wait until migrate exits 0\nthen  start the api\nwait until the api answers /health\nthen  start the workers"
+        }
+      }
+    },
+    {
+      "narration": "The syntax is a depends on block. It's a map: each key is another process name, and each value carries a condition. That's the whole shape.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  api:\n    command: \"python3 ./services/api.py\"\n    depends_on:\n      migrate:\n        condition: process_completed_successfully",
+        "highlight": [4, 5, 6]
+      }
+    },
+    {
+      "narration": "There are five conditions. Process started is the loosest. It means the process has been launched. Not that it's listening, not that it's initialised, just that it exists. Use it when the dependency is genuinely instant, or when you have retry logic on the other side.",
+      "visual": {
+        "type": "conditions",
+        "items": [
+          {
+            "name": "process_started",
+            "meaning": "the process has been launched",
+            "use": "the dependency is instant, or the dependent already retries",
+            "warn": "does not mean listening, initialised, or ready"
+          }
+        ]
+      }
+    },
+    {
+      "narration": "Process completed waits for the process to exit, with any exit code at all. Process completed successfully waits for it to exit zero. The difference matters more than it looks. If you use the first one for a migration step, a failed migration still releases your API, and you get a confusing crash downstream instead of a clear failure at the source. For anything that has to succeed, use the second one.",
+      "visual": {
+        "type": "conditions",
+        "items": [
+          {
+            "name": "process_completed",
+            "meaning": "the process exited, any exit code",
+            "use": "cleanup or best-effort steps where failure is acceptable"
+          },
+          {
+            "name": "process_completed_successfully",
+            "meaning": "the process exited with code 0",
+            "use": "migrations, seeding, build steps, anything that must work",
+            "good": true
+          }
+        ]
+      }
+    },
+    {
+      "narration": "Process healthy is the one you want for services. It waits for the dependency's readiness probe to pass. This is the difference between the API being alive and the API being able to answer. There's a rule attached: the process you're waiting on has to actually define a readiness or liveness probe. If it doesn't, you get an error at load time rather than a dependency that silently never resolves.",
+      "visual": {
+        "type": "conditions",
+        "items": [
+          {
+            "name": "process_healthy",
+            "meaning": "the dependency's readiness probe is passing",
+            "use": "databases, APIs, anything with a real startup sequence",
+            "warn": "requires the dependency to define a readiness or liveness probe",
+            "good": true
+          }
+        ]
+      }
+    },
+    {
+      "narration": "The fifth is process log ready, and it exists for a specific and very common annoyance: services that only tell you they're ready by printing a line. Postgres does this. Plenty of application servers do this. You give the process a ready log line, and anything depending on it waits for that string to appear in its output. It's a substring match, not a regular expression.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  mailer:\n    command: \"python3 ./services/mailer.py\"\n    ready_log_line: \"relay ready, accepting mail\"\n\n  notifier:\n    command: \"./notifier\"\n    depends_on:\n      mailer:\n        condition: process_log_ready",
+        "highlight": [4, 10]
+      }
+    },
+    {
+      "narration": "One catch worth knowing before you hit it. A ready log line and a readiness probe are mutually exclusive. You can't set both on the same process. If you do, it's rejected at load, which is better than the alternative but still surprising the first time.",
+      "visual": {
+        "type": "callout",
+        "tone": "warn",
+        "heading": "Mutually exclusive",
+        "body": "ready_log_line and readiness_probe cannot both be set on the same process. Pick the one that matches how the service actually announces itself."
+      }
+    },
+    {
+      "narration": "Here's the demo project's real chain. Migrate has to exit zero. Then the API starts, and it has a readiness probe on its health endpoint. The workers and the frontend both wait for the API to be healthy, not merely started. And the smoke test waits for the same thing, which is what makes it a smoke test rather than a race.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "migrate:      # runs once, must exit 0\n  availability:\n    restart: \"no\"\n\napi:\n  depends_on:\n    migrate:\n      condition: process_completed_successfully\n\nworker:\n  replicas: 2\n  depends_on:\n    api:\n      condition: process_healthy\n\nweb:\n  depends_on:\n    api:\n      condition: process_healthy",
+        "highlight": [7, 8, 13, 14, 18, 19]
+      }
+    },
+    {
+      "narration": "Now, the graph you wrote is not always the graph you meant. Press control Q in the terminal interface and you get the dependency tree live, with the current state and the condition on each edge. This is the fastest way to find the edge you forgot.",
+      "visual": { "type": "tui", "frame": "07-dependency-graph", "caption": "Ctrl-Q: the live dependency tree with conditions on each edge" }
+    },
+    {
+      "narration": "The same graph is available from the command line without opening the interface, which is handy in a pull request or a readme.",
+      "visual": { "type": "cmdframe", "command": "process-compose graph", "frame": "21-cli-graph" }
+    },
+    {
+      "narration": "And it will emit Mermaid, so you can paste a current, accurate diagram straight into your documentation instead of maintaining a drawing that drifts.",
+      "visual": { "type": "cmdframe", "command": "process-compose graph --format mermaid", "frame": "22-cli-graph-mermaid", "caption": "Also supports json and yaml" }
+    },
+    {
+      "narration": "Once you have a graph, the obvious question is what's actually costing you time on startup. Analyze critical chain answers it. The at sign is when a process became ready, and the plus is how long it took. Here the API is the whole story: four seconds of its own startup, and everything downstream is waiting on it.",
+      "visual": { "type": "cmdframe", "command": "process-compose analyze critical-chain", "frame": "25-cli-critical", "caption": "Modelled on systemd-analyze critical-chain" }
+    },
+    {
+      "narration": "Two more things. Circular dependencies are rejected at load time, so you can't accidentally build a deadlock. And if you only want part of the stack, you can name the processes you want. By default that pulls in their dependencies too. Add no deps if you want just that process and nothing else, which is what you want when the database is already running from an earlier session.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose up api worker\nprocess-compose up api --no-deps",
+        "output": "# first form:  starts migrate, then api, then worker\n# second form: starts api alone, dependencies assumed running",
+        "caption": ""
+      }
+    },
+    {
+      "narration": "Finally, shutdown. By default everything stops at once. If your processes care about the order they go down in, and database clients usually do, set ordered shutdown at the top level and it tears down in reverse dependency order.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "version: \"0.5\"\nordered_shutdown: true\n\nprocesses:\n  # ...",
+        "highlight": [2],
+        "caption": "Also available as --ordered-shutdown or PC_ORDERED_SHUTDOWN"
+      }
+    },
+    {
+      "narration": "So: use completed successfully for one shot steps, healthy for services, and log ready when a service will only talk to you through its output. Next video is about making healthy mean something, which is where health checks come in.",
+      "visual": {
+        "type": "bigtext",
+        "text": "Next: health checks",
+        "sub": "Readiness, liveness, and the tuning that decides whether either one helps"
+      }
+    }
+  ]
+}

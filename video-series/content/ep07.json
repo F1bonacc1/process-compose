@@ -1,0 +1,217 @@
+{
+  "number": 7,
+  "slug": "config",
+  "title": "Environment Variables and Templating",
+  "subtitle": "Two substitution systems, and when each one runs",
+  "beats": [
+    {
+      "narration": "There are two substitution systems in a Process Compose file, and they look similar enough that people mix them up. One runs when the file is read. The other runs when the process starts. Once you know which is which, a whole category of confusing bug goes away.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 7",
+        "title": "Environment Variables and Templating",
+        "subtitle": "Two substitution systems, and when each one runs"
+      }
+    },
+    {
+      "narration": "Start with the simple part. Environment variables can be set globally for every process, or on a single process. Both are lists of name equals value strings. Process level wins over global.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "environment:\n  - \"PYTHONUNBUFFERED=1\"\n  - \"LINKSTASH_DB=./data/linkstash.db\"\n\nprocesses:\n  api:\n    command: \"python3 ./services/api.py\"\n    environment:\n      - \"API_PORT=8110\"\n      - \"LOG_LEVEL=debug\"",
+        "highlight": [1, 8]
+      }
+    },
+    {
+      "narration": "There's also a dot env file, read automatically from the working directory. You can point at a different one, or several, and you can turn it off completely. Individual processes can have their own env file too.",
+      "visual": {
+        "type": "points",
+        "heading": "Environment precedence, lowest to highest",
+        "items": [
+          { "lead": "1", "body": ".env file" },
+          { "lead": "2", "body": "the environment process-compose itself was started with" },
+          { "lead": "3", "body": "the global environment block" },
+          { "lead": "4", "body": "the process env_file" },
+          { "lead": "5", "body": "the process environment block" }
+        ],
+        "note": "Disable with --disable-dotenv globally, or is_dotenv_disabled on one process."
+      }
+    },
+    {
+      "narration": "Now the part that matters. When Process Compose reads your YAML file, before it parses anything, it does a text substitution pass. In that pass, a name in curly braces after a dollar sign gets replaced with a value from your dot env file or from the environment Process Compose is running in. Nothing else exists yet. Your process level environment blocks have not been applied, because there are no processes yet.",
+      "visual": { "type": "diagram", "name": "twophase" }
+    },
+    {
+      "narration": "So here's the trap. Two processes. Both set the same variable in their own environment block. The first one references it in curly braces, the second escapes the dollar sign by doubling it. Watch what they print.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  braced:\n    command: \"echo [${ENV_TEST}]\"\n    environment: [\"ENV_TEST=from-process\"]\n\n  escaped:\n    command: \"echo [$${ENV_TEST}]\"\n    environment: [\"ENV_TEST=from-process\"]",
+        "highlight": [3, 7]
+      }
+    },
+    {
+      "narration": "The braced one prints empty brackets. The escaped one prints the value. The first was substituted at load time, when the variable did not exist anywhere, so it became an empty string. The second was left alone and handed to the shell, which expanded it at run time, when the process environment was in place.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose up -t=false",
+        "output": "[braced ] []\n[escaped] [from-process]",
+        "caption": "Same variable, same value, different timing"
+      }
+    },
+    {
+      "narration": "The rule in one line. Curly braces mean resolve this now, from the dot env file and the shell that launched me. Two dollar signs mean leave it for the process to resolve later. A bare dollar with no braces is a different thing again, and it is the one that surprises people.",
+      "visual": {
+        "type": "table",
+        "heading": "What resolves when",
+        "columns": ["you write", "resolved by", "sees"],
+        "rows": [
+          ["${VAR}", "the loader, at file read time", ".env and the launching environment"],
+          ["$$VAR or $${VAR}", "the shell, at process start", "the full process environment"],
+          ["$VAR", "nobody, unless a shell runs it", "see the next slide"]
+        ]
+      }
+    },
+    {
+      "narration": "The loader only ever looks for a dollar sign followed by an opening brace. A bare dollar with just a name after it is not a substitution as far as the loader is concerned, so it passes straight through. In the command field that works out fine, because the shell expands it when the process starts. But command is the only field that goes through a shell. Put a bare dollar variable in a working directory or in an environment value, and nothing expands it. Not the loader, not the shell. You get the literal text, and usually an error.",
+      "visual": {
+        "type": "compare",
+        "before": {
+          "title": "$VAR outside command",
+          "code": "working_dir: \"$HOME/project\"\nenvironment:\n  - \"DATA_DIR=$HOME/data\"\n\n# nothing expands these\n# ERR Failed to run command for\n#   process wd_bare\n#   stat $HOME/project:\n#   no such file or directory"
+        },
+        "after": {
+          "title": "${VAR} anywhere",
+          "code": "working_dir: \"${HOME}/project\"\nenvironment:\n  - \"DATA_DIR=${HOME}/data\"\n\n# replaced when the file is read\n# working_dir becomes\n#   /home/you/project"
+        }
+      }
+    },
+    {
+      "narration": "Braced substitution supports defaults, which is genuinely useful for optional settings.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  api:\n    command: \"./api --port ${API_PORT:-8110} --env ${APP_ENV:-development}\"",
+        "caption": "Falls back when the variable is unset or empty"
+      }
+    },
+    {
+      "narration": "If you want none of this, turn it off. Disable env expansion at the top level re-reads the raw file, and everything reaches the shell exactly as you typed it.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "version: \"0.5\"\ndisable_env_expansion: true",
+        "highlight": [2]
+      }
+    },
+    {
+      "narration": "There's also a way to compute a value at startup instead of hardcoding it. Env commands is a map of variable names to shell commands. Each one runs once when the project starts, and its trimmed output becomes the value. Two constraints: the command has to finish inside two seconds, and it should print a single line.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "env_cmds:\n  TODAY: \"date +%Y-%m-%d\"\n  GIT_SHA: \"git rev-parse --short HEAD\"\n  OS_NAME: \"awk -F= '/PRETTY/ {print $2}' /etc/os-release\"\n\nprocesses:\n  build:\n    command: \"./build --tag $${GIT_SHA} --date $${TODAY}\"",
+        "highlight": [1, 8],
+        "caption": "Reference them with the escaped form, so the shell resolves them"
+      }
+    },
+    {
+      "narration": "That's the environment system. The second system is Go templates, and it uses a different syntax on purpose: double curly braces, and a dot before the name. You define values under vars, globally or per process, and process level wins.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "vars:\n  GREETING: \"hello\"\n  PORT: 8080\n\nprocesses:\n  templated:\n    vars:\n      GREETING: \"hi there\"    # overrides the global one\n    command: \"echo {{.GREETING}} on port {{.PORT}}\"",
+        "highlight": [8, 9],
+        "caption": "Prints: hi there on port 8080"
+      }
+    },
+    {
+      "narration": "Templates work in more places than the command. Working directory, log location, description, each environment entry, and inside probes, including the exec command and the HTTP path, host, scheme and port. That last one enables a trick worth knowing.",
+      "visual": {
+        "type": "points",
+        "heading": "Where templates are expanded",
+        "compact": true,
+        "items": [
+          { "lead": "command", "body": "" },
+          { "lead": "working_dir", "body": "" },
+          { "lead": "log_location", "body": "" },
+          { "lead": "description", "body": "" },
+          { "lead": "environment", "body": "each entry" },
+          { "lead": "probes", "body": "exec.command, and http_get path, host, scheme, port" }
+        ]
+      }
+    },
+    {
+      "narration": "When you run several copies of a process, each one gets its replica number as a template variable. Two copies of the same server can't share a port, so you build the port out of the replica number. Replica zero gets four thousand and forty, replica one gets four thousand and forty one, and the readiness probe follows along automatically.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "server:\n  command: \"python3 -m http.server 404{{.PC_REPLICA_NUM}}\"\n  replicas: 2\n  readiness_probe:\n    http_get:\n      host: \"127.0.0.1\"\n      port: \"404{{.PC_REPLICA_NUM}}\"\n      scheme: \"http\"",
+        "highlight": [2, 7],
+        "caption": "Also available to the process as the PC_REPLICA_NUM environment variable"
+      }
+    },
+    {
+      "narration": "One escaping problem you'll meet eventually. If your command already contains double curly braces, and Docker's inspect format is the usual culprit, the template engine will try to interpret them. Wrap the literal in quotes inside a template expression, or turn templating off for that one process.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "liveness_probe:\n  exec:\n    command: '[ $(docker inspect -f {{ \"{{.State.Running}}\" }} nginx_test) = true ]'\n\n# or, for the whole process:\nis_template_disabled: true",
+        "highlight": [3, 6]
+      }
+    },
+    {
+      "narration": "Last topic: splitting configuration across files. You can pass several files and they merge left to right. There's also a convention borrowed from Docker Compose, where an override file sitting next to your main one is picked up automatically. That's the usual way to keep personal tweaks out of the shared file.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose -f base.yaml -f local.yaml -f ci.yaml",
+        "output": "# merged left to right, later files win\n# process-compose.override.yaml is picked up automatically",
+        "caption": "Paths inside later files are relative to the FIRST file, not their own"
+      }
+    },
+    {
+      "narration": "That last point catches people. Relative paths in an override file resolve against the base file's directory, not the override's own. And there's a second gotcha: setting disabled to false in an override does not reliably re-enable a process, because false is Go's zero value for a boolean and the merge can't tell it apart from unset. There's a string version of the field for exactly this case.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.override.yaml",
+        "code": "processes:\n  docs:\n    disabled: false      # unreliable in a merge\n    is_disabled: \"false\"  # use this instead, it is a string",
+        "highlight": [3, 4]
+      }
+    },
+    {
+      "narration": "You can also inherit. A file can extend another file, and a process can extend another process in the same project, which is the equivalent of the extends service feature in Docker Compose. One caveat: if file B extends file A, load only B. Passing both with two file flags fails.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  base:\n    command: \"echo base\"\n    working_dir: \"/tmp\"\n    environment:\n      - \"SHARED=base\"\n    availability:\n      restart: \"always\"\n\n  derived:\n    extends: \"base\"\n    environment:\n      - \"EXTRA=2\"",
+        "highlight": [11]
+      }
+    },
+    {
+      "narration": "Finally, strict mode. Turn it on and unknown keys become fatal errors instead of warnings. Write c o m m n a d instead of command, and you get a clear failure with the process name and the bad key, rather than a process that quietly never runs. Dry run switches this on for you, which is why it belongs in your CI pipeline.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose --dry-run",
+        "output": "unknown key commnad found in process process1\nexit status 1",
+        "caption": "is_strict: true does the same for normal runs"
+      }
+    },
+    {
+      "narration": "Next video: namespaces for slicing a big project into parts, replicas for running several copies, and schedules for work that runs on a timer.",
+      "visual": {
+        "type": "bigtext",
+        "text": "Next: namespaces, replicas and schedules",
+        "sub": "Slicing a large project, running copies, and cron style work"
+      }
+    }
+  ]
+}

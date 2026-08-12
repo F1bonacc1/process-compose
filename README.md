@@ -71,6 +71,10 @@ Check the [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 
 [Documentation](https://f1bonacc1.github.io/process-compose/launcher/)
 
+## Video Series
+
+[Process Compose Intro](https://www.youtube.com/playlist?list=PLY3UbHll3zOI) is a ten part course, about 45 minutes in total. It goes from a first config through dependencies, health checks, restart policies, the TUI, templating, namespaces, the REST API and CI pipelines. Every episode has chapter markers.
+
 ## How to Contribute
 
 1. Fork it

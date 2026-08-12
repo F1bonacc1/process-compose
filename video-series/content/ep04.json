@@ -1,0 +1,113 @@
+{
+  "number": 4,
+  "slug": "health-checks",
+  "title": "Health Checks That Mean Something",
+  "subtitle": "Readiness, liveness, and what actually restarts a process",
+  "beats": [
+    {
+      "narration": "Last time we used the healthy condition without saying what makes a process healthy. That's this video. Two probe types, the fields that tune them, and one behaviour that differs from Kubernetes in a way that catches people out.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 4",
+        "title": "Health Checks That Mean Something",
+        "subtitle": "Readiness, liveness, and what actually restarts a process"
+      }
+    },
+    {
+      "narration": "The gap we're closing is between started and ready. A process gets a process ID the instant it launches. But a real service still has to read config, open a database connection, warm a cache, and bind a port. During that window it exists and it cannot serve anything. If your dependents only wait for started, they'll connect into that window and fail.",
+      "visual": { "type": "diagram", "name": "readygap" }
+    },
+    {
+      "narration": "A probe is a question you ask the process on a timer. There are two ways to ask. An HTTP request, where a two hundred means healthy. Or a command, where exit code zero means healthy. That's the whole model, and it's deliberately the same shape as Kubernetes probes.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "readiness_probe:\n  http_get:\n    host: 127.0.0.1\n    scheme: http\n    path: \"/health\"\n    port: 8110\n\n# or\n\nreadiness_probe:\n  exec:\n    command: \"pg_isready\""
+      }
+    },
+    {
+      "narration": "The exec probe is the one that gets you out of trouble, because most things ship a readiness command already. Postgres has pg is ready. Redis has redis cli ping. If yours has nothing, any shell command works, and it runs with the same shell and the same environment as the process itself.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "postgres:\n  command: \"pg_ctl start -o \\\"-k $PGHOST\\\"\"\n  is_daemon: true\n  availability:\n    restart: \"always\"\n  readiness_probe:\n    exec:\n      command: \"pg_isready\"\n  shutdown:\n    command: \"pg_ctl stop -m fast\"",
+        "highlight": [6, 7, 8],
+        "caption": "Runs with the project shell and the process environment"
+      }
+    },
+    {
+      "narration": "Five fields tune the timing, and the defaults are worth knowing because you inherit them silently. Initial delay is zero, so probing starts immediately. Period is ten seconds. Timeout is one second. Failure threshold is three. Success threshold is one, and the documentation is clear that it is a placeholder which is not read yet, so leave it alone.",
+      "visual": {
+        "type": "table",
+        "heading": "Probe tuning",
+        "columns": ["field", "default", "what it controls"],
+        "rows": [
+          ["initial_delay_seconds", "0", "quiet period before the first probe"],
+          ["period_seconds", "10", "how often to ask"],
+          ["timeout_seconds", "1", "how long to wait for an answer"],
+          ["failure_threshold", "3", "consecutive failures before giving up"],
+          ["success_threshold", "1", "placeholder, not currently respected"]
+        ]
+      }
+    },
+    {
+      "narration": "Two of those defaults deserve attention. A ten second period means that in the worst case you wait ten seconds after your service is ready before anything notices. On a stack you start twenty times a day, dropping that to two makes a real difference. And a one second timeout is tight for anything that touches a disk or a network on the health path.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "readiness_probe:\n  http_get:\n    host: 127.0.0.1\n    path: \"/health\"\n    port: 8110\n  initial_delay_seconds: 2   # skip the guaranteed-failing probes\n  period_seconds: 2          # not the default 10\n  timeout_seconds: 2         # not the default 1\n  failure_threshold: 5",
+        "highlight": [6, 7, 8, 9]
+      }
+    },
+    {
+      "narration": "Now the part that differs from Kubernetes. In Kubernetes, a failing liveness probe restarts the container and a failing readiness probe just takes it out of the load balancer. Here it's the readiness probe that acts. When a readiness probe fails past its threshold, the process is marked not ready and then stopped. What happens next is decided entirely by its availability block.",
+      "visual": { "type": "diagram", "name": "probeflow" }
+    },
+    {
+      "narration": "The practical consequence: a readiness probe with no restart policy is a process that fails its check, gets stopped, and stays stopped. If you want it to recover, you have to say so. For background processes, the ones marked as daemons, the restart policy needs to be always.",
+      "visual": {
+        "type": "callout",
+        "tone": "warn",
+        "heading": "Probes do not restart anything on their own",
+        "body": "A failing readiness probe stops the process. Only the availability block decides whether it comes back. Without it, the process transitions to completed and stays there."
+      }
+    },
+    {
+      "narration": "So a probe and a restart policy are a pair. Here's the API from the demo project with both. Readiness gates everything downstream. Liveness runs on a slower cycle and matters most for daemon processes, where it's how a forked service gets noticed as gone. And availability says what to do about it.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "api:\n  command: \"python3 ./services/api.py\"\n  readiness_probe:\n    http_get:\n      host: 127.0.0.1\n      path: \"/health\"\n      port: 8110\n    initial_delay_seconds: 2\n    period_seconds: 2\n    failure_threshold: 5\n  liveness_probe:\n    http_get:\n      host: 127.0.0.1\n      path: \"/health\"\n      port: 8110\n    period_seconds: 10\n    failure_threshold: 3\n  availability:\n    restart: always\n    backoff_seconds: 2",
+        "highlight": [18, 19, 20]
+      }
+    },
+    {
+      "narration": "You can watch all of this in the health column. Not ready while the probe is failing, ready once it passes. Here the API and the mail relay both show ready. The workers show a dash, because they have no probe defined, and that's fine. Not everything needs one.",
+      "visual": { "type": "tui", "frame": "03-running", "caption": "The HEALTH column reflects the readiness probe, or a dash if there is none" }
+    },
+    {
+      "narration": "A quick word on what makes a good health endpoint, because this is where health checks stop helping. If your endpoint returns two hundred as long as the web server is up, it tells you nothing you didn't already know from the process being alive. If it checks the database connection, it tells you something real. But if it checks five downstream services, one of them will be slow and you'll restart a perfectly good process. Check what this process needs in order to do its own job, and stop there.",
+      "visual": {
+        "type": "points",
+        "heading": "A health endpoint worth having",
+        "items": [
+          { "lead": "Too shallow", "body": "returns 200 whenever the HTTP server is listening, so it duplicates the process ID" },
+          { "lead": "About right", "body": "checks the things this process cannot work without, like its own database connection" },
+          { "lead": "Too deep", "body": "checks every downstream dependency, so one slow neighbour restarts a healthy process" }
+        ]
+      }
+    },
+    {
+      "narration": "Next video: the availability block in full. Restart policies, backoff, restart limits, telling Process Compose that exit code one thirty is a normal shutdown, and how to stop things cleanly.",
+      "visual": {
+        "type": "bigtext",
+        "text": "Next: restart policies and clean shutdown",
+        "sub": "availability, backoff, exit codes, and signals"
+      }
+    }
+  ]
+}

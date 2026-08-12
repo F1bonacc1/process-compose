@@ -1,0 +1,11 @@
+# Generated artifacts. The sources are content/, scripts/ and demo/.
+audio/
+tui/*.ansi
+tui/frames.json
+process-compose-course.html
+process-compose-course.single-file.html
+SCRIPTS.md
+video/
+.render/
+demo/data/
+__pycache__/

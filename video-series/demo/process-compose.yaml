@@ -1,0 +1,132 @@
+version: "0.5"
+
+# linkstash - a small link shortener used as the demo stack for the
+# Process Compose video series. Every process here is a real program.
+
+vars:
+  PY: "python3"
+  SERVICES: "./services"
+
+environment:
+  - "PYTHONUNBUFFERED=1"
+  - "LINKSTASH_DB=./data/linkstash.db"
+
+processes:
+
+  # ---- backend -------------------------------------------------------------
+
+  migrate:
+    namespace: backend
+    description: "Apply pending database migrations"
+    command: "{{.PY}} {{.SERVICES}}/migrate.py"
+    availability:
+      restart: "no"
+
+  api:
+    namespace: backend
+    description: "linkstash HTTP API"
+    command: "{{.PY}} {{.SERVICES}}/api.py"
+    depends_on:
+      migrate:
+        condition: process_completed_successfully
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        scheme: http
+        path: "/health"
+        port: 8110
+      initial_delay_seconds: 2
+      period_seconds: 2
+      timeout_seconds: 2
+      success_threshold: 1
+      failure_threshold: 5
+    liveness_probe:
+      http_get:
+        host: 127.0.0.1
+        scheme: http
+        path: "/health"
+        port: 8110
+      period_seconds: 10
+      failure_threshold: 3
+    availability:
+      restart: always
+      backoff_seconds: 2
+    shutdown:
+      signal: 15
+      timeout_seconds: 5
+
+  worker:
+    namespace: backend
+    description: "Hit rollup and link expiry"
+    command: "{{.PY}} {{.SERVICES}}/worker.py"
+    replicas: 2
+    depends_on:
+      api:
+        condition: process_healthy
+    availability:
+      restart: always
+      backoff_seconds: 1
+    shutdown:
+      signal: 15
+      timeout_seconds: 10
+
+  mailer:
+    namespace: backend
+    description: "Outbound mail relay"
+    command: "{{.PY}} {{.SERVICES}}/mailer.py"
+    ready_log_line: "relay ready, accepting mail"
+    availability:
+      restart: always
+
+  # ---- frontend ------------------------------------------------------------
+
+  web:
+    namespace: frontend
+    description: "Static frontend on :8111"
+    command: "{{.PY}} -m http.server 8111 --directory ./web"
+    depends_on:
+      api:
+        condition: process_healthy
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        scheme: http
+        path: "/"
+        port: 8111
+      initial_delay_seconds: 1
+      period_seconds: 3
+    availability:
+      restart: always
+
+  # ---- tools ---------------------------------------------------------------
+
+  smoke-test:
+    namespace: tools
+    description: "Post a link and read it back"
+    command: |
+      set -e
+      curl -sf -X POST localhost:8110/links \
+        -H 'content-type: application/json' \
+        -d '{"url":"https://github.com/F1bonacc1/process-compose"}'
+      echo
+      curl -sf localhost:8110/stats
+      echo
+    depends_on:
+      api:
+        condition: process_healthy
+    availability:
+      restart: "no"
+
+  vacuum:
+    namespace: tools
+    description: "Compact the sqlite database"
+    command: "sqlite3 ./data/linkstash.db 'VACUUM;' && echo vacuum complete"
+    schedule:
+      interval: "30s"
+      run_on_start: false
+
+  docs:
+    namespace: tools
+    description: "Docs site, off by default"
+    command: "{{.PY}} -m http.server 8112 --directory ./web"
+    disabled: true

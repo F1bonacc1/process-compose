@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>linkstash</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #0e1116; color: #d8dee9;
+    font: 15px/1.6 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  main { width: min(560px, 90vw); }
+  h1 { font-size: 20px; letter-spacing: .04em; margin: 0 0 4px; }
+  p.sub { color: #6e7681; margin: 0 0 24px; }
+  form { display: flex; gap: 8px; margin-bottom: 20px; }
+  input, button {
+    font: inherit; padding: 10px 12px; border-radius: 6px;
+    border: 1px solid #2d333b; background: #161b22; color: inherit;
+  }
+  input { flex: 1; }
+  button { background: #2f6f4f; border-color: #2f6f4f; cursor: pointer; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { padding: 8px 0; border-bottom: 1px solid #21262d; display: flex; gap: 12px; }
+  code { color: #7ee2b8; }
+  .url { color: #6e7681; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stats { margin-top: 20px; color: #6e7681; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>linkstash</h1>
+  <p class="sub">short links, no ceremony</p>
+  <form id="f">
+    <input id="url" placeholder="https://…" value="https://github.com/F1bonacc1/process-compose">
+    <button>shorten</button>
+  </form>
+  <ul id="list"></ul>
+  <div class="stats" id="stats"></div>
+</main>
+<script>
+const API = "http://localhost:8110";
+
+async function refresh() {
+  try {
+    const [links, stats] = await Promise.all([
+      fetch(API + "/links").then(r => r.json()),
+      fetch(API + "/stats").then(r => r.json()),
+    ]);
+    document.getElementById("list").innerHTML = links.links
+      .map(l => `<li><code>/${l.slug}</code><span class="url">${l.url}</span></li>`)
+      .join("");
+    document.getElementById("stats").textContent =
+      `${stats.links} links · ${stats.hits} hits`;
+  } catch (e) {
+    document.getElementById("stats").textContent = "api unreachable";
+  }
+}
+
+document.getElementById("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  await fetch(API + "/links", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: document.getElementById("url").value }),
+  });
+  refresh();
+});
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>

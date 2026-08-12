@@ -1,0 +1,123 @@
+{
+  "number": 2,
+  "slug": "first-config",
+  "title": "Install It and Write Your First Config",
+  "subtitle": "From nothing to a running stack",
+  "beats": [
+    {
+      "narration": "In this one we install Process Compose, write a config from scratch, and read the terminal interface properly. By the end you'll have a stack that starts in the right order and you'll know what every column on screen means.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 2",
+        "title": "Install It and Write Your First Config",
+        "subtitle": "From nothing to a running stack"
+      }
+    },
+    {
+      "narration": "There are five ways to install it and they all produce the same single binary. Homebrew works on macOS and Linux. Go install builds from source. There's a Nix flake, which is where a lot of the community lives. The shell script is the one to use in continuous integration, because it drops the binary in a directory you choose. Or just download a release archive and put it on your path.",
+      "visual": {
+        "type": "code",
+        "lang": "shell",
+        "filename": "install",
+        "code": "# Homebrew, macOS and Linux\nbrew install f1bonacc1/tap/process-compose\n\n# From source\ngo install github.com/f1bonacc1/process-compose@latest\n\n# Nix\nnix run nixpkgs/master#process-compose -- --help\n\n# Script, useful in CI\nsh -c \"$(curl --location \\\n  https://raw.githubusercontent.com/F1bonacc1/process-compose/main/scripts/get-pc.sh)\" \\\n  -- -d -b ~/.local/bin"
+      }
+    },
+    {
+      "narration": "One thing to watch on macOS and Windows: the local bin directory under your home folder is not on the path by default. If the script says it installed and your shell says command not found, that's usually why.",
+      "visual": {
+        "type": "callout",
+        "tone": "warn",
+        "heading": "Common first stumble",
+        "body": "On macOS and Windows, ~/.local/bin and ~/bin are not on $PATH by default. The installer will happily put the binary somewhere your shell will not look."
+      }
+    },
+    {
+      "narration": "Now the config. At minimum a process needs a name and a command. The name is the key in the processes map, and the command is a string run through your shell, so pipes, redirects and environment variables all work the way you expect.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "version: \"0.5\"\n\nprocesses:\n  api:\n    command: \"python3 ./services/api.py\"\n  worker:\n    command: \"python3 ./services/worker.py\"",
+        "highlight": [4, 5]
+      }
+    },
+    {
+      "narration": "Here's the real demo config, trimmed a bit. Migrations run once and exit. The API waits for migrations to succeed, then reports readiness over HTTP. The workers wait for the API to be healthy, and there are two of them. Don't worry about the details yet, we'll take each of these apart in later videos.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  migrate:\n    command: \"python3 ./services/migrate.py\"\n    availability:\n      restart: \"no\"\n\n  api:\n    command: \"python3 ./services/api.py\"\n    depends_on:\n      migrate:\n        condition: process_completed_successfully\n    readiness_probe:\n      http_get:\n        host: 127.0.0.1\n        path: \"/health\"\n        port: 8110\n      period_seconds: 2\n\n  worker:\n    command: \"python3 ./services/worker.py\"\n    replicas: 2\n    depends_on:\n      api:\n        condition: process_healthy",
+        "highlight": [9, 10, 11, 21, 22, 23, 24]
+      }
+    },
+    {
+      "narration": "Before you run anything, validate it. Dry run parses the file, turns on strict mode, tells you about anything it doesn't recognise, and exits. Strict mode is the useful part: a typo like c-o-m-m-n-a-d instead of command becomes a hard error rather than a process that silently never starts.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose --dry-run",
+        "output": "Validated 9 configured processes from 2 files.",
+        "caption": "Exit code 0. In CI, that is your config lint step."
+      }
+    },
+    {
+      "narration": "Now run it. Just process compose, or process compose up. It finds the config on its own: it looks for compose dot y m l, compose dot yaml, process dash compose dot y m l, and process dash compose dot yaml, in that order, and takes the first one it finds. If there's a matching override file next to it, that gets layered on top automatically.",
+      "visual": {
+        "type": "points",
+        "heading": "Config auto discovery, first match wins",
+        "items": [
+          { "lead": "1", "body": "compose.yml" },
+          { "lead": "2", "body": "compose.yaml" },
+          { "lead": "3", "body": "process-compose.yml" },
+          { "lead": "4", "body": "process-compose.yaml" }
+        ],
+        "note": "Then any matching *.override.yml or *.override.yaml is merged on top."
+      }
+    },
+    {
+      "narration": "This is the first second of startup. Migrate and mailer are running because nothing blocks them. The API is pending, because it's waiting on migrate. Smoke test is pending too. Docs is disabled, and vacuum is on a schedule rather than starting now.",
+      "visual": { "type": "tui", "frame": "01-boot-pending", "caption": "One second in: pending means waiting on a dependency" }
+    },
+    {
+      "narration": "A couple of seconds later migrate has completed with exit code zero, and the API has started. Watch the status column change rather than the process list, that's where the interesting information is.",
+      "visual": { "type": "tui", "frame": "02-boot-launching", "caption": "Migrate completed, exit code 0, so the API was released" }
+    },
+    {
+      "narration": "And this is the steady state. Five processes running, the API and web both reporting ready, two workers, the one shot smoke test completed, and vacuum sitting on its schedule.",
+      "visual": { "type": "tui", "frame": "03-running", "caption": "Steady state" }
+    },
+    {
+      "narration": "Let's read the screen. Top left is the version, the project name, how many processes are running out of the total, and the combined memory and CPU. The table below has the process ID, the name, the namespace, the status, how long it's been in that state, health, memory, CPU, restart count and last exit code. The bottom pane is the log for whichever row is selected, and the bar underneath lists the keys that are live right now.",
+      "visual": { "type": "diagram", "name": "tuilayout" }
+    },
+    {
+      "narration": "Statuses you'll see: pending means waiting on a dependency. Running means the process is alive. Completed means it exited, and the exit code column tells you how. Failed means it exited non zero and won't be retried. Restarting means the recovery policy kicked in. Terminating is a shutdown in progress. Disabled and scheduled mean it isn't meant to be running right now.",
+      "visual": { "type": "diagram", "name": "states" }
+    },
+    {
+      "narration": "The keys worth learning first. Arrow keys move between processes. F4 makes the log pane full screen and back. F5 stops the log following new lines so you can scroll without fighting it. F7 starts the selected process, F9 stops it, control R restarts it. F1 lists everything. F10 quits, and it asks first.",
+      "visual": {
+        "type": "keys",
+        "heading": "Start with these",
+        "items": [
+          { "key": "↑ ↓", "body": "move between processes" },
+          { "key": "F4", "body": "maximize the log pane" },
+          { "key": "F5", "body": "stop following new log lines" },
+          { "key": "F7", "body": "start the selected process" },
+          { "key": "F9", "body": "stop the selected process" },
+          { "key": "Ctrl-R", "body": "restart the selected process" },
+          { "key": "F1", "body": "the full list of shortcuts" },
+          { "key": "F10", "body": "quit, with a confirmation" }
+        ]
+      }
+    },
+    {
+      "narration": "That's a working stack. Next time we get into dependencies properly: the five conditions you can wait on, which one to pick, and why waiting a fixed number of seconds is the thing you're trying to get away from.",
+      "visual": {
+        "type": "bigtext",
+        "text": "Next: dependencies and startup order",
+        "sub": "The five conditions, and when each one is the right answer"
+      }
+    }
+  ]
+}

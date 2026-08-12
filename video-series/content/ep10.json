@@ -1,0 +1,164 @@
+{
+  "number": 10,
+  "slug": "ci-and-mcp",
+  "title": "CI Pipelines and the MCP Server",
+  "subtitle": "Tests with real dependencies, and exposing processes to an AI client",
+  "beats": [
+    {
+      "narration": "Two things to finish on. Using Process Compose in continuous integration, where it replaces a pile of background shell jobs and sleep statements. And the MCP server, which exposes your processes to an AI assistant.",
+      "visual": {
+        "type": "title",
+        "kicker": "Episode 10",
+        "title": "CI Pipelines and the MCP Server",
+        "subtitle": "Tests with real dependencies, and exposing processes to an AI client"
+      }
+    },
+    {
+      "narration": "Here's the CI problem. Your integration tests need a database and a message queue. So the pipeline starts them with an ampersand, sleeps for a guessed number of seconds, runs the tests, and then tries to remember what to kill. When it fails at three in the morning, the log tells you the tests failed, not that the database was still starting.",
+      "visual": {
+        "type": "compare",
+        "before": {
+          "title": "The usual shell script",
+          "code": "start-postgres &\nstart-redis &\nsleep 10        # ?\n\nrun-tests\nRC=$?\n\nkill %1 %2      # hopefully\nexit $RC"
+        },
+        "after": {
+          "title": "The same thing declared",
+          "code": "process-compose up -t=false\n\n# tests wait for healthy dependencies\n# the test exit code becomes the exit code\n# everything is torn down on the way out"
+        }
+      }
+    },
+    {
+      "narration": "The mechanism is exit on end, which we met in the restart policies video. The test process depends on its dependencies being healthy, not merely started. When the tests finish, the whole project shuts down and Process Compose exits with the test process's exit code. Your pipeline sees a pass or a fail, and the dependencies are cleaned up whichever way it went.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.ci.yaml",
+        "code": "version: \"0.5\"\nis_strict: true\n\nprocesses:\n  postgres:\n    command: postgres-start\n    readiness_probe:\n      exec:\n        command: pg_isready\n      period_seconds: 1\n\n  redis:\n    command: redis-start\n    readiness_probe:\n      exec:\n        command: \"redis-cli ping\"\n      period_seconds: 1\n\n  tests:\n    command: \"pytest -v tests/integration\"\n    availability:\n      exit_on_end: true      # implies exit_on_failure\n    depends_on:\n      postgres:\n        condition: process_healthy\n      redis:\n        condition: process_healthy",
+        "highlight": [21, 22, 24, 25, 26, 27]
+      }
+    },
+    {
+      "narration": "Put together, a workflow step looks like this. Install with the script, because it lets you choose where the binary lands. Validate the config as its own step, so a typo fails in five seconds instead of five minutes. Then run it with the interface off.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": ".github/workflows/test.yml",
+        "code": "- name: Install process-compose\n  run: |\n    sh -c \"$(curl --location \\\n      https://raw.githubusercontent.com/F1bonacc1/process-compose/main/scripts/get-pc.sh)\" \\\n      -- -d -b \"$HOME/.local/bin\"\n    echo \"$HOME/.local/bin\" >> \"$GITHUB_PATH\"\n\n- name: Validate compose config\n  run: process-compose -f process-compose.ci.yaml --dry-run\n\n- name: Integration tests\n  run: process-compose -f process-compose.ci.yaml up -t=false",
+        "highlight": [8, 9, 11, 12]
+      }
+    },
+    {
+      "narration": "That dry run step is worth keeping even when you're confident. It turns on strict mode, so an unknown key is a hard error rather than a warning you'd never read in CI output. It costs nothing and it catches the class of mistake where a process silently does not run.",
+      "visual": {
+        "type": "cmd",
+        "command": "process-compose -f process-compose.ci.yaml --dry-run",
+        "output": "Validated 3 configured processes from 1 files.",
+        "caption": "Exit code 0. A failing key gives you a message and exit 1."
+      }
+    },
+    {
+      "narration": "If the pipeline works but feels slow, analyze critical chain tells you where the time went. It prints when each process became ready and how long it took, so you can see whether you're waiting on a real startup or on a probe period you left at the default of ten seconds.",
+      "visual": { "type": "cmdframe", "command": "process-compose analyze critical-chain", "frame": "25-cli-critical", "caption": "Where the startup time actually goes" }
+    },
+    {
+      "narration": "Now the MCP server. MCP is a protocol for giving an AI client access to tools and data. Process Compose can act as an MCP server in two ways: exposing the processes you define as callable tools, and exposing its own control plane.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "mcp_server:\n  transport: stdio          # or sse, the default\n  expose_control_tools: false",
+        "highlight": [1, 2]
+      }
+    },
+    {
+      "narration": "The first idea is the interesting one. Normally, adding a tool to an AI assistant means learning an SDK and writing a server. Here, if you can write a shell command, you can expose it. Add an MCP block to a process, declare its arguments, and it becomes a tool.",
+      "visual": {
+        "type": "code",
+        "lang": "yaml",
+        "filename": "process-compose.yaml",
+        "code": "processes:\n  db_query:\n    command: \"psql -d @{database} -c '@{query}'\"\n    disabled: true          # MCP processes are run on demand\n    mcp:\n      type: tool\n      arguments:\n        - name: database\n          type: string\n          required: true\n        - name: query\n          type: string\n          required: true",
+        "highlight": [3, 5, 6, 7]
+      }
+    },
+    {
+      "narration": "Arguments are substituted with an at sign and braces, and you can give them defaults. MCP processes are forced to disabled, because they run when they're called rather than when the project starts. You can also expose a process as a resource instead of a tool, addressed by a process URL, which suits things that return a document rather than performing an action.",
+      "visual": {
+        "type": "points",
+        "heading": "Two shapes",
+        "items": [
+          { "lead": "type: tool", "body": "the assistant calls it with arguments, and gets the output back" },
+          { "lead": "type: resource", "body": "readable at process://<name>. JSON output is detected automatically" }
+        ],
+        "note": "@{name} substitutes, @{name:default} falls back, \\@{name} is a literal."
+      }
+    },
+    {
+      "narration": "The second idea is the control plane. Turn on control tools and the assistant gets a set of operations on the project itself: list processes, start, stop, restart, scale, read logs, search logs, and get the dependency graph. So you can ask why the worker keeps restarting, and it can go and look.",
+      "visual": {
+        "type": "table",
+        "heading": "Built in control tools, prefix pc_",
+        "columns": ["tool", "what it does"],
+        "rows": [
+          ["pc_process_list", "every process and its state"],
+          ["pc_process_start / stop / restart", "lifecycle control"],
+          ["pc_process_scale", "change the replica count"],
+          ["pc_process_logs", "recent log lines for a process"],
+          ["pc_process_logs_search", "ranked search across the log buffer"],
+          ["pc_process_ports", "what a process is listening on"],
+          ["pc_project_state", "uptime and counts"],
+          ["pc_project_is_ready", "is everything up"],
+          ["pc_project_dependency_graph", "the graph with current status"]
+        ]
+      }
+    },
+    {
+      "narration": "That is a lot of authority to hand out, so it is off by default and you should keep it that way unless you mean it. If you turn it on without a token, you get a warning at startup. Use a token, and keep the network transport on loopback unless you have a specific reason not to.",
+      "visual": {
+        "type": "callout",
+        "tone": "warn",
+        "heading": "Control tools give full process management access",
+        "body": "Anything connected can stop, restart and scale your processes. Off by default. Use an API token, and keep the network transport bound to loopback."
+      }
+    },
+    {
+      "narration": "Wiring it into a client is a config file entry. For the standard input transport, the client launches Process Compose itself. Note that this transport turns the interface off automatically, because both of them want the terminal's input and output.",
+      "visual": {
+        "type": "code",
+        "lang": "json",
+        "filename": "claude_desktop_config.json",
+        "code": "{\n  \"mcpServers\": {\n    \"process-compose\": {\n      \"command\": \"process-compose\",\n      \"args\": [\"-f\", \"/path/to/your/process-compose.yaml\"]\n    }\n  }\n}"
+      }
+    },
+    {
+      "narration": "If something doesn't appear where you expect, the MCP Inspector is the fastest way to see what the server is actually offering, without involving a chat client at all.",
+      "visual": {
+        "type": "cmd",
+        "command": "npx @modelcontextprotocol/inspector process-compose -f process-compose.yaml",
+        "output": ""
+      }
+    },
+    {
+      "narration": "That's the series. To recap the shape of it: you describe processes in a YAML file, you express ordering with dependency conditions rather than sleeps, you make ready mean something with health checks, you decide what happens on failure with restart policies, and then you drive it from the interface, the command line, or over HTTP.",
+      "visual": {
+        "type": "points",
+        "heading": "The whole thing, in six lines",
+        "items": [
+          { "lead": "Describe", "body": "processes in YAML, one file, no containers required" },
+          { "lead": "Order", "body": "depends_on with a condition, not sleep" },
+          { "lead": "Verify", "body": "readiness probes, so healthy means something" },
+          { "lead": "Recover", "body": "availability decides what happens on exit" },
+          { "lead": "Observe", "body": "one screen, or the API, or a log stream" },
+          { "lead": "Reuse", "body": "the same file in dev and in CI" }
+        ]
+      }
+    },
+    {
+      "narration": "The documentation covers more than I could fit here, including interactive processes, log rotation, themes and recipes. Links are in the description. Thanks for watching.",
+      "visual": {
+        "type": "bigtext",
+        "text": "f1bonacc1.github.io/process-compose",
+        "sub": "Docs, and the repository at github.com/F1bonacc1/process-compose"
+      }
+    }
+  ]
+}
