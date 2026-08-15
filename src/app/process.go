@@ -50,6 +50,9 @@ type Process struct {
 	readyLogCancelFn     context.CancelCauseFunc
 	procRunCtx           context.Context
 	runCancelFn          context.CancelFunc
+	procDoneChan         chan struct{}
+	doneOnce             sync.Once
+	procTerminatedChan   chan struct{}
 	waitForPassCtx       context.Context
 	waitForPassCancelFn  context.CancelFunc
 	mtxStopFn            sync.Mutex
@@ -92,14 +95,29 @@ type Process struct {
 // and may be nil — Process treats that as a no-op.
 type StatePublisher func(ev types.ProcessStateEvent)
 
+// waitResult reports how a wait on another process ended.
+type waitResult int
+
+const (
+	// waitOk - the awaited condition was met.
+	waitOk waitResult = iota
+	// waitFailed - the awaited process terminated without meeting the condition.
+	waitFailed
+	// waitAborted - the *waiting* process was shut down before the condition
+	// was met, so it must not run at all.
+	waitAborted
+)
+
 func NewProcess(opts ...ProcOpts) *Process {
 	proc := &Process{
-		redColor:        color.New(color.FgHiRed).SprintFunc(),
-		noColor:         color.New(color.Reset).SprintFunc(),
-		started:         false,
-		done:            false,
-		procStateChan:   make(chan string, 1),
-		procStartedChan: make(chan struct{}, 1),
+		redColor:           color.New(color.FgHiRed).SprintFunc(),
+		noColor:            color.New(color.Reset).SprintFunc(),
+		started:            false,
+		done:               false,
+		procStateChan:      make(chan string, 1),
+		procStartedChan:    make(chan struct{}, 1),
+		procDoneChan:       make(chan struct{}),
+		procTerminatedChan: make(chan struct{}),
 	}
 
 	for _, opt := range opts {
@@ -364,10 +382,16 @@ func (p *Process) isRestartable() bool {
 	return false
 }
 
-func (p *Process) waitForStarted() {
+// The wait* functions below are used by dependent processes to block until this
+// process reaches some condition. They all accept an abort channel belonging to
+// the *waiting* process (its procRunCtx.Done()), so that stopping a process
+// that is still waiting on its dependencies releases it immediately instead of
+// leaving its goroutine parked until the dependency happens to resolve.
+func (p *Process) waitForStarted(abort <-chan struct{}) {
 	select {
 	case <-p.procStartedChan:
 	case <-p.procRunCtx.Done():
+	case <-abort:
 	}
 }
 
@@ -381,26 +405,78 @@ func (p *Process) waitForCompletion() int {
 	return p.getExitCode()
 }
 
-func (p *Process) waitUntilReady() bool {
-	<-p.procReadyCtx.Done()
+// waitForCompletionOrAbort is the abortable flavour of waitForCompletion.
+func (p *Process) waitForCompletionOrAbort(abort <-chan struct{}) (int, waitResult) {
+	select {
+	case <-p.procDoneChan:
+		return p.getExitCode(), waitOk
+	case <-abort:
+		return 0, waitAborted
+	}
+}
+
+func (p *Process) waitUntilReady(abort <-chan struct{}) waitResult {
+	select {
+	case <-p.procReadyCtx.Done():
+	case <-abort:
+		return waitAborted
+	}
 	if p.procState.Health == types.ProcessHealthReady {
-		return true
+		return waitOk
 	}
 	log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
 	p.setExitCode(1)
-	return false
-
+	return waitFailed
 }
 
-func (p *Process) waitUntilLogReady() bool {
-	<-p.procLogReadyCtx.Done()
+func (p *Process) waitUntilLogReady(abort <-chan struct{}) waitResult {
+	select {
+	case <-p.procLogReadyCtx.Done():
+	case <-abort:
+		return waitAborted
+	}
 	err := context.Cause(p.procLogReadyCtx)
 	if errors.Is(err, context.Canceled) {
-		return true
+		return waitOk
 	}
 	log.Error().Err(err).Msgf("Process %s was aborted and won't become log ready", p.getName())
-	return false
+	return waitFailed
+}
 
+// waitUntilTerminated blocks until the goroutine that owns this process (the
+// one started by ProjectRunner.runProcess) has exited, or until the timeout
+// elapses. It reports whether the goroutine is gone.
+func (p *Process) waitUntilTerminated(timeout time.Duration) bool {
+	if p.procTerminatedChan == nil {
+		return true
+	}
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	select {
+	case <-p.procTerminatedChan:
+		return true
+	case <-timer.C:
+		return false
+	}
+}
+
+// onTerminated marks the owning goroutine as gone. Safe to call once.
+func (p *Process) onTerminated() {
+	if p.procTerminatedChan != nil {
+		close(p.procTerminatedChan)
+	}
+}
+
+func (p *Process) hasStarted() bool {
+	p.Lock()
+	defer p.Unlock()
+	return p.started
+}
+
+func (p *Process) isDone() bool {
+	p.Lock()
+	defer p.Unlock()
+	return p.done
 }
 
 func (p *Process) wontRun() {
@@ -637,6 +713,14 @@ func (p *Process) onProcessEnd(state string) {
 	p.done = true
 	p.Unlock()
 	p.procCond.Broadcast()
+	// Release anyone waiting on us through a select-able channel. onProcessEnd
+	// can be reached more than once for the same instance (e.g. a Pending
+	// process that is stopped and later shut down again), hence the Once.
+	p.doneOnce.Do(func() {
+		if p.procDoneChan != nil {
+			close(p.procDoneChan)
+		}
+	})
 }
 
 func (p *Process) getLogPath() string {

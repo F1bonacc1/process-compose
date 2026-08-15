@@ -1,0 +1,11 @@
+version: "0.5"
+
+processes:
+  a:
+    command: ./a.sh
+    ready_log_line: "Server running on port"
+  b:
+    command: ./b.sh
+    depends_on:
+      a:
+        condition: process_log_ready

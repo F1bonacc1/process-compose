@@ -28,6 +28,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// pendingTerminationTimeout bounds how long a restart waits for a process that
+// never started (one still waiting on its dependencies) to release its
+// goroutine before the replacement instance is launched.
+const pendingTerminationTimeout = 5 * time.Second
+
 type ExitError struct {
 	Code int
 }
@@ -221,6 +226,18 @@ func (p *ProjectRunner) Run() error {
 					log.Debug().Msgf("Skipping project completion: %d update(s) in progress", updates)
 					continue
 				}
+				// The count carried by the message is a snapshot taken when a
+				// process exited. By the time it is read here a replacement may
+				// already be running (restart, update, scale), so re-read the
+				// live count - a stale zero must not complete a project that
+				// still has running processes.
+				p.runProcMutex.Lock()
+				running := len(p.runningProcesses)
+				p.runProcMutex.Unlock()
+				if running > 0 {
+					log.Debug().Msgf("Skipping project completion: %d process(es) still running", running)
+					continue
+				}
 				if s := p.processScheduler.Load(); s == nil || len(s.GetScheduledProcesses()) == 0 {
 					log.Info().Msg("Project completed")
 					p.exitCodeMutex.Lock()
@@ -247,7 +264,7 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		log.Error().Msgf("Error: Can't get log: %s using empty buffer", err.Error())
 		procLog = pclog.NewLogBuffer(0)
 	}
-	procState, _ := p.GetProcessState(config.ReplicaName)
+	procState := p.newIncarnationState(config)
 	isMain := config.Name == p.mainProcess
 	hasMain := p.mainProcess != ""
 	printLogs := !hasMain && !p.isTuiOn && !p.project.MCPServer.IsStdio()
@@ -276,30 +293,60 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 	)
 	p.addRunningProcess(process)
 	go func(proc *Process) {
-		if err = p.waitIfNeeded(proc.procConf); err != nil {
-			log.Error().Msgf("Error: %s", err.Error())
-			log.Error().Msgf("Error: process %s won't run", proc.getName())
-			proc.wontRun()
-			p.onProcessSkipped(proc.procConf)
+		defer proc.onTerminated()
+		if waitErr := p.waitIfNeeded(proc); waitErr != nil {
+			if errors.Is(waitErr, errWaitAborted) {
+				log.Debug().Msgf("Process %s was stopped while waiting for its dependencies", proc.getName())
+				// The stop path marks a Pending process as done; make sure of it
+				// so that anything waiting on this instance is released.
+				if !proc.isDone() {
+					proc.onProcessEnd(types.ProcessStateTerminating)
+				}
+			} else {
+				log.Error().Msgf("Error: %s", waitErr.Error())
+				log.Error().Msgf("Error: process %s won't run", proc.getName())
+				proc.wontRun()
+				p.onProcessSkipped(proc.procConf)
+			}
 		} else {
 			exitCode := proc.run()
 			p.addDoneProcess(proc)
 			p.onProcessEnd(exitCode, proc.procConf)
 		}
-		count := p.removeRunningProcess(proc)
-		p.procCompleteChannel <- count
+		// Only the instance that still owns the process name may deregister it
+		// and report the remaining process count. A superseded instance must
+		// not evict its replacement.
+		if count, removed := p.removeRunningProcess(proc); removed {
+			p.procCompleteChannel <- count
+		}
 	}(process)
 }
 
-func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
+// errWaitAborted is returned by waitIfNeeded when the waiting process was shut
+// down (stopped, restarted or removed) before its dependencies were satisfied.
+// It is not a failure of the process itself, so it must not be reported as a
+// skipped process.
+var errWaitAborted = errors.New("process was stopped while waiting for its dependencies")
+
+func (p *ProjectRunner) waitIfNeeded(waiter *Process) error {
+	process := waiter.procConf
+	// Cancelled when the waiting process is shut down, which releases every
+	// wait below instead of leaving this goroutine parked on a dependency that
+	// may only resolve minutes later (or never).
+	abort := waiter.procRunCtx.Done()
 	for k := range process.DependsOn {
 		if proc := p.getDoneOrRunningProcess(k); proc != nil {
 			switch process.DependsOn[k].Condition {
 			case types.ProcessConditionCompleted:
-				proc.waitForCompletion()
+				if _, res := proc.waitForCompletionOrAbort(abort); res == waitAborted {
+					return errWaitAborted
+				}
 			case types.ProcessConditionCompletedSuccessfully:
 				log.Info().Msgf("%s is waiting for %s to complete successfully", process.ReplicaName, k)
-				exitCode := proc.waitForCompletion()
+				exitCode, res := proc.waitForCompletionOrAbort(abort)
+				if res == waitAborted {
+					return errWaitAborted
+				}
 				if !proc.procConf.IsExitCodeSuccess(exitCode) {
 					return fmt.Errorf("process %s depended on %s to complete successfully, but it exited with status %d",
 						process.ReplicaName, k, exitCode)
@@ -309,24 +356,35 @@ func (p *ProjectRunner) waitIfNeeded(process *types.ProcessConfig) error {
 					return fmt.Errorf("health dependency defined in '%s' but no health check exists in '%s'", process.ReplicaName, k)
 				}
 				log.Info().Msgf("%s is waiting for %s to be healthy", process.ReplicaName, k)
-				ready := proc.waitUntilReady()
-				if !ready {
+				switch proc.waitUntilReady(abort) {
+				case waitAborted:
+					return errWaitAborted
+				case waitFailed:
 					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.ReplicaName, k)
 				}
 			case types.ProcessConditionLogReady:
 				log.Info().Msgf("%s is waiting for %s log line %s", process.ReplicaName, k, proc.procConf.ReadyLogLine)
-				ready := proc.waitUntilLogReady()
-				if !ready {
+				switch proc.waitUntilLogReady(abort) {
+				case waitAborted:
+					return errWaitAborted
+				case waitFailed:
 					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.ReplicaName, k)
 				}
 			case types.ProcessConditionStarted:
 				log.Info().Msgf("%s is waiting for %s to start", process.ReplicaName, k)
-				proc.waitForStarted()
+				proc.waitForStarted(abort)
 			}
 		} else {
 			log.Error().Msgf("Error: process %s depends on %s, but it isn't running or completed", process.ReplicaName, k)
 		}
 
+	}
+	// A stop that arrived while the last dependency was already satisfied must
+	// still keep the process from starting.
+	select {
+	case <-abort:
+		return errWaitAborted
+	default:
 	}
 	return nil
 }
@@ -357,6 +415,23 @@ func (p *ProjectRunner) onProcessSkipped(procConf *types.ProcessConfig) {
 		log.Info().Msgf("Process %s skipped. Shutting down project...", procConf.Name)
 		_ = p.ShutDownProject()
 	}
+}
+
+// newIncarnationState builds the state object for a fresh incarnation of a
+// process. Previously the state was cloned from the outgoing instance, which
+// made a new instance inherit a terminal status ("Terminating") and a stale
+// process_end_time. Only the cumulative restart counter is carried over. The
+// state is also registered as the canonical one for that name, so lookups
+// performed while no instance is running observe the latest incarnation.
+func (p *ProjectRunner) newIncarnationState(config *types.ProcessConfig) *types.ProcessState {
+	state := types.NewProcessState(config)
+	p.statesMutex.Lock()
+	defer p.statesMutex.Unlock()
+	if prev, ok := p.processStates[config.ReplicaName]; ok && prev != nil {
+		state.Restarts = prev.Restarts
+	}
+	p.processStates[config.ReplicaName] = state
+	return state
 }
 
 func (p *ProjectRunner) initProcessStates() {
@@ -473,9 +548,18 @@ func (p *ProjectRunner) addRunningProcess(process *Process) {
 	p.runProcMutex.Unlock()
 }
 
+// addDoneProcess records process as the last completed incarnation of its name.
+// A stale instance that finishes after it was superseded is dropped, so that
+// dependents resolving through getDoneOrRunningProcess never see an older,
+// already cancelled object.
 func (p *ProjectRunner) addDoneProcess(process *Process) {
+	name := process.getName()
+	if current := p.getRunningProcess(name); current != nil && current != process {
+		log.Debug().Msgf("Not recording superseded instance of %s as done", name)
+		return
+	}
 	p.doneProcMutex.Lock()
-	p.doneProcesses[process.getName()] = process
+	p.doneProcesses[name] = process
 	p.doneProcMutex.Unlock()
 }
 
@@ -508,12 +592,21 @@ func (p *ProjectRunner) getDoneOrRunningProcess(name string) *Process {
 	return p.getDoneProcess(name)
 }
 
-func (p *ProjectRunner) removeRunningProcess(process *Process) int {
+// removeRunningProcess deregisters process, but only if it is still the
+// instance registered under its name. A process can be superseded by a newer
+// incarnation (restart, update, scale), and a stale instance finishing later
+// must not evict the live one. It returns the number of remaining running
+// processes and whether the removal took place.
+func (p *ProjectRunner) removeRunningProcess(process *Process) (int, bool) {
 	p.runProcMutex.Lock()
-	delete(p.runningProcesses, process.getName())
-	runProcCount := len(p.runningProcesses)
-	p.runProcMutex.Unlock()
-	return runProcCount
+	defer p.runProcMutex.Unlock()
+	name := process.getName()
+	if current, ok := p.runningProcesses[name]; ok && current != process {
+		log.Debug().Msgf("Not removing superseded instance of %s", name)
+		return len(p.runningProcesses), false
+	}
+	delete(p.runningProcesses, name)
+	return len(p.runningProcesses), true
 }
 
 func (p *ProjectRunner) StartProcess(name string) error {
@@ -828,6 +921,14 @@ func (p *ProjectRunner) doRestart(name string) error {
 		if err != nil {
 			log.Err(err).Msgf("failed to stop process %s", name)
 			return err
+		}
+		// A process that never started is still parked in waitIfNeeded. The
+		// shutdown above releases it; wait for its goroutine to actually exit so
+		// the replacement is the only incarnation in flight. Already started
+		// processes are not waited for here - their shutdown honours the
+		// configured shutdown parameters and can take arbitrarily long.
+		if !proc.hasStarted() && !proc.waitUntilTerminated(pendingTerminationTimeout) {
+			log.Warn().Msgf("process %s did not stop within %v, starting a new instance anyway", name, pendingTerminationTimeout)
 		}
 		time.Sleep(proc.getBackoff())
 	}
@@ -1203,7 +1304,7 @@ func (p *ProjectRunner) updateReplicaCount(name string, scale int) {
 func (p *ProjectRunner) renameProcess(name string, newName string) {
 	process := p.getRunningProcess(name)
 	if process != nil {
-		p.removeRunningProcess(process)
+		_, _ = p.removeRunningProcess(process)
 		process.setName(newName)
 		p.addRunningProcess(process)
 	}
