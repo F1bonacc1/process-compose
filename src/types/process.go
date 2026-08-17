@@ -60,6 +60,7 @@ type (
 		Executable              string              `yaml:"executable,omitempty" json:"executable,omitempty"`
 		Args                    []string            `yaml:"args,omitempty" json:"args,omitempty"`
 		Schedule                *ScheduleConfig     `yaml:"schedule,omitempty" json:"schedule,omitempty"`
+		Watch                   *WatchConfig        `yaml:"watch,omitempty" json:"watch,omitempty"`
 		MCP                     *MCPProcessConfig   `yaml:"mcp,omitempty" json:"mcp,omitempty"`
 		TruncateLog             bool                `yaml:"truncate_log,omitempty" json:"truncateLog,omitempty"`
 		DisableCommandRendering bool                `yaml:"is_template_disabled,omitempty" json:"disableCommandRendering,omitempty"`
@@ -148,22 +149,34 @@ func (p *ProcessConfig) Compare(another *ProcessConfig) bool {
 		return false
 	}
 
-	if !reflect.DeepEqual(p.LoggerConfig, another.LoggerConfig) ||
-		!reflect.DeepEqual(p.LivenessProbe, another.LivenessProbe) ||
-		!reflect.DeepEqual(p.ReadinessProbe, another.ReadinessProbe) ||
-		!reflect.DeepEqual(p.ShutDownParams, another.ShutDownParams) ||
-		!reflect.DeepEqual(p.Vars, another.Vars) ||
-		!reflect.DeepEqual(p.Extensions, another.Extensions) ||
-		!reflect.DeepEqual(p.DependsOn, another.DependsOn) ||
-		!reflect.DeepEqual(p.RestartPolicy, another.RestartPolicy) ||
-		!reflect.DeepEqual(p.Environment, another.Environment) ||
-		!reflect.DeepEqual(p.Args, another.Args) ||
-		!reflect.DeepEqual(p.SuccessExitCodes, another.SuccessExitCodes) {
-		//diffs := compareStructs(*p, *another)
-		//log.Warn().Msgf("Structs are different: %s", diffs)
-		return false
-	}
+	return p.compareCompositeFields(another)
+}
 
+// compareCompositeFields compares the fields that need a deep comparison. It is
+// split out of Compare to keep that function within the project's cyclomatic
+// complexity limit; add new composite fields here.
+func (p *ProcessConfig) compareCompositeFields(another *ProcessConfig) bool {
+	composites := []struct{ a, b any }{
+		{p.LoggerConfig, another.LoggerConfig},
+		{p.LivenessProbe, another.LivenessProbe},
+		{p.ReadinessProbe, another.ReadinessProbe},
+		{p.ShutDownParams, another.ShutDownParams},
+		{p.Vars, another.Vars},
+		{p.Extensions, another.Extensions},
+		{p.DependsOn, another.DependsOn},
+		{p.RestartPolicy, another.RestartPolicy},
+		{p.Environment, another.Environment},
+		{p.Args, another.Args},
+		{p.Watch, another.Watch},
+		{p.SuccessExitCodes, another.SuccessExitCodes},
+	}
+	for _, field := range composites {
+		if !reflect.DeepEqual(field.a, field.b) {
+			//diffs := compareStructs(*p, *another)
+			//log.Warn().Msgf("Structs are different: %s", diffs)
+			return false
+		}
+	}
 	return true
 }
 func (p *ProcessConfig) AssignProcessExecutableAndArgs(shellConf *command.ShellConfig, elevatedShellArg string) {
@@ -281,7 +294,17 @@ type ProcessState struct {
 	IsRunning        bool          `json:"is_running"`
 	NextRunTime      *time.Time    `json:"next_run_time,omitempty"`
 	LastActivityTime *time.Time    `json:"last_activity_time,omitempty"`
-	MaxLogicalLine   int64         `json:"-"` // TUI-only: furthest logical line reached in terminal
+	// IsWatched reports whether an active file watcher is armed for this
+	// process. It is the `watch` counterpart of NextRunTime and, like it, must
+	// stay in the JSON payload - the remote client deserializes this struct, so
+	// attached sessions would otherwise never see the Watching state.
+	IsWatched bool `json:"is_watched,omitempty"`
+	// WatchTriggerPath and WatchTriggerTime describe the file change that last
+	// restarted this process. They travel in the state, rather than through a
+	// local callback, so that an attached (remote) TUI can report them too.
+	WatchTriggerPath string     `json:"watch_trigger_path,omitempty"`
+	WatchTriggerTime *time.Time `json:"watch_trigger_time,omitempty"`
+	MaxLogicalLine   int64      `json:"-"` // TUI-only: furthest logical line reached in terminal
 	// ProcessStartTime is the wall-clock time the process (first) entered a
 	// running/launched state. Used by `process-compose analyze critical-chain`.
 	ProcessStartTime *time.Time `json:"process_start_time,omitempty"`
@@ -355,6 +378,23 @@ func (p *ProcessState) IsReady() bool {
 // success, honoring its SuccessExitCodes allowlist (carried from the config).
 func (p *ProcessState) IsExitCodeSuccess() bool {
 	return isExitCodeSuccess(p.ExitCode, p.SuccessExitCodes)
+}
+
+// IsWatchIdle reports whether this process has finished cleanly and is only
+// waiting for a watched file to change.
+//
+// A failed process is deliberately excluded. "Watching" must never stand in for
+// "Failed": a broken build is the single most important thing a watch loop has
+// to tell the user, and a state that hid it would be worse than no state at
+// all. The IsWatched flag still travels in the state, so a caller that wants to
+// show "armed" alongside a failure can.
+//
+// Callers must combine this with IsWatched - it deliberately says nothing about
+// whether a watch exists.
+func (p *ProcessState) IsWatchIdle() bool {
+	return !p.IsRunning &&
+		p.Status == ProcessStateCompleted &&
+		p.IsExitCodeSuccess()
 }
 
 // Check if a process is running and healthy and explain why.
@@ -448,6 +488,7 @@ const (
 	ProcessStateSkipped     = "Skipped"
 	ProcessStateError       = "Error"
 	ProcessStateScheduled   = "Scheduled"
+	ProcessStateWatching    = "Watching"
 )
 
 // Display a process status for the UI.
@@ -461,6 +502,13 @@ const (
 func DisplayProcessStatus(state ProcessState) string {
 	if state.NextRunTime != nil && !state.IsRunning {
 		return ProcessStateScheduled
+	}
+	// A process that exited cleanly but still has an active file watcher is
+	// armed rather than finished - showing "Completed" would suggest nothing
+	// more can happen, and would leave the project's continued running
+	// unexplained. A failed one keeps its failure; see IsWatchIdle.
+	if state.IsWatched && state.IsWatchIdle() {
+		return ProcessStateWatching
 	}
 	if state.Status == ProcessStateCompleted && !state.IsExitCodeSuccess() {
 		return "Failed"

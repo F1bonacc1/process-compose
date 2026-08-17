@@ -73,6 +73,11 @@ func (pv *pcView) fillTableData() {
 	// Update activity/silence monitor notifications
 	pv.monitor.updateNotifications(states.States)
 
+	// Report watch-triggered restarts, coalesced so a burst stays readable.
+	if msg := pv.watchNotifier.observe(states.States, time.Now()); msg != "" {
+		pv.attentionMessage(msg, watchMessageDuration, false)
+	}
+
 	showPass := false
 	row := 1
 	succeeded := true
@@ -440,7 +445,8 @@ func (pv *pcView) getIconForState(state types.ProcessState) (string, tcell.Color
 		return "●", pv.styles.ProcTable().FgColor.Color()
 	case types.ProcessStatePending,
 		types.ProcessStateRestarting,
-		types.ProcessStateScheduled:
+		types.ProcessStateScheduled,
+		types.ProcessStateWatching:
 		return "●", pv.styles.ProcTable().FgPending.Color()
 	case types.ProcessStateCompleted:
 		if state.IsExitCodeSuccess() {

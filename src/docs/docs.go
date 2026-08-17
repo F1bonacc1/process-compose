@@ -1572,6 +1572,9 @@ const docTemplate = `{
                 "vars": {
                     "$ref": "#/definitions/types.Vars"
                 },
+                "watch": {
+                    "$ref": "#/definitions/types.WatchConfig"
+                },
                 "workingDir": {
                     "type": "string"
                 }
@@ -1633,6 +1636,10 @@ const docTemplate = `{
                 "is_running": {
                     "type": "boolean"
                 },
+                "is_watched": {
+                    "description": "IsWatched reports whether an active file watcher is armed for this\nprocess. It is the ` + "`" + `watch` + "`" + ` counterpart of NextRunTime and, like it, must\nstay in the JSON payload - the remote client deserializes this struct, so\nattached sessions would otherwise never see the Watching state.",
+                    "type": "boolean"
+                },
                 "last_activity_time": {
                     "type": "string"
                 },
@@ -1682,6 +1689,13 @@ const docTemplate = `{
                     }
                 },
                 "system_time": {
+                    "type": "string"
+                },
+                "watch_trigger_path": {
+                    "description": "WatchTriggerPath and WatchTriggerTime describe the file change that last\nrestarted this process. They travel in the state, rather than through a\nlocal callback, so that an attached (remote) TUI can report them too.",
+                    "type": "string"
+                },
+                "watch_trigger_time": {
                     "type": "string"
                 }
             }
@@ -1815,6 +1829,61 @@ const docTemplate = `{
         "types.Vars": {
             "type": "object",
             "additionalProperties": {}
+        },
+        "types.WatchConfig": {
+            "type": "object",
+            "properties": {
+                "buffer_size": {
+                    "description": "BufferSize overrides DefaultWatchBufferSize. Windows only.",
+                    "type": "integer"
+                },
+                "cascade": {
+                    "description": "Cascade also restarts the transitive dependents of this process, in\ndependency order. Restarts never propagate to dependencies.",
+                    "type": "boolean"
+                },
+                "debounce": {
+                    "description": "Debounce is how long to wait for changes to settle before restarting,\ne.g. \"300ms\" or \"1s\". Defaults to DefaultWatchDebounce.\n\nThis is a string rather than a time.Duration so that it survives the JSON\nround trip used by the REST API and by OriginalConfig (which ScaleProcess\nreplays to build replicas), and so that the generated JSON schema types it\nas a string. ScheduleConfig.Interval is a string for the same reasons.",
+                    "type": "string"
+                },
+                "disable_default_excludes": {
+                    "description": "DisableDefaultExcludes turns off the built-in ignore list (.git,\nnode_modules, build output directories, log files and editor swap files).",
+                    "type": "boolean"
+                },
+                "max_entries": {
+                    "description": "MaxEntries overrides DefaultWatchMaxEntries for this process.",
+                    "type": "integer"
+                },
+                "paths": {
+                    "description": "Paths to watch. A config with no paths watches nothing.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.WatchPath"
+                    }
+                }
+            }
+        },
+        "types.WatchPath": {
+            "type": "object",
+            "properties": {
+                "exclude": {
+                    "description": "Exclude drops matching files and prunes matching directories during the\nwalk. Applied on top of the default ignores.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "include": {
+                    "description": "Include, when non-empty, restricts triggering to matching files.\nA pattern containing '/' matches the root-relative path; a pattern\nwithout one matches the base name.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "path": {
+                    "description": "Path is the directory to watch, resolved against the process working_dir.\nThe whole subtree is watched; Exclude prunes it.",
+                    "type": "string"
+                }
+            }
         }
     },
     "externalDocs": {

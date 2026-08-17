@@ -18,6 +18,7 @@ type ProjectOpts struct {
 	truncateLogs         bool
 	refRate              time.Duration
 	withRecursiveMetrics bool
+	noWatch              bool
 	admitters            []admitter.Admitter
 }
 
@@ -72,6 +73,14 @@ func (p *ProjectOpts) WithSlowRefRate(refRate time.Duration) *ProjectOpts {
 
 func (p *ProjectOpts) WithRecursiveMetrics(withRecursiveMetrics bool) *ProjectOpts {
 	p.withRecursiveMetrics = withRecursiveMetrics
+	return p
+}
+
+// WithNoWatch disables file watching for the whole project, so `watch:` blocks
+// in the config are ignored. CI runs and scripted invocations need `up` to
+// behave exactly as it did before watching existed.
+func (p *ProjectOpts) WithNoWatch(noWatch bool) *ProjectOpts {
+	p.noWatch = noWatch
 	return p
 }
 

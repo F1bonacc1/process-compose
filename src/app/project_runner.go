@@ -24,6 +24,7 @@ import (
 	"github.com/f1bonacc1/process-compose/src/scheduler"
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
+	"github.com/f1bonacc1/process-compose/src/watcher"
 
 	"github.com/rs/zerolog/log"
 )
@@ -42,19 +43,22 @@ func (e *ExitError) Error() string {
 }
 
 type ProjectRunner struct {
-	procConfMutex    sync.Mutex
-	project          *types.Project
-	logsMutex        sync.Mutex
-	processLogs      map[string]*pclog.ProcessLogBuffer
-	statesMutex      sync.Mutex
-	processStates    map[string]*types.ProcessState
-	runProcMutex     sync.Mutex
-	runningProcesses map[string]*Process
-	doneProcMutex    sync.Mutex
-	doneProcesses    map[string]*Process
-	restartMutex     sync.Mutex
-	restartCalls     map[string]*RestartCall
-	logger           pclog.PcLogger
+	procConfMutex sync.Mutex
+	project       *types.Project
+	logsMutex     sync.Mutex
+	processLogs   map[string]*pclog.ProcessLogBuffer
+	statesMutex   sync.Mutex
+	processStates map[string]*types.ProcessState
+	// pendingRestartReset marks processes whose next incarnation should start
+	// with a zeroed restart counter. Guarded by statesMutex.
+	pendingRestartReset map[string]bool
+	runProcMutex        sync.Mutex
+	runningProcesses    map[string]*Process
+	doneProcMutex       sync.Mutex
+	doneProcesses       map[string]*Process
+	restartMutex        sync.Mutex
+	restartCalls        map[string]*RestartCall
+	logger              pclog.PcLogger
 	//waitGroup            sync.WaitGroup
 	//waitGroup            sync.WaitGroup
 	exitCodeMutex        sync.Mutex
@@ -75,7 +79,9 @@ type ProjectRunner struct {
 	procCompleteChannel  chan int
 	updatesInFlight      atomic.Int32
 	processTree          *ProcessTree
+	noWatch              bool
 	processScheduler     atomic.Pointer[scheduler.Scheduler]
+	processWatcher       atomic.Pointer[watcher.Watcher]
 	stateBroadcaster     *ProcessStateBroadcaster
 	admitters            []admitter.Admitter
 }
@@ -202,6 +208,13 @@ func (p *ProjectRunner) Run() error {
 		newConf := proc
 		p.runProcess(&newConf)
 	}
+
+	// Started after the run order, deliberately: a watch registered earlier
+	// could fire on start-up churn and restart a process whose first launch is
+	// still in flight, leaving two incarnations.
+	p.startWatcher()
+	defer p.stopWatcher()
+
 	for {
 		select {
 		case <-p.ctxApp.Done():
@@ -238,7 +251,10 @@ func (p *ProjectRunner) Run() error {
 					log.Debug().Msgf("Skipping project completion: %d process(es) still running", running)
 					continue
 				}
-				if s := p.processScheduler.Load(); s == nil || len(s.GetScheduledProcesses()) == 0 {
+				// Scheduled processes and armed watchers can both still start
+				// something, so an empty running set is not the end of the
+				// project while either is live.
+				if !p.hasBackgroundTriggers() {
 					log.Info().Msg("Project completed")
 					p.exitCodeMutex.Lock()
 					exitCode := p.exitCode
@@ -311,7 +327,15 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		} else {
 			exitCode := proc.run()
 			p.addDoneProcess(proc)
-			p.onProcessEnd(exitCode, proc.procConf)
+			// An exit caused by a restart is not the process ending: a
+			// SIGTERM'd process exits non-zero, so letting it reach
+			// onProcessEnd would shut the whole project down under
+			// exit_on_end or exit_on_failure every time a file is saved.
+			if proc.isBeingRestarted() {
+				log.Debug().Msgf("Process %s exited for a restart; not ending the project", proc.getName())
+			} else {
+				p.onProcessEnd(exitCode, proc.procConf)
+			}
 		}
 		// Only the instance that still owns the process name may deregister it
 		// and report the remaining process count. A superseded instance must
@@ -430,8 +454,31 @@ func (p *ProjectRunner) newIncarnationState(config *types.ProcessConfig) *types.
 	if prev, ok := p.processStates[config.ReplicaName]; ok && prev != nil {
 		state.Restarts = prev.Restarts
 	}
+	if p.pendingRestartReset[config.ReplicaName] {
+		state.Restarts = 0
+		delete(p.pendingRestartReset, config.ReplicaName)
+	}
 	p.processStates[config.ReplicaName] = state
 	return state
+}
+
+// resetRestartCount arranges for the next incarnation of name to start with a
+// zeroed restart counter, which newIncarnationState would otherwise carry
+// forward. A restart the user asked for is a fresh start, not a continuation of
+// a crash loop - without this, a process that had already exhausted
+// max_restarts would come back with its budget still spent.
+//
+// The intent is recorded rather than applied: the stored ProcessState is the
+// same object the outgoing Process is still updating under its own mutex, so
+// writing to it here would race. newIncarnationState consumes the flag while
+// building the new state, which nothing else can see yet.
+func (p *ProjectRunner) resetRestartCount(name string) {
+	p.statesMutex.Lock()
+	defer p.statesMutex.Unlock()
+	if p.pendingRestartReset == nil {
+		p.pendingRestartReset = make(map[string]bool)
+	}
+	p.pendingRestartReset[name] = true
 }
 
 func (p *ProjectRunner) initProcessStates() {
@@ -492,6 +539,20 @@ func (p *ProjectRunner) GetProcessState(name string) (*types.ProcessState, error
 			// Restore to Completed if it was marked as Scheduled but no longer has a next run
 			state.Status = types.ProcessStateCompleted
 		}
+	}
+
+	// A process that exited cleanly but still has an armed watch is not
+	// finished - it is waiting for a file to change. Reporting Watching also
+	// explains why the project is still running, which "Completed" would leave
+	// mysterious. IsWatchIdle is the same predicate DisplayProcessStatus uses,
+	// so the API and the TUI cannot disagree; in particular a failed process
+	// keeps its failure rather than being masked as Watching.
+	state.IsWatched = p.isProcessWatched(name)
+	state.WatchTriggerPath, state.WatchTriggerTime = p.lastWatchTrigger(name)
+	if state.IsWatched && state.IsWatchIdle() {
+		state.Status = types.ProcessStateWatching
+	} else if !state.IsWatched && state.Status == types.ProcessStateWatching {
+		state.Status = types.ProcessStateCompleted
 	}
 	return state, nil
 }
@@ -623,6 +684,16 @@ func (p *ProjectRunner) StartProcess(name string) error {
 				log.Error().Err(err).Msgf("Failed to resume schedule for process %s", name)
 			}
 		}
+		// Resume an existing registration - a stopped process's watch is paused,
+		// not removed, so resuming it avoids re-walking the whole tree. A
+		// process with no registration becomes watchable only now: it may have
+		// been deferred (disabled, or excluded from an `up <process>...`
+		// selection) when the watcher was first populated.
+		if p.isProcessWatchRegistered(name) {
+			p.watchResume(name)
+		} else {
+			p.watchAdd(&processConfig)
+		}
 	} else {
 		return fmt.Errorf("no such process: %s", name)
 	}
@@ -641,9 +712,14 @@ func (p *ProjectRunner) StopProcess(name string) error {
 			log.Err(err).Msgf("failed to stop process %s", name)
 		}
 	} else {
-		// If not running, check if it's scheduled. If so, we'll just pause the schedule.
+		// A process that is not running may still be armed to start again on
+		// its own - by a schedule, or by a file watch. Stopping it then means
+		// disarming it, which is a perfectly sensible request and not an error:
+		// a process reading Scheduled or Watching is exactly what the user is
+		// looking at when they ask for it to stop.
 		sched := p.processScheduler.Load()
-		if sched == nil || !sched.IsScheduled(name) {
+		isScheduled := sched != nil && sched.IsScheduled(name)
+		if !isScheduled && !p.isProcessWatched(name) {
 			if _, ok := p.project.Processes[name]; !ok {
 				log.Error().Msgf("Process %s does not exist", name)
 				return fmt.Errorf("process %s does not exist", name)
@@ -652,6 +728,9 @@ func (p *ProjectRunner) StopProcess(name string) error {
 			return fmt.Errorf("process %s is not running", name)
 		}
 	}
+
+	// A deliberately stopped process must not be brought back by a file change.
+	p.watchPause(name)
 
 	// Pause schedule if it was running or scheduled
 	if sched := p.processScheduler.Load(); sched != nil && sched.IsScheduled(name) {
@@ -881,7 +960,26 @@ waitingForStop:
 	return nil
 }
 
+// restartOpts tunes an individual restart. The zero value reproduces the
+// historical behavior of RestartProcess exactly.
+type restartOpts struct {
+	// skipBackoff omits the inter-incarnation sleep. Backoff exists to damp a
+	// crash loop; a restart the user asked for - directly or by saving a file -
+	// is not a crash, and the one-second floor would otherwise make every
+	// watch-triggered restart feel sluggish.
+	skipBackoff bool
+	// resetRestarts zeroes the cumulative restart counter. Without it a process
+	// that had already exhausted max_restarts would come back with its
+	// crash-loop budget still spent, so the user's fix-and-save would start it
+	// once and then refuse to restart it again.
+	resetRestarts bool
+}
+
 func (p *ProjectRunner) RestartProcess(name string) error {
+	return p.restartProcessWithOpts(name, restartOpts{})
+}
+
+func (p *ProjectRunner) restartProcessWithOpts(name string, opts restartOpts) error {
 	p.restartMutex.Lock()
 
 	// Check if restart is already in progress
@@ -899,7 +997,7 @@ func (p *ProjectRunner) RestartProcess(name string) error {
 	p.restartMutex.Unlock()
 
 	// Perform the restart
-	err := p.doRestart(name)
+	err := p.doRestart(name, opts)
 
 	// Complete the operation and notify waiters
 	call.err = err
@@ -913,10 +1011,13 @@ func (p *ProjectRunner) RestartProcess(name string) error {
 	return err
 }
 
-func (p *ProjectRunner) doRestart(name string) error {
+func (p *ProjectRunner) doRestart(name string, opts restartOpts) error {
 	log.Debug().Msgf("Restarting %s", name)
 	proc := p.getRunningProcess(name)
 	if proc != nil {
+		// Mark before shutting down: the exit is a consequence of this
+		// restart, and onProcessEnd must not read it as the process ending.
+		proc.markRestarting()
 		err := proc.shutDownNoRestart()
 		if err != nil {
 			log.Err(err).Msgf("failed to stop process %s", name)
@@ -930,7 +1031,13 @@ func (p *ProjectRunner) doRestart(name string) error {
 		if !proc.hasStarted() && !proc.waitUntilTerminated(pendingTerminationTimeout) {
 			log.Warn().Msgf("process %s did not stop within %v, starting a new instance anyway", name, pendingTerminationTimeout)
 		}
-		time.Sleep(proc.getBackoff())
+		if !opts.skipBackoff {
+			time.Sleep(proc.getBackoff())
+		}
+	}
+
+	if opts.resetRestarts {
+		p.resetRestartCount(name)
 	}
 
 	if processConfig, ok := p.project.Processes[name]; ok {
@@ -1085,6 +1192,11 @@ func (p *ProjectRunner) shutDownAndWait(shutdownOrder []*Process) {
 }
 
 func (p *ProjectRunner) ShutDownProject() error {
+	// Stop watching before anything is torn down: a file touched by a
+	// shutdown.command must not trigger a restart of a process that is already
+	// on its way out.
+	p.stopWatcher()
+
 	p.runProcMutex.Lock()
 	shutdownOrder := []*Process{}
 	if p.isOrderedShutdown {
@@ -1326,6 +1438,13 @@ func (p *ProjectRunner) renameProcess(name string, newName string) {
 		procConf.ReplicaName = newName
 		p.project.Processes[newName] = procConf
 	}
+	// The watcher is keyed by replica name, and scaling down to 1 renames
+	// e.g. api-0 to api. Re-key it here, alongside the logs and state above,
+	// or the watch would be stranded under a name nothing looks up.
+	p.watchRemove(name)
+	if ok {
+		p.watchAdd(&procConf)
+	}
 }
 func (p *ProjectRunner) removeProcessLogs(name string) *pclog.ProcessLogBuffer {
 	p.logsMutex.Lock()
@@ -1339,6 +1458,7 @@ func (p *ProjectRunner) removeProcessLogs(name string) *pclog.ProcessLogBuffer {
 }
 
 func (p *ProjectRunner) removeProcess(name string) error {
+	p.watchRemove(name)
 	p.removeProcessLogs(name)
 	p.procConfMutex.Lock()
 	delete(p.project.Processes, name)
@@ -1372,6 +1492,9 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	if !proc.IsDeferred() {
 		p.runProcess(&proc)
 	}
+	// UpdateProject routes every add, update and scale-up through here, so this
+	// single hook keeps the watcher reconciled across reloads.
+	p.watchAdd(&proc)
 }
 
 func selectRunningProcesses(project *types.Project, procList []string) error {
@@ -1525,6 +1648,7 @@ func NewProjectRunner(opts *ProjectOpts) (*ProjectRunner, error) {
 		truncateLogs:         opts.truncateLogs,
 		refRate:              opts.refRate,
 		withRecursiveMetrics: opts.withRecursiveMetrics,
+		noWatch:              opts.noWatch,
 		projectState: &types.ProjectState{
 			FileNames: opts.project.FileNames,
 			StartTime: time.Now(),

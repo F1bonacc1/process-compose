@@ -78,6 +78,45 @@ func copyWorkingDirToProcesses(p *types.Project, wd string) {
 	}
 }
 
+// resolveWatchPaths makes every watch path absolute, resolving a relative one
+// against the process working dir (falling back to the current directory, which
+// is where a process without a working_dir runs). Mirrors how
+// copyWorkingDirToProbes anchors exec probes.
+//
+// Resolution happens at load time so the watcher is handed unambiguous roots,
+// and so the absolute paths are baked into OriginalConfig - which ScaleProcess
+// replays verbatim to build replicas.
+func resolveWatchPaths(p *types.Project) {
+	cwd := ""
+	for name, proc := range p.Processes {
+		if !proc.Watch.IsEnabled() {
+			continue
+		}
+		base := proc.WorkingDir
+		if base == "" {
+			if cwd == "" {
+				var err error
+				if cwd, err = os.Getwd(); err != nil {
+					log.Error().Err(err).Msgf("failed to resolve watch paths for process %s", name)
+					continue
+				}
+			}
+			base = cwd
+		}
+		for i, watchPath := range proc.Watch.Paths {
+			if watchPath.Path == "" {
+				continue
+			}
+			if !filepath.IsAbs(watchPath.Path) {
+				proc.Watch.Paths[i].Path = filepath.Join(base, watchPath.Path)
+			} else {
+				proc.Watch.Paths[i].Path = filepath.Clean(watchPath.Path)
+			}
+		}
+		p.Processes[name] = proc
+	}
+}
+
 // Exec Probes should use the same working dir if not specified otherwise
 func copyWorkingDirToProbes(p *types.Project) {
 	for name, proc := range p.Processes {
@@ -162,6 +201,10 @@ func cloneProcess(proc *types.ProcessConfig) *types.ProcessConfig {
 	newProc.Environment = slices.Clone(proc.Environment)
 	newProc.Args = slices.Clone(proc.Args)
 	newProc.Entrypoint = slices.Clone(proc.Entrypoint)
+
+	// 5. DEEP COPY the Watch config, so per-replica path resolution doesn't
+	// mutate every other replica through a shared pointer.
+	newProc.Watch = proc.Watch.Clone()
 
 	return &newProc
 }

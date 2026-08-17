@@ -75,6 +75,7 @@ type Process struct {
 	isMain               bool
 	extraArgs            []string
 	isStopped            atomic.Bool
+	isRestarting         atomic.Bool
 	stdin                io.WriteCloser
 	passProvided         bool
 	isTuiEnabled         bool
@@ -487,6 +488,26 @@ func (p *Process) wontRun() {
 func (p *Process) shutDownNoRestart() error {
 	p.prepareForShutDown()
 	return p.shutDown()
+}
+
+// markRestarting records that this incarnation is being torn down to make way
+// for a replacement, rather than ending on its own.
+//
+// The distinction matters because every exit routes through onProcessEnd, which
+// shuts the whole project down under exit_on_end or exit_on_failure. A
+// SIGTERM'd process does not exit 0, so without this marker a restart would
+// look exactly like a failure and take the project with it.
+//
+// Unlike isStopped, this flag is not consumed by isRestartable - it is read
+// once the process has fully exited.
+func (p *Process) markRestarting() {
+	p.isRestarting.Store(true)
+}
+
+// isBeingRestarted reports whether this incarnation's exit was caused by an
+// intentional restart.
+func (p *Process) isBeingRestarted() bool {
+	return p.isRestarting.Load()
 }
 
 // perform graceful process shutdown if defined in configuration

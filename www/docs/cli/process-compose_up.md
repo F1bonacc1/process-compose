@@ -28,6 +28,7 @@ process-compose up [PROCESS...] [flags]
       --logs-truncate            truncate process logs buffer on startup
   -n, --namespace stringArray    run only specified namespaces (default all, env: PC_NAMESPACES)
       --no-deps                  don't start dependent processes
+      --no-watch                 disable file watching, ignoring all 'watch' configuration (env: PC_NO_WATCH)
       --recursive-metrics        collect metrics recursively (env: PC_RECURSIVE_METRICS)
   -r, --ref-rate duration        TUI refresh interval in seconds or as a Go duration string (e.g. 1s) (default 1)
   -R, --reverse                  sort in reverse order
@@ -56,3 +57,4 @@ process-compose up [PROCESS...] [flags]
 ### SEE ALSO
 
 * [process-compose](process-compose.md)	 - Processes scheduler and orchestrator
+

@@ -49,6 +49,7 @@ const (
 	EnvVarDisabledProcs        = "PC_DISABLED_PROCESSES"
 	EnvVarNameAddress          = "PC_ADDRESS"
 	EnvVarLogNoColor           = "PC_LOG_NO_COLOR"
+	EnvVarNoWatch              = "PC_NO_WATCH"
 )
 
 // Flags represents PC configuration flags.
@@ -94,6 +95,7 @@ type Flags struct {
 	WithRecursiveMetrics *bool
 	ApiTokenPath         *string
 	LogNoColor           *bool
+	NoWatch              *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -136,5 +138,6 @@ func NewFlags() *Flags {
 		WithRecursiveMetrics: new(getWithRecursiveMetricsEnvDefault()),
 		ApiTokenPath:         new(getApiTokenPathDefault()),
 		LogNoColor:           new(getLogNoColorDefault()),
+		NoWatch:              new(getNoWatchEnvDefault()),
 	}
 }

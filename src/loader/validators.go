@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/f1bonacc1/process-compose/src/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -190,6 +191,131 @@ func validateScheduledProcessScaling(p *types.Project) error {
 	for name, proc := range p.Processes {
 		if proc.Schedule != nil && proc.Replicas > 1 {
 			errStr := fmt.Sprintf("scheduled process '%s' cannot be scaled (replicas > 1)", name)
+			if p.IsStrict {
+				return errors.New(errStr)
+			}
+			log.Error().Msg(errStr)
+		}
+	}
+	return nil
+}
+
+// validateWatchConfig rejects watch configurations that are malformed, or that
+// combine with features whose interaction is unsafe or undefined. Each rejection
+// follows the house convention: fail the load under strict mode, log otherwise.
+func validateWatchConfig(p *types.Project) error {
+	for name, proc := range p.Processes {
+		if proc.Watch == nil {
+			continue
+		}
+		reject := func(format string, args ...any) error {
+			errStr := fmt.Sprintf(format, args...)
+			if p.IsStrict {
+				return errors.New(errStr)
+			}
+			log.Error().Msg(errStr)
+			return nil
+		}
+
+		if len(proc.Watch.Paths) == 0 {
+			if err := reject("process '%s' has a 'watch' block with no 'paths'", name); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// A replicated process would install one watcher per replica on the
+		// same tree - N times the descriptors, events and simultaneous
+		// restarts - and whether replicas should restart together or in a
+		// rolling fashion is undefined. Same shape as scheduled + scaling.
+		if proc.Replicas > 1 {
+			if err := reject("watched process '%s' cannot be scaled (replicas > 1)", name); err != nil {
+				return err
+			}
+		}
+
+		// A restart neither pauses nor resumes the cron job, and the
+		// scheduler's max_concurrent guard counts only scheduler-initiated
+		// starts, so a watch-triggered start would silently violate it.
+		if proc.Schedule.IsScheduled() {
+			if err := reject("process '%s' cannot combine 'schedule' with 'watch'", name); err != nil {
+				return err
+			}
+		}
+
+		// Foreground processes run inside the TUI with the terminal suspended
+		// and never enter the runner's process registry, so a watch-triggered
+		// restart would silently start one as an ordinary background process.
+		if proc.IsForeground {
+			if err := reject("process '%s' cannot combine 'is_foreground' with 'watch'", name); err != nil {
+				return err
+			}
+		}
+
+		// fsnotify refuses a buffer this small on Windows, which would leave the
+		// process unwatched with no obvious cause. Reject it everywhere.
+		if proc.Watch.BufferSize != 0 && proc.Watch.BufferSize < types.MinWatchBufferSize {
+			if err := reject("process '%s' has a watch 'buffer_size' of %d, below the minimum of %d bytes",
+				name, proc.Watch.BufferSize, types.MinWatchBufferSize); err != nil {
+				return err
+			}
+		}
+
+		if _, err := proc.Watch.GetDebounceDuration(); err != nil {
+			if err := reject("process '%s' has an invalid watch 'debounce' value '%s': %v (expected a duration such as '300ms' or '1s')",
+				name, proc.Watch.Debounce, err); err != nil {
+				return err
+			}
+		}
+
+		for _, watchPath := range proc.Watch.Paths {
+			if strings.TrimSpace(watchPath.Path) == "" {
+				if err := reject("process '%s' has a watch path with an empty 'path'", name); err != nil {
+					return err
+				}
+				continue
+			}
+			// Watch paths are not run through the templater, so a variable
+			// reference would silently watch a literal directory of that name.
+			if strings.Contains(watchPath.Path, "{{") {
+				if err := reject("process '%s' watch path '%s' uses a template variable, which is not supported for watch paths",
+					name, watchPath.Path); err != nil {
+					return err
+				}
+				continue
+			}
+			if err := validateWatchPatterns(p, name, watchPath); err != nil {
+				return err
+			}
+			if info, err := os.Stat(watchPath.Path); os.IsNotExist(err) {
+				if err := reject("watch path '%s' for process '%s' does not exist", watchPath.Path, name); err != nil {
+					return err
+				}
+			} else if err == nil && !info.IsDir() {
+				// Watching a file directly is lost the moment an editor saves
+				// atomically (write to a temp file, then rename over it).
+				log.Warn().Msgf("watch path '%s' for process '%s' is a file; its parent directory will be watched and filtered to this name",
+					watchPath.Path, name)
+			}
+		}
+	}
+	return nil
+}
+
+func validateWatchPatterns(p *types.Project, name string, watchPath types.WatchPath) error {
+	for _, group := range []struct {
+		kind     string
+		patterns []string
+	}{
+		{"include", watchPath.Include},
+		{"exclude", watchPath.Exclude},
+	} {
+		for _, pattern := range group.patterns {
+			if doublestar.ValidatePattern(pattern) {
+				continue
+			}
+			errStr := fmt.Sprintf("process '%s' watch path '%s' has an invalid %s pattern '%s'",
+				name, watchPath.Path, group.kind, pattern)
 			if p.IsStrict {
 				return errors.New(errStr)
 			}

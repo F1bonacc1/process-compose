@@ -101,6 +101,7 @@ type pcView struct {
 	attentionCancel        context.CancelFunc
 	errTuiStartup          error
 	monitor                *processMonitor
+	watchNotifier          *watchNotifier
 	prevSelectedProc       string
 }
 
@@ -143,6 +144,7 @@ func newPcView(project app.IProject) *pcView {
 	pv.statTable = pv.createStatTable()
 	go pv.loadProcNames()
 	pv.monitor = newProcessMonitor()
+	pv.watchNotifier = newWatchNotifier()
 	pv.startMonitoring()
 	pv.loadShortcuts()
 	pv.setShortCutsActions()

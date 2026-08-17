@@ -6,12 +6,14 @@ require (
 	dario.cat/mergo v1.0.2
 	github.com/adrg/xdg v0.5.3
 	github.com/alecthomas/chroma/v2 v2.26.1
+	github.com/bmatcuk/doublestar/v4 v4.10.0
 	github.com/creack/pty v1.1.24
 	github.com/drone/envsubst v1.0.3
 	github.com/f1bonacc1/glippy v1.2.0
 	github.com/f1bonacc1/go-health/v2 v2.1.6
 	github.com/f1bonacc1/netstat v1.0.2
 	github.com/fatih/color v1.19.0
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gdamore/tcell/v2 v2.13.10
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-co-op/gocron/v2 v2.21.2

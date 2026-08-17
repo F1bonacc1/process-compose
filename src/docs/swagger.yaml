@@ -349,6 +349,8 @@ components:
                     type: boolean
                 vars:
                     $ref: '#/components/schemas/types.Vars'
+                watch:
+                    $ref: '#/components/schemas/types.WatchConfig'
                 workingDir:
                     type: string
             type: object
@@ -388,6 +390,13 @@ components:
                 is_ready:
                     type: string
                 is_running:
+                    type: boolean
+                is_watched:
+                    description: |-
+                        IsWatched reports whether an active file watcher is armed for this
+                        process. It is the `watch` counterpart of NextRunTime and, like it, must
+                        stay in the JSON payload - the remote client deserializes this struct, so
+                        attached sessions would otherwise never see the Watching state.
                     type: boolean
                 last_activity_time:
                     type: string
@@ -431,6 +440,14 @@ components:
                         type: integer
                     type: array
                 system_time:
+                    type: string
+                watch_trigger_path:
+                    description: |-
+                        WatchTriggerPath and WatchTriggerTime describe the file change that last
+                        restarted this process. They travel in the state, rather than through a
+                        local callback, so that an attached (remote) TUI can report them too.
+                    type: string
+                watch_trigger_time:
                     type: string
             type: object
         types.ProcessesState:
@@ -521,6 +538,63 @@ components:
             type: object
         types.Vars:
             additionalProperties: {}
+            type: object
+        types.WatchConfig:
+            properties:
+                buffer_size:
+                    description: BufferSize overrides DefaultWatchBufferSize. Windows only.
+                    type: integer
+                cascade:
+                    description: |-
+                        Cascade also restarts the transitive dependents of this process, in
+                        dependency order. Restarts never propagate to dependencies.
+                    type: boolean
+                debounce:
+                    description: |-
+                        Debounce is how long to wait for changes to settle before restarting,
+                        e.g. "300ms" or "1s". Defaults to DefaultWatchDebounce.
+
+                        This is a string rather than a time.Duration so that it survives the JSON
+                        round trip used by the REST API and by OriginalConfig (which ScaleProcess
+                        replays to build replicas), and so that the generated JSON schema types it
+                        as a string. ScheduleConfig.Interval is a string for the same reasons.
+                    type: string
+                disable_default_excludes:
+                    description: |-
+                        DisableDefaultExcludes turns off the built-in ignore list (.git,
+                        node_modules, build output directories, log files and editor swap files).
+                    type: boolean
+                max_entries:
+                    description: MaxEntries overrides DefaultWatchMaxEntries for this process.
+                    type: integer
+                paths:
+                    description: Paths to watch. A config with no paths watches nothing.
+                    items:
+                        $ref: '#/components/schemas/types.WatchPath'
+                    type: array
+            type: object
+        types.WatchPath:
+            properties:
+                exclude:
+                    description: |-
+                        Exclude drops matching files and prunes matching directories during the
+                        walk. Applied on top of the default ignores.
+                    items:
+                        type: string
+                    type: array
+                include:
+                    description: |-
+                        Include, when non-empty, restricts triggering to matching files.
+                        A pattern containing '/' matches the root-relative path; a pattern
+                        without one matches the base name.
+                    items:
+                        type: string
+                    type: array
+                path:
+                    description: |-
+                        Path is the directory to watch, resolved against the process working_dir.
+                        The whole subtree is watched; Exclude prunes it.
+                    type: string
             type: object
 externalDocs:
     url: https://f1bonacc1.github.io/process-compose/

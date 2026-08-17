@@ -23,6 +23,16 @@ var processSpecials = &specials{
 			}
 			return nil
 		},
+		// watch paths are overridden as a whole. mergeProcess uses
+		// WithAppendSlice, so without this an override file would add its paths
+		// to the base ones instead of replacing them - leaving no way to narrow
+		// a watch in an override.
+		reflect.TypeFor[[]types.WatchPath](): func(dst, src reflect.Value) error {
+			if src.Len() > 0 {
+				dst.Set(src)
+			}
+			return nil
+		},
 	},
 }
 

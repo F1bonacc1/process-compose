@@ -281,3 +281,26 @@ processes:
     success_exit_codes: [130] # 128 + SIGINT(2)
     shutdown:
       signal: 2 # send SIGINT instead of SIGTERM
+
+  watcher:
+    command: "echo `date`"
+    namespace: "watch"
+    watch:
+      paths:
+        - path: "./src"
+      debounce: 1s
+      cascade: true
+
+  after-watcher-a:
+    command: "echo `date`"
+    namespace: "watch"
+    depends_on:
+      watcher:
+        condition: process_completed_successfully
+
+  after-watcher-b:
+    command: "echo `date`"
+    namespace: "watch"
+    depends_on:
+      after-watcher-a:
+        condition: process_completed_successfully

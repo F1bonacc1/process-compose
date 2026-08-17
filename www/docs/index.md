@@ -54,6 +54,7 @@ Prefer to watch? [Process Compose Intro](https://www.youtube.com/playlist?list=P
 - On the fly Project update
 - [Recipes](https://github.com/F1bonacc1/process-compose-recipes) Management
 - Scheduled Processes (cron and interval-based)
+- [File Watching](https://f1bonacc1.github.io/process-compose/watch/) - restart a process when its files change, optionally cascading to its dependents
 - Dependency Graph visualization (CLI, TUI, and API)
 - [MCP Server](mcp-server.md) integration for AI assistants — expose processes as tools/resources and (optionally) the project's own control plane (start/stop/scale/list/logs)
 - Processes Monitor (Push Notifications)

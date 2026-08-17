@@ -247,6 +247,97 @@ func Test_mergeProcess_NamespaceOverridesNotAppends(t *testing.T) {
 	}
 }
 
+// Test_mergeProcess_WatchPathsOverrideNotAppend pins the watch path transformer.
+// mergeProcess merges with WithAppendSlice, so without it an override file
+// would add its paths to the base ones - leaving no way to narrow a watch in an
+// override, only to widen it.
+func Test_mergeProcess_WatchPathsOverrideNotAppend(t *testing.T) {
+	watch := func(paths ...types.WatchPath) *types.WatchConfig {
+		if paths == nil {
+			return nil
+		}
+		return &types.WatchConfig{Paths: paths}
+	}
+	src := types.WatchPath{Path: "./src"}
+	pkg := types.WatchPath{Path: "./pkg"}
+	web := types.WatchPath{Path: "./web"}
+
+	tests := []struct {
+		name     string
+		base     *types.WatchConfig
+		override *types.WatchConfig
+		want     []types.WatchPath
+	}{
+		{
+			name:     "override replaces",
+			base:     watch(src),
+			override: watch(web),
+			want:     []types.WatchPath{web},
+		},
+		{
+			name:     "override replaces a list",
+			base:     watch(src, pkg),
+			override: watch(web),
+			want:     []types.WatchPath{web},
+		},
+		{
+			name:     "empty override keeps base",
+			base:     watch(src, pkg),
+			override: nil,
+			want:     []types.WatchPath{src, pkg},
+		},
+		{
+			name:     "override adds a watch where there was none",
+			base:     nil,
+			override: watch(web),
+			want:     []types.WatchPath{web},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			base := &types.ProcessConfig{Name: "p", Watch: tt.base}
+			override := &types.ProcessConfig{Name: "p", Watch: tt.override}
+			got, err := mergeProcess(base, override)
+			if err != nil {
+				t.Fatalf("mergeProcess() error = %v", err)
+			}
+			if got.Watch == nil {
+				t.Fatalf("mergeProcess() watch = nil, want %#v", tt.want)
+			}
+			if !reflect.DeepEqual(got.Watch.Paths, tt.want) {
+				t.Errorf("mergeProcess() watch paths = %#v, want %#v", got.Watch.Paths, tt.want)
+			}
+		})
+	}
+}
+
+// Test_mergeProcess_WatchScalarsOverride covers the non-slice watch fields,
+// which take the ordinary mergo path rather than the transformer.
+func Test_mergeProcess_WatchScalarsOverride(t *testing.T) {
+	base := &types.ProcessConfig{Name: "p", Watch: &types.WatchConfig{
+		Paths:    []types.WatchPath{{Path: "./src"}},
+		Debounce: "300ms",
+	}}
+	override := &types.ProcessConfig{Name: "p", Watch: &types.WatchConfig{
+		Debounce: "1s",
+		Cascade:  true,
+	}}
+
+	got, err := mergeProcess(base, override)
+	if err != nil {
+		t.Fatalf("mergeProcess() error = %v", err)
+	}
+	if got.Watch.Debounce != "1s" {
+		t.Errorf("debounce = %v, want 1s", got.Watch.Debounce)
+	}
+	if !got.Watch.Cascade {
+		t.Error("cascade = false, want true")
+	}
+	if len(got.Watch.Paths) != 1 || got.Watch.Paths[0].Path != "./src" {
+		t.Errorf("watch paths = %#v, want the base paths to survive", got.Watch.Paths)
+	}
+}
+
 func Test_merge(t *testing.T) {
 	type args struct {
 		opts *LoaderOptions

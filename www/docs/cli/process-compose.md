@@ -25,6 +25,7 @@ process-compose [flags]
       --logs-truncate            truncate process logs buffer on startup
   -n, --namespace stringArray    run only specified namespaces (default all, env: PC_NAMESPACES)
       --no-server                disable HTTP server (env: PC_NO_SERVER)
+      --no-watch                 disable file watching, ignoring all 'watch' configuration (env: PC_NO_WATCH)
       --ordered-shutdown         shut down processes in reverse dependency order
   -p, --port int                 port number (env: PC_PORT_NUM) (default 8080)
       --read-only                enable read-only mode (env: PC_READ_ONLY)
@@ -58,3 +59,4 @@ process-compose [flags]
 * [process-compose run](process-compose_run.md)	 - Run PROCESS in the foreground, and its dependencies in the background
 * [process-compose up](process-compose_up.md)	 - Run process compose project
 * [process-compose version](process-compose_version.md)	 - Print version and build info
+

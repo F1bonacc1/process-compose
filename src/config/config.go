@@ -357,3 +357,8 @@ func getLogNoColorDefault() bool {
 	_, found := os.LookupEnv(EnvVarLogNoColor)
 	return found
 }
+
+func getNoWatchEnvDefault() bool {
+	_, found := os.LookupEnv(EnvVarNoWatch)
+	return found
+}

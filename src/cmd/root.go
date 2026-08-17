@@ -150,6 +150,7 @@ func init() {
 	rootCmd.Flags().BoolVar(pcFlags.IsTuiFullScreen, "tui-fs", *pcFlags.IsTuiFullScreen, "enable TUI full screen (env: "+config.EnvVarTuiFullScreen+"=1)")
 	rootCmd.Flags().BoolVar(pcFlags.LogsTruncate, "logs-truncate", *pcFlags.LogsTruncate, "truncate process logs buffer on startup")
 	rootCmd.Flags().BoolVar(pcFlags.WithRecursiveMetrics, "recursive-metrics", *pcFlags.WithRecursiveMetrics, "collect metrics recursively (env: "+config.EnvVarWithRecursiveMetrics+")")
+	rootCmd.Flags().BoolVar(pcFlags.NoWatch, "no-watch", *pcFlags.NoWatch, "disable file watching, ignoring all 'watch' configuration (env: "+config.EnvVarNoWatch+")")
 	rootCmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "validate the config and exit")
 	rootCmd.PersistentFlags().StringVar(pcFlags.ApiTokenPath, "token-file", *pcFlags.ApiTokenPath, "path to a file containing the API token (env: "+config.EnvVarApiTokenPath+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.LogNoColor, "log-no-color", *pcFlags.LogNoColor, "disable color output in the log file (env: "+config.EnvVarLogNoColor+")")

@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -96,6 +97,114 @@ func BuildDependencyGraph(processes Processes) *DependencyGraph {
 	}
 
 	return graph
+}
+
+// TransitiveDependents returns every process that depends on root, directly or
+// transitively, ordered so that a process always appears after everything it
+// depends on. root itself is excluded, as are deferred processes (disabled or
+// foreground) - traversal still passes through them, so a running process is
+// reached even when an intermediate one is disabled.
+//
+// This is the cascade order used by `watch`. Ordering is load-bearing: a
+// dependent restarted before its dependency would resolve against the
+// dependency's stale, already-completed incarnation and run against old output.
+//
+// The traversal operates in replica-name space, which is what processes is
+// keyed by and what cloneReplicas rewrites depends_on to, so replicas need no
+// special handling. Ties are broken lexicographically to keep the order
+// deterministic and testable.
+func TransitiveDependents(processes Processes, root string) []string {
+	// Reverse adjacency: dependency -> processes that depend on it.
+	dependents := make(map[string][]string, len(processes))
+	for name, proc := range processes {
+		for dep := range proc.DependsOn {
+			dependents[dep] = append(dependents[dep], name)
+		}
+	}
+
+	// Collect the closure reachable from root.
+	inSet := make(map[string]bool)
+	queue := []string{root}
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+		for _, dependent := range dependents[current] {
+			if inSet[dependent] || dependent == root {
+				continue
+			}
+			inSet[dependent] = true
+			queue = append(queue, dependent)
+		}
+	}
+	if len(inSet) == 0 {
+		return nil
+	}
+
+	// Kahn's algorithm over the induced subgraph. root is excluded from the
+	// set, so an edge back to it imposes no constraint - it is restarted first
+	// by the caller regardless.
+	inDegree := make(map[string]int, len(inSet))
+	for name := range inSet {
+		for dep := range processes[name].DependsOn {
+			if inSet[dep] {
+				inDegree[name]++
+			}
+		}
+	}
+
+	ready := make([]string, 0, len(inSet))
+	for name := range inSet {
+		if inDegree[name] == 0 {
+			ready = append(ready, name)
+		}
+	}
+	sort.Strings(ready)
+
+	ordered := make([]string, 0, len(inSet))
+	for len(ready) > 0 {
+		name := ready[0]
+		ready = ready[1:]
+		ordered = append(ordered, name)
+
+		promoted := make([]string, 0)
+		for _, dependent := range dependents[name] {
+			if !inSet[dependent] {
+				continue
+			}
+			inDegree[dependent]--
+			if inDegree[dependent] == 0 {
+				promoted = append(promoted, dependent)
+			}
+		}
+		if len(promoted) > 0 {
+			ready = append(ready, promoted...)
+			sort.Strings(ready)
+		}
+	}
+
+	// A cycle is impossible - validateNoCircularDependencies rejects one at load
+	// time - but never silently drop processes if that guarantee ever breaks.
+	if len(ordered) < len(inSet) {
+		for name := range inSet {
+			if !slices.Contains(ordered, name) {
+				ordered = append(ordered, name)
+			}
+		}
+	}
+
+	// Deferred processes must not be started by a cascade.
+	result := make([]string, 0, len(ordered))
+	for _, name := range ordered {
+		proc := processes[name]
+		if proc.IsDeferred() {
+			continue
+		}
+		result = append(result, name)
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
 }
 
 // ToMermaid outputs the dependency graph in Mermaid flowchart format

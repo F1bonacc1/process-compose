@@ -41,6 +41,7 @@ func getProjectRunner(process []string, noDeps bool, mainProcess string, mainPro
 			WithLogTruncate(*pcFlags.LogsTruncate).
 			WithSlowRefRate(*pcFlags.SlowRefreshRate).
 			WithRecursiveMetrics(*pcFlags.WithRecursiveMetrics).
+			WithNoWatch(*pcFlags.NoWatch).
 			WithAdmitters(opts.GetAdmitters()...),
 	)
 	if err != nil {

@@ -77,6 +77,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		assignDefaultProcessValues,
 		cloneReplicas,
 		copyWorkingDirToProbes,
+		resolveWatchPaths,
 		convertStrDisabledToBool,
 		disableProcsInEnv,
 	)
@@ -101,6 +102,7 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 		validateDependencyIsEnabled,
 		validateNoIncompatibleHealthChecks,
 		validateScheduledProcessScaling,
+		validateWatchConfig,
 		validateMCPConfig,
 		validateProject,
 	)
