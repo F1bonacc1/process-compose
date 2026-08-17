@@ -553,12 +553,24 @@ func TestWatch_StartResumesPausedWatch(t *testing.T) {
 	// Record a trigger before stopping. It lives on the registration, so it
 	// survives a resume and is wiped by a rebuild - which is how this test tells
 	// the two apart from outside the watcher package.
+	triggered := runner.getRunningProcess("api")
 	touch(t, filepath.Join(watchDir, "main.go"), "package main")
 	if !waitFor(30*time.Second, func() bool {
 		state, err := runner.GetProcessState("api")
 		return err == nil && state.WatchTriggerPath != ""
 	}) {
 		t.Fatal("the watch never fired, so there is no trigger to preserve")
+	}
+	// The trigger is recorded as the restart starts, so stopping on it alone
+	// lands in the gap between the teardown and the relaunch. That a stop wins
+	// there is TestStopDuringRestartCancelsTheRestart's subject; here it would
+	// just leave this test stopping a process that was already down. Wait for
+	// the replacement instead.
+	if !waitFor(30*time.Second, func() bool {
+		restarted := runner.getRunningProcess("api")
+		return restarted != nil && restarted != triggered && restarted.isRunning()
+	}) {
+		t.Fatal("the watch-triggered restart never produced a running process")
 	}
 
 	if err := runner.StopProcess("api"); err != nil {

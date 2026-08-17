@@ -133,8 +133,11 @@ func TestRestartWhilePendingOnDependency(t *testing.T) {
 	if proc := runner.getRunningProcess(procB); proc == nil {
 		t.Errorf("b is not tracked in runningProcesses after dependency became ready (issue #530)")
 	}
-	if n := countLines(t, marker); n != 1 {
-		t.Errorf("b was started %d times, want exactly 1 (issue #530)", n)
+	// The marker is written by b's shell, which is only spawned once the state
+	// reads Running - so wait for the write rather than assuming it has already
+	// landed. What matters is that the count settles at one and stays there.
+	if !waitForLines(marker, 1, 10*time.Second) {
+		t.Errorf("b was started %d times, want exactly 1 (issue #530)", countLines(t, marker))
 	}
 
 	// A subsequent start must be rejected, not silently duplicate the process.
@@ -147,12 +150,120 @@ func TestRestartWhilePendingOnDependency(t *testing.T) {
 	}
 }
 
+// A stop that lands while a restart is in flight must win. Between tearing the
+// old incarnation down and launching its replacement the process is registered
+// nowhere, so the stop finds nothing to stop and used to be silently overtaken
+// by the relaunch - the process came back up, and the caller was told either
+// that the stop had succeeded or that the process was not running.
+//
+// The window is sub-millisecond on Linux, which is why this test holds it open
+// with a restart backoff instead of racing for it. On Windows it is wide enough
+// to be hit by accident, by a watch-triggered restart of a process the user
+// stops at the wrong moment.
+func TestStopDuringRestartCancelsTheRestart(t *testing.T) {
+	shell := command.DefaultShellConfig()
+	const (
+		proc = "a"
+		// A second process keeps the project alive while a is down, so that the
+		// runner is still around to be asked about a's state.
+		keepAlive = "keepalive"
+	)
+	marker := filepath.Join(t.TempDir(), "a-started")
+
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project: &types.Project{
+			ShellConfig: shell,
+			Processes: map[string]types.ProcessConfig{
+				proc: {
+					Name:        proc,
+					ReplicaName: proc,
+					Executable:  shell.ShellCommand,
+					// Append on every start, so a relaunch is countable even if
+					// it is stopped again right after.
+					Args: []string{shell.ShellArgument, fmt.Sprintf("echo x >> %s && ", marker) + getSleepCommand(120.0)},
+					// Widens the gap between the teardown and the relaunch to
+					// the whole backoff, which is where the stop has to land.
+					RestartPolicy: types.RestartPolicyConfig{BackoffSeconds: 2},
+				},
+				keepAlive: {
+					Name:        keepAlive,
+					ReplicaName: keepAlive,
+					Executable:  shell.ShellCommand,
+					Args:        []string{shell.ShellArgument, getSleepCommand(120.0)},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go func() { _ = runner.Run() }()
+	t.Cleanup(func() { _ = runner.ShutDownProject() })
+
+	waitForProcessState(t, runner, proc, types.ProcessStateRunning, 30*time.Second)
+	if t.Failed() {
+		return
+	}
+	if !waitForLines(marker, 1, 10*time.Second) {
+		t.Fatalf("a started %d times before the restart, want exactly 1", countLines(t, marker))
+	}
+
+	restarted := make(chan error, 1)
+	go func() { restarted <- runner.RestartProcess(proc) }()
+
+	// The restart is in its backoff once the old incarnation is gone. Stopping
+	// here means stopping a process that is, for the moment, running nowhere.
+	if !waitForProcessDeregistered(runner, proc, 30*time.Second) {
+		t.Fatal("the restarted process never left the running set")
+	}
+	if err := runner.StopProcess(proc); err != nil {
+		t.Errorf("StopProcess() during a restart error = %v, want nil", err)
+	}
+
+	select {
+	case err := <-restarted:
+		if err != nil {
+			t.Errorf("RestartProcess() error = %v, want nil", err)
+		}
+	case <-time.After(30 * time.Second):
+		t.Fatal("the restart never returned")
+	}
+
+	// The stop is the later intent, so the replacement must never have started.
+	time.Sleep(time.Second)
+	if n := countLines(t, marker); n != 1 {
+		t.Errorf("a ran %d times, want exactly 1 - the stop was undone by the restart", n)
+	}
+	if p := runner.getRunningProcess(proc); p != nil {
+		t.Errorf("a is running again after being stopped mid-restart")
+	}
+	if state, err := runner.GetProcessState(proc); err == nil && state.IsRunning {
+		t.Errorf("a reports IsRunning after being stopped mid-restart, status %s", state.Status)
+	}
+}
+
 // waitForProcessDeregistered reports whether the process left the running
 // processes registry within timeout.
 func waitForProcessDeregistered(runner *ProjectRunner, name string, timeout time.Duration) bool {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		if runner.getRunningProcess(name) == nil {
+			return true
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	return false
+}
+
+// waitForLines polls a marker file until it holds exactly want lines. The
+// marker is appended by the process's own shell, which is spawned after the
+// runner reports the process as running - on a slow spawn (Windows `cmd /C`,
+// or a loaded machine) reading it right away sees nothing.
+func waitForLines(path string, want int, timeout time.Duration) bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if data, err := os.ReadFile(path); err == nil && strings.Count(string(data), "\n") == want {
 			return true
 		}
 		time.Sleep(20 * time.Millisecond)

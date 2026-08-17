@@ -58,7 +58,14 @@ type ProjectRunner struct {
 	doneProcesses       map[string]*Process
 	restartMutex        sync.Mutex
 	restartCalls        map[string]*RestartCall
-	logger              pclog.PcLogger
+	// stopEpochs counts the stop requests made for each process. A restart
+	// samples it before tearing the running incarnation down and re-reads it
+	// before launching the replacement: a stop that lands inside that window
+	// finds the old incarnation already Terminating, so it stops nothing, and
+	// without this the relaunch would silently bring the process back up.
+	// Guarded by restartMutex.
+	stopEpochs map[string]uint64
+	logger     pclog.PcLogger
 	//waitGroup            sync.WaitGroup
 	//waitGroup            sync.WaitGroup
 	exitCodeMutex        sync.Mutex
@@ -499,6 +506,33 @@ func (p *ProjectRunner) initProcessLogs() {
 
 func (p *ProjectRunner) initRestartCoalescing() {
 	p.restartCalls = make(map[string]*RestartCall)
+	p.stopEpochs = make(map[string]uint64)
+}
+
+// noteStopRequest records that a stop was requested for name. It must be called
+// before the shutdown itself, so that a restart already in flight sees the
+// request even if the stop turns out to be a no-op on an incarnation that is
+// on its way out.
+func (p *ProjectRunner) noteStopRequest(name string) {
+	p.restartMutex.Lock()
+	defer p.restartMutex.Unlock()
+	p.stopEpochs[name]++
+}
+
+// stopEpoch returns the number of stop requests made for name so far.
+func (p *ProjectRunner) stopEpoch(name string) uint64 {
+	p.restartMutex.Lock()
+	defer p.restartMutex.Unlock()
+	return p.stopEpochs[name]
+}
+
+// isRestartInFlight reports whether a restart of name is between its teardown
+// and its relaunch, a window in which the process is registered nowhere.
+func (p *ProjectRunner) isRestartInFlight(name string) bool {
+	p.restartMutex.Lock()
+	defer p.restartMutex.Unlock()
+	_, exists := p.restartCalls[name]
+	return exists
 }
 
 func (p *ProjectRunner) initProcessLog(name string) {
@@ -703,6 +737,11 @@ func (p *ProjectRunner) StartProcess(name string) error {
 
 func (p *ProjectRunner) StopProcess(name string) error {
 	log.Info().Msgf("Stopping %s", name)
+	// Claim the stop before touching the process: if a restart is between
+	// tearing the old incarnation down and starting its replacement, the
+	// shutdown below has nothing left to stop, and only this marker keeps the
+	// restart from undoing the stop.
+	p.noteStopRequest(name)
 	proc := p.getRunningProcess(name)
 
 	var err error
@@ -717,9 +756,12 @@ func (p *ProjectRunner) StopProcess(name string) error {
 		// disarming it, which is a perfectly sensible request and not an error:
 		// a process reading Scheduled or Watching is exactly what the user is
 		// looking at when they ask for it to stop.
+		// A process caught between the teardown and the relaunch of a restart
+		// is not "not running" either - the request that just landed is what
+		// keeps its replacement from starting, which is as real a stop as any.
 		sched := p.processScheduler.Load()
 		isScheduled := sched != nil && sched.IsScheduled(name)
-		if !isScheduled && !p.isProcessWatched(name) {
+		if !isScheduled && !p.isProcessWatched(name) && !p.isRestartInFlight(name) {
 			if _, ok := p.project.Processes[name]; !ok {
 				log.Error().Msgf("Process %s does not exist", name)
 				return fmt.Errorf("process %s does not exist", name)
@@ -1008,11 +1050,20 @@ func (p *ProjectRunner) restartProcessWithOpts(name string, opts restartOpts) er
 	delete(p.restartCalls, name)
 	p.restartMutex.Unlock()
 
+	// The completion check skips a project whose running set empties while a
+	// restart is registered, on the assumption that the replacement is coming.
+	// A restart that ended without one - abandoned by a stop, or failed - has
+	// to re-arm that check, or the project stays up with nothing running.
+	p.retriggerCompletionCheck()
+
 	return err
 }
 
 func (p *ProjectRunner) doRestart(name string, opts restartOpts) error {
 	log.Debug().Msgf("Restarting %s", name)
+	// Sampled before the teardown and compared after it: any stop requested in
+	// between outranks this restart, because it is the more recent intent.
+	epoch := p.stopEpoch(name)
 	proc := p.getRunningProcess(name)
 	if proc != nil {
 		// Mark before shutting down: the exit is a consequence of this
@@ -1040,11 +1091,30 @@ func (p *ProjectRunner) doRestart(name string, opts restartOpts) error {
 		p.resetRestartCount(name)
 	}
 
-	if processConfig, ok := p.project.Processes[name]; ok {
-		p.runProcess(&processConfig)
-	} else {
+	return p.launchUnlessStopped(name, epoch)
+}
+
+// launchUnlessStopped starts the replacement incarnation unless a stop was
+// requested for the process since epoch, in which case the restart is dropped
+// and the process stays down.
+//
+// The comparison and the launch share restartMutex because at this point the
+// old incarnation is already gone: a stop slipping in between would find
+// nothing to stop, and the replacement would come up in spite of it.
+func (p *ProjectRunner) launchUnlessStopped(name string, epoch uint64) error {
+	p.restartMutex.Lock()
+	defer p.restartMutex.Unlock()
+
+	if p.stopEpochs[name] != epoch {
+		log.Debug().Msgf("Restart of %s abandoned: it was stopped while restarting", name)
+		return nil
+	}
+
+	processConfig, ok := p.project.Processes[name]
+	if !ok {
 		return fmt.Errorf("no such process: %s", name)
 	}
+	p.runProcess(&processConfig)
 	return nil
 }
 
@@ -1686,15 +1756,25 @@ func (p *ProjectRunner) beginUpdate() func() {
 		}
 		// The update may have removed the last running process for good -
 		// re-trigger the completion check that was suppressed while it ran.
-		p.runProcMutex.Lock()
-		running := len(p.runningProcesses)
-		p.runProcMutex.Unlock()
-		if running == 0 {
-			select {
-			case p.procCompleteChannel <- 0:
-			default:
-			}
-		}
+		p.retriggerCompletionCheck()
+	}
+}
+
+// retriggerCompletionCheck re-runs the project completion check for a project
+// with nothing running. The check is skipped while an update or a restart is
+// registered, since either is expected to bring a process back; when one ends
+// without doing so, the zero count it suppressed has already been consumed, so
+// nothing else would ever complete the project.
+func (p *ProjectRunner) retriggerCompletionCheck() {
+	p.runProcMutex.Lock()
+	running := len(p.runningProcesses)
+	p.runProcMutex.Unlock()
+	if running > 0 {
+		return
+	}
+	select {
+	case p.procCompleteChannel <- 0:
+	default:
 	}
 }
 
