@@ -18,7 +18,7 @@ in
 
   nativeBuildInputs = [ installShellFiles ];
 
-  vendorHash = "sha256-xV1dcqFx1mz83XISoAIwn3W3F6XndBEiSkB1Jlq2XJA=";
+  vendorHash = "sha256-Wl3vMR122wn5ivQVbdS79nATQBlEHu44h0OZLGeEasU=";
   #vendorHash = lib.fakeHash;
 
   postInstall = ''
