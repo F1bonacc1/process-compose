@@ -249,6 +249,7 @@ func (pv *pcView) setShortCutsActions() {
 	})
 	pv.shortcuts.setAction(ActionProcessScale, pv.showScale)
 	pv.shortcuts.setAction(ActionProcessInfo, pv.showInfo)
+	pv.shortcuts.setAction(ActionProcOpenURL, pv.openProcessURL)
 	if len(availableSignalOptions()) > 0 {
 		pv.shortcuts.setAction(ActionProcessSignal, pv.showSignalDialog)
 	}
@@ -467,6 +468,22 @@ func (pv *pcView) showInfo() {
 	ports, _ := pv.project.GetProcessPorts(name)
 	form := pv.createProcInfoForm(info, state, ports)
 	pv.showDialog(form, 0, 5+form.GetFormItemCount()*2)
+}
+
+func (pv *pcView) openProcessURL() {
+	name := pv.getSelectedProcName()
+	info, err := pv.project.GetProcessInfo(name)
+	if err != nil {
+		pv.showError(err.Error())
+		return
+	}
+	ports, _ := pv.project.GetProcessPorts(name)
+	url, ok := deriveProcessURL(info, ports)
+	if !ok {
+		pv.showError(fmt.Sprintf("No URL available for process '%s'", name))
+		return
+	}
+	openBrowser(url)
 }
 
 func (pv *pcView) showGraphDialog() {
