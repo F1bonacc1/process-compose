@@ -27,6 +27,7 @@ func (c *CmdWrapperPty) Start() (err error) {
 	if err != nil {
 		return fmt.Errorf("error starting PTY command: %w", err)
 	}
+	c.captureProcessGroup()
 
 	// Set initial window size to a reasonable default
 	// This prevents programs like 'top' from rendering with tiny/wrong dimensions

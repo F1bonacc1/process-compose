@@ -35,6 +35,14 @@ func (c *CmdWrapper) Stop(sig int, parentOnly bool) error {
 	return nil
 }
 
+func (c *CmdWrapper) IsAlive(_ bool) bool {
+	return c.cmd != nil && c.cmd.ProcessState == nil
+}
+
+func (c *CmdWrapper) captureProcessGroup() {
+	// Windows shutdown targets the live PID's process tree, so no group ID is retained.
+}
+
 func (c *CmdWrapper) SetCmdArgs() {
 	//empty for windows
 }

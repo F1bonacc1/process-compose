@@ -3,8 +3,10 @@
 package command
 
 import (
-	"github.com/rs/zerolog/log"
+	"errors"
 	"syscall"
+
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -31,12 +33,40 @@ func (c *CmdWrapper) Stop(sig int, parentOnly bool) error {
 		return c.cmd.Process.Signal(syscall.Signal(sig))
 	}
 
-	pgid, err := syscall.Getpgid(c.Pid())
-	if err == nil {
-		return syscall.Kill(-pgid, syscall.Signal(sig))
+	pgid := int(c.processGroupID.Load())
+	if pgid <= 0 {
+		var err error
+		pgid, err = syscall.Getpgid(c.Pid())
+		if err != nil {
+			return err
+		}
+		c.processGroupID.CompareAndSwap(0, int64(pgid))
+	}
+	return syscall.Kill(-pgid, syscall.Signal(sig))
+}
+
+func (c *CmdWrapper) IsAlive(parentOnly bool) bool {
+	if c.cmd == nil || c.cmd.Process == nil {
+		return false
+	}
+	if parentOnly {
+		err := c.cmd.Process.Signal(syscall.Signal(0))
+		return err == nil || errors.Is(err, syscall.EPERM)
 	}
 
-	return err
+	pgid := int(c.processGroupID.Load())
+	if pgid <= 0 {
+		return false
+	}
+	err := syscall.Kill(-pgid, syscall.Signal(0))
+	return err == nil || errors.Is(err, syscall.EPERM)
+}
+
+func (c *CmdWrapper) captureProcessGroup() {
+	pgid, err := syscall.Getpgid(c.Pid())
+	if err == nil {
+		c.processGroupID.Store(int64(pgid))
+	}
 }
 
 func (c *CmdWrapper) SetCmdArgs() {

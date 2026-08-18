@@ -1407,6 +1407,65 @@ func TestSystem_TestProcShutDownWithConfiguredTimeOut(t *testing.T) {
 
 }
 
+func TestSystem_ShutdownWaitsForProcessGroupExtinction(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("test requires Unix process-group semantics")
+	}
+
+	const processName = "leader_exits_first"
+	childPIDFile := filepath.Join(t.TempDir(), "child.pid")
+	shell := command.DefaultShellConfig()
+	project := &types.Project{
+		Processes: map[string]types.ProcessConfig{
+			processName: {
+				Name:        processName,
+				ReplicaName: processName,
+				Executable:  shell.ShellCommand,
+				Args: []string{
+					shell.ShellArgument,
+					fmt.Sprintf("trap 'exit 0' TERM; bash -c \"trap '' TERM; while true; do sleep 1; done\" & echo $! > %q; wait", childPIDFile),
+				},
+				RestartPolicy: types.RestartPolicyConfig{Restart: types.RestartPolicyNo},
+				ShutDownParams: types.ShutDownParams{
+					ShutDownTimeout: 1,
+					Signal:          int(syscall.SIGTERM),
+				},
+			},
+		},
+		ShellConfig: shell,
+	}
+
+	runner, err := NewProjectRunner(&ProjectOpts{project: project})
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() { _ = runner.Run() }()
+
+	var childPID int
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		raw, readErr := os.ReadFile(childPIDFile)
+		if readErr == nil {
+			parsed, _ := fmt.Sscanf(string(raw), "%d", &childPID)
+			if parsed == 1 {
+				break
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if childPID <= 1 {
+		t.Fatal("child process never started")
+	}
+	t.Cleanup(func() { _ = syscall.Kill(childPID, syscall.SIGKILL) })
+
+	if err := runner.StopProcess(processName); err != nil {
+		t.Fatal(err)
+	}
+	if err := syscall.Kill(childPID, 0); !errors.Is(err, syscall.ESRCH) {
+		t.Fatalf("child process %d survived shutdown", childPID)
+	}
+}
+
 func TestSystem_TestRestartingProcessShutDown(t *testing.T) {
 	proc1 := "proc1"
 	shell := command.DefaultShellConfig()

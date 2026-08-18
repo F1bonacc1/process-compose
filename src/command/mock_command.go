@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"io"
+	"sync/atomic"
 )
 
 type MockCommand struct {
@@ -10,6 +11,7 @@ type MockCommand struct {
 	env            []string
 	cancel         context.CancelFunc
 	stopChan       chan struct{}
+	isAlive        atomic.Bool
 	infoNoiseMaker *noiseMaker
 	errNoiseMaker  *noiseMaker
 }
@@ -25,6 +27,7 @@ func NewMockCommand() *MockCommand {
 func (c *MockCommand) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
+	c.isAlive.Store(true)
 	go c.infoNoiseMaker.Run(ctx)
 	return nil
 }
@@ -32,7 +35,12 @@ func (c *MockCommand) Start() error {
 func (c *MockCommand) Stop(_ int, _ bool) error {
 	c.stopChan <- struct{}{}
 	c.cancel()
+	c.isAlive.Store(false)
 	return nil
+}
+
+func (c *MockCommand) IsAlive(_ bool) bool {
+	return c.isAlive.Load()
 }
 
 func (c *MockCommand) SetCmdArgs() {

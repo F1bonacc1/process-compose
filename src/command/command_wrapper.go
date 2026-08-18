@@ -4,10 +4,12 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sync/atomic"
 )
 
 type CmdWrapper struct {
-	cmd *exec.Cmd
+	cmd            *exec.Cmd
+	processGroupID atomic.Int64
 }
 
 func (c *CmdWrapper) GetPty() *os.File {
@@ -15,7 +17,11 @@ func (c *CmdWrapper) GetPty() *os.File {
 }
 
 func (c *CmdWrapper) Start() error {
-	return c.cmd.Start()
+	if err := c.cmd.Start(); err != nil {
+		return err
+	}
+	c.captureProcessGroup()
+	return nil
 }
 
 func (c *CmdWrapper) Run() error {
