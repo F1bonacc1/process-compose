@@ -7,6 +7,7 @@ import (
 
 	"github.com/f1bonacc1/glippy"
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 )
 
@@ -17,7 +18,7 @@ func (pv *pcView) toggleLogSelection() {
 		row, col := pv.logsText.GetScrollOffset()
 		pv.logsTextArea.SetText(pv.logsText.GetText(true), false).
 			SetBorder(true).
-			SetTitle(name + " [Select & Press Enter to Copy]")
+			SetTitle(fmt.Sprintf("%s [Select to Copy (or press %s)]", name, pv.logCopyShortcut()))
 		pv.logsTextArea.SetOffset(row, col)
 	} else {
 		pv.logsTextArea.SetText("", false)
@@ -98,25 +99,72 @@ func (pv *pcView) updateLogs(ctx context.Context) {
 
 func (pv *pcView) createLogSelectionTextArea() {
 	pv.logsTextArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyCR:
-			text, start, _ := pv.logsTextArea.GetSelection()
-			method, err := glippy.SetWithMethod(text)
-			if err != nil {
-				log.Err(err).Msg("failed to set clipboard")
-				pv.attentionMessage(fmt.Sprintf("Failed to copy to clipboard: %s", err.Error()), 5*time.Second, true)
-			} else if method == glippy.MethodOSC52 {
-				pv.attentionMessage("Copied via OSC 52 (terminal must allow OSC 52)", 3*time.Second, false)
-			} else {
-				pv.attentionMessage("Copied to clipboard", 2*time.Second, false)
-			}
-			pv.logsTextArea.Select(start, start)
-		case tcell.KeyEsc:
+		switch {
+		case pv.isLogCopyEvent(event):
+			pv.copyLogSelection(true)
+		case event.Key() == tcell.KeyEsc:
 			pv.toggleLogSelection()
 			pv.updateHelpTextView()
 		}
 		return nil
 	})
+
+	// Copy-on-select: completing a mouse selection (drag release) copies it to
+	// the clipboard automatically, no key press required. The capture runs
+	// before the text area's own handler, but the selection has already been
+	// extended by the preceding mouse-move events, so it is current here.
+	pv.logsTextArea.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		if pv.logSelect && action == tview.MouseLeftUp {
+			pv.copyLogSelection(false)
+		}
+		return action, event
+	})
+}
+
+// copyLogSelection copies the current text-area selection to the clipboard.
+// When collapse is true the selection is cleared afterwards (used by the
+// keyboard path); the mouse path keeps the highlight visible. Empty selections
+// are ignored so a stray click or key press never clobbers the clipboard.
+func (pv *pcView) copyLogSelection(collapse bool) {
+	text, start, _ := pv.logsTextArea.GetSelection()
+	if len(text) == 0 {
+		return
+	}
+	method, err := glippy.SetWithMethod(text)
+	if err != nil {
+		log.Err(err).Msg("failed to set clipboard")
+		pv.attentionMessage(fmt.Sprintf("Failed to copy to clipboard: %s", err.Error()), 5*time.Second, true)
+	} else if method == glippy.MethodOSC52 {
+		pv.attentionMessage("Copied via OSC 52 (terminal must allow OSC 52)", 3*time.Second, false)
+	} else {
+		pv.attentionMessage("Copied to clipboard", 2*time.Second, false)
+	}
+	if collapse {
+		pv.logsTextArea.Select(start, start)
+	}
+}
+
+// logCopyShortcut returns the human-readable label of the configured copy
+// shortcut (e.g. "Enter", "Ctrl-Y", "y"), falling back to "Enter".
+func (pv *pcView) logCopyShortcut() string {
+	if action := pv.shortcuts.ShortCutKeys[ActionLogCopy]; action != nil && action.ShortCut != "" {
+		return action.ShortCut
+	}
+	return tcell.KeyNames[tcell.KeyCR]
+}
+
+// isLogCopyEvent reports whether the given key event matches the configured
+// copy-selection shortcut. The shortcut may be bound to either a special key
+// (e.g. Enter, Ctrl-Y) or a single rune (e.g. y).
+func (pv *pcView) isLogCopyEvent(event *tcell.EventKey) bool {
+	action := pv.shortcuts.ShortCutKeys[ActionLogCopy]
+	if action == nil {
+		return event.Key() == tcell.KeyCR
+	}
+	if action.rune != 0 {
+		return event.Key() == tcell.KeyRune && event.Rune() == action.rune
+	}
+	return event.Key() == action.key
 }
 
 func (pv *pcView) getLogTitle(name string) string {
