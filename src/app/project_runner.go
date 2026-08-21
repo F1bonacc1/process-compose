@@ -1438,6 +1438,10 @@ func (p *ProjectRunner) scaleUpProcess(proc types.ProcessConfig, toAdd, scale, o
 		procFromConf.ReplicaName = procFromConf.CalculateReplicaName()
 		tpl := templater.New(p.project.Vars)
 		tpl.RenderProcess(&procFromConf)
+		if err := tpl.GetError(); err != nil {
+			log.Err(err).Msgf("failed to render template for %s, field %s", proc.Name, tpl.GetErrorField())
+			return
+		}
 		procFromConf.AssignProcessExecutableAndArgs(p.project.ShellConfig, p.project.GetElevatedShellArg())
 		p.addProcessAndRun(procFromConf)
 	}

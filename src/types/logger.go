@@ -1,5 +1,7 @@
 package types
 
+import "slices"
+
 // LogRotationConfig is the configuration for logging
 type LogRotationConfig struct {
 	// Directory to log to when filelogging is enabled
@@ -34,4 +36,20 @@ type LoggerConfig struct {
 	AddTimestamp bool `yaml:"add_timestamp,omitempty" json:"addTimestamp,omitempty"`
 	// FlushEachLine flushes the logger on each line
 	FlushEachLine bool `yaml:"flush_each_line,omitempty" json:"flushEachLine,omitempty"`
+}
+
+// Clone returns a deep copy of the logger config. Like health.Probe.Clone, this
+// exists so replicas of a scaled process do not share one pointer - the
+// rotation file name is template-rendered per replica.
+func (l *LoggerConfig) Clone() *LoggerConfig {
+	if l == nil {
+		return nil
+	}
+	newLogger := *l
+	newLogger.FieldsOrder = slices.Clone(l.FieldsOrder)
+	if l.Rotation != nil {
+		rotation := *l.Rotation
+		newLogger.Rotation = &rotation
+	}
+	return &newLogger
 }

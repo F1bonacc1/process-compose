@@ -248,16 +248,26 @@ Variables in Process Compose rely on [Go template engine](https://pkg.go.dev/tex
 #### Rendered Parameters
 
 - `processes.process.command`
+- `processes.process.entrypoint` values
+- `processes.process.shutdown.command`
 - `processes.process.working_dir`
 - `processes.process.log_location`
 - `processes.process.description`
-- `processes.process.environment` values.
+- `processes.process.ready_log_line`
+- `processes.process.env_file`
+- `processes.process.environment` values
+- `processes.process.log_configuration.rotation.directory`
+- `processes.process.log_configuration.rotation.filename`
 - For `readiness_probe`and `liveness_probe`:
   - `processes.process.<probe>.exec.command`
+  - `processes.process.<probe>.exec.working_dir`
   - `processes.process.<probe>.http_get.host`
   - `processes.process.<probe>.http_get.path`
   - `processes.process.<probe>.http_get.scheme`
   - `processes.process.<probe>.http_get.port`
+  - `processes.process.<probe>.http_get.headers` values
+
+Every other parameter is used as written. If a template fails to render, Process Compose reports the process and the parameter it came from, and exits.
 
 ### Local (Per Process)
 
@@ -352,7 +362,7 @@ processes:
     is_template_disabled: true
 ```
 
-When `is_template_disabled` is set to `true`, the `command` field is passed as-is without Go template rendering. All other fields (`working_dir`, `log_location`, `description`, `environment`, and probes) continue to be rendered normally.
+When `is_template_disabled` is set to `true`, the shell command family - `command`, `entrypoint` and `shutdown.command` - is passed as-is without Go template rendering. A process that needs literal braces in the command it starts with usually needs them in the command it is stopped with, so the three share one switch. All other fields (`working_dir`, `log_location`, `description`, `ready_log_line`, `env_file`, `environment`, `log_configuration` and probes) continue to be rendered normally.
 
 ### Auto Inserted Variables
 
