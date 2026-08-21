@@ -37,9 +37,9 @@ var (
 		Short: "Processes scheduler and orchestrator",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			// Client-mode invocations log to a separate file so they don't
-			// truncate the log of a running server. GetClientLogFilePath
-			// still honors PC_LOG_FILE, so only an explicit --log-file needs
-			// to be checked here.
+			// truncate the log of a running server: PC_CLIENT_LOG_FILE, or a
+			// "-client" sibling of the server's path. Only an explicit
+			// --log-file needs to be checked here.
 			if !cmd.Flags().Changed(flagLogFile) && (isClientCmd(cmd) || *pcFlags.IsDetachedWithTui) {
 				*pcFlags.LogFile = config.GetClientLogFilePath()
 			}

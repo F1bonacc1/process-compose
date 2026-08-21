@@ -70,16 +70,20 @@ const (
 	TokenHeader        = "X-PC-Token-Key"
 	pcConfigEnv        = "PROC_COMP_CONFIG"
 	LogPathEnvVarName  = "PC_LOG_FILE"
-	LogLevelEnvVarName = "PC_LOG_LEVEL"
-	LogFileFlags       = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
-	LogFileMode        = os.FileMode(0600)
-	RecipeFileMode     = os.FileMode(0644)
-	themeFileName      = "theme.yaml"
-	settingsFileName   = "settings.yaml"
-	configHome         = "process-compose"
-	recipesPath        = "recipes"
-	DonateURL          = "https://github.com/sponsors/f1bonacc1"
-	DiscussionsURL     = "https://github.com/f1bonacc1/process-compose/discussions"
+	// ClientLogPathEnvVarName sets the log file of client-mode invocations
+	// explicitly. Without it they log to a "-client" sibling of the server's
+	// log file.
+	ClientLogPathEnvVarName = "PC_CLIENT_LOG_FILE"
+	LogLevelEnvVarName      = "PC_LOG_LEVEL"
+	LogFileFlags            = os.O_CREATE | os.O_APPEND | os.O_WRONLY | os.O_TRUNC
+	LogFileMode             = os.FileMode(0600)
+	RecipeFileMode          = os.FileMode(0644)
+	themeFileName           = "theme.yaml"
+	settingsFileName        = "settings.yaml"
+	configHome              = "process-compose"
+	recipesPath             = "recipes"
+	DonateURL               = "https://github.com/sponsors/f1bonacc1"
+	DiscussionsURL          = "https://github.com/f1bonacc1/process-compose/discussions"
 )
 
 var (
@@ -92,21 +96,42 @@ func GetLogFilePath() string {
 
 // GetClientLogFilePath returns the log file path for client-mode invocations
 // (e.g. down, attach), kept separate so they don't truncate the log of a
-// running server.
+// running server. PC_CLIENT_LOG_FILE sets it explicitly; otherwise it is
+// derived from the server's path, a PC_LOG_FILE value included.
 func GetClientLogFilePath() string {
+	if val := os.Getenv(ClientLogPathEnvVarName); val != "" {
+		return val
+	}
 	return logFilePath("-client")
 }
 
+// logFilePath returns the internal log file path of this invocation. suffix
+// tells the client log apart from the server log, and is applied to a
+// PC_LOG_FILE value as well - without it a client command would truncate the
+// log of a running server. An empty environment variable counts as unset.
 func logFilePath(suffix string) string {
-	val, found := os.LookupEnv(LogPathEnvVarName)
-	if found {
-		return val
+	if val := os.Getenv(LogPathEnvVarName); val != "" {
+		return withLogSuffix(val, suffix)
 	}
 	userName := getUser()
 	if len(userName) != 0 {
 		userName = "-" + userName
 	}
 	return filepath.Join(os.TempDir(), fmt.Sprintf("process-compose%s%s.log", userName, suffix))
+}
+
+// withLogSuffix inserts suffix before the file extension of path, so that
+// /var/log/pc.log becomes /var/log/pc-client.log.
+func withLogSuffix(path, suffix string) string {
+	if suffix == "" || path == "" {
+		return path
+	}
+	ext := filepath.Ext(path)
+	if ext == filepath.Base(path) {
+		// A dotfile (".pclog") is all extension. Keep the name and append.
+		return path + suffix
+	}
+	return strings.TrimSuffix(path, ext) + suffix + ext
 }
 
 func GetLogLevel() zerolog.Level {

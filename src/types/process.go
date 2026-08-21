@@ -1,6 +1,8 @@
 package types
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -171,13 +173,58 @@ func (p *ProcessConfig) compareCompositeFields(another *ProcessConfig) bool {
 		{p.SuccessExitCodes, another.SuccessExitCodes},
 	}
 	for _, field := range composites {
-		if !reflect.DeepEqual(field.a, field.b) {
+		if !equalConfigField(field.a, field.b) {
 			//diffs := compareStructs(*p, *another)
 			//log.Warn().Msgf("Structs are different: %s", diffs)
 			return false
 		}
 	}
 	return true
+}
+
+// equalConfigField compares one composite config field, tolerating the two
+// representation differences that the REST API introduces. `project update`
+// ships the project as JSON, so a var that YAML decoded as an int comes back as
+// a float64, and an empty map or slice comes back as nil (omitempty). Neither is
+// a configuration change, but reflect.DeepEqual reports one, which used to
+// restart every process on the first update after a server start.
+func equalConfigField(a, b any) bool {
+	if reflect.DeepEqual(a, b) {
+		return true
+	}
+	if isEmptyContainer(a) && isEmptyContainer(b) {
+		return true
+	}
+	// Both sides are rendered as JSON, the format they cross the API in, so
+	// that an int and the float64 it decodes back to compare as equal. Map
+	// keys are sorted by encoding/json, which keeps the output deterministic.
+	aJson, err := json.Marshal(a)
+	if err != nil {
+		return false
+	}
+	bJson, err := json.Marshal(b)
+	if err != nil {
+		return false
+	}
+	return bytes.Equal(aJson, bJson)
+}
+
+// isEmptyContainer reports whether v is a nil value, or a map or slice with no
+// entries. A field that is absent and a field that is present but empty carry
+// the same configuration.
+func isEmptyContainer(v any) bool {
+	if v == nil {
+		return true
+	}
+	val := reflect.ValueOf(v)
+	switch val.Kind() {
+	case reflect.Map, reflect.Slice:
+		return val.Len() == 0
+	case reflect.Ptr, reflect.Interface:
+		return val.IsNil()
+	default:
+		return false
+	}
 }
 func (p *ProcessConfig) AssignProcessExecutableAndArgs(shellConf *command.ShellConfig, elevatedShellArg string) {
 	if p.Command != "" || len(p.Entrypoint) == 0 {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -2021,4 +2022,61 @@ func TestSystem_TestEnvFile(t *testing.T) {
 			t.Errorf("Expected output to contain 'My name is Inigo_Montoya' in the logs")
 		}
 	})
+}
+
+// TestUpdateProjectAfterJSONRoundTrip reproduces what `project update` does: the
+// project reaches the server as JSON, which turns an int var (every process gets
+// PC_REPLICA_NUM) into a float64, and drops empty maps and slices. None of that
+// is a configuration change, so no process may be restarted.
+func TestUpdateProjectAfterJSONRoundTrip(t *testing.T) {
+	shell := command.DefaultShellConfig()
+	proc1 := "process1"
+	proc2 := "process2"
+	newProcess := func(name string) types.ProcessConfig {
+		return types.ProcessConfig{
+			Name:        name,
+			ReplicaName: name,
+			Executable:  shell.ShellCommand,
+			Args:        []string{shell.ShellArgument, getSleepCommand(30)},
+			Vars:        types.Vars{"PC_REPLICA_NUM": 0, "port": 3000},
+			Environment: types.Environment{"VAR1=value1"},
+			DependsOn:   types.DependsOnConfig{},
+		}
+	}
+	project := &types.Project{
+		ShellConfig: shell,
+		Processes: map[string]types.ProcessConfig{
+			proc1: newProcess(proc1),
+			proc2: newProcess(proc2),
+		},
+	}
+	p, err := NewProjectRunner(&ProjectOpts{project: project})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	go func() {
+		_ = p.Run()
+	}()
+	waitForProcessState(t, p, proc1, types.ProcessStateRunning, 5*time.Second)
+	waitForProcessState(t, p, proc2, types.ProcessStateRunning, 5*time.Second)
+	defer func() {
+		_ = p.ShutDownProject()
+	}()
+
+	data, err := json.Marshal(project)
+	if err != nil {
+		t.Fatalf("failed to marshal the project: %v", err)
+	}
+	updated := &types.Project{}
+	if err := json.Unmarshal(data, updated); err != nil {
+		t.Fatalf("failed to unmarshal the project: %v", err)
+	}
+
+	status, err := p.UpdateProject(updated)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if len(status) != 0 {
+		t.Errorf("UpdateProject() restarted %d processes after a JSON round trip: %v", len(status), status)
+	}
 }

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -601,4 +602,113 @@ func TestValidateProcessConfigSendKeys(t *testing.T) {
 	if err := (&ProcessConfig{Name: "p", ShutDownParams: keys}).ValidateProcessConfig(); err == nil {
 		t.Errorf("ValidateProcessConfig() expected error for send_keys without is_interactive, got nil")
 	}
+}
+
+// TestCompareSurvivesJSONRoundTrip covers the representation differences that
+// `project update` introduces: the project reaches the server as JSON, so an
+// int var returns as a float64, and an empty map or slice returns as nil. The
+// config did not change, so neither may Compare.
+func TestCompareSurvivesJSONRoundTrip(t *testing.T) {
+	original := &ProcessConfig{
+		Name:        "proc",
+		ReplicaName: "proc",
+		Command:     "sleep 1000",
+		Vars: Vars{
+			"PC_REPLICA_NUM": 0,
+			"port":           3000,
+			"ratio":          1.5,
+			"label":          "web",
+			"nested":         map[string]any{"retries": 3},
+		},
+		Extensions:       map[string]any{"x-tool": map[string]any{"weight": 10}},
+		DependsOn:        DependsOnConfig{},
+		Environment:      Environment{},
+		Args:             []string{},
+		SuccessExitCodes: []int{},
+	}
+
+	roundTripped := jsonRoundTrip(t, original)
+	if !original.Compare(roundTripped) {
+		t.Errorf("Compare() = false after a JSON round trip, want true")
+	}
+	if !roundTripped.Compare(original) {
+		t.Errorf("Compare() = false in the reverse direction after a JSON round trip, want true")
+	}
+}
+
+// TestCompareDetectsChangesAcrossJSONRoundTrip makes sure the tolerance added
+// for the round trip does not hide a real change.
+func TestCompareDetectsChangesAcrossJSONRoundTrip(t *testing.T) {
+	base := &ProcessConfig{
+		Name:        "proc",
+		ReplicaName: "proc",
+		Command:     "sleep 1000",
+		Vars:        Vars{"PC_REPLICA_NUM": 0, "port": 3000},
+		Extensions:  map[string]any{"x-tool": map[string]any{"weight": 10}},
+		DependsOn:   DependsOnConfig{"other": {Condition: ProcessConditionStarted}},
+		Environment: Environment{"A=1"},
+	}
+
+	tests := []struct {
+		name   string
+		modify func(p *ProcessConfig)
+	}{
+		{"changed var value", func(p *ProcessConfig) { p.Vars = Vars{"PC_REPLICA_NUM": 0, "port": 3001} }},
+		{"added var", func(p *ProcessConfig) { p.Vars = Vars{"PC_REPLICA_NUM": 0, "port": 3000, "host": "localhost"} }},
+		{"removed var", func(p *ProcessConfig) { p.Vars = Vars{"PC_REPLICA_NUM": 0} }},
+		{"changed extension", func(p *ProcessConfig) { p.Extensions = map[string]any{"x-tool": map[string]any{"weight": 11}} }},
+		{"changed dependency condition", func(p *ProcessConfig) {
+			p.DependsOn = DependsOnConfig{"other": {Condition: ProcessConditionCompleted}}
+		}},
+		{"removed dependency", func(p *ProcessConfig) { p.DependsOn = DependsOnConfig{} }},
+		{"changed environment", func(p *ProcessConfig) { p.Environment = Environment{"A=2"} }},
+		{"emptied environment", func(p *ProcessConfig) { p.Environment = Environment{} }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updated := jsonRoundTrip(t, base)
+			tt.modify(updated)
+			if base.Compare(updated) {
+				t.Errorf("Compare() = true for a %s, want false", tt.name)
+			}
+		})
+	}
+}
+
+func TestEqualConfigField(t *testing.T) {
+	tests := []struct {
+		name string
+		a    any
+		b    any
+		want bool
+	}{
+		{"int and the float64 it decodes to", Vars{"n": 1}, Vars{"n": float64(1)}, true},
+		{"nil map and empty map", Vars(nil), Vars{}, true},
+		{"nil slice and empty slice", Environment(nil), Environment{}, true},
+		{"nil pointers", (*WatchConfig)(nil), (*WatchConfig)(nil), true},
+		{"different numbers", Vars{"n": 1}, Vars{"n": 2}, false},
+		{"empty map and populated map", Vars{}, Vars{"n": 1}, false},
+		{"nil pointer and value", (*WatchConfig)(nil), &WatchConfig{Cascade: true}, false},
+		{"different string values", Vars{"s": "a"}, Vars{"s": "b"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := equalConfigField(tt.a, tt.b); got != tt.want {
+				t.Errorf("equalConfigField(%v, %v) = %v, want %v", tt.a, tt.b, got, tt.want)
+			}
+		})
+	}
+}
+
+func jsonRoundTrip(t *testing.T, proc *ProcessConfig) *ProcessConfig {
+	t.Helper()
+	data, err := json.Marshal(proc)
+	if err != nil {
+		t.Fatalf("failed to marshal process config: %v", err)
+	}
+	roundTripped := &ProcessConfig{}
+	if err := json.Unmarshal(data, roundTripped); err != nil {
+		t.Fatalf("failed to unmarshal process config: %v", err)
+	}
+	return roundTripped
 }
