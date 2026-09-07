@@ -21,7 +21,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/invopop/jsonschema v0.14.0
 	github.com/joho/godotenv v1.5.1
-	github.com/mark3labs/mcp-go v0.58.0
+	github.com/mark3labs/mcp-go v1.0.0
 	github.com/rivo/tview v0.42.0
 	github.com/shirou/gopsutil/v4 v4.26.7
 	github.com/spf13/cobra v1.10.2
