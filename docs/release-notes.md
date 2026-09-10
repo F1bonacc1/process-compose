@@ -1,5 +1,13 @@
 # Release Notes
 
+## [Unreleased]
+
+### Bug Fixes
+
+- Fixed the [REST API](https://f1bonacc1.github.io/process-compose/client/#rest-api) returning a process `namespace` as a plain string when it holds a single namespace, while the OpenAPI spec declares an array of strings, which broke clients generated from the spec. `namespace` is now always an array in JSON output (REST responses, the process state WebSocket, and `process list`, `process get` and `process monitor` with `-o json`). Requests and YAML configs still accept a plain string. Anything that expects a string needs updating, including scripts that compare `namespace` to a string and process-compose client binaries older than v1.122.0, addresses issue #538.
+
+---
+
 ## [v1.122.0] - 2026-08-18
 
 ### New Features

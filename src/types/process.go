@@ -324,7 +324,7 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 
 type ProcessState struct {
 	Name             string        `json:"name"`
-	Namespace        Namespaces    `json:"namespace" swaggertype:"array,string"`
+	Namespace        Namespaces    `json:"namespace"`
 	Status           string        `json:"status"`
 	SystemTime       string        `json:"system_time"`
 	Age              time.Duration `json:"age" swaggertype:"primitive,integer"`

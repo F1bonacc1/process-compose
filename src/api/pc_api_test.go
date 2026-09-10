@@ -900,7 +900,7 @@ func TestGetProcess_NamespaceSerialization(t *testing.T) {
 		ns   types.Namespaces
 		want string
 	}{
-		{name: "single namespace stays a string", ns: types.Namespaces{"default"}, want: `"namespace":"default"`},
+		{name: "single namespace is serialized as an array", ns: types.Namespaces{"default"}, want: `"namespace":["default"]`},
 		{name: "multiple namespaces become an array", ns: types.Namespaces{"a", "b"}, want: `"namespace":["a","b"]`},
 	}
 	for _, tt := range tests {

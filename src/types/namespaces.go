@@ -11,8 +11,9 @@ import (
 )
 
 // Namespaces is the set of namespaces a process belongs to.
-// It accepts either a single string or a list of strings in YAML and JSON,
-// and marshals back to a plain string when it holds a single namespace.
+// It accepts either a single string or a list of strings in YAML and JSON.
+// In YAML it marshals to a plain string when it holds a single namespace,
+// and in JSON it always marshals as a list of strings.
 type Namespaces []string
 
 func (n *Namespaces) UnmarshalYAML(node *yaml.Node) error {
@@ -70,11 +71,11 @@ func (n *Namespaces) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON marshals the namespaces as a JSON array of strings.
+// Nil or empty namespaces are defaulted to [DefaultNamespace] so that
+// JSON output always satisfies the non-nullable string array schema.
 func (n Namespaces) MarshalJSON() ([]byte, error) {
-	if len(n) == 1 {
-		return json.Marshal(n[0])
-	}
-	return json.Marshal([]string(n))
+	return json.Marshal([]string(n.OrDefault()))
 }
 
 // Normalized drops empty entries, removes duplicates preserving order,
