@@ -44,8 +44,8 @@ type Process struct {
 	procCond             sync.Cond
 	procStartedChan      chan struct{}
 	procStateChan        chan string
-	procReadyCtx         context.Context
-	readyCancelFn        context.CancelFunc
+	readyChangedCh       chan struct{} // guarded by stateMtx, see readyChangedLocked
+	wontBeReady          bool          // guarded by stateMtx, see markWontBeReady
 	procLogReadyCtx      context.Context
 	readyLogCancelFn     context.CancelCauseFunc
 	procRunCtx           context.Context
@@ -126,7 +126,6 @@ func NewProcess(opts ...ProcOpts) *Process {
 	}
 	proc.procColor = pclog.Name2Color(proc.getName())
 
-	proc.procReadyCtx, proc.readyCancelFn = context.WithCancel(context.Background())
 	proc.procLogReadyCtx, proc.readyLogCancelFn = context.WithCancelCause(context.Background())
 	proc.procRunCtx, proc.runCancelFn = context.WithCancel(context.Background())
 	proc.setUpProbes()
@@ -416,18 +415,31 @@ func (p *Process) waitForCompletionOrAbort(abort <-chan struct{}) (int, waitResu
 	}
 }
 
+// waitUntilReady waits until the process is ready now, not merely ready at some
+// point in the past: a running process can lose readiness to a nonfatal probe
+// failure and regain it later. It fails only once the process can no longer
+// become ready.
 func (p *Process) waitUntilReady(abort <-chan struct{}) waitResult {
-	select {
-	case <-p.procReadyCtx.Done():
-	case <-abort:
-		return waitAborted
+	for {
+		p.stateMtx.Lock()
+		health, final, changed := p.procState.Health, p.wontBeReady, p.readyChangedLocked()
+		p.stateMtx.Unlock()
+		// Checked before final, so a process that exited while ready still
+		// satisfies its dependents.
+		if health == types.ProcessHealthReady {
+			return waitOk
+		}
+		if final {
+			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
+			p.setExitCode(1)
+			return waitFailed
+		}
+		select {
+		case <-changed:
+		case <-abort:
+			return waitAborted
+		}
 	}
-	if p.procState.Health == types.ProcessHealthReady {
-		return waitOk
-	}
-	log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
-	p.setExitCode(1)
-	return waitFailed
 }
 
 func (p *Process) waitUntilLogReady(abort <-chan struct{}) waitResult {
@@ -552,9 +564,7 @@ func (p *Process) stopProcess(withNoRestart bool) error {
 	}
 	p.stopProbes()
 	if withNoRestart {
-		if p.readyProber != nil {
-			p.readyCancelFn()
-		}
+		p.markWontBeReady()
 		p.cancelReadyLogFunc(fmt.Errorf("process %s was shut down", p.getName()))
 	}
 	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
@@ -713,9 +723,7 @@ func (p *Process) onProcessEnd(state string) {
 	p.mtxStopFn.Unlock()
 	p.cancelReadyLogFunc(fmt.Errorf("process %s completed", p.getName()))
 	p.stopProbes()
-	if p.readyProber != nil {
-		p.readyCancelFn()
-	}
+	p.markWontBeReady()
 	p.setStateNoPublish(state)
 	p.updateProcState()
 
@@ -1164,7 +1172,6 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string, details an
 		_ = p.internalStop()
 	} else if isOk {
 		p.setProcHealth(types.ProcessHealthReady)
-		p.readyCancelFn()
 	} else {
 		p.setProcHealth(types.ProcessHealthNotReady)
 	}
@@ -1293,10 +1300,43 @@ func (p *Process) setProcHealth(health string) {
 	var ev types.ProcessStateEvent
 	if changed {
 		ev = p.snapshotEventLocked()
+		if health == types.ProcessHealthReady {
+			p.notifyReadinessLocked()
+		}
 	}
 	p.stateMtx.Unlock()
 	if changed {
 		p.publishLocked(ev)
+	}
+}
+
+// markWontBeReady records that the process can no longer become ready and
+// releases every waitUntilReady.
+func (p *Process) markWontBeReady() {
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
+	if !p.wontBeReady {
+		p.wontBeReady = true
+		p.notifyReadinessLocked()
+	}
+}
+
+// readyChangedLocked returns the channel closed by the next readiness change:
+// the process becoming ready, or wontBeReady being set. It is created on
+// demand. The caller must hold stateMtx.
+func (p *Process) readyChangedLocked() <-chan struct{} {
+	if p.readyChangedCh == nil {
+		p.readyChangedCh = make(chan struct{})
+	}
+	return p.readyChangedCh
+}
+
+// notifyReadinessLocked wakes every waitUntilReady to re-evaluate readiness.
+// The caller must hold stateMtx.
+func (p *Process) notifyReadinessLocked() {
+	if p.readyChangedCh != nil {
+		close(p.readyChangedCh)
+		p.readyChangedCh = nil
 	}
 }
 

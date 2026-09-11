@@ -1,0 +1,21 @@
+version: "0.5"
+
+processes:
+  parent:
+    command: sleep 300
+    readiness_probe:
+      exec:
+        command: ./ready.sh
+      initial_delay_seconds: 0
+      period_seconds: 1
+      timeout_seconds: 1
+      success_threshold: 1
+      # Keep the probe failure nonfatal so the running process can recover.
+      failure_threshold: 300
+
+  child:
+    command: sh -c 'echo CHILD_STARTED >> child.log; sleep 60'
+    disabled: true
+    depends_on:
+      parent:
+        condition: process_healthy

@@ -679,7 +679,7 @@ func (p *ProjectRunner) getDoneProcess(name string) *Process {
 func (p *ProjectRunner) getDoneOrRunningProcess(name string) *Process {
 	// Prefer the currently running process over a stale done entry.
 	// After UpdateProcess / Restart replaces a process, the old object lingers
-	// in doneProcesses with an already-cancelled procReadyCtx; returning it
+	// in doneProcesses, already marked as never becoming ready; returning it
 	// would cause downstream waitUntilReady to spuriously fail ("aborted").
 	if runningProc := p.getRunningProcess(name); runningProc != nil {
 		return runningProc
