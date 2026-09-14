@@ -417,17 +417,37 @@ func (p *Process) waitForCompletionOrAbort(abort <-chan struct{}) (int, waitResu
 }
 
 func (p *Process) waitUntilReady(abort <-chan struct{}) waitResult {
-	select {
-	case <-p.procReadyCtx.Done():
-	case <-abort:
-		return waitAborted
+	for {
+		ctx := p.procReadyCtx
+		select {
+		case <-ctx.Done():
+		case <-abort:
+			return waitAborted
+		}
+
+		var health string
+		p.getStateData(func(state *types.ProcessState) {
+			health = state.Health
+		})
+		if health == types.ProcessHealthReady {
+			return waitOk
+		}
+		// A historical Ready cancel must not fail late process_healthy waiters
+		// while the dependency is still running through a nonfatal NotReady
+		// window (see #544). Wait again on the current ready context.
+		if !p.isRunning() {
+			log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
+			p.setExitCode(1)
+			return waitFailed
+		}
+		if p.procReadyCtx == ctx {
+			select {
+			case <-abort:
+				return waitAborted
+			case <-time.After(50 * time.Millisecond):
+			}
+		}
 	}
-	if p.procState.Health == types.ProcessHealthReady {
-		return waitOk
-	}
-	log.Error().Msgf("Process %s was aborted and won't become ready", p.getName())
-	p.setExitCode(1)
-	return waitFailed
 }
 
 func (p *Process) waitUntilLogReady(abort <-chan struct{}) waitResult {
@@ -1166,7 +1186,16 @@ func (p *Process) onReadinessCheckEnd(isOk, isFatal bool, err string, details an
 		p.setProcHealth(types.ProcessHealthReady)
 		p.readyCancelFn()
 	} else {
+		var wasReady bool
+		p.getStateData(func(state *types.ProcessState) {
+			wasReady = state.Health == types.ProcessHealthReady
+		})
 		p.setProcHealth(types.ProcessHealthNotReady)
+		// Recreate the wait context after a nonfatal Ready→NotReady transition
+		// so late process_healthy dependents can wait for recovery (#544).
+		if wasReady {
+			p.procReadyCtx, p.readyCancelFn = context.WithCancel(context.Background())
+		}
 	}
 
 	procHealth := types.ProcessHealthUnknown
