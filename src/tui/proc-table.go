@@ -194,13 +194,7 @@ func (pv *pcView) onTableSelectionChange(_, _ int) {
 	pv.logsText.resetSearch()
 	pv.updateHelpTextView()
 	pv.logsText.SetTitle(name)
-	pv.unFollowLog()
-	pv.followLog(name)
-	if !pv.logFollow {
-		// call follow and unfollow to update the buffer and stop following
-		// in case the following is disabled
-		pv.unFollowLog()
-	}
+	pv.showLog(name)
 
 	// Update terminal view for interactive processes
 	if pv.isInteractive(name) {
