@@ -362,3 +362,8 @@ func getNoWatchEnvDefault() bool {
 	_, found := os.LookupEnv(EnvVarNoWatch)
 	return found
 }
+
+func getDisableUpdateCheckDefault() bool {
+	_, found := os.LookupEnv(EnvVarDisableUpdateCheck)
+	return found
+}

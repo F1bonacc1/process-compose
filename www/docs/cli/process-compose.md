@@ -15,6 +15,7 @@ process-compose [flags]
   -D, --detached                 run process-compose in detached mode
       --detached-with-tui        run process-compose in detached mode with TUI
       --disable-dotenv           disable .env file loading (env: PC_DISABLE_DOTENV=1)
+      --disable-update-check     do not check GitHub for a newer release (env: PC_DISABLE_UPDATE_CHECK=1)
       --dry-run                  validate the config and exit
   -e, --env stringArray          path to env files to load (default [.env])
   -h, --help                     help for process-compose

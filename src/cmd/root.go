@@ -52,6 +52,11 @@ var (
 			pcFlags.SortColumnChanged = cmd.Flags().Changed(flagSort)
 			config.CliApiTokenPath = *pcFlags.ApiTokenPath
 
+			// Opting out also silences the TUI's check, which reads the same setting.
+			// An explicit `version update` still works.
+			if *pcFlags.DisableUpdateCheck {
+				config.CheckForUpdates = "false"
+			}
 			isVersionUpdate := cmd.Name() == versionUpdateCmd.Name() && cmd.Parent() != nil && cmd.Parent().Name() == versionCmd.Name()
 			if config.CheckForUpdates == "true" && !isMCPStdio && !isVersionUpdate {
 				checkForUpdatesInBackground()
@@ -154,6 +159,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "validate the config and exit")
 	rootCmd.PersistentFlags().StringVar(pcFlags.ApiTokenPath, "token-file", *pcFlags.ApiTokenPath, "path to a file containing the API token (env: "+config.EnvVarApiTokenPath+")")
 	rootCmd.PersistentFlags().BoolVar(pcFlags.LogNoColor, "log-no-color", *pcFlags.LogNoColor, "disable color output in the log file (env: "+config.EnvVarLogNoColor+")")
+	rootCmd.PersistentFlags().BoolVar(pcFlags.DisableUpdateCheck, "disable-update-check", *pcFlags.DisableUpdateCheck, "do not check GitHub for a newer release (env: "+config.EnvVarDisableUpdateCheck+"=1)")
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagReverse))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagSort))
 	rootCmd.Flags().AddFlag(commonFlags.Lookup(flagTheme))

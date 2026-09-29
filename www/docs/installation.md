@@ -48,3 +48,13 @@ If you have [Golang](https://go.dev/doc/install) installed:
 go install github.com/f1bonacc1/process-compose@latest
 ```
 This will [compile and install](https://pkg.go.dev/cmd/go#hdr-Compile_and_install_packages_and_dependencies) the binary.
+
+## Update Check
+
+Release and `go install` builds check GitHub for a newer release and, when one exists, print a hint to run `process-compose version update`. The check calls the GitHub API anonymously on every invocation, including client commands such as `process-compose process logs`, so scripts that call Process Compose in a loop can exhaust GitHub's unauthenticated rate limit (60 requests per hour per IP address) for every tool on the machine.
+
+Disable it with the `PC_DISABLE_UPDATE_CHECK=1` environment variable or the `--disable-update-check` flag. It also stops the TUI's update notification. `process-compose version update` still works when run explicitly.
+
+```shell
+export PC_DISABLE_UPDATE_CHECK=1
+```

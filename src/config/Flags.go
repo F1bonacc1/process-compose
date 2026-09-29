@@ -50,6 +50,7 @@ const (
 	EnvVarNameAddress          = "PC_ADDRESS"
 	EnvVarLogNoColor           = "PC_LOG_NO_COLOR"
 	EnvVarNoWatch              = "PC_NO_WATCH"
+	EnvVarDisableUpdateCheck   = "PC_DISABLE_UPDATE_CHECK"
 )
 
 // Flags represents PC configuration flags.
@@ -96,6 +97,7 @@ type Flags struct {
 	ApiTokenPath         *string
 	LogNoColor           *bool
 	NoWatch              *bool
+	DisableUpdateCheck   *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -139,5 +141,6 @@ func NewFlags() *Flags {
 		ApiTokenPath:         new(getApiTokenPathDefault()),
 		LogNoColor:           new(getLogNoColorDefault()),
 		NoWatch:              new(getNoWatchEnvDefault()),
+		DisableUpdateCheck:   new(getDisableUpdateCheckDefault()),
 	}
 }
