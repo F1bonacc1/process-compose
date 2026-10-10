@@ -3,13 +3,16 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	neturl "net/url"
 	"os"
 	"strconv"
 	"sync/atomic"
+	"syscall"
 
 	"github.com/f1bonacc1/process-compose/src/api"
 	"github.com/f1bonacc1/process-compose/src/config"
@@ -21,6 +24,7 @@ type LogClient struct {
 	ws               *websocket.Conn
 	Format           string
 	isClosed         atomic.Bool
+	readDone         atomic.Bool
 	socketPath       string
 	address          string
 	PrintProcessName bool
@@ -78,6 +82,15 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, fn fun
 
 // CloseChannel Cleanly close the connection by sending a close message and then
 // waiting (with timeout) for the server to close the connection.
+//
+// Non-follow requests always reach this via <-done after readLogs has already
+// observed the server-sent close, at which point the underlying conn is torn
+// down and a courtesy close frame from us races into an EPIPE. Skip the write
+// when the read side has finished, and treat "peer already closed" write
+// errors as benign so users don't see a spurious "write close: ... broken
+// pipe" on stderr after a successful log tail. Errors from the final
+// ws.Close are also swallowed — they signal an already-torn-down conn, not
+// a client fault worth surfacing.
 func (l *LogClient) CloseChannel() error {
 	if l.ws == nil {
 		return nil
@@ -86,18 +99,45 @@ func (l *LogClient) CloseChannel() error {
 	// instead of a "websocket: close sent" error.
 	ws := l.ws
 	l.ws = nil
+	l.isClosed.Store(true)
+	if l.readDone.Load() {
+		_ = ws.Close()
+		return nil
+	}
 	err := ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "write close:", err)
 		_ = ws.Close()
+		if isPeerClosedErr(err) {
+			return nil
+		}
+		fmt.Fprintln(os.Stderr, "write close:", err)
 		return err
 	}
-	l.isClosed.Store(true)
-	return ws.Close()
+	_ = ws.Close()
+	return nil
+}
+
+// isPeerClosedErr reports whether err is the benign consequence of the peer
+// having closed the connection while we were sending the courtesy close
+// frame — EPIPE from the raw socket, EOF/net.ErrClosed from the closed
+// conn, or a WebSocket close frame received in reply.
+func isPeerClosedErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, syscall.EPIPE) || errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) {
+		return true
+	}
+	var closeErr *websocket.CloseError
+	return errors.As(err, &closeErr)
 }
 
 func (l *LogClient) readLogs(done chan struct{}, ws *websocket.Conn, follow bool, fn func(api.LogMessage)) {
+	// LIFO defer order: mark readDone before signalling done, so a
+	// CloseChannel racing on <-done observes the flag and skips its
+	// close-frame write.
 	defer close(done)
+	defer l.readDone.Store(true)
 	for {
 		var message api.LogMessage
 		if err := ws.ReadJSON(&message); err != nil {
