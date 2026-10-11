@@ -139,141 +139,141 @@ func TestProcessStateIsReady(t *testing.T) {
 		isReady bool
 	}{
 		{
-			name: "pending, no health probe",
+			name: "pending, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStatePending,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStatePending,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: false,
 		},
 		{
-			name: "launching, no health probe",
+			name: "launching, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateLaunching,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStateLaunching,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: false,
 		},
 		{
-			name: "restarting, exit ok, no health probe",
+			name: "restarting, exit ok, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateRestarting,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
-				ExitCode:       0,
+				Status:        ProcessStateRestarting,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
+				ExitCode:      0,
 			},
 			isReady: true,
 		},
 		{
-			name: "restarting, exit failed, no health probe",
+			name: "restarting, exit failed, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateRestarting,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
-				ExitCode:       1,
+				Status:        ProcessStateRestarting,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
+				ExitCode:      1,
 			},
 			isReady: false,
 		},
 		{
-			name: "terminating, no health probe",
+			name: "terminating, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateTerminating,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStateTerminating,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: false,
 		},
 		{
-			name: "running, no health probe",
+			name: "running, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateRunning,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStateRunning,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: true,
 		},
 		{
-			name: "foreground, no health probe",
+			name: "foreground, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateForeground,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStateForeground,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: true,
 		},
 		{
-			name: "launched, no health probe",
+			name: "launched, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateLaunched,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStateLaunched,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: true,
 		},
 		{
-			name: "completed, exit success, no health probe",
+			name: "completed, exit success, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateCompleted,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
-				ExitCode:       0,
+				Status:        ProcessStateCompleted,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
+				ExitCode:      0,
 			},
 			isReady: true,
 		},
 		{
-			name: "completed, exit failure, no health probe",
+			name: "completed, exit failure, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateCompleted,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
-				ExitCode:       1,
+				Status:        ProcessStateCompleted,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
+				ExitCode:      1,
 			},
 			isReady: false,
 		},
 		{
-			name: "skipped, no health probe",
+			name: "skipped, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateSkipped,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStateSkipped,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: true,
 		},
 		{
-			name: "error, no health probe",
+			name: "error, no ready probe",
 			p: &ProcessState{
-				Status:         ProcessStateError,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStateError,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: false,
 		},
 		{
-			name: "disabled, no health probe (disabled processes will only start manually)",
+			name: "disabled, no ready probe (disabled processes will only start manually)",
 			p: &ProcessState{
-				Status:         ProcessStateDisabled,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
+				Status:        ProcessStateDisabled,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
 			},
 			isReady: true,
 		},
 		{
 			name: "running, unhealthy",
 			p: &ProcessState{
-				Status:         ProcessStateRunning,
-				HasHealthProbe: true,
-				Health:         ProcessHealthNotReady,
+				Status:        ProcessStateRunning,
+				HasReadyProbe: true,
+				Health:        ProcessHealthNotReady,
 			},
 			isReady: false,
 		},
 		{
 			name: "running, healthy",
 			p: &ProcessState{
-				Status:         ProcessStateRunning,
-				HasHealthProbe: true,
-				Health:         ProcessHealthReady,
+				Status:        ProcessStateRunning,
+				HasReadyProbe: true,
+				Health:        ProcessHealthReady,
 			},
 			isReady: true,
 		},
@@ -282,8 +282,8 @@ func TestProcessStateIsReady(t *testing.T) {
 			p: &ProcessState{
 				Status: ProcessStateRunning,
 				// This state probably should not be possible, but the type system does not prevent it...
-				HasHealthProbe: false,
-				Health:         ProcessHealthNotReady,
+				HasReadyProbe: false,
+				Health:        ProcessHealthNotReady,
 			},
 			isReady: false,
 		},
@@ -291,27 +291,27 @@ func TestProcessStateIsReady(t *testing.T) {
 			name: "garbage status and health",
 			p: &ProcessState{
 				// This is garbage, but again the type system allows it.
-				Status:         "puppy",
-				HasHealthProbe: true,
-				Health:         "doggy",
+				Status:        "puppy",
+				HasReadyProbe: true,
+				Health:        "doggy",
 			},
 			isReady: false,
 		},
 		{
 			name: "garbage health",
 			p: &ProcessState{
-				Status:         ProcessStateRunning,
-				HasHealthProbe: true,
-				Health:         "doggy",
+				Status:        ProcessStateRunning,
+				HasReadyProbe: true,
+				Health:        "doggy",
 			},
 			isReady: false,
 		},
 		{
-			name: "no health probe, garbage health",
+			name: "no ready probe, garbage health",
 			p: &ProcessState{
-				Status:         ProcessStateRunning,
-				HasHealthProbe: false,
-				Health:         "doggy",
+				Status:        ProcessStateRunning,
+				HasReadyProbe: false,
+				Health:        "doggy",
 			},
 			isReady: false,
 		},
@@ -319,7 +319,7 @@ func TestProcessStateIsReady(t *testing.T) {
 			name: "completed, signal exit code in success_exit_codes",
 			p: &ProcessState{
 				Status:           ProcessStateCompleted,
-				HasHealthProbe:   false,
+				HasReadyProbe:    false,
 				Health:           ProcessHealthUnknown,
 				ExitCode:         130,
 				SuccessExitCodes: []int{130},
@@ -330,7 +330,7 @@ func TestProcessStateIsReady(t *testing.T) {
 			name: "completed, signal exit code not in success_exit_codes",
 			p: &ProcessState{
 				Status:           ProcessStateCompleted,
-				HasHealthProbe:   false,
+				HasReadyProbe:    false,
 				Health:           ProcessHealthUnknown,
 				ExitCode:         130,
 				SuccessExitCodes: []int{143},
@@ -340,10 +340,10 @@ func TestProcessStateIsReady(t *testing.T) {
 		{
 			name: "completed, non-zero exit, no success_exit_codes",
 			p: &ProcessState{
-				Status:         ProcessStateCompleted,
-				HasHealthProbe: false,
-				Health:         ProcessHealthUnknown,
-				ExitCode:       130,
+				Status:        ProcessStateCompleted,
+				HasReadyProbe: false,
+				Health:        ProcessHealthUnknown,
+				ExitCode:      130,
 			},
 			isReady: false,
 		},
@@ -353,6 +353,32 @@ func TestProcessStateIsReady(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.p.IsReady() != tt.isReady {
 				t.Errorf("Expected IsReady() = %v for state %v", tt.isReady, tt.p)
+			}
+		})
+	}
+}
+
+func TestLivenessProbeDoesNotGateReadiness(t *testing.T) {
+	probe := &health.Probe{}
+	tests := []struct {
+		name    string
+		config  *ProcessConfig
+		isReady bool
+	}{
+		{"no probes", &ProcessConfig{}, true},
+		{"liveness probe", &ProcessConfig{LivenessProbe: probe}, true},
+		{"readiness probe", &ProcessConfig{ReadinessProbe: probe}, false},
+		{"liveness and readiness probes", &ProcessConfig{LivenessProbe: probe, ReadinessProbe: probe}, false},
+		{"ready log line", &ProcessConfig{ReadyLogLine: "ready"}, true},
+		{"liveness probe and ready log line", &ProcessConfig{LivenessProbe: probe, ReadyLogLine: "ready"}, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			state := NewProcessState(tt.config)
+			state.Status = ProcessStateRunning
+			if isReady, reason := state.IsReadyReason(); isReady != tt.isReady {
+				t.Errorf("IsReadyReason() = %v (%s), want %v", isReady, reason, tt.isReady)
 			}
 		})
 	}
