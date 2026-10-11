@@ -33,4 +33,6 @@ jobs:
     - name: Run golangci-lint
       if: matrix.os == 'ubuntu-latest'
       uses: golangci/golangci-lint-action@v9.0.0
+      with:
+        version: v2.11.3 # keep in sync with the Makefile
 
