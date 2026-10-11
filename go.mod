@@ -6,7 +6,7 @@ require (
 	dario.cat/mergo v1.0.2
 	github.com/adrg/xdg v0.5.3
 	github.com/alecthomas/chroma/v2 v2.27.0
-	github.com/bmatcuk/doublestar/v4 v4.10.0
+	github.com/bmatcuk/doublestar/v4 v4.10.2
 	github.com/creack/pty v1.1.24
 	github.com/drone/envsubst v1.0.3
 	github.com/f1bonacc1/glippy v1.2.0
