@@ -917,11 +917,16 @@ func (p *Process) handleOutput(pipe io.ReadCloser, output string, handler func(m
 				Msgf("error reading from %s", output)
 			break
 		}
-		if p.procConf.ReadyLogLine != "" && p.procState.Health == types.ProcessHealthUnknown && strings.Contains(line, p.procConf.ReadyLogLine) {
-			// setProcHealth takes stateMtx, updates Health and (for Ready)
-			// records ProcessReadyTime atomically.
-			p.setProcHealth(types.ProcessHealthReady)
-			p.cancelReadyLogFunc(nil)
+		if p.procConf.ReadyLogLine != "" && strings.Contains(line, p.procConf.ReadyLogLine) {
+			p.stateMtx.Lock()
+			isUnknown := p.procState.Health == types.ProcessHealthUnknown
+			p.stateMtx.Unlock()
+			if isUnknown {
+				// setProcHealth takes stateMtx, updates Health and (for Ready)
+				// records ProcessReadyTime atomically.
+				p.setProcHealth(types.ProcessHealthReady)
+				p.cancelReadyLogFunc(nil)
+			}
 		}
 		p.checkElevatedProcOutput(line)
 		handler(strings.TrimSuffix(line, "\n"))
