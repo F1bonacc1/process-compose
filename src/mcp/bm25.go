@@ -32,10 +32,10 @@ type Hit struct {
 // Corpus holds pre-tokenized documents and the statistics needed to score
 // queries using Okapi BM25.
 type Corpus struct {
-	docs     [][]string       // tokenized docs (one slice per doc)
-	docLens  []int            // doc length per doc
-	avgDL    float64          // average doc length across the corpus
-	docFreq  map[string]int   // term -> number of docs containing term
+	docs     [][]string     // tokenized docs (one slice per doc)
+	docLens  []int          // doc length per doc
+	avgDL    float64        // average doc length across the corpus
+	docFreq  map[string]int // term -> number of docs containing term
 	idfCache map[string]float64
 	termFreq []map[string]int // per-doc term frequency
 	k1       float64
