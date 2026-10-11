@@ -456,6 +456,13 @@ func (p *ProjectRunner) onProcessSkipped(procConf *types.ProcessConfig) {
 // performed while no instance is running observe the latest incarnation.
 func (p *ProjectRunner) newIncarnationState(config *types.ProcessConfig) *types.ProcessState {
 	state := types.NewProcessState(config)
+	// A `ready_log_line` gates readiness like a probe does, but only for an
+	// incarnation whose output is scanned for it: interactive processes own
+	// their PTY, and attached ones write straight to process-compose's own
+	// stdout and stderr.
+	isOutputScanned := !config.IsInteractive &&
+		!usesAttachedIO(config, config.Name == p.mainProcess, p.isTuiOn)
+	state.HasHealthProbe = state.HasHealthProbe || (config.ReadyLogLine != "" && isOutputScanned)
 	p.statesMutex.Lock()
 	defer p.statesMutex.Unlock()
 	if prev, ok := p.processStates[config.ReplicaName]; ok && prev != nil {
