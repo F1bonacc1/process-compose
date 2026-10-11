@@ -402,6 +402,10 @@ func (p *ProcessState) IsWatchIdle() bool {
 // If `hasHealthProbe` is true, the process must be healthy to be considered
 // ready.
 //
+// A process that has exited must have exited successfully. The exit code is
+// ignored while the status is `Running`, because after an automatic restart it
+// is still the previous run's.
+//
 // The explanation may be empty.
 func (p *ProcessState) IsReadyReason() (bool, string) {
 	if p.Status != ProcessStateRunning &&
@@ -424,7 +428,7 @@ func (p *ProcessState) IsReadyReason() (bool, string) {
 		return false, fmt.Sprintf("health is %s", health)
 	} else if p.Health != ProcessHealthReady && p.Health != ProcessHealthUnknown {
 		return false, fmt.Sprintf("health is %s", p.Health)
-	} else if !p.IsExitCodeSuccess() {
+	} else if p.Status != ProcessStateRunning && !p.IsExitCodeSuccess() {
 		return false, fmt.Sprintf("failed with exit code %d", p.ExitCode)
 	}
 	return true, ""
