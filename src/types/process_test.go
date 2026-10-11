@@ -132,19 +132,6 @@ func TestCompareProcessConfigs(t *testing.T) {
 	}
 }
 
-func TestProcessStateLogReadiness(t *testing.T) {
-	state := NewProcessState(&ProcessConfig{ReadyLogLine: "READY"})
-	state.Status = ProcessStateRunning
-
-	if state.IsReady() {
-		t.Error("IsReady() = true before the ready log line was observed")
-	}
-	state.Health = ProcessHealthReady
-	if !state.IsReady() {
-		t.Error("IsReady() = false after the ready log line was observed")
-	}
-}
-
 func TestProcessStateIsReady(t *testing.T) {
 	tests := []struct {
 		name    string

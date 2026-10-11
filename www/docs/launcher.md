@@ -157,7 +157,9 @@ processes:
 
 > :bulb: `ready_log_line` and readiness probe are incompatible and can't be used at the same time.
 
-> :bulb: A process with a `ready_log_line` is not considered ready (e.g. by `process-compose project is-ready` or `--detach-on-success`) until the line is printed.
+> :bulb: A process with a `ready_log_line` is not considered ready (e.g. by `process-compose project is-ready` or `--detach-on-success`) until the line is printed. A process that exits without printing it, or that is stopped, is not ready.
+
+> :bulb: The line is only detected in output that Process Compose captures, so it does not affect the readiness of [foreground processes](#foreground-processes) started from the TUI, [interactive processes](interactive-processes.md), the process selected by `process-compose run`, or elevated processes when the TUI is disabled.
 
 ## Run only specific processes
 

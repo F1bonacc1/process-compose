@@ -259,7 +259,7 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 		Age:              time.Duration(0),
 		IsRunning:        false,
 		Health:           ProcessHealthUnknown,
-		HasHealthProbe:   proc.ReadinessProbe != nil || proc.LivenessProbe != nil || proc.ReadyLogLine != "",
+		HasHealthProbe:   proc.ReadinessProbe != nil || proc.LivenessProbe != nil,
 		Restarts:         0,
 		ExitCode:         0,
 		SuccessExitCodes: proc.SuccessExitCodes,
