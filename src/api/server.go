@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/f1bonacc1/process-compose/src/app"
+	"github.com/f1bonacc1/process-compose/src/docs"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
@@ -55,6 +56,9 @@ func StartHttpServerWithTCP(useLogger bool, address string, port int, project ap
 		Addr:    endPoint,
 		Handler: router.Handler(),
 	}
+
+	// Update swagger address and port dynamically based on the provided address and port
+	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", address, port)
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
