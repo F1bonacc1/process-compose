@@ -1130,21 +1130,22 @@ func TestSystem_TestReadyLineProjectReadiness(t *testing.T) {
 		_ = runner.ShutDownProject()
 		<-runErr
 	}()
-	isProjectReady := func() bool {
+
+	// Asserting "not ready" before the line is due would fail whenever the
+	// test happens to be slower than the process.
+	var healthWhenReady string
+	if !waitFor(10*time.Second, func() bool {
 		states, err := runner.GetProcessesState()
 		if err != nil {
 			t.Fatal(err.Error())
 		}
+		healthWhenReady = states.States[0].Health
 		return states.IsReady()
+	}) {
+		t.Fatal("project did not become ready")
 	}
-
-	waitForProcessState(t, runner, proc1, types.ProcessStateRunning, 5*time.Second)
-	if isProjectReady() {
-		t.Fatal("project is ready before the ready log line was printed")
-	}
-
-	if !waitFor(10*time.Second, isProjectReady) {
-		t.Fatal("project is not ready after the ready log line was printed")
+	if healthWhenReady != types.ProcessHealthReady {
+		t.Fatalf("project is ready before the ready log line was printed (health: %q)", healthWhenReady)
 	}
 }
 
