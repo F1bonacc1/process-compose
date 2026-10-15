@@ -38,6 +38,29 @@ func newScheduledUpdateRunner(t *testing.T) (*ProjectRunner, types.ProcessConfig
 	return runner, keeper
 }
 
+func updateScheduledProject(t *testing.T, runner *ProjectRunner, keeper types.ProcessConfig, proc *types.ProcessConfig) map[string]string {
+	t.Helper()
+	project := &types.Project{ShellConfig: runner.project.ShellConfig, Processes: types.Processes{"keeper": keeper}}
+	if proc != nil {
+		proc.AssignProcessExecutableAndArgs(project.ShellConfig, "")
+		project.Processes[proc.Name] = *proc
+	}
+	status, err := runner.UpdateProject(project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return status
+}
+
+func scheduledRunCount(t *testing.T, path string) int {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		t.Fatal(err)
+	}
+	return strings.Count(string(data), "\n")
+}
+
 func TestUpdateProjectRegistersScheduledProcess(t *testing.T) {
 	runner, keeper := newScheduledUpdateRunner(t)
 	shell := runner.project.ShellConfig
@@ -71,32 +94,12 @@ func TestUpdateProjectScheduledProcessLifecycle(t *testing.T) {
 		Name: "scheduled", ReplicaName: "scheduled", Command: "echo run >> \"" + path + "\"",
 		Schedule: &types.ScheduleConfig{Interval: "500ms", RunOnStart: true},
 	}
-	update := func(proc *types.ProcessConfig) map[string]string {
-		t.Helper()
-		project := &types.Project{ShellConfig: runner.project.ShellConfig, Processes: types.Processes{"keeper": keeper}}
-		if proc != nil {
-			proc.AssignProcessExecutableAndArgs(project.ShellConfig, "")
-			project.Processes[proc.Name] = *proc
-		}
-		status, err := runner.UpdateProject(project)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return status
-	}
-	runs := func() int {
-		data, err := os.ReadFile(path)
-		if err != nil && !os.IsNotExist(err) {
-			t.Fatal(err)
-		}
-		return strings.Count(string(data), "\n")
-	}
-	update(&proc)
+	updateScheduledProject(t, runner, keeper, &proc)
 	deadline := time.Now().Add(5 * time.Second)
-	for runs() < 2 && time.Now().Before(deadline) {
+	for scheduledRunCount(t, path) < 2 && time.Now().Before(deadline) {
 		time.Sleep(20 * time.Millisecond)
 	}
-	if n := runs(); n < 2 {
+	if n := scheduledRunCount(t, path); n < 2 {
 		t.Fatalf("hot-added interval task ran %d times; want recurring runs", n)
 	}
 
@@ -112,7 +115,7 @@ func TestUpdateProjectScheduledProcessLifecycle(t *testing.T) {
 
 	// A schedule-only edit must replace the old armed job.
 	proc.Schedule = &types.ScheduleConfig{Interval: "2h"}
-	if status := update(&proc); status[proc.Name] != types.ProcessUpdateUpdated {
+	if status := updateScheduledProject(t, runner, keeper, &proc); status[proc.Name] != types.ProcessUpdateUpdated {
 		t.Fatalf("schedule edit status = %v", status)
 	}
 	sched := runner.processScheduler.Load()
@@ -120,13 +123,13 @@ func TestUpdateProjectScheduledProcessLifecycle(t *testing.T) {
 	if next == nil || time.Until(*next) < time.Hour {
 		t.Fatalf("edited schedule next run = %v", next)
 	}
-	oldRuns := runs()
+	oldRuns := scheduledRunCount(t, path)
 	time.Sleep(700 * time.Millisecond)
-	if n := runs(); n != oldRuns {
+	if n := scheduledRunCount(t, path); n != oldRuns {
 		t.Fatalf("old interval still firing: runs changed from %d to %d", oldRuns, n)
 	}
 
-	if status := update(nil); status[proc.Name] != types.ProcessUpdateRemoved {
+	if status := updateScheduledProject(t, runner, keeper, nil); status[proc.Name] != types.ProcessUpdateRemoved {
 		t.Fatalf("remove status = %v", status)
 	}
 	if sched.IsScheduled(proc.Name) || sched.GetNextRunTime(proc.Name) != nil {
@@ -135,14 +138,14 @@ func TestUpdateProjectScheduledProcessLifecycle(t *testing.T) {
 
 	// Re-adding the same name must be independently scheduled.
 	proc.Schedule = &types.ScheduleConfig{Cron: "0 0 1 1 *", Timezone: "UTC"}
-	update(&proc)
-	if next := sched.GetNextRunTime(proc.Name); next == nil {
+	updateScheduledProject(t, runner, keeper, &proc)
+	if sched.GetNextRunTime(proc.Name) == nil {
 		t.Fatal("re-added cron task has no next run")
 	}
 
 	// Removing scheduling turns it back into an ordinary one-shot process.
 	proc.Schedule = nil
-	update(&proc)
+	updateScheduledProject(t, runner, keeper, &proc)
 	if sched.IsScheduled(proc.Name) {
 		t.Fatal("one-shot process kept its old schedule")
 	}
