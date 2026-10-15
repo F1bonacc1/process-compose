@@ -91,6 +91,9 @@ type ProjectRunner struct {
 	processWatcher       atomic.Pointer[watcher.Watcher]
 	stateBroadcaster     *ProcessStateBroadcaster
 	admitters            []admitter.Admitter
+	// shuttingDown is set by ShutDownProject under runProcMutex, so no process
+	// is launched after it has collected the processes to stop.
+	shuttingDown bool
 }
 
 // RestartCall represents an in-flight restart operation
@@ -314,7 +317,13 @@ func (p *ProjectRunner) runProcess(config *types.ProcessConfig) {
 		withProcessTree(p.processTree),
 		withStatePublisher(p.publishProcessState),
 	)
-	p.addRunningProcess(process)
+	p.runProcMutex.Lock()
+	if p.shuttingDown {
+		p.runProcMutex.Unlock()
+		return
+	}
+	p.runningProcesses[process.getName()] = process
+	p.runProcMutex.Unlock()
 	go func(proc *Process) {
 		defer proc.onTerminated()
 		if waitErr := p.waitIfNeeded(proc); waitErr != nil {
@@ -1268,6 +1277,7 @@ func (p *ProjectRunner) ShutDownProject() error {
 	p.stopWatcher()
 
 	p.runProcMutex.Lock()
+	p.shuttingDown = true
 	shutdownOrder := []*Process{}
 	if p.isOrderedShutdown {
 		err := p.project.WithProcesses([]string{}, func(process types.ProcessConfig) error {
