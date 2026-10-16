@@ -38,4 +38,6 @@ in
   };
 
   doCheck = true;
+
+  __darwinAllowLocalNetworking = true;
 }
