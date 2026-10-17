@@ -7,14 +7,14 @@ import (
 )
 
 type ProcessLogBuffer struct {
-	mxBuf          sync.Mutex
-	buffer         []string // fixed-size ring buffer
-	size           int      // capacity
-	head           int      // next write index
-	count          int      // items stored (0..size)
-	mxObs          sync.Mutex
-	observers      map[string]LogObserver
-	lastWriteNano  atomic.Int64 // activity tracking (lock-free)
+	mxBuf         sync.Mutex
+	buffer        []string // fixed-size ring buffer
+	size          int      // capacity
+	head          int      // next write index
+	count         int      // items stored (0..size)
+	mxObs         sync.Mutex
+	observers     map[string]LogObserver
+	lastWriteNano atomic.Int64 // activity tracking (lock-free)
 }
 
 const defaultSize = 1000

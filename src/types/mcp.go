@@ -9,8 +9,8 @@ import (
 
 // MCPServerConfig defines the top-level MCP server configuration
 type MCPServerConfig struct {
-	Host               string `yaml:"host,omitempty"`
-	Port               int    `yaml:"port,omitempty"`
+	Host               string   `yaml:"host,omitempty"`
+	Port               int      `yaml:"port,omitempty"`
 	Transport          string   `yaml:"transport,omitempty"`            // Optional: defaults to "sse"
 	Timeout            string   `yaml:"timeout,omitempty"`              // Optional: defaults to "5m"
 	ExposeControlTools bool     `yaml:"expose_control_tools,omitempty"` // Optional: when true, expose built-in pc_* control tools

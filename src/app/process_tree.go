@@ -17,8 +17,8 @@ type ProcessTree struct {
 
 func NewProcessTree(cacheTTL time.Duration) *ProcessTree {
 	return &ProcessTree{
-		tree:  make(map[int32][]int32),
-		procs: make(map[int32]*puproc.Process),
+		tree:     make(map[int32][]int32),
+		procs:    make(map[int32]*puproc.Process),
 		cacheTTL: cacheTTL,
 	}
 }

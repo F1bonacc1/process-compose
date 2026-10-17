@@ -88,7 +88,6 @@ func (l *LogView) WriteString(line string) (n int, err error) {
 	}
 }
 
-
 // escapeForAnsiWriter escapes tview-style tags in text that also contains ANSI
 // escape sequences. tview.Escape cannot be used here for two reasons:
 //  1. Its regex matches across ANSI/literal boundaries (e.g. "\x1b[0m]" contains
@@ -257,4 +256,3 @@ func (l *LogView) AddMark() {
 func (l *LogView) setTruncator(t truncator) {
 	l.truncator = t
 }
-
