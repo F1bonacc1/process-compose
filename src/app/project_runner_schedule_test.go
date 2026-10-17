@@ -94,7 +94,7 @@ func TestUpdateProjectScheduledProcessLifecycle(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "runs")
 	runner, keeper := newScheduledUpdateRunner(t)
 	proc := types.ProcessConfig{
-		Name: "scheduled", ReplicaName: "scheduled", Command: "echo run >> \"" + path + "\"",
+		Name: "scheduled", ReplicaName: "scheduled", Command: "echo run >> " + path,
 		Schedule: &types.ScheduleConfig{Interval: "500ms", RunOnStart: true},
 	}
 	updateScheduledProject(t, runner, keeper, &proc)
@@ -159,7 +159,7 @@ func TestUpdateProjectDisabledSchedule(t *testing.T) {
 	runner, keeper := newScheduledUpdateRunner(t)
 	proc := types.ProcessConfig{
 		Name: "disabled", ReplicaName: "disabled", Disabled: true,
-		Command:  "echo unexpected >> \"" + path + "\"",
+		Command:  "echo unexpected >> " + path,
 		Schedule: &types.ScheduleConfig{Interval: "20ms", RunOnStart: true},
 	}
 	proc.AssignProcessExecutableAndArgs(runner.project.ShellConfig, "")
