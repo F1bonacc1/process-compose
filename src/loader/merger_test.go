@@ -247,6 +247,51 @@ func Test_mergeProcess_NamespaceOverridesNotAppends(t *testing.T) {
 	}
 }
 
+func Test_mergeProjects_EnvironmentValuesWithEquals(t *testing.T) {
+	for _, name := range []string{"project", "process"} {
+		t.Run(name, func(t *testing.T) {
+			baseEnv := types.Environment{
+				"BASE=a=b",
+				"TOKEN=YWJjZA==",
+				"SHARED=old=value",
+				"EMPTY=",
+				"PLAIN=unchanged",
+				"INVALID",
+			}
+			overrideEnv := types.Environment{"SHARED=new=value", "ADDED=x=y=z"}
+			base := &types.Project{Environment: baseEnv}
+			override := &types.Project{Environment: overrideEnv}
+			if name == "process" {
+				base = &types.Project{Processes: types.Processes{
+					"p": {Environment: baseEnv},
+				}}
+				override = &types.Project{Processes: types.Processes{
+					"p": {Environment: overrideEnv},
+				}}
+			}
+
+			if err := mergeProjects(base, override); err != nil {
+				t.Fatalf("mergeProjects() error = %v", err)
+			}
+			got := base.Environment
+			if name == "process" {
+				got = base.Processes["p"].Environment
+			}
+			want := types.Environment{
+				"ADDED=x=y=z",
+				"BASE=a=b",
+				"EMPTY=",
+				"PLAIN=unchanged",
+				"SHARED=new=value",
+				"TOKEN=YWJjZA==",
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("Environment = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
 // Test_mergeProcess_WatchPathsOverrideNotAppend pins the watch path transformer.
 // mergeProcess merges with WithAppendSlice, so without it an override file
 // would add its paths to the base ones - leaving no way to narrow a watch in an

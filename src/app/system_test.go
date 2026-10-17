@@ -657,7 +657,9 @@ func TestSystem_TestUpdateKeepsProjectAlive(t *testing.T) {
 	waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
 
 	_ = runner.ShutDownProject()
-	<-runErr
+	if err := <-runErr; err != nil {
+		t.Errorf("runner.Run() = %v, want nil", err)
+	}
 }
 
 // TestSystem_TestProcListToRunSurvivesReload makes sure a config reload doesn't
@@ -698,7 +700,9 @@ func TestSystem_TestProcListToRunSurvivesReload(t *testing.T) {
 		}()
 		defer func() {
 			_ = runner.ShutDownProject()
-			<-runErr
+			if err := <-runErr; err != nil {
+				t.Errorf("runner.Run() = %v, want nil", err)
+			}
 		}()
 		waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
 
@@ -730,7 +734,9 @@ func TestSystem_TestProcListToRunSurvivesReload(t *testing.T) {
 		}()
 		defer func() {
 			_ = runner.ShutDownProject()
-			<-runErr
+			if err := <-runErr; err != nil {
+				t.Errorf("runner.Run() = %v, want nil", err)
+			}
 		}()
 		waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
 
@@ -782,7 +788,10 @@ func TestSystem_TestProcListToRunSurvivesReload(t *testing.T) {
 		// Nothing is left to run - the project has to complete on its own and
 		// not hang waiting for a process that will never start.
 		select {
-		case <-runErr:
+		case err := <-runErr:
+			if err != nil {
+				t.Errorf("runner.Run() = %v, want nil", err)
+			}
 		case <-time.After(10 * time.Second):
 			t.Error("project did not complete after its last running process was removed")
 		}

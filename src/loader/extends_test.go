@@ -72,6 +72,34 @@ func TestResolveProcessExtends_InheritsAndOverrides(t *testing.T) {
 	}
 }
 
+func TestResolveProcessExtends_EnvironmentValuesWithEquals(t *testing.T) {
+	parentEnv := types.Environment{"BASE=a=b", "TOKEN=YWJjZA==", "SHARED=old=value", "EMPTY="}
+	p := &types.Project{Processes: types.Processes{
+		"base": {Environment: parentEnv},
+		"derived": {
+			Extends:     "base",
+			Environment: types.Environment{"SHARED=new=value", "ADDED=x=y=z"},
+		},
+	}}
+
+	if err := resolveProcessExtends(p); err != nil {
+		t.Fatalf("resolveProcessExtends() error = %v", err)
+	}
+	want := types.Environment{
+		"ADDED=x=y=z",
+		"BASE=a=b",
+		"EMPTY=",
+		"SHARED=new=value",
+		"TOKEN=YWJjZA==",
+	}
+	if got := p.Processes["derived"].Environment; !reflect.DeepEqual(got, want) {
+		t.Errorf("Environment = %v, want %v", got, want)
+	}
+	if got := p.Processes["base"].Environment; !reflect.DeepEqual(got, parentEnv) {
+		t.Errorf("parent Environment = %v, want %v", got, parentEnv)
+	}
+}
+
 func TestResolveProcessExtends_TransitiveChain(t *testing.T) {
 	p := &types.Project{
 		Processes: types.Processes{
