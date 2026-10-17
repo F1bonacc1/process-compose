@@ -16,6 +16,7 @@ through the dependency graph.
 
 Available subcommands:
   critical-chain    Print the dependency chains ordered by startup time.`,
+	Annotations: map[string]string{clientModeAnnotation: "true"},
 }
 
 func init() {

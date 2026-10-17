@@ -13,9 +13,10 @@ import (
 )
 
 var graphCmd = &cobra.Command{
-	Use:   "graph",
-	Short: "Display process dependency graph",
-	Long:  `Output the process dependency graph in various formats (mermaid, json, yaml, ascii)`,
+	Use:         "graph",
+	Short:       "Display process dependency graph",
+	Long:        `Output the process dependency graph in various formats (mermaid, json, yaml, ascii)`,
+	Annotations: map[string]string{clientModeAnnotation: "true"},
 	Run: func(cmd *cobra.Command, args []string) {
 		graph, err := getClient().GetDependencyGraph()
 		if err != nil {

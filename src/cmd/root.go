@@ -52,8 +52,7 @@ var (
 			pcFlags.SortColumnChanged = cmd.Flags().Changed(flagSort)
 			config.CliApiTokenPath = *pcFlags.ApiTokenPath
 
-			isVersionUpdate := cmd.Name() == versionUpdateCmd.Name() && cmd.Parent() != nil && cmd.Parent().Name() == versionCmd.Name()
-			if config.CheckForUpdates == "true" && !isMCPStdio && !isVersionUpdate {
+			if shouldCheckForUpdates(cmd) {
 				checkForUpdatesInBackground()
 			}
 		},
@@ -293,7 +292,8 @@ func getClient() *client.PcClient {
 }
 
 // clientModeAnnotation marks commands that act as clients of a running
-// process-compose server; they log to a separate file (see PersistentPreRun).
+// process-compose server; they log to a separate file and skip the update
+// check (see PersistentPreRun).
 const clientModeAnnotation = "pc-client-mode"
 
 // isClientCmd reports whether the resolved command talks to a running
@@ -347,6 +347,18 @@ func (f refreshRateFlag) Set(str string) error {
 
 func (f refreshRateFlag) Type() string {
 	return "duration"
+}
+
+// shouldCheckForUpdates reports whether this invocation should query GitHub
+// for a newer release. Client commands are skipped: they are short-lived and
+// often run from scripts in a loop, and every check spends the machine's
+// unauthenticated GitHub API quota (60 requests per hour per IP).
+func shouldCheckForUpdates(cmd *cobra.Command) bool {
+	if config.CheckForUpdates != "true" || isMCPStdio || isClientCmd(cmd) {
+		return false
+	}
+	isVersionUpdate := cmd.Name() == versionUpdateCmd.Name() && cmd.Parent() != nil && cmd.Parent().Name() == versionCmd.Name()
+	return !isVersionUpdate
 }
 
 func checkForUpdatesInBackground() {
