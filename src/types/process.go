@@ -220,7 +220,7 @@ func isEmptyContainer(v any) bool {
 	switch val.Kind() {
 	case reflect.Map, reflect.Slice:
 		return val.Len() == 0
-	case reflect.Ptr, reflect.Interface:
+	case reflect.Pointer, reflect.Interface:
 		return val.IsNil()
 	default:
 		return false
