@@ -602,3 +602,27 @@ func TestValidateProcessConfigSendKeys(t *testing.T) {
 		t.Errorf("ValidateProcessConfig() expected error for send_keys without is_interactive, got nil")
 	}
 }
+
+func TestCompareProcessConfigsSchedule(t *testing.T) {
+	base := &ProcessConfig{Schedule: &ScheduleConfig{Interval: "1h"}}
+	tests := []struct {
+		name     string
+		schedule *ScheduleConfig
+		equal    bool
+	}{
+		{"same interval", &ScheduleConfig{Interval: "1h"}, true},
+		{"changed interval", &ScheduleConfig{Interval: "2h"}, false},
+		{"changed cron", &ScheduleConfig{Cron: "0 0 * * *"}, false},
+		{"changed timezone", &ScheduleConfig{Interval: "1h", Timezone: "UTC"}, false},
+		{"changed run on start", &ScheduleConfig{Interval: "1h", RunOnStart: true}, false},
+		{"changed concurrency", &ScheduleConfig{Interval: "1h", MaxConcurrent: 2}, false},
+		{"removed schedule", nil, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if equal := base.Compare(&ProcessConfig{Schedule: tt.schedule}); equal != tt.equal {
+				t.Fatalf("Compare() = %v, want %v", equal, tt.equal)
+			}
+		})
+	}
+}
