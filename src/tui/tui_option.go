@@ -14,6 +14,15 @@ func WithRefreshRate(rate time.Duration) Option {
 func WithStateSorter(column ColumnID, isAscending bool) Option {
 	return func(view *pcView) error {
 		view.stateSorter = StateSorter{sortByColumn: column, isAsc: isAscending}
+		// Mark the column in the header, as setTableSorter does when its
+		// shortcut is pressed. The header starts out unmarked.
+		if title, ok := view.procColumns[column]; ok {
+			order := "[pink]↓[-:-:-]"
+			if !isAscending {
+				order = "[pink]↑[-:-:-]"
+			}
+			view.procTable.GetCell(0, int(column)).SetText(title + order)
+		}
 		return nil
 	}
 }
