@@ -85,7 +85,7 @@ func toEnvVarMap(s any) (map[any]any, error) {
 	}
 	m := map[any]any{}
 	for _, v := range envVars {
-		kv := strings.Split(v, "=")
+		kv := strings.SplitN(v, "=", 2)
 		if len(kv) == 2 {
 			m[kv[0]] = kv[1]
 		}

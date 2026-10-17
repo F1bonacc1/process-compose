@@ -261,7 +261,9 @@ func TestNamespaceOps_StartExcludedFromUpSelection(t *testing.T) {
 	}()
 	defer func() {
 		_ = runner.ShutDownProject()
-		<-runErr
+		if err := <-runErr; err != nil {
+			t.Errorf("runner.Run() = %v, want nil", err)
+		}
 	}()
 
 	waitForProcessLaunched(t, runner, "customer-api", 10*time.Second)
