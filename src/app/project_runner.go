@@ -703,6 +703,11 @@ func (p *ProjectRunner) StartProcess(name string) error {
 		return fmt.Errorf("process %s is already running", name)
 	}
 	if processConfig, ok := p.project.Processes[name]; ok {
+		// Keep the project configuration disabled so initial startup continues
+		// to skip this process. A manual start must use an enabled runtime copy,
+		// however, or its new state remains Disabled while it waits for
+		// dependencies and the TUI falsely reports it as not started.
+		processConfig.Disabled = false
 		p.runProcess(&processConfig)
 		// Resume schedule if it was paused (e.g. initially disabled)
 		if s := p.processScheduler.Load(); s != nil && s.IsScheduled(name) {
