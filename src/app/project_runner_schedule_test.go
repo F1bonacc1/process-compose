@@ -29,7 +29,10 @@ func newScheduledUpdateRunner(t *testing.T) (*ProjectRunner, types.ProcessConfig
 	t.Cleanup(func() {
 		_ = runner.ShutDownProject()
 		select {
-		case <-done:
+		case err := <-done:
+			if err != nil {
+				t.Errorf("runner.Run() = %v, want nil", err)
+			}
 		case <-time.After(5 * time.Second):
 			t.Error("runner did not stop")
 		}
