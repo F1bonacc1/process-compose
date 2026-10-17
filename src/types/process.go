@@ -171,6 +171,7 @@ func (p *ProcessConfig) compareCompositeFields(another *ProcessConfig) bool {
 		{p.Args, another.Args},
 		{p.Watch, another.Watch},
 		{p.SuccessExitCodes, another.SuccessExitCodes},
+		{p.Schedule, another.Schedule},
 	}
 	for _, field := range composites {
 		if !equalConfigField(field.a, field.b) {

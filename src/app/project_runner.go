@@ -190,15 +190,7 @@ func (p *ProjectRunner) Run() error {
 	} else {
 		p.processScheduler.Store(sched)
 		for name, proc := range p.project.Processes {
-			if proc.Schedule != nil && proc.Schedule.IsScheduled() {
-				if err := sched.AddProcess(name, proc.Schedule); err != nil {
-					log.Error().Err(err).Msgf("Failed to schedule process %s", name)
-				} else if proc.Disabled {
-					if err := sched.PauseProcess(name); err != nil {
-						log.Error().Err(err).Msgf("Failed to pause schedule for disabled process %s", name)
-					}
-				}
-			}
+			p.scheduleProcess(name, proc)
 		}
 		sched.Start()
 		defer func() {
@@ -1532,6 +1524,12 @@ func (p *ProjectRunner) removeProcessLogs(name string) *pclog.ProcessLogBuffer {
 }
 
 func (p *ProjectRunner) removeProcess(name string) error {
+	if sched := p.processScheduler.Load(); sched != nil {
+		if err := sched.RemoveProcess(name); err != nil {
+			return err
+		}
+	}
+
 	p.watchRemove(name)
 	p.removeProcessLogs(name)
 	p.procConfMutex.Lock()
@@ -1563,12 +1561,34 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	delete(p.doneProcesses, proc.ReplicaName)
 	p.doneProcMutex.Unlock()
 	p.initProcessLog(proc.ReplicaName)
-	if !proc.IsDeferred() {
+	if proc.Schedule.IsScheduled() {
+		p.scheduleProcess(proc.ReplicaName, proc)
+	} else if !proc.IsDeferred() {
 		p.runProcess(&proc)
 	}
 	// UpdateProject routes every add, update and scale-up through here, so this
 	// single hook keeps the watcher reconciled across reloads.
 	p.watchAdd(&proc)
+}
+
+// scheduleProcess applies the same schedule registration at startup and reload.
+func (p *ProjectRunner) scheduleProcess(name string, proc types.ProcessConfig) {
+	if !proc.Schedule.IsScheduled() {
+		return
+	}
+	sched := p.processScheduler.Load()
+	if sched == nil {
+		return
+	}
+	var err error
+	if proc.Disabled {
+		err = sched.AddPausedProcess(name, proc.Schedule)
+	} else {
+		err = sched.AddProcess(name, proc.Schedule)
+	}
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to schedule process %s", name)
+	}
 }
 
 func selectRunningProcesses(project *types.Project, procList []string) error {

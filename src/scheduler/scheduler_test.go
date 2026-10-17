@@ -273,3 +273,43 @@ func TestScheduler_PauseResume(t *testing.T) {
 		t.Error("GetNextRunTime() should return non-nil for resumed process")
 	}
 }
+
+func TestScheduler_RemoveProcess(t *testing.T) {
+	for _, paused := range []bool{false, true} {
+		t.Run(map[bool]string{false: "active", true: "paused"}[paused], func(t *testing.T) {
+			s, err := New(&mockProcessStarter{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			s.Start()
+			t.Cleanup(func() { _ = s.Stop() })
+			config := &types.ScheduleConfig{Interval: "1h"}
+			if paused {
+				err = s.AddPausedProcess("task", config)
+			} else {
+				err = s.AddProcess("task", config)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := s.RemoveProcess("task"); err != nil {
+				t.Fatal(err)
+			}
+			if s.IsScheduled("task") || s.GetNextRunTime("task") != nil {
+				t.Fatal("removed schedule remains registered")
+			}
+			if len(s.gocronScheduler.Jobs()) != 0 {
+				t.Fatal("removed job remains in gocron")
+			}
+			if err := s.ResumeProcess("task"); err != nil {
+				t.Fatal(err)
+			}
+			if s.IsScheduled("task") {
+				t.Fatal("resume resurrected a removed schedule")
+			}
+			if err := s.RemoveProcess("task"); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
