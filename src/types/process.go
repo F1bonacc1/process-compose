@@ -260,7 +260,7 @@ func NewProcessState(proc *ProcessConfig) *ProcessState {
 		Age:              time.Duration(0),
 		IsRunning:        false,
 		Health:           ProcessHealthUnknown,
-		HasHealthProbe:   proc.ReadinessProbe != nil || proc.LivenessProbe != nil,
+		HasReadyProbe:    proc.ReadinessProbe != nil, // not LivenessProbe, which never updates Health
 		Restarts:         0,
 		ExitCode:         0,
 		SuccessExitCodes: proc.SuccessExitCodes,
@@ -283,7 +283,7 @@ type ProcessState struct {
 	SystemTime       string        `json:"system_time"`
 	Age              time.Duration `json:"age" swaggertype:"primitive,integer"`
 	Health           string        `json:"is_ready"`
-	HasHealthProbe   bool          `json:"has_ready_probe"`
+	HasReadyProbe    bool          `json:"has_ready_probe"`
 	Restarts         int           `json:"restarts"`
 	ExitCode         int           `json:"exit_code"`
 	SuccessExitCodes []int         `json:"success_exit_codes,omitempty"`
@@ -368,7 +368,7 @@ func (p *ProcessesState) IsReady() bool {
 
 // Check if a process is running and healthy.
 //
-// If `hasHealthProbe` is true, the process must be healthy to be considered
+// If `HasReadyProbe` is true, the process must be healthy to be considered
 // ready.
 func (p *ProcessState) IsReady() bool {
 	isReady, _ := p.IsReadyReason()
@@ -400,7 +400,7 @@ func (p *ProcessState) IsWatchIdle() bool {
 
 // Check if a process is running and healthy and explain why.
 //
-// If `hasHealthProbe` is true, the process must be healthy to be considered
+// If `HasReadyProbe` is true, the process must be healthy to be considered
 // ready.
 //
 // The explanation may be empty.
@@ -415,7 +415,7 @@ func (p *ProcessState) IsReadyReason() (bool, string) {
 		return false, fmt.Sprintf("status is %s", p.Status)
 	} else if p.Status == ProcessStateDisabled {
 		return true, "process is disabled"
-	} else if p.HasHealthProbe && p.Health != ProcessHealthReady {
+	} else if p.HasReadyProbe && p.Health != ProcessHealthReady {
 		health := p.Health
 		if health == ProcessHealthUnknown {
 			// `ProcessHealthUnknown` is `-`, which looks fine in the TUI's table view
