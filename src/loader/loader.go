@@ -170,8 +170,10 @@ func loadProjectFromFile(inputFile string, opts *LoaderOptions) (*types.Project,
 	temp := strings.ReplaceAll(string(yamlFile), "$$", envEscaped)
 	temp, err = envsubst.Eval(temp, expanderFn)
 	if err != nil {
+		if opts.IsInternalLoader {
+			return nil, err
+		}
 		log.Fatal().Err(err).Msgf("Failed to parse %s, environment substitution errored.", inputFile)
-		return nil, err
 	}
 	temp = strings.ReplaceAll(temp, envEscaped, "$")
 

@@ -24,4 +24,5 @@ var startCmd = &cobra.Command{
 
 func init() {
 	processCmd.AddCommand(startCmd)
+	startCmd.ValidArgsFunction = completeProcessNamesFromServer(true)
 }
