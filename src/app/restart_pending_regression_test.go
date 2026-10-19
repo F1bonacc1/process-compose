@@ -65,6 +65,10 @@ func (g *readinessGate) release() {
 	g.open.Store(true)
 }
 
+func (g *readinessGate) block() {
+	g.open.Store(false)
+}
+
 // Regression test for https://github.com/F1bonacc1/process-compose/issues/530
 //
 // Restarting a process while it is still Pending (blocked in waitIfNeeded on a
