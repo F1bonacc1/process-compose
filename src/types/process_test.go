@@ -195,6 +195,36 @@ func TestProcessStateIsReady(t *testing.T) {
 			isReady: true,
 		},
 		{
+			name: "running, stale exit failure, no health probe",
+			p: &ProcessState{
+				Status:         ProcessStateRunning,
+				HasHealthProbe: false,
+				Health:         ProcessHealthUnknown,
+				ExitCode:       1,
+			},
+			isReady: true,
+		},
+		{
+			name: "running, stale exit failure, healthy",
+			p: &ProcessState{
+				Status:         ProcessStateRunning,
+				HasHealthProbe: true,
+				Health:         ProcessHealthReady,
+				ExitCode:       1,
+			},
+			isReady: true,
+		},
+		{
+			name: "running, stale exit failure, health unknown",
+			p: &ProcessState{
+				Status:         ProcessStateRunning,
+				HasHealthProbe: true,
+				Health:         ProcessHealthUnknown,
+				ExitCode:       1,
+			},
+			isReady: false,
+		},
+		{
 			name: "foreground, no health probe",
 			p: &ProcessState{
 				Status:         ProcessStateForeground,
