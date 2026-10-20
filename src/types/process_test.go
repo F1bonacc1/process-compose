@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -575,6 +576,67 @@ func TestProcessConfigCompareSuccessExitCodes(t *testing.T) {
 	}
 	if a.Compare(diff) {
 		t.Errorf("Compare() = true for differing SuccessExitCodes, want false")
+	}
+}
+
+// TestProcessConfigCompareJSONRoundTrip pins that a process loaded from YAML
+// (whole numbers decode as int) equals the same process received over the REST
+// API (every number in free-form values decodes as float64). It exercises
+// nested maps and slices, and still requires real value and type changes to be
+// detected.
+func TestProcessConfigCompareJSONRoundTrip(t *testing.T) {
+	roundTrip := func(t *testing.T, p *ProcessConfig) *ProcessConfig {
+		t.Helper()
+		data, err := json.Marshal(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var decoded ProcessConfig
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			t.Fatal(err)
+		}
+		return &decoded
+	}
+
+	loaded := &ProcessConfig{
+		Name: "p",
+		Vars: Vars{
+			"PC_REPLICA_NUM": 0,
+			"PORT":           8080,
+			"nested":         map[string]any{"n": 3},
+			"list":           []any{1, 2.0, "x", true},
+		},
+		Extensions: map[string]any{
+			"x-meta": map[string]any{"weight": 3, "tags": []any{"a", "b"}},
+		},
+	}
+
+	if fromAPI := roundTrip(t, loaded); !loaded.Compare(fromAPI) {
+		t.Error("Compare() = false for int vs float64 encodings of the same nested values, want true")
+	}
+
+	changedVar := roundTrip(t, loaded)
+	changedVar.Vars["PORT"] = float64(9090)
+	if loaded.Compare(changedVar) {
+		t.Error("Compare() = true for a changed var value, want false")
+	}
+
+	changedType := roundTrip(t, loaded)
+	changedType.Vars["PORT"] = "8080"
+	if loaded.Compare(changedType) {
+		t.Error("Compare() = true for a var changed from number to string, want false")
+	}
+
+	changedNested := roundTrip(t, loaded)
+	changedNested.Vars["nested"].(map[string]any)["n"] = float64(4)
+	if loaded.Compare(changedNested) {
+		t.Error("Compare() = true for a changed nested var value, want false")
+	}
+
+	changedExtension := roundTrip(t, loaded)
+	changedExtension.Extensions["x-meta"].(map[string]any)["weight"] = float64(4)
+	if loaded.Compare(changedExtension) {
+		t.Error("Compare() = true for a changed extension value, want false")
 	}
 }
 

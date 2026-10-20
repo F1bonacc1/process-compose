@@ -1,6 +1,8 @@
 package types
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -161,8 +163,6 @@ func (p *ProcessConfig) compareCompositeFields(another *ProcessConfig) bool {
 		{p.LivenessProbe, another.LivenessProbe},
 		{p.ReadinessProbe, another.ReadinessProbe},
 		{p.ShutDownParams, another.ShutDownParams},
-		{p.Vars, another.Vars},
-		{p.Extensions, another.Extensions},
 		{p.DependsOn, another.DependsOn},
 		{p.RestartPolicy, another.RestartPolicy},
 		{p.Environment, another.Environment},
@@ -178,8 +178,24 @@ func (p *ProcessConfig) compareCompositeFields(another *ProcessConfig) bool {
 			return false
 		}
 	}
-	return true
+	return equalAsJSON(p.Vars, another.Vars) && equalAsJSON(p.Extensions, another.Extensions)
 }
+
+// equalAsJSON compares free-form (map[string]any) config values by their JSON
+// encoding. The same definition reaches UpdateProject decoded two ways: by the
+// YAML loader, which yields int for whole numbers, and by the REST API, which
+// yields float64 for every number. reflect.DeepEqual(int(0), float64(0)) is
+// false, and every process carries a numeric var (PC_REPLICA_NUM), so without
+// this an unchanged `project update` restarted every process.
+func equalAsJSON(a, b any) bool {
+	if reflect.DeepEqual(a, b) {
+		return true
+	}
+	aJSON, errA := json.Marshal(a)
+	bJSON, errB := json.Marshal(b)
+	return errA == nil && errB == nil && bytes.Equal(aJSON, bJSON)
+}
+
 func (p *ProcessConfig) AssignProcessExecutableAndArgs(shellConf *command.ShellConfig, elevatedShellArg string) {
 	if p.Command != "" || len(p.Entrypoint) == 0 {
 		if len(p.Entrypoint) > 0 {
