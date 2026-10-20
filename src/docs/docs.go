@@ -1164,6 +1164,9 @@ const docTemplate = `{
                 "exec": {
                     "$ref": "#/definitions/health.ExecProbe"
                 },
+                "failAfterSeconds": {
+                    "type": "integer"
+                },
                 "failureThreshold": {
                     "type": "integer"
                 },
@@ -1176,10 +1179,19 @@ const docTemplate = `{
                 "periodSeconds": {
                     "type": "integer"
                 },
+                "startupFailAfterSeconds": {
+                    "type": "integer"
+                },
+                "startupPeriodSeconds": {
+                    "type": "integer"
+                },
                 "successThreshold": {
                     "type": "integer"
                 },
                 "timeoutSeconds": {
+                    "type": "integer"
+                },
+                "unhealthyPeriodSeconds": {
                     "type": "integer"
                 }
             }

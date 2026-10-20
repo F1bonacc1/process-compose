@@ -62,6 +62,8 @@ components:
             properties:
                 exec:
                     $ref: '#/components/schemas/health.ExecProbe'
+                failAfterSeconds:
+                    type: integer
                 failureThreshold:
                     type: integer
                 httpGet:
@@ -70,9 +72,15 @@ components:
                     type: integer
                 periodSeconds:
                     type: integer
+                startupFailAfterSeconds:
+                    type: integer
+                startupPeriodSeconds:
+                    type: integer
                 successThreshold:
                     type: integer
                 timeoutSeconds:
+                    type: integer
+                unhealthyPeriodSeconds:
                     type: integer
             type: object
         time.Duration:
