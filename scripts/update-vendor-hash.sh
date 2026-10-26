@@ -15,15 +15,17 @@ if [ ! -f "default.nix" ]; then
 fi
 
 echo "Vendoring dependencies..."
-go mod vendor
+# Vendor outside the tree so a leftover vendor/ never switches local builds to -mod=vendor
+VENDOR_TMP=$(mktemp -d)
+trap 'rm -rf "$VENDOR_TMP"' EXIT
+go mod vendor -o "$VENDOR_TMP/vendor"
 
 echo "Computing new vendorHash..."
 # Generate the new hash
-NEW_HASH=$(nix-hash --type sha256 --sri vendor)
+NEW_HASH=$(nix-hash --type sha256 --sri "$VENDOR_TMP/vendor")
 
 echo "Updating default.nix with new vendorHash: $NEW_HASH"
 # Replace the old hash in default.nix
 sed -i "s|vendorHash = \"sha256-[a-zA-Z0-9+/]*=*\"|vendorHash = \"$NEW_HASH\"|" default.nix
 
-rm -rI vendor
 echo "Done! vendorHash updated successfully."
