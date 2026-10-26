@@ -272,13 +272,19 @@ func (p *Process) waitForStdOutErr() {
 	}
 }
 
+// usesAttachedIO reports whether the process inherits process-compose's own
+// stdin, stdout and stderr instead of having its output piped through it.
+func usesAttachedIO(proc *types.ProcessConfig, isMain, isTuiEnabled bool) bool {
+	return isMain || (proc.IsElevated && !isTuiEnabled)
+}
+
 func (p *Process) getProcessStarter() func() error {
 	return func() error {
 		p.command = p.getCommander()
 		p.command.SetEnv(p.getProcessEnvironment())
 		p.command.SetDir(p.procConf.WorkingDir)
 
-		if p.isMain || (p.procConf.IsElevated && !p.isTuiEnabled) {
+		if usesAttachedIO(p.procConf, p.isMain, p.isTuiEnabled) {
 			p.command.AttachIo()
 		} else {
 			p.command.SetCmdArgs()
