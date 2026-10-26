@@ -4,7 +4,7 @@ Process Compose is written in Go.
 ### Prerequisites:
 
 - [Make](https://www.gnu.org/software/make/)
-- [Go 1.26+](https://go.dev/doc/install)
+- [Go 1.27+](https://go.dev/doc/install)
 - [Nix](https://nix.dev/install-nix.html) - Optional, but recommended
 
 ### Clone Process Compose:
