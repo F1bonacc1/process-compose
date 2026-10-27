@@ -194,6 +194,21 @@ func TestStartDisabledProcessIsPendingUntilDependenciesAreHealthy(t *testing.T) 
 		t.Fatalf("start disabled process: %v", err)
 	}
 	waitForProcessState(t, runner, manual, types.ProcessStatePending, 10*time.Second)
+	if t.Failed() {
+		return
+	}
+
+	// A restart reads the stored (still disabled) configuration, so it must
+	// not bring the Disabled status back while the dependency is not ready.
+	if err := runner.RestartProcess(manual); err != nil {
+		t.Fatalf("restart disabled process: %v", err)
+	}
+	waitForProcessState(t, runner, manual, types.ProcessStatePending, 10*time.Second)
+	if state, err := runner.GetProcessState(manual); err == nil {
+		if ready, reason := state.IsReadyReason(); ready {
+			t.Errorf("restarted %s reports ready while waiting for its dependency: %s", manual, reason)
+		}
+	}
 
 	gate.release()
 	waitForProcessState(t, runner, manual, types.ProcessStateRunning, 30*time.Second)

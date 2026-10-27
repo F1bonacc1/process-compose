@@ -456,6 +456,11 @@ func (p *ProjectRunner) onProcessSkipped(procConf *types.ProcessConfig) {
 // performed while no instance is running observe the latest incarnation.
 func (p *ProjectRunner) newIncarnationState(config *types.ProcessConfig) *types.ProcessState {
 	state := types.NewProcessState(config)
+	// Whatever reaches runProcess is being launched, so it is never Disabled,
+	// even if the stored config still says so (manual start, restart).
+	if state.Status == types.ProcessStateDisabled {
+		state.Status = types.ProcessStatePending
+	}
 	p.statesMutex.Lock()
 	defer p.statesMutex.Unlock()
 	if prev, ok := p.processStates[config.ReplicaName]; ok && prev != nil {
@@ -711,11 +716,6 @@ func (p *ProjectRunner) StartProcess(name string) error {
 		return fmt.Errorf("process %s is already running", name)
 	}
 	if processConfig, ok := p.project.Processes[name]; ok {
-		// Keep the project configuration disabled so initial startup continues
-		// to skip this process. A manual start must use an enabled runtime copy,
-		// however, or its new state remains Disabled while it waits for
-		// dependencies and the TUI falsely reports it as not started.
-		processConfig.Disabled = false
 		p.runProcess(&processConfig)
 		// Resume schedule if it was paused (e.g. initially disabled)
 		if s := p.processScheduler.Load(); s != nil && s.IsScheduled(name) {
