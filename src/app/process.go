@@ -159,6 +159,9 @@ func (p *Process) run() int {
 loop:
 	for {
 		err := p.setStateAndRun(p.getStartingStateName(), p.getProcessStarter())
+		if errors.Is(err, errStoppedBeforeStart) {
+			break loop
+		}
 		if err != nil {
 			log.Error().Err(err).Msgf(`Failed to run command ["%v"] for process %s`, strings.Join(p.getCommand(), `" "`), p.getName())
 			p.logBuffer.Write(err.Error())
@@ -1049,8 +1052,16 @@ func (p *Process) getStatusName() string {
 	return p.procState.Status
 }
 
+var errStoppedBeforeStart = errors.New("process was stopped before it started")
+
 func (p *Process) setStateAndRun(state string, runnable func() error) error {
 	p.stateMtx.Lock()
+	// A stop that found the process Pending or Restarting signalled nothing,
+	// so it must keep the command from launching.
+	if p.procRunCtx.Err() != nil {
+		p.stateMtx.Unlock()
+		return errStoppedBeforeStart
+	}
 	p.procState.Status = state
 	p.onStateChange(state)
 	ev := p.snapshotEventLocked()
