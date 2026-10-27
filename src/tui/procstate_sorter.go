@@ -157,11 +157,21 @@ func getSorter(sortBy ColumnID, states *types.ProcessesState) sortFn {
 		}
 	case ProcessStateMem:
 		return func(i, j int) bool {
-			return states.States[i].Mem < states.States[j].Mem
+			memI, memJ := displayedMem(states.States[i]), displayedMem(states.States[j])
+			if memI == memJ {
+				return states.States[i].Name < states.States[j].Name
+			} else {
+				return memI < memJ
+			}
 		}
 	case ProcessStateCPU:
 		return func(i, j int) bool {
-			return states.States[i].CPU < states.States[j].CPU
+			cpuI, cpuJ := displayedCPU(states.States[i]), displayedCPU(states.States[j])
+			if cpuI == cpuJ {
+				return states.States[i].Name < states.States[j].Name
+			} else {
+				return cpuI < cpuJ
+			}
 		}
 	case ProcessStateName:
 		fallthrough
@@ -172,8 +182,25 @@ func getSorter(sortBy ColumnID, states *types.ProcessesState) sortFn {
 	}
 }
 
+// displayedMem and displayedCPU return the usage the table shows. A process
+// keeps its last sample after it stops, but the table shows none for it, so
+// it sorts as idle.
+func displayedMem(state types.ProcessState) int64 {
+	if !state.IsRunning {
+		return 0
+	}
+	return state.Mem
+}
+
+func displayedCPU(state types.ProcessState) float64 {
+	if !state.IsRunning {
+		return 0
+	}
+	return state.CPU
+}
+
 func reverse(less func(i, j int) bool) func(i, j int) bool {
 	return func(i, j int) bool {
-		return !less(i, j)
+		return less(j, i)
 	}
 }

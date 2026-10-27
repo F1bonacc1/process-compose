@@ -226,8 +226,7 @@ func (pv *pcView) setShortCutsActions() {
 		// Re-render current logs with new setting
 		name := pv.getSelectedProcName()
 		if name != "" {
-			pv.unFollowLog()
-			pv.followLog(name)
+			pv.showLog(name)
 		}
 		pv.updateHelpTextView()
 	})

@@ -190,15 +190,7 @@ func (p *ProjectRunner) Run() error {
 	} else {
 		p.processScheduler.Store(sched)
 		for name, proc := range p.project.Processes {
-			if proc.Schedule != nil && proc.Schedule.IsScheduled() {
-				if err := sched.AddProcess(name, proc.Schedule); err != nil {
-					log.Error().Err(err).Msgf("Failed to schedule process %s", name)
-				} else if proc.Disabled {
-					if err := sched.PauseProcess(name); err != nil {
-						log.Error().Err(err).Msgf("Failed to pause schedule for disabled process %s", name)
-					}
-				}
-			}
+			p.scheduleProcess(name, proc)
 		}
 		sched.Start()
 		defer func() {
@@ -684,7 +676,7 @@ func (p *ProjectRunner) getDoneProcess(name string) *Process {
 func (p *ProjectRunner) getDoneOrRunningProcess(name string) *Process {
 	// Prefer the currently running process over a stale done entry.
 	// After UpdateProcess / Restart replaces a process, the old object lingers
-	// in doneProcesses with an already-cancelled procReadyCtx; returning it
+	// in doneProcesses, already marked as never becoming ready; returning it
 	// would cause downstream waitUntilReady to spuriously fail ("aborted").
 	if runningProc := p.getRunningProcess(name); runningProc != nil {
 		return runningProc
@@ -1443,6 +1435,10 @@ func (p *ProjectRunner) scaleUpProcess(proc types.ProcessConfig, toAdd, scale, o
 		procFromConf.ReplicaName = procFromConf.CalculateReplicaName()
 		tpl := templater.New(p.project.Vars)
 		tpl.RenderProcess(&procFromConf)
+		if err := tpl.GetError(); err != nil {
+			log.Err(err).Msgf("failed to render template for %s, field %s", proc.Name, tpl.GetErrorField())
+			return
+		}
 		procFromConf.AssignProcessExecutableAndArgs(p.project.ShellConfig, p.project.GetElevatedShellArg())
 		p.addProcessAndRun(procFromConf)
 	}
@@ -1533,6 +1529,12 @@ func (p *ProjectRunner) removeProcessLogs(name string) *pclog.ProcessLogBuffer {
 }
 
 func (p *ProjectRunner) removeProcess(name string) error {
+	if sched := p.processScheduler.Load(); sched != nil {
+		if err := sched.RemoveProcess(name); err != nil {
+			return err
+		}
+	}
+
 	p.watchRemove(name)
 	p.removeProcessLogs(name)
 	p.procConfMutex.Lock()
@@ -1564,12 +1566,34 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	delete(p.doneProcesses, proc.ReplicaName)
 	p.doneProcMutex.Unlock()
 	p.initProcessLog(proc.ReplicaName)
-	if !proc.IsDeferred() {
+	if proc.Schedule.IsScheduled() {
+		p.scheduleProcess(proc.ReplicaName, proc)
+	} else if !proc.IsDeferred() {
 		p.runProcess(&proc)
 	}
 	// UpdateProject routes every add, update and scale-up through here, so this
 	// single hook keeps the watcher reconciled across reloads.
 	p.watchAdd(&proc)
+}
+
+// scheduleProcess applies the same schedule registration at startup and reload.
+func (p *ProjectRunner) scheduleProcess(name string, proc types.ProcessConfig) {
+	if !proc.Schedule.IsScheduled() {
+		return
+	}
+	sched := p.processScheduler.Load()
+	if sched == nil {
+		return
+	}
+	var err error
+	if proc.Disabled {
+		err = sched.AddPausedProcess(name, proc.Schedule)
+	} else {
+		err = sched.AddProcess(name, proc.Schedule)
+	}
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to schedule process %s", name)
+	}
 }
 
 func selectRunningProcesses(project *types.Project, procList []string) error {

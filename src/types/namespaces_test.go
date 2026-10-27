@@ -120,7 +120,7 @@ func TestNamespaces_MarshalJSON(t *testing.T) {
 		ns   Namespaces
 		want string
 	}{
-		{name: "single as string", ns: Namespaces{"foo"}, want: `{"namespace":"foo"}`},
+		{name: "single as array", ns: Namespaces{"foo"}, want: `{"namespace":["foo"]}`},
 		{name: "multiple as array", ns: Namespaces{"foo", "bar"}, want: `{"namespace":["foo","bar"]}`},
 		{name: "empty omitted", ns: nil, want: `{}`},
 	}
@@ -137,6 +137,21 @@ func TestNamespaces_MarshalJSON(t *testing.T) {
 				t.Errorf("Marshal = %s, want %s", string(data), tt.want)
 			}
 		})
+	}
+}
+
+func TestNamespaces_MarshalJSON_DefaultsNilNamespace(t *testing.T) {
+	holder := struct {
+		Namespace Namespaces `json:"namespace"`
+	}{}
+
+	data, err := json.Marshal(holder)
+	if err != nil {
+		t.Fatalf("Marshal error = %v", err)
+	}
+	const want = `{"namespace":["default"]}`
+	if string(data) != want {
+		t.Errorf("Marshal = %s, want %s", string(data), want)
 	}
 }
 

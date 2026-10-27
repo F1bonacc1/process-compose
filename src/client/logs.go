@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,6 +21,7 @@ type LogClient struct {
 	ws               *websocket.Conn
 	Format           string
 	isClosed         atomic.Bool
+	done             chan struct{}
 	socketPath       string
 	address          string
 	PrintProcessName bool
@@ -69,6 +71,7 @@ func (l *LogClient) ReadProcessLogs(name string, offset int, follow bool, fn fun
 	}
 	//defer l.ws.Close()
 	done = make(chan struct{})
+	l.done = done
 
 	go l.readLogs(done, l.ws, follow, fn)
 
@@ -81,13 +84,26 @@ func (l *LogClient) CloseChannel() error {
 	if l.ws == nil {
 		return nil
 	}
-	err := l.ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	// Forget the connection before closing it, so a repeated close is a no-op
+	// instead of a "websocket: close sent" error.
+	ws, done := l.ws, l.done
+	l.ws, l.done = nil, nil
+	select {
+	case <-done:
+		// The reader has exited, usually because the server ended the stream
+		// and closed its side, so a close message would only hit a broken
+		// pipe.
+		return ws.Close()
+	default:
+	}
+	err := ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "write close:", err)
+		_ = ws.Close()
 		return err
 	}
 	l.isClosed.Store(true)
-	return l.ws.Close()
+	return ws.Close()
 }
 
 func (l *LogClient) readLogs(done chan struct{}, ws *websocket.Conn, follow bool, fn func(api.LogMessage)) {
@@ -111,6 +127,23 @@ func (l *LogClient) readLogs(done chan struct{}, ws *websocket.Conn, follow bool
 			fn(message)
 		}
 	}
+}
+
+func (p *PcClient) getProcessLog(name string, offsetFromEnd, limit int) ([]string, error) {
+	url := fmt.Sprintf("http://%s/process/logs/%s/%d/%d", p.address, escapePathSegment(name), offsetFromEnd, limit)
+	resp, err := p.client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, parseErrorResponse(resp, fmt.Sprintf("get process %s logs", name))
+	}
+	var logsResp api.LogsResponse
+	if err = json.NewDecoder(resp.Body).Decode(&logsResp); err != nil {
+		return nil, err
+	}
+	return logsResp.Logs, nil
 }
 
 func (p *PcClient) truncateProcessLogs(name string) error {

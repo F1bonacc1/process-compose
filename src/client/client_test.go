@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -23,8 +24,24 @@ func init() {
 // any other method call panics via the embedded nil interface.
 type fakeProject struct {
 	app.IProject
-	restarted []string
-	stopped   []string
+	restarted   []string
+	stopped     []string
+	logs        []string
+	logRequests []logRequest
+}
+
+type logRequest struct {
+	name          string
+	offsetFromEnd int
+	limit         int
+}
+
+func (f *fakeProject) GetProcessLog(name string, offsetFromEnd, limit int) ([]string, error) {
+	f.logRequests = append(f.logRequests, logRequest{name, offsetFromEnd, limit})
+	if f.logs == nil {
+		return nil, fmt.Errorf("process %s doesn't exist", name)
+	}
+	return f.logs, nil
 }
 
 func (f *fakeProject) RestartProcess(name string) error {
@@ -87,6 +104,29 @@ func TestGetProcessState_NameWithSlash(t *testing.T) {
 	}
 	if state.Name != "@scope/pkg" {
 		t.Fatalf("expected process name %q, got %q", "@scope/pkg", state.Name)
+	}
+}
+
+func TestGetProcessLog_NameWithSlash(t *testing.T) {
+	fake := &fakeProject{logs: []string{"line 1", "line 2"}}
+	c := newTestClient(t, fake)
+	lines, err := c.GetProcessLog("@scope/pkg", 3, 7)
+	if err != nil {
+		t.Fatalf("failed to get process log: %v", err)
+	}
+	if strings.Join(lines, "|") != "line 1|line 2" {
+		t.Fatalf("expected lines %v, got %v", fake.logs, lines)
+	}
+	want := logRequest{name: "@scope/pkg", offsetFromEnd: 3, limit: 7}
+	if len(fake.logRequests) != 1 || fake.logRequests[0] != want {
+		t.Fatalf("expected request %+v, got %+v", want, fake.logRequests)
+	}
+}
+
+func TestGetProcessLog_Error(t *testing.T) {
+	c := newTestClient(t, &fakeProject{})
+	if _, err := c.GetProcessLog("missing", 0, 0); err == nil {
+		t.Fatal("expected an error for a missing process")
 	}
 }
 

@@ -117,8 +117,7 @@ func (p *PcClient) UnSubscribeLogger(name string, observer pclog.LogObserver) er
 }
 
 func (p *PcClient) GetProcessLog(name string, offsetFromEnd, limit int) ([]string, error) {
-	//TODO implement me
-	panic("implement me")
+	return p.getProcessLog(name, offsetFromEnd, limit)
 }
 
 func (p *PcClient) GetLexicographicProcessNames() ([]string, error) {

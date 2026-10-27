@@ -2,6 +2,7 @@ package health
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -31,6 +32,27 @@ type HttpProbe struct {
 	NumPort    int               `yaml:"num_port,omitempty" json:"numPort,omitempty"`
 	Headers    map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
 	StatusCode int               `yaml:"status_code,omitempty" json:"statusCode,omitempty"`
+}
+
+// Clone returns a deep copy of the probe. Each replica of a scaled process
+// needs its own copy: probe fields are template-rendered per replica (a port
+// built from PC_REPLICA_NUM, for example), and a pointer shared by every
+// replica would leave them all with the value rendered for the first one.
+func (p *Probe) Clone() *Probe {
+	if p == nil {
+		return nil
+	}
+	newProbe := *p
+	if p.Exec != nil {
+		exec := *p.Exec
+		newProbe.Exec = &exec
+	}
+	if p.HttpGet != nil {
+		httpGet := *p.HttpGet
+		httpGet.Headers = maps.Clone(p.HttpGet.Headers)
+		newProbe.HttpGet = &httpGet
+	}
+	return &newProbe
 }
 
 func (h *HttpProbe) getUrl() (*url.URL, error) {

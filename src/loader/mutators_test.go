@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/f1bonacc1/process-compose/src/command"
@@ -757,5 +759,107 @@ func Test_convertEnvToDisabled(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Test_renderTemplatesPerReplica pins that every replica renders its own copy
+// of the pointer-held config. Before probes and the logger config were deep
+// copied in cloneProcess, all replicas shared one pointer, so whichever replica
+// the loader visited first substituted PC_REPLICA_NUM for all of them - the
+// documented "404{{.PC_REPLICA_NUM}}" readiness probe silently probed replica
+// 0's port from every replica.
+func Test_renderTemplatesPerReplica(t *testing.T) {
+	p := &types.Project{
+		Vars: types.Vars{},
+		Processes: types.Processes{
+			"server": {
+				Name:     "server",
+				Command:  "http.server 404{{.PC_REPLICA_NUM}}",
+				Replicas: 3,
+				ReadinessProbe: &health.Probe{
+					HttpGet: &health.HttpProbe{Port: "404{{.PC_REPLICA_NUM}}"},
+				},
+				LivenessProbe: &health.Probe{
+					Exec: &health.ExecProbe{Command: "check 404{{.PC_REPLICA_NUM}}"},
+				},
+				LoggerConfig: &types.LoggerConfig{
+					Rotation: &types.LogRotationConfig{Filename: "server-{{.PC_REPLICA_NUM}}.log"},
+				},
+			},
+		},
+	}
+	assignDefaultProcessValues(p)
+	cloneReplicas(p)
+	if err := renderTemplates(p); err != nil {
+		t.Fatalf("renderTemplates() error = %v", err)
+	}
+
+	if len(p.Processes) != 3 {
+		t.Fatalf("expected 3 replicas, got %d", len(p.Processes))
+	}
+	for name, proc := range p.Processes {
+		num := strconv.Itoa(proc.ReplicaNum)
+		checks := []struct{ field, got, want string }{
+			{"command", proc.Command, "http.server 404" + num},
+			{"readiness_probe.http_get.port", proc.ReadinessProbe.HttpGet.Port, "404" + num},
+			{"liveness_probe.exec.command", proc.LivenessProbe.Exec.Command, "check 404" + num},
+			{"log rotation filename", proc.LoggerConfig.Rotation.Filename, "server-" + num + ".log"},
+		}
+		for _, c := range checks {
+			if c.got != c.want {
+				t.Errorf("%s: %s = %q, want %q", name, c.field, c.got, c.want)
+			}
+		}
+	}
+}
+
+// Test_renderTemplatesProbeWorkingDir pins that an exec probe inheriting the
+// process working_dir gets the rendered value. copyWorkingDirToProbes runs
+// before renderTemplates, so the probe receives the raw template and has to be
+// rendered in its own right.
+func Test_renderTemplatesProbeWorkingDir(t *testing.T) {
+	p := &types.Project{
+		Vars: types.Vars{"DIR": "/srv/web"},
+		Processes: types.Processes{
+			"web": {
+				Name:       "web",
+				Command:    "serve",
+				WorkingDir: "{{.DIR}}",
+				ReadinessProbe: &health.Probe{
+					Exec: &health.ExecProbe{Command: "check"},
+				},
+			},
+		},
+	}
+	assignDefaultProcessValues(p)
+	cloneReplicas(p)
+	copyWorkingDirToProbes(p)
+	if err := renderTemplates(p); err != nil {
+		t.Fatalf("renderTemplates() error = %v", err)
+	}
+	if got := p.Processes["web"].ReadinessProbe.Exec.WorkingDir; got != "/srv/web" {
+		t.Errorf("readiness_probe.exec.working_dir = %q, want %q", got, "/srv/web")
+	}
+}
+
+// Test_renderTemplatesErrorNamesField pins that a broken template reports which
+// field it came from.
+func Test_renderTemplatesErrorNamesField(t *testing.T) {
+	p := &types.Project{
+		Vars: types.Vars{"Key": "Value"},
+		Processes: types.Processes{
+			"web": {
+				Name:           "web",
+				Command:        "serve",
+				ShutDownParams: types.ShutDownParams{ShutDownCommand: "{{ invalid .Key }}"},
+			},
+		},
+	}
+	err := renderTemplates(p)
+	if err == nil {
+		t.Fatal("expected an error but got nil")
+	}
+	if !strings.Contains(err.Error(), "field shutdown.command") {
+		t.Errorf("expected the error to name the field, got %q", err.Error())
 	}
 }

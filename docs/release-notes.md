@@ -1,5 +1,29 @@
 # Release Notes
 
+## [v1.124.0] - 2026-10-27
+
+### New Features
+
+- Extended [template rendering](https://f1bonacc1.github.io/process-compose/configuration/#rendered-parameters) to more process fields: `entrypoint`, `shutdown.command`, `ready_log_line`, `env_file`, `log_configuration.rotation.directory` and `filename`, the exec probe `working_dir`, and HTTP probe `headers`. A template that fails to render now names the process and the field it came from. [`is_template_disabled`](https://f1bonacc1.github.io/process-compose/configuration/#disable-command-rendering) now covers `entrypoint` and `shutdown.command` along with `command`, so a shutdown command or entrypoint with literal Go template syntax (e.g. `docker inspect -f '{{.State.Running}}'`) needs [escaping](https://f1bonacc1.github.io/process-compose/configuration/#template-escaping) or that flag.
+- Added `PC_CLIENT_LOG_FILE` to set the [log file of client commands](https://f1bonacc1.github.io/process-compose/logging/#client-commands-and-pc_log_file). Client commands no longer share the server's `PC_LOG_FILE` path (truncating the server's log on every call): they now log to a `-client` sibling of it, e.g. `pc.log` becomes `pc-client.log`.
+
+### Bug Fixes
+
+- Fixed processes with a [`schedule`](https://f1bonacc1.github.io/process-compose/scheduled-processes/) that were added or changed by a project update or reload running once immediately and never being scheduled. They are now registered as they are at startup (a disabled one stays paused), a schedule change alone triggers the update, and a removed or replaced process no longer leaves its old schedule behind, addresses issue #561, by @jihtsan.
+- Fixed a `process_healthy` dependent being skipped when it started while its still-running dependency was temporarily not ready after a nonfatal [readiness probe](https://f1bonacc1.github.io/process-compose/health/#readiness-probe) failure, which also stamped the dependency with `exit_code=1`. The dependent now waits for the dependency to become ready again, addresses issue #544.
+- Fixed the first [`project update`](https://f1bonacc1.github.io/process-compose/cli/process-compose_project_update/) after a server start restarting every process even when its configuration had not changed.
+- Fixed replicas of a scaled process sharing one copy of their probes and log rotation settings, so every replica used the values rendered for the first one: the documented readiness probe with [`port: "404{{.PC_REPLICA_NUM}}"`](https://f1bonacc1.github.io/process-compose/configuration/#auto-inserted-variables) probed replica 0's port from every replica.
+- Fixed several log streaming issues: in `attach` mode a process whose log was not being followed showed an empty log pane, log backlogs larger than 256 lines sent over the API were mostly dropped, a log request for several processes ended all of them when the first one finished, and a line written while a viewer subscribed could be shown twice or not at all, addresses issue #539.
+- Fixed [`process-compose process logs`](https://f1bonacc1.github.io/process-compose/cli/process-compose_process_logs/) without `--follow` printing a spurious `write close: ... broken pipe` error on stderr after a successful run, by @emeka.
+- Fixed CJK and other wide characters being garbled in the terminal view of [interactive processes](https://f1bonacc1.github.io/process-compose/interactive-processes/), where each character overwrote the right half of the wide character before it, addresses issue #535.
+- Fixed the TUI process table reshuffling stopped processes on every refresh when sorted by CPU or memory, and the selection jumping to a different process when a refresh reordered the rows. Ties now sort by name, and the column chosen with `--sort` is marked in the header from the start, addresses issue #547.
+- Client commands no longer check GitHub for a newer release, since scripts running them in a loop could exhaust the machine's unauthenticated GitHub API rate limit. The remaining update checks identify themselves with a `process-compose/<version>` User-Agent, addresses issue #552.
+- Fixed `environment` entries whose value contains `=` (e.g. `DSN=host=db user=app`) being dropped when [merging configuration files](https://f1bonacc1.github.io/process-compose/merge/#adding-and-overriding-configuration) or using [`extends`](https://f1bonacc1.github.io/process-compose/merge/#process-inheritance-with-extends), by @bensynapse.
+- Fixed the Swagger UI always targeting `localhost:8080` when the [API server](https://f1bonacc1.github.io/process-compose/client/#rest-api) runs on a different address or port, by @icyleaf.
+- Fixed the [REST API](https://f1bonacc1.github.io/process-compose/client/#rest-api) returning a process `namespace` as a plain string when it holds a single namespace, while the OpenAPI spec declares an array of strings, which broke clients generated from the spec. `namespace` is now always an array in JSON output (REST responses, the process state WebSocket, and `process list`, `process get` and `process monitor` with `-o json`). Requests and YAML configs still accept a plain string. Anything that expects a string needs updating, including scripts that compare `namespace` to a string and process-compose client binaries older than v1.122.0, addresses issue #538.
+
+---
+
 ## [v1.122.0] - 2026-08-18
 
 ### New Features

@@ -51,11 +51,19 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 	if follow {
 		go handleIncoming(ws, done)
 	}
+	// Streams of several processes share ws, so it is closed once all of them
+	// have ended rather than by the first one to finish.
+	var streams sync.WaitGroup
 	for _, processName := range processNames {
 		if processName == "" {
 			continue
 		}
 		logChan := make(chan LogMessage, 256)
+		// The backlog is handed to handleLog in one piece instead of being
+		// queued line by line on logChan: SetLines runs under the log buffer's
+		// lock, so it must not block, and a backlog larger than logChan would
+		// otherwise be mostly dropped.
+		backlogChan := make(chan []string, 1)
 		chanCloseMtx := &sync.Mutex{}
 		isChannelClosed := false
 		closeLogChan := func() {
@@ -86,12 +94,11 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 		}
 		connector := pclog.NewConnector(
 			func(messages []string) {
-				for _, message := range messages {
-					msg := LogMessage{
-						Message:     message,
-						ProcessName: processName,
-					}
-					enqueue(msg)
+				// SetLines is called once per subscription, so this never
+				// drops; the select only guarantees it never blocks.
+				select {
+				case backlogChan <- messages:
+				default:
 				}
 				if !follow {
 					closeLogChan()
@@ -108,21 +115,30 @@ func (api *PcApi) HandleLogsStream(c *gin.Context) {
 				return len(message), nil
 			},
 			endOffset)
-		go api.handleLog(ws, processName, connector, logChan, done, wsWriteMtx, dropped, closeLogChan)
+		streams.Go(func() {
+			api.handleLog(ws, processName, connector, backlogChan, logChan, done, wsWriteMtx, dropped, closeLogChan)
+		})
 
 		err = api.project.GetLogsAndSubscribe(processName, connector)
 		if err != nil {
 			log.Err(err).Msg("Failed to subscribe to logger")
-			return
+			// End this stream instead of leaving handleLog waiting forever,
+			// and keep streaming the other processes.
+			close(backlogChan)
+			continue
 		}
 	}
-
+	go func() {
+		streams.Wait()
+		_ = ws.Close()
+	}()
 }
 
 func (api *PcApi) handleLog(
 	ws *websocket.Conn,
 	procName string,
 	connector *pclog.Connector,
+	backlogChan <-chan []string,
 	logChan chan LogMessage,
 	done chan struct{},
 	wsWriteMtx *sync.Mutex,
@@ -141,24 +157,29 @@ func (api *PcApi) handleLog(
 			log.Err(err).Msg("Failed to unsubscribe from logger")
 		}
 	}(api.project, procName, connector)
-	defer ws.Close()
+	// Send the backlog before any live line queued on logChan meanwhile.
+	select {
+	case lines, ok := <-backlogChan:
+		if !ok {
+			return
+		}
+		for _, line := range lines {
+			if !writeLogMessage(ws, wsWriteMtx, &LogMessage{Message: line, ProcessName: procName}) {
+				return
+			}
+		}
+	case <-done:
+		log.Warn().Msg("Socket closed remotely")
+		closeLogChan()
+		return
+	}
 	for {
 		select {
 		case msg, open := <-logChan:
 			if !open {
 				return
 			}
-			// Serialize writes per ws.Conn. Multiple process streams share the
-			// same connection when the request contains comma-separated names.
-			wsWriteMtx.Lock()
-			_ = ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			err := ws.WriteJSON(&msg)
-			wsWriteMtx.Unlock()
-			if err != nil {
-				if errors.Is(err, net.ErrClosed) {
-					return
-				}
-				log.Err(err).Msg("Failed to write to socket")
+			if !writeLogMessage(ws, wsWriteMtx, &msg) {
 				return
 			}
 		case <-done:
@@ -168,6 +189,26 @@ func (api *PcApi) handleLog(
 		}
 
 	}
+}
+
+// writeLogMessage writes msg to ws and reports whether the stream can go on.
+func writeLogMessage(ws *websocket.Conn, wsWriteMtx *sync.Mutex, msg *LogMessage) bool {
+	// Serialize writes per ws.Conn. Multiple process streams share the
+	// same connection when the request contains comma-separated names.
+	wsWriteMtx.Lock()
+	_ = ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	err := ws.WriteJSON(msg)
+	wsWriteMtx.Unlock()
+	if err != nil {
+		if !errors.Is(err, net.ErrClosed) {
+			log.Err(err).Msg("Failed to write to socket")
+		}
+		// The connection is unusable for every stream sharing it: close it
+		// so they all end instead of waiting for their next line.
+		_ = ws.Close()
+		return false
+	}
+	return true
 }
 
 func handleIncoming(ws *websocket.Conn, done chan struct{}) {

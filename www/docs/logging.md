@@ -91,23 +91,21 @@ their own log file so they don't overwrite the log of a running `process-compose
 server. By default that's `/tmp/process-compose-$USER-client.log`, next to the
 server's `/tmp/process-compose-$USER.log`.
 
-`PC_LOG_FILE` (and `--log-file`) sets the path for every `process-compose`
-invocation, server and client alike. Since each invocation truncates its log file
-on open, exporting `PC_LOG_FILE` in your shell points both at the same file, and
-the next client command starts it over.
+`PC_LOG_FILE` sets the server's path, and the clients follow it to a sibling file with a
+`-client` suffix. Exporting `PC_LOG_FILE=.pc/logs/pc.log` in your shell sends the server
+to `.pc/logs/pc.log` and every client command to `.pc/logs/pc-client.log`.
 
-To use custom locations, give the server and the clients separate paths:
+Use `PC_CLIENT_LOG_FILE` to place the client log yourself:
 
 ```shell
-process-compose up --detached --log-file .pc/logs/process-compose.log
-
-export PC_LOG_FILE=.pc/logs/process-compose-client.log
-process-compose list
+export PC_LOG_FILE=.pc/logs/process-compose.log
+export PC_CLIENT_LOG_FILE=.pc/logs/client.log
 ```
 
-The explicit `--log-file` on `up` takes precedence over `PC_LOG_FILE`, so the
-server keeps `process-compose.log` while client commands log to
-`process-compose-client.log`.
+For client commands the precedence is `--log-file`, then `PC_CLIENT_LOG_FILE`, then the
+`-client` sibling of `PC_LOG_FILE`, then `/tmp/process-compose-$USER-client.log`.
+
+> :warning: Each invocation truncates its log file on open. Don't point a client command at the server's log file with an explicit `--log-file` - it would start the server's log over.
 
 By default, the internal log file contains ANSI color codes. You can disable color output using the `--log-no-color` flag or the `PC_LOG_NO_COLOR` environment variable.
 

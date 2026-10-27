@@ -206,6 +206,14 @@ func cloneProcess(proc *types.ProcessConfig) *types.ProcessConfig {
 	// mutate every other replica through a shared pointer.
 	newProc.Watch = proc.Watch.Clone()
 
+	// 6. DEEP COPY the probes and the logger config, for the same reason: their
+	// fields are template-rendered per replica, so sharing one pointer would
+	// give every replica the values rendered for whichever replica the loader
+	// happened to visit first.
+	newProc.LivenessProbe = proc.LivenessProbe.Clone()
+	newProc.ReadinessProbe = proc.ReadinessProbe.Clone()
+	newProc.LoggerConfig = proc.LoggerConfig.Clone()
+
 	return &newProc
 }
 
@@ -243,6 +251,9 @@ func renderTemplates(p *types.Project) error {
 		tpl.RenderProcess(&proc)
 
 		if tpl.GetError() != nil {
+			if field := tpl.GetErrorField(); field != "" {
+				return fmt.Errorf("error rendering template for process %s, field %s: %w", name, field, tpl.GetError())
+			}
 			return fmt.Errorf("error rendering template for process %s: %w", name, tpl.GetError())
 		}
 		p.Processes[name] = proc

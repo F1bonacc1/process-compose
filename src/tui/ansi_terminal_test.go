@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/uniseg"
 )
 
 // TestDeferredTerminalReplaysAtActivatedWidth is a unit-level regression test
@@ -152,3 +153,114 @@ func TestUtf8Rendering(t *testing.T) {
 		t.Errorf("expected '🌍', got %c", c3.Char)
 	}
 }
+
+// TestWideUtf8Rendering verifies the CJK output in the interactive-process
+// fixture for issue #535. These runes occupy two terminal cells; storing each
+// one in a single cell lets the following rune overwrite its right half during
+// rendering.
+func TestWideUtf8Rendering(t *testing.T) {
+	const input = "中文测试：系统连接正常，今日2026年8月27日" //nolint:gosmopolitan
+	term := NewAnsiTerminal(80, 24)
+
+	// PTY reads can split a multi-byte UTF-8 rune at arbitrary byte boundaries.
+	bytes := []byte(input)
+	for _, split := range []int{1, 8, 19, len(bytes)} {
+		if len(bytes) == 0 {
+			break
+		}
+		if split > len(bytes) {
+			split = len(bytes)
+		}
+		term.Write(bytes[:split])
+		bytes = bytes[split:]
+	}
+
+	col := 0
+	for _, r := range input {
+		if got := term.GetCell(col, 0); got.Char != r || got.Continuation {
+			t.Fatalf("cell %d = %#v, want leading cell for %q", col, got, r)
+		}
+		width := uniseg.StringWidth(string(r))
+		for continuation := 1; continuation < width; continuation++ {
+			if got := term.GetCell(col+continuation, 0); !got.Continuation {
+				t.Fatalf("cell %d is not marked as the continuation of %q", col+continuation, r)
+			}
+		}
+		col += width
+	}
+
+	if got := term.GetText(0, 0, col-1, 0); got != input {
+		t.Fatalf("copied terminal text = %q, want %q", got, input)
+	}
+	if x, y := term.GetCursor(); x != col || y != 0 {
+		t.Fatalf("cursor = (%d, %d), want (%d, 0)", x, y, col)
+	}
+}
+
+// TestWideRuneWrapsBeforeFinalColumn ensures that a wide rune that cannot fit in the
+// remaining column wraps to the next line instead of overflowing or splitting.
+func TestWideRuneWrapsBeforeFinalColumn(t *testing.T) {
+	term := NewAnsiTerminal(5, 2)
+	term.Write([]byte("abcd中")) //nolint:gosmopolitan
+
+	const want = "abcd\n中" //nolint:gosmopolitan
+	if got := term.GetText(0, 0, 4, 1); got != want {
+		t.Fatalf("terminal text = %q, want %q", got, want)
+	}
+	if x, y := term.GetCursor(); x != 2 || y != 1 {
+		t.Fatalf("cursor = (%d, %d), want (2, 1)", x, y)
+	}
+}
+
+// TestWideRuneOverwrite verifies that overwriting parts of a wide rune cleanly
+// resets orphaned continuation cells and orphaned leading halves.
+func TestWideRuneOverwrite(t *testing.T) {
+	t.Run("Overwrite leading cell with narrow character clears continuation", func(t *testing.T) {
+		term := NewAnsiTerminal(10, 2)
+		// Write a wide character followed by another character: "中B"
+		term.Write([]byte("中B")) //nolint:gosmopolitan
+		if cell := term.GetCell(1, 0); !cell.Continuation {
+			t.Fatalf("cell 1 should be continuation cell")
+		}
+
+		// Move cursor back to col 0 and overwrite with 'A'
+		term.Write([]byte("\rA"))
+
+		// Col 0 should be 'A', Col 1 should now be a blank space with Continuation=false
+		if got := term.GetCell(0, 0); got.Char != 'A' || got.Continuation {
+			t.Fatalf("cell 0 = %#v, want 'A' without continuation", got)
+		}
+		if got := term.GetCell(1, 0); got.Char != ' ' || got.Continuation {
+			t.Fatalf("cell 1 = %#v, want ' ' without continuation", got)
+		}
+		if got := term.GetCell(2, 0); got.Char != 'B' || got.Continuation {
+			t.Fatalf("cell 2 = %#v, want 'B' without continuation", got)
+		}
+
+		// GetText should preserve the space between A and B
+		if got := term.GetText(0, 0, 2, 0); got != "A B" {
+			t.Fatalf("copied terminal text = %q, want %q", got, "A B")
+		}
+	})
+
+	t.Run("Overwrite continuation cell with narrow character clears leading cell", func(t *testing.T) {
+		term := NewAnsiTerminal(10, 2)
+		// Write a wide character: "中" at col 0, continuation at col 1
+		term.Write([]byte("中")) //nolint:gosmopolitan
+
+		// Backspace once to land on col 1 (the continuation cell) and write 'X'
+		term.Write([]byte("\bX"))
+
+		// Col 0 should have been cleared to ' ', Col 1 should be 'X'
+		if got := term.GetCell(0, 0); got.Char != ' ' || got.Continuation {
+			t.Fatalf("cell 0 = %#v, want ' ' without continuation", got)
+		}
+		if got := term.GetCell(1, 0); got.Char != 'X' || got.Continuation {
+			t.Fatalf("cell 1 = %#v, want 'X' without continuation", got)
+		}
+		if got := term.GetText(0, 0, 1, 0); got != " X" {
+			t.Fatalf("copied terminal text = %q, want %q", got, " X")
+		}
+	})
+}
+

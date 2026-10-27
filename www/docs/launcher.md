@@ -226,6 +226,19 @@ In case the `shutdown.command` is defined:
 2. Wait for `shutdown.timeout_seconds` for its completion (if not defined wait for 10 seconds)
 3. In case of timeout, the process group will receive the `SIGKILL` signal (irrespective of the `shutdown.parent_only` option).
 
+The `shutdown.command` is [rendered](configuration.md#variables) like the `command` is, so it can use `{{.PC_REPLICA_NUM}}` and your own `vars`:
+
+```yaml hl_lines="6"
+processes:
+  server:
+    command: "python3 -m http.server 404{{.PC_REPLICA_NUM}}"
+    replicas: 2
+    shutdown:
+      command: "curl -X POST http://127.0.0.1:404{{.PC_REPLICA_NUM}}/quit"
+```
+
+> :bulb: If your shutdown command contains literal Go template syntax (`docker inspect -f '{{.State.Running}}'`, `kubectl -o go-template`), [escape it](configuration.md#template-escaping) or set `is_template_disabled: true` on the process.
+
 In case the `shutdown.timeout_seconds` is defined (without `shutdown.command`) and the process will fail to terminate within that time, the process group will receive the `SIGKILL` signal.
 
 ### Stopping Interactive Processes With Keystrokes

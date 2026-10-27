@@ -55,19 +55,55 @@ func (pv *pcView) stopFollowLog() {
 	pv.updateHelpTextView()
 }
 
+// showLog switches the log pane to the named process. It follows the new
+// process's log when log following is on, and only loads its backlog when off.
+func (pv *pcView) showLog(name string) {
+	pv.unFollowLog()
+	if pv.logFollow {
+		pv.followLog(name)
+	} else {
+		pv.loadLog(name)
+	}
+}
+
 func (pv *pcView) followLog(name string) {
-	pv.loggedProc = name
-	pv.logsText.Clear()
-	config, err := pv.project.GetProcessInfo(name)
-	if err != nil {
+	if !pv.resetLogView(name) {
 		return
 	}
-	pv.logsText.useAnsi = !config.DisableAnsiColors
-	if err = pv.project.GetLogsAndSubscribe(name, pv.logsText); err != nil {
+	if err := pv.project.GetLogsAndSubscribe(name, pv.logsText); err != nil {
 		pv.attentionMessage(fmt.Sprintf("Couldn't subscribe to the process logs: %s", err.Error()), 5*time.Second, true)
 		return
 	}
 	pv.logsText.ScrollToEnd()
+}
+
+// loadLog shows the current backlog of the named process without subscribing
+// to new lines. The backlog is fetched synchronously: a remote project delivers
+// the backlog of a subscription asynchronously, so subscribing and immediately
+// unsubscribing would leave the pane empty.
+func (pv *pcView) loadLog(name string) {
+	if !pv.resetLogView(name) {
+		return
+	}
+	lines, err := pv.project.GetProcessLog(name, 0, pv.project.GetLogLength())
+	if err != nil {
+		pv.attentionMessage(fmt.Sprintf("Couldn't load the process logs: %s", err.Error()), 5*time.Second, true)
+		return
+	}
+	pv.logsText.SetLines(lines)
+	pv.logsText.Flush()
+	pv.logsText.ScrollToEnd()
+}
+
+func (pv *pcView) resetLogView(name string) bool {
+	pv.loggedProc = name
+	pv.logsText.Clear()
+	config, err := pv.project.GetProcessInfo(name)
+	if err != nil {
+		return false
+	}
+	pv.logsText.useAnsi = !config.DisableAnsiColors
+	return true
 }
 
 func (pv *pcView) unFollowLog() {

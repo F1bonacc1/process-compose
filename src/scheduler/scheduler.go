@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -48,6 +49,16 @@ func New(starter ProcessStarter) (*Scheduler, error) {
 
 // AddProcess adds a scheduled process.
 func (s *Scheduler) AddProcess(name string, config *types.ScheduleConfig) error {
+	return s.addProcess(name, config, false)
+}
+
+// AddPausedProcess registers a schedule without arming it. This avoids firing
+// run_on_start when a disabled process is added to a running scheduler.
+func (s *Scheduler) AddPausedProcess(name string, config *types.ScheduleConfig) error {
+	return s.addProcess(name, config, true)
+}
+
+func (s *Scheduler) addProcess(name string, config *types.ScheduleConfig, paused bool) error {
 	if config == nil || !config.IsScheduled() {
 		return nil
 	}
@@ -60,9 +71,10 @@ func (s *Scheduler) AddProcess(name string, config *types.ScheduleConfig) error 
 		Config:      config,
 	}
 
-	err := s.addJobInternal(entry)
-	if err != nil {
-		return err
+	if !paused {
+		if err := s.addJobInternal(entry); err != nil {
+			return err
+		}
 	}
 
 	s.schedules[name] = entry
@@ -174,6 +186,23 @@ func (s *Scheduler) PauseProcess(name string) error {
 		entry.Job = nil
 		return err
 	}
+	return nil
+}
+
+// RemoveProcess removes a schedule entirely, rather than retaining it for resume.
+func (s *Scheduler) RemoveProcess(name string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	entry, ok := s.schedules[name]
+	if !ok {
+		return nil
+	}
+	if entry.Job != nil {
+		if err := s.gocronScheduler.RemoveJob(entry.Job.ID()); err != nil && !errors.Is(err, gocron.ErrJobNotFound) {
+			return err
+		}
+	}
+	delete(s.schedules, name)
 	return nil
 }
 

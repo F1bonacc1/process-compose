@@ -11,13 +11,15 @@ import (
 	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/uniseg"
 	"github.com/rs/zerolog/log"
 )
 
 // Cell represents a single character cell in the terminal
 type Cell struct {
-	Char  rune
-	Style tcell.Style
+	Char         rune
+	Style        tcell.Style
+	Continuation bool // true when this cell is occupied by the preceding wide rune
 }
 
 // AnsiTerminal is a simple ANSI escape sequence parser and terminal emulator
@@ -721,11 +723,50 @@ func (t *AnsiTerminal) putChar(ch rune) {
 		t.latentWrap = false
 	}
 
-	if t.cursorY >= 0 && t.cursorY < t.height && t.cursorX >= 0 && t.cursorX < t.width {
-		t.cells[t.cursorY][t.cursorX] = Cell{Char: ch, Style: t.currentStyle}
+	// The terminal grid is measured in display cells, not runes. In
+	// particular, CJK characters use two cells. Advancing one cell for every
+	// rune caused the next character to overwrite the right half of a wide
+	// character when TerminalView rendered the grid (#535).
+	charWidth := 1
+	if ch >= 128 {
+		charWidth = uniseg.StringWidth(string(ch))
+		if charWidth < 1 {
+			// Combining runes need more elaborate grapheme handling than this simple
+			// emulator provides. Preserve its existing one-cell behavior for them.
+			charWidth = 1
+		}
+	}
+	if charWidth > t.width {
+		charWidth = t.width
+	}
+	if t.cursorX+charWidth > t.width {
+		// A wide rune cannot begin in the final column. Move it to the next
+		// line, matching normal terminal wrapping behavior.
+		t.cursorX = 0
+		t.cursorY++
+		if t.cursorY > t.scrollBottom {
+			t.scrollUp()
+			t.cursorY = t.scrollBottom
+		}
 	}
 
-	t.cursorX++
+	if t.cursorY >= 0 && t.cursorY < t.height && t.cursorX >= 0 && t.cursorX < t.width {
+		// If overwriting a continuation cell, clear the orphaned leading cell.
+		if t.cells[t.cursorY][t.cursorX].Continuation && t.cursorX > 0 {
+			t.cells[t.cursorY][t.cursorX-1] = Cell{Char: ' ', Style: t.currentStyle}
+		}
+		// If the new character does not cover following continuation cells, clear them.
+		for col := charWidth; t.cursorX+col < t.width && t.cells[t.cursorY][t.cursorX+col].Continuation; col++ {
+			t.cells[t.cursorY][t.cursorX+col] = Cell{Char: ' ', Style: t.currentStyle}
+		}
+
+		t.cells[t.cursorY][t.cursorX] = Cell{Char: ch, Style: t.currentStyle}
+		for col := 1; col < charWidth && t.cursorX+col < t.width; col++ {
+			t.cells[t.cursorY][t.cursorX+col] = Cell{Char: ' ', Style: t.currentStyle, Continuation: true}
+		}
+	}
+
+	t.cursorX += charWidth
 	if t.cursorX >= t.width {
 		t.cursorX = t.width - 1
 		t.latentWrap = true
@@ -1172,6 +1213,9 @@ func (t *AnsiTerminal) GetText(startCol, startRow, endCol, endRow int) string {
 		var line strings.Builder
 		for col := colStart; col <= colEnd; col++ {
 			cell := t.getCellUnlocked(col, row)
+			if cell.Continuation {
+				continue
+			}
 			line.WriteRune(cell.Char)
 		}
 		lines = append(lines, strings.TrimRight(line.String(), " "))

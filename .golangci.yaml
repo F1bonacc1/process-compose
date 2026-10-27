@@ -20,7 +20,7 @@ linters:
     - gochecksumtype
     - gocyclo
     - goheader
-    - gomodguard
+    - gomodguard_v2
     - gosmopolitan
     - govet
     - grouper

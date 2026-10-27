@@ -1,0 +1,11 @@
+version: "0.5"
+
+processes:
+  repro:
+    command: >
+      bash -lc 'while true; do
+        printf "中文测试：系统连接正常，今日2026年8月27日日志发送成功，AA数据更新完成BB数据更新完成CC数据更新完成DD数据更新完成EE数据更新完成\n";
+        read -r line;
+        printf "收到输入：%s\n" "$line";
+      done'
+    is_interactive: true

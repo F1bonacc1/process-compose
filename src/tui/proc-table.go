@@ -78,6 +78,7 @@ func (pv *pcView) fillTableData() {
 		pv.attentionMessage(msg, watchMessageDuration, false)
 	}
 
+	selectedName := pv.getSelectedProcName()
 	showPass := false
 	row := 1
 	succeeded := true
@@ -108,8 +109,7 @@ func (pv *pcView) fillTableData() {
 				totalCPU += state.CPU
 			}
 		}
-		selectedRow, _ := pv.procTable.GetSelection()
-		if selectedRow == row && pv.isPassModeNeeded(&state) {
+		if state.Name == selectedName && pv.isPassModeNeeded(&state) {
 			showPass = true
 		}
 		row += 1
@@ -123,6 +123,8 @@ func (pv *pcView) fillTableData() {
 	}
 	if pv.selectedNsChanged.Swap(false) {
 		pv.procTable.Select(1, 1)
+	} else {
+		pv.followSelectedProcess(selectedName)
 	}
 
 	if pv.procCountCell != nil {
@@ -194,13 +196,7 @@ func (pv *pcView) onTableSelectionChange(_, _ int) {
 	pv.logsText.resetSearch()
 	pv.updateHelpTextView()
 	pv.logsText.SetTitle(name)
-	pv.unFollowLog()
-	pv.followLog(name)
-	if !pv.logFollow {
-		// call follow and unfollow to update the buffer and stop following
-		// in case the following is disabled
-		pv.unFollowLog()
-	}
+	pv.showLog(name)
 
 	// Update terminal view for interactive processes
 	if pv.isInteractive(name) {
@@ -593,12 +589,33 @@ func (pv *pcView) getSelectedProcName() string {
 }
 
 func (pv *pcView) selectTableProcess(name string) {
+	if row, ok := pv.getProcRow(name); ok {
+		pv.procTable.Select(row, 1)
+	}
+}
+
+// followSelectedProcess moves the cursor to the row now holding name, after a
+// refresh reordered the table, so that actions keep targeting the process the
+// user picked. The selected process does not change, so the selection-changed
+// callback, which would reset the log view, is not fired.
+func (pv *pcView) followSelectedProcess(name string) {
+	if name == "" || pv.getSelectedProcName() == name {
+		return
+	}
+	if row, ok := pv.getProcRow(name); ok {
+		pv.procTable.SetSelectionChangedFunc(nil)
+		pv.procTable.Select(row, 1)
+		pv.procTable.SetSelectionChangedFunc(pv.onTableSelectionChange)
+	}
+}
+
+func (pv *pcView) getProcRow(name string) (int, bool) {
 	for i := 1; i < pv.procTable.GetRowCount(); i++ {
 		if pv.procTable.GetCell(i, int(ProcessStateName)).Text == name {
-			pv.procTable.Select(i, 1)
-			return
+			return i, true
 		}
 	}
+	return 0, false
 }
 
 func (pv *pcView) selectFirstEnabledProcess() {
