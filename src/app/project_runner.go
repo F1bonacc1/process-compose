@@ -448,6 +448,11 @@ func (p *ProjectRunner) onProcessSkipped(procConf *types.ProcessConfig) {
 // performed while no instance is running observe the latest incarnation.
 func (p *ProjectRunner) newIncarnationState(config *types.ProcessConfig) *types.ProcessState {
 	state := types.NewProcessState(config)
+	// Whatever reaches runProcess is being launched, so it is never Disabled,
+	// even if the stored config still says so (manual start, restart).
+	if state.Status == types.ProcessStateDisabled {
+		state.Status = types.ProcessStatePending
+	}
 	p.statesMutex.Lock()
 	defer p.statesMutex.Unlock()
 	if prev, ok := p.processStates[config.ReplicaName]; ok && prev != nil {
