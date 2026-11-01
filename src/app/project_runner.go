@@ -63,6 +63,7 @@ type ProjectRunner struct {
 	// before launching the replacement: a stop that lands inside that window
 	// finds the old incarnation already Terminating, so it stops nothing, and
 	// without this the relaunch would silently bring the process back up.
+	// Project updates that remove or replace a process count as stops too.
 	// Guarded by restartMutex.
 	stopEpochs map[string]uint64
 	logger     pclog.PcLogger
@@ -631,8 +632,15 @@ func (p *ProjectRunner) getProcessesStateData(filter filterFn) error {
 
 func (p *ProjectRunner) addRunningProcess(process *Process) {
 	p.runProcMutex.Lock()
-	p.runningProcesses[process.getName()] = process
+	name := process.getName()
+	prev := p.runningProcesses[name]
+	p.runningProcesses[name] = process
 	p.runProcMutex.Unlock()
+	// Nothing can stop a process once it is no longer in runningProcesses.
+	if prev != nil && prev != process && !prev.isDone() {
+		log.Warn().Msgf("process %s replaced while still running, stopping the old instance", name)
+		go func() { _ = prev.shutDownNoRestart() }()
+	}
 }
 
 // addDoneProcess records process as the last completed incarnation of its name.
@@ -1098,7 +1106,7 @@ func (p *ProjectRunner) launchUnlessStopped(name string, epoch uint64) error {
 	defer p.restartMutex.Unlock()
 
 	if p.stopEpochs[name] != epoch {
-		log.Debug().Msgf("Restart of %s abandoned: it was stopped while restarting", name)
+		log.Debug().Msgf("Restart of %s abandoned: it was stopped or replaced while restarting", name)
 		return nil
 	}
 
@@ -1524,6 +1532,7 @@ func (p *ProjectRunner) removeProcessLogs(name string) *pclog.ProcessLogBuffer {
 }
 
 func (p *ProjectRunner) removeProcess(name string) error {
+	p.noteStopRequest(name)
 	if sched := p.processScheduler.Load(); sched != nil {
 		if err := sched.RemoveProcess(name); err != nil {
 			return err
@@ -1563,9 +1572,8 @@ func (p *ProjectRunner) addProcessAndRun(proc types.ProcessConfig) {
 	p.initProcessLog(proc.ReplicaName)
 	if proc.Schedule.IsScheduled() {
 		p.scheduleProcess(proc.ReplicaName, proc)
-	} else if !proc.IsDeferred() {
-		p.runProcess(&proc)
 	}
+	p.runUpdatedProcess(&proc)
 	// UpdateProject routes every add, update and scale-up through here, so this
 	// single hook keeps the watcher reconciled across reloads.
 	p.watchAdd(&proc)
@@ -1588,6 +1596,18 @@ func (p *ProjectRunner) scheduleProcess(name string, proc types.ProcessConfig) {
 	}
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to schedule process %s", name)
+	}
+}
+
+// runUpdatedProcess starts a process added or replaced by a project update and
+// cancels any restart of it that is still in flight. Otherwise the restart
+// would start a second instance next to this one.
+func (p *ProjectRunner) runUpdatedProcess(proc *types.ProcessConfig) {
+	p.restartMutex.Lock()
+	defer p.restartMutex.Unlock()
+	p.stopEpochs[proc.ReplicaName]++
+	if !proc.IsDeferred() && !proc.Schedule.IsScheduled() {
+		p.runProcess(proc)
 	}
 }
 
