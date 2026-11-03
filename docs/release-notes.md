@@ -1,5 +1,11 @@
 # Release Notes
 
+## Unreleased
+
+### Bug Fixes
+
+- Fixed concurrent probe shutdowns panicking with `close of closed channel`. Probe starts and stops are now serialized, and a pending initial-delay start cannot revive a stopped or superseded probe.
+
 ## [v1.124.0] - 2026-10-27
 
 ### New Features

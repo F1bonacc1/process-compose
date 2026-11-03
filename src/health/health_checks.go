@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -22,6 +23,9 @@ type Prober struct {
 	name           string
 	onCheckEndFunc func(bool, bool, string, any)
 	hc             *health.Health
+	// go-health does not serialize Start and Stop, including repeated Stop calls.
+	lifecycleMutex sync.Mutex
+	startSequence  uint64
 	stopped        atomic.Bool
 	env            []string
 	shellConfig    command.ShellConfig
@@ -56,10 +60,16 @@ func New(name string, probe Probe, env []string, shellConfig command.ShellConfig
 }
 
 func (p *Prober) Start() {
+	p.lifecycleMutex.Lock()
+	p.startSequence++
+	sequence := p.startSequence
+	p.stopped.Store(false)
+	p.lifecycleMutex.Unlock()
 	go func() {
-		p.stopped.Store(false)
 		time.Sleep(time.Duration(p.probe.InitialDelay) * time.Second)
-		if p.stopped.Load() {
+		p.lifecycleMutex.Lock()
+		defer p.lifecycleMutex.Unlock()
+		if p.stopped.Load() || sequence != p.startSequence {
 			return
 		}
 		err := p.hc.Start()
@@ -72,9 +82,11 @@ func (p *Prober) Start() {
 }
 
 func (p *Prober) Stop() {
+	p.lifecycleMutex.Lock()
+	defer p.lifecycleMutex.Unlock()
+	p.stopped.Store(true)
 	if p.hc != nil {
 		_ = p.hc.Stop()
-		p.stopped.Store(true)
 	}
 }
 
