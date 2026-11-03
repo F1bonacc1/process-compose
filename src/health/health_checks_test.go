@@ -3,6 +3,7 @@ package health
 import (
 	"net/http"
 	"net/url"
+	"sync"
 	"testing"
 	"time"
 
@@ -121,4 +122,79 @@ func TestProber_getHttpChecker(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProberConcurrentStopAndRestart(t *testing.T) {
+	hc := health.New()
+	hc.DisableLogging()
+	checked := make(chan struct{}, 1)
+	if err := hc.AddCheck(&health.Config{
+		Name:     "restart",
+		Checker:  lifecycleChecker{},
+		Interval: time.Hour,
+		OnComplete: func(*health.State) {
+			select {
+			case checked <- struct{}{}:
+			default:
+			}
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	p := &Prober{hc: hc}
+	t.Cleanup(p.Stop)
+	waitForCheck := func() {
+		t.Helper()
+		select {
+		case <-checked:
+		case <-time.After(5 * time.Second):
+			t.Fatal("probe did not start")
+		}
+	}
+	p.Start()
+	waitForCheck()
+
+	start := make(chan struct{})
+	var stopped sync.WaitGroup
+	for range 64 {
+		stopped.Go(func() {
+			<-start
+			p.Stop()
+		})
+	}
+	close(start)
+	stopped.Wait()
+	if err := hc.Stop(); err != health.ErrAlreadyStopped {
+		t.Fatalf("health checker still running after concurrent stops: %v", err)
+	}
+
+	p.Start()
+	waitForCheck()
+	p.Stop()
+}
+
+func TestProberStopCancelsDelayedStart(t *testing.T) {
+	hc := health.New()
+	hc.DisableLogging()
+	if err := hc.AddCheck(&health.Config{
+		Name:     "delayed",
+		Checker:  lifecycleChecker{},
+		Interval: time.Hour,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	p := &Prober{hc: hc, probe: Probe{InitialDelay: 1}}
+	t.Cleanup(p.Stop)
+	p.Start()
+	p.Stop()
+	time.Sleep(1100 * time.Millisecond)
+	if err := hc.Stop(); err != health.ErrAlreadyStopped {
+		t.Fatalf("stopped probe started after its initial delay: %v", err)
+	}
+}
+
+type lifecycleChecker struct{}
+
+func (lifecycleChecker) Status() (any, error) {
+	return nil, nil
 }
