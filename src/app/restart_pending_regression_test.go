@@ -150,6 +150,74 @@ func TestRestartWhilePendingOnDependency(t *testing.T) {
 	}
 }
 
+func TestStartDisabledProcessIsPendingUntilDependenciesAreHealthy(t *testing.T) {
+	shell := command.DefaultShellConfig()
+	const (
+		dependency = "dependency"
+		manual     = "manual"
+	)
+	gate := newReadinessGate(t)
+
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project: &types.Project{
+			ShellConfig: shell,
+			Processes: map[string]types.ProcessConfig{
+				dependency: {
+					Name:           dependency,
+					ReplicaName:    dependency,
+					Executable:     shell.ShellCommand,
+					Args:           []string{shell.ShellArgument, getSleepCommand(120.0)},
+					ReadinessProbe: gate.probe(t),
+				},
+				manual: {
+					Name:        manual,
+					ReplicaName: manual,
+					Executable:  shell.ShellCommand,
+					Args:        []string{shell.ShellArgument, getSleepCommand(120.0)},
+					Disabled:    true,
+					DependsOn: map[string]types.ProcessDependency{
+						dependency: {Condition: types.ProcessConditionHealthy},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go func() { _ = runner.Run() }()
+	t.Cleanup(func() { _ = runner.ShutDownProject() })
+	waitForProcessLaunched(t, runner, dependency, 10*time.Second)
+
+	if err := runner.StartProcess(manual); err != nil {
+		t.Fatalf("start disabled process: %v", err)
+	}
+	waitForProcessState(t, runner, manual, types.ProcessStatePending, 10*time.Second)
+	if t.Failed() {
+		return
+	}
+
+	// A restart reads the stored (still disabled) configuration, so it must
+	// not bring the Disabled status back while the dependency is not ready.
+	if err := runner.RestartProcess(manual); err != nil {
+		t.Fatalf("restart disabled process: %v", err)
+	}
+	waitForProcessState(t, runner, manual, types.ProcessStatePending, 10*time.Second)
+	if state, err := runner.GetProcessState(manual); err == nil {
+		if ready, reason := state.IsReadyReason(); ready {
+			t.Errorf("restarted %s reports ready while waiting for its dependency: %s", manual, reason)
+		}
+	}
+
+	gate.release()
+	waitForProcessState(t, runner, manual, types.ProcessStateRunning, 30*time.Second)
+
+	if runner.project.Processes[manual].Disabled != true {
+		t.Fatal("manual start must not enable the stored project configuration")
+	}
+}
+
 // A stop that lands while a restart is in flight must win. Between tearing the
 // old incarnation down and launching its replacement the process is registered
 // nowhere, so the stop finds nothing to stop and used to be silently overtaken
