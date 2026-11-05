@@ -131,7 +131,7 @@ func (p *monitorPrinter) printText(ev types.ProcessStateEvent, prev types.Proces
 	switch {
 	case ev.Snapshot:
 		fmt.Printf("%s  %-20s  snapshot  %s\n", ts, ev.State.Name, ev.State.Status)
-		if ev.State.HasHealthProbe && ev.State.Health != types.ProcessHealthUnknown {
+		if ev.State.HasReadyProbe && ev.State.Health != types.ProcessHealthUnknown {
 			fmt.Printf("%s  %-20s  health    %s\n", ts, ev.State.Name, ev.State.Health)
 		}
 	case !hadPrev || prev.Status != ev.State.Status:
