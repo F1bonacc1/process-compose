@@ -358,7 +358,80 @@ func (p *ProjectRunner) waitIfNeeded(waiter *Process) error {
 	// may only resolve minutes later (or never).
 	abort := waiter.procRunCtx.Done()
 	for k := range process.DependsOn {
-		if proc := p.getDoneOrRunningProcess(k); proc != nil {
+		if err := p.waitForDependency(waiter, k, abort); err != nil {
+			return err
+		}
+	}
+	// A stop that arrived while the last dependency was already satisfied must
+	// still keep the process from starting.
+	select {
+	case <-abort:
+		return errWaitAborted
+	default:
+	}
+	return nil
+}
+
+// errDependencyTerminated marks a dependency instance that ended without meeting the awaited condition.
+var errDependencyTerminated = errors.New("dependency terminated")
+
+// waitForDependency waits for dependency k of waiter. If the instance waited on is
+// replaced by a project or process update (the old one is shut down, a new one is
+// added), the wait continues on the new instance instead of failing.
+func (p *ProjectRunner) waitForDependency(waiter *Process, k string, abort <-chan struct{}) error {
+	process := waiter.procConf
+	var last *Process
+	for {
+		proc := p.getDoneOrRunningProcess(k)
+		if proc == nil || proc == last {
+			// Nothing registered yet or still the old instance: during an update the
+			// replacement shows up shortly, otherwise there is nothing to wait for.
+			next, aborted := p.awaitReplacement(k, last, abort)
+			if aborted {
+				return errWaitAborted
+			}
+			if next == nil {
+				if last != nil {
+					return fmt.Errorf("process %s depended on %s, but it was terminated", process.ReplicaName, k)
+				}
+				log.Error().Msgf("Error: process %s depends on %s, but it isn't running or completed", process.ReplicaName, k)
+				return nil
+			}
+			proc = next
+		}
+		err := p.waitForDependencyInstance(waiter, k, proc, abort)
+		if !errors.Is(err, errDependencyTerminated) {
+			return err
+		}
+		last = proc
+		if p.updatesInFlight.Load() == 0 && p.getDoneOrRunningProcess(k) == proc {
+			return err
+		}
+	}
+}
+
+// awaitReplacement waits while an update is in flight for a dependency instance
+// different from old to be registered. It returns nil when no update is running.
+func (p *ProjectRunner) awaitReplacement(k string, old *Process, abort <-chan struct{}) (*Process, bool) {
+	for {
+		if proc := p.getDoneOrRunningProcess(k); proc != nil && proc != old {
+			return proc, false
+		}
+		if p.updatesInFlight.Load() == 0 {
+			return nil, false
+		}
+		select {
+		case <-abort:
+			return nil, true
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+}
+
+func (p *ProjectRunner) waitForDependencyInstance(waiter *Process, k string, proc *Process, abort <-chan struct{}) error {
+	process := waiter.procConf
+	{
+		{
 			switch process.DependsOn[k].Condition {
 			case types.ProcessConditionCompleted:
 				if _, res := proc.waitForCompletionOrAbort(abort); res == waitAborted {
@@ -383,7 +456,7 @@ func (p *ProjectRunner) waitIfNeeded(waiter *Process) error {
 				case waitAborted:
 					return errWaitAborted
 				case waitFailed:
-					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.ReplicaName, k)
+					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated: %w", process.ReplicaName, k, errDependencyTerminated)
 				}
 			case types.ProcessConditionLogReady:
 				log.Info().Msgf("%s is waiting for %s log line %s", process.ReplicaName, k, proc.procConf.ReadyLogLine)
@@ -391,23 +464,13 @@ func (p *ProjectRunner) waitIfNeeded(waiter *Process) error {
 				case waitAborted:
 					return errWaitAborted
 				case waitFailed:
-					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated", process.ReplicaName, k)
+					return fmt.Errorf("process %s depended on %s to become ready, but it was terminated: %w", process.ReplicaName, k, errDependencyTerminated)
 				}
 			case types.ProcessConditionStarted:
 				log.Info().Msgf("%s is waiting for %s to start", process.ReplicaName, k)
 				proc.waitForStarted(abort)
 			}
-		} else {
-			log.Error().Msgf("Error: process %s depends on %s, but it isn't running or completed", process.ReplicaName, k)
 		}
-
-	}
-	// A stop that arrived while the last dependency was already satisfied must
-	// still keep the process from starting.
-	select {
-	case <-abort:
-		return errWaitAborted
-	default:
 	}
 	return nil
 }
