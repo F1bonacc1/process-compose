@@ -23,4 +23,5 @@ var restartCmd = &cobra.Command{
 
 func init() {
 	processCmd.AddCommand(restartCmd)
+	restartCmd.ValidArgsFunction = completeProcessNamesFromServer(true)
 }

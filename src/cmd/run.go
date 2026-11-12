@@ -46,6 +46,7 @@ Command line arguments, provided after --, are passed to the PROCESS.`,
 
 func init() {
 	rootCmd.AddCommand(runCmd)
+	runCmd.ValidArgsFunction = completeProcessNamesFromConfig(true)
 
 	runCmd.Flags().BoolVarP(pcFlags.NoDependencies, "no-deps", "", *pcFlags.NoDependencies, "don't start dependent processes")
 	runCmd.Flags().AddFlag(rootCmd.Flags().Lookup("config"))

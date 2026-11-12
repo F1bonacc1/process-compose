@@ -78,5 +78,6 @@ func prepareConciseOutput(stopped map[string]string, processes []string) (string
 
 func init() {
 	processCmd.AddCommand(stopCmd)
+	stopCmd.ValidArgsFunction = completeProcessNamesFromServer(false)
 	stopCmd.Flags().BoolVarP(&stopVerboseOutput, "verbose", "v", stopVerboseOutput, "verbose output")
 }
