@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/f1bonacc1/process-compose/src/health"
 	"github.com/f1bonacc1/process-compose/src/templater"
 	"github.com/f1bonacc1/process-compose/src/types"
 )
@@ -542,5 +543,83 @@ func TestProjectRunner_getNamespaceProcesses(t *testing.T) {
 				t.Errorf("getNamespaceProcesses() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+// TestProjectRunner_newIncarnationStateLogReadiness makes sure that a
+// `ready_log_line` gates readiness only when the output is scanned for it.
+func TestProjectRunner_newIncarnationStateLogReadiness(t *testing.T) {
+	const procName = "service"
+	tests := []struct {
+		name        string
+		proc        types.ProcessConfig
+		mainProcess string
+		isTuiOn     bool
+		wantGated   bool
+	}{
+		{name: "no ready log line"},
+		{name: "piped output", proc: types.ProcessConfig{ReadyLogLine: "ready"}, wantGated: true},
+		{
+			name:      "foreground started through the runner",
+			proc:      types.ProcessConfig{ReadyLogLine: "ready", IsForeground: true},
+			wantGated: true,
+		},
+		{
+			name:      "elevated with TUI",
+			proc:      types.ProcessConfig{ReadyLogLine: "ready", IsElevated: true},
+			isTuiOn:   true,
+			wantGated: true,
+		},
+		{name: "interactive", proc: types.ProcessConfig{ReadyLogLine: "ready", IsInteractive: true}},
+		{name: "run-selected process", proc: types.ProcessConfig{ReadyLogLine: "ready"}, mainProcess: procName},
+		{name: "elevated without TUI", proc: types.ProcessConfig{ReadyLogLine: "ready", IsElevated: true}},
+		{
+			name:        "unscanned output keeps its probe",
+			proc:        types.ProcessConfig{ReadyLogLine: "ready", LivenessProbe: &health.Probe{}},
+			mainProcess: procName,
+			wantGated:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runner := &ProjectRunner{
+				mainProcess:   tt.mainProcess,
+				isTuiOn:       tt.isTuiOn,
+				processStates: make(map[string]*types.ProcessState),
+			}
+			proc := tt.proc
+			proc.Name = procName
+			// `process-compose run` selects a process by name, not by replica.
+			proc.ReplicaName = procName + "-0"
+
+			if got := runner.newIncarnationState(&proc).HasHealthProbe; got != tt.wantGated {
+				t.Errorf("newIncarnationState().HasHealthProbe = %v, want %v", got, tt.wantGated)
+			}
+		})
+	}
+}
+
+// TestProjectRunner_ForegroundLogReadiness makes sure that a foreground
+// process, which waits to be started from the TUI, does not hold the project
+// back with its `ready_log_line`.
+func TestProjectRunner_ForegroundLogReadiness(t *testing.T) {
+	runner, err := NewProjectRunner(&ProjectOpts{
+		project: &types.Project{
+			Processes: types.Processes{
+				"fg": {Name: "fg", ReplicaName: "fg", IsForeground: true, ReadyLogLine: "ready"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewProjectRunner() error = %v", err)
+	}
+
+	state, err := runner.GetProcessState("fg")
+	if err != nil {
+		t.Fatalf("GetProcessState() error = %v", err)
+	}
+	if ready, reason := state.IsReadyReason(); !ready {
+		t.Errorf("foreground process is not ready before it is started: %s", reason)
 	}
 }
