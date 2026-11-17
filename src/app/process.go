@@ -56,8 +56,6 @@ type Process struct {
 	waitForPassCtx       context.Context
 	waitForPassCancelFn  context.CancelFunc
 	mtxStopFn            sync.Mutex
-	waitForStoppedCtx    context.Context
-	waitForStoppedFn     context.CancelFunc
 	procColor            func(a ...any) string
 	noColor              func(a ...any) string
 	redColor             func(a ...any) string
@@ -584,21 +582,35 @@ func (p *Process) stopProcess(withNoRestart bool) error {
 }
 
 func (p *Process) forceKillOnTimeout() error {
-	p.mtxStopFn.Lock()
-	p.waitForStoppedCtx, p.waitForStoppedFn = context.WithTimeout(context.Background(), time.Duration(p.procConf.ShutDownParams.ShutDownTimeout)*time.Second)
-	p.mtxStopFn.Unlock()
-	<-p.waitForStoppedCtx.Done()
-	err := p.waitForStoppedCtx.Err()
-	switch {
-	case errors.Is(err, context.Canceled):
+	if p.waitForStopped(p.procConf.ShutDownParams.ShutDownTimeout) {
 		return nil
-	case errors.Is(err, context.DeadlineExceeded):
-		log.Debug().Msgf("process failed to shut down within %d seconds, sending %d", p.procConf.ShutDownParams.ShutDownTimeout, syscall.SIGKILL)
-		return p.command.Stop(int(syscall.SIGKILL), false)
-	default:
-		log.Error().Err(err).Msgf("terminating %s with timeout %d failed", p.getName(), p.procConf.ShutDownParams.ShutDownTimeout)
-		return err
 	}
+	log.Debug().Msgf("process failed to shut down within %d seconds, sending %d", p.procConf.ShutDownParams.ShutDownTimeout, syscall.SIGKILL)
+	return p.forceKill()
+}
+
+// waitForStopped waits up to timeout seconds for the process to end and reports
+// whether it did. It waits on procDoneChan, which stays closed once the process
+// has ended, so an exit that happens before the wait starts is not missed.
+func (p *Process) waitForStopped(timeout int) bool {
+	timer := time.NewTimer(time.Duration(timeout) * time.Second)
+	defer timer.Stop()
+	select {
+	case <-p.procDoneChan:
+		return true
+	case <-timer.C:
+		return false
+	}
+}
+
+// forceKill sends SIGKILL to the process group. ESRCH means there is nothing
+// left to kill because the process exited just as the timeout expired.
+func (p *Process) forceKill() error {
+	err := p.command.Stop(int(syscall.SIGKILL), false)
+	if errors.Is(err, syscall.ESRCH) {
+		return nil
+	}
+	return err
 }
 
 func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
@@ -647,21 +659,11 @@ func (p *Process) doSendKeysStop(params types.ShutDownParams) error {
 	if timeout == UndefinedShutdownTimeoutSec {
 		timeout = DefaultShutdownTimeoutSec
 	}
-	p.mtxStopFn.Lock()
-	p.waitForStoppedCtx, p.waitForStoppedFn = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
-	p.mtxStopFn.Unlock()
-	<-p.waitForStoppedCtx.Done()
-	err := p.waitForStoppedCtx.Err()
-	switch {
-	case errors.Is(err, context.Canceled):
+	if p.waitForStopped(timeout) {
 		return nil // exited gracefully in response to the keys
-	case errors.Is(err, context.DeadlineExceeded):
-		log.Debug().Msgf("process %s failed to exit on keys within %d seconds, sending %d", p.getName(), timeout, syscall.SIGKILL)
-		return p.command.Stop(int(syscall.SIGKILL), false)
-	default:
-		log.Error().Err(err).Msgf("terminating %s with send_keys timeout %d failed", p.getName(), timeout)
-		return err
 	}
+	log.Debug().Msgf("process %s failed to exit on keys within %d seconds, sending %d", p.getName(), timeout, syscall.SIGKILL)
+	return p.forceKill()
 }
 
 // gracefulShutDownWithSignal sends the configured signal and applies the
@@ -715,12 +717,6 @@ func (p *Process) onProcessEnd(state string) {
 	if isStringDefined(p.procConf.LogLocation) {
 		p.logger.Close()
 	}
-	p.mtxStopFn.Lock()
-	if p.waitForStoppedFn != nil {
-		p.waitForStoppedFn()
-		p.waitForStoppedFn = nil
-	}
-	p.mtxStopFn.Unlock()
 	p.cancelReadyLogFunc(fmt.Errorf("process %s completed", p.getName()))
 	p.stopProbes()
 	p.markWontBeReady()
