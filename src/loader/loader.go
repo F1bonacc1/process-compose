@@ -30,12 +30,15 @@ func Load(opts *LoaderOptions) (*types.Project, error) {
 	fileNames := make([]string, len(opts.FileNames))
 	_ = copy(fileNames, opts.FileNames)
 
-	for idx, file := range fileNames {
+	for _, file := range fileNames {
 		prj, err := loadProjectFromFile(file, opts)
 		if err != nil {
 			return nil, err
 		}
-		err = loadExtendProject(prj, opts, file, idx)
+		// Insert the extended projects right before this one. Earlier files
+		// may have added their own extended projects, so the position is the
+		// number of projects loaded so far, not the index in fileNames.
+		err = loadExtendProject(prj, opts, file, len(opts.projects))
 		if err != nil {
 			if opts.IsInternalLoader {
 				return nil, err

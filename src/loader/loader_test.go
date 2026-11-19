@@ -1,8 +1,10 @@
 package loader
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 )
 
@@ -185,6 +187,80 @@ func TestLoadFileWithExtendProject(t *testing.T) {
 		if proc.WorkingDir != "" {
 			t.Errorf("expected empty, got %s", proc.WorkingDir)
 		}
+	}
+}
+
+// TestLoad_MultipleFilesWithExtends checks that with several -f files, each
+// extended project is merged right before the file that extends it, so
+// `-f a -f b` behaves like `-f <a's base> -f a -f <b's base> -f b`.
+func TestLoad_MultipleFilesWithExtends(t *testing.T) {
+	dir := t.TempDir()
+	files := map[string]string{
+		"top.yaml": "processes:\n  top:\n    command: echo top\n",
+		"c.yaml":   "processes:\n  p:\n    command: echo from-c\n",
+		"a.yaml":   "extends: c.yaml\nprocesses:\n  p:\n    command: echo from-a\n",
+		"e.yaml":   "processes:\n  p:\n    command: echo from-e\n  r:\n    command: echo from-e\n",
+		"d.yaml":   "extends: e.yaml\nprocesses:\n  p:\n    command: echo from-d\n",
+		"b.yaml":   "extends: d.yaml\nprocesses:\n  q:\n    command: echo q\n",
+	}
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	paths := func(names ...string) []string {
+		out := make([]string, len(names))
+		for i, n := range names {
+			out[i] = filepath.Join(dir, n)
+		}
+		return out
+	}
+
+	tests := []struct {
+		name      string
+		files     []string
+		wantOrder []string
+		wantP     string
+	}{
+		{
+			name:      "two files with extends",
+			files:     paths("a.yaml", "b.yaml"),
+			wantOrder: paths("c.yaml", "a.yaml", "e.yaml", "d.yaml", "b.yaml"),
+			wantP:     "echo from-d",
+		},
+		{
+			name:      "plain file first",
+			files:     paths("top.yaml", "a.yaml", "b.yaml"),
+			wantOrder: paths("top.yaml", "c.yaml", "a.yaml", "e.yaml", "d.yaml", "b.yaml"),
+			wantP:     "echo from-d",
+		},
+		{
+			name:      "extending file last",
+			files:     paths("b.yaml", "a.yaml"),
+			wantOrder: paths("e.yaml", "d.yaml", "b.yaml", "c.yaml", "a.yaml"),
+			wantP:     "echo from-a",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := &LoaderOptions{
+				FileNames:        tt.files,
+				IsInternalLoader: true,
+			}
+			project, err := Load(opts)
+			if err != nil {
+				t.Fatalf("failed to load project: %v", err)
+			}
+			if !slices.Equal(opts.FileNames, tt.wantOrder) {
+				t.Errorf("merge order = %v, want %v", opts.FileNames, tt.wantOrder)
+			}
+			if got := project.Processes["p"].Command; got != tt.wantP {
+				t.Errorf("p command = %q, want %q", got, tt.wantP)
+			}
+			if got := project.Processes["r"].Command; got != "echo from-e" {
+				t.Errorf("r command = %q, want %q", got, "echo from-e")
+			}
+		})
 	}
 }
 
