@@ -62,6 +62,7 @@ type Process struct {
 	logBuffer            *pclog.ProcessLogBuffer
 	logger               pclog.PcLogger
 	command              command.Commander
+	attemptDone          chan struct{} // guarded by stateMtx together with command
 	started              bool
 	done                 bool
 	timeMutex            sync.Mutex
@@ -205,6 +206,8 @@ loop:
 			p.waitForDaemonCompletion()
 		}
 
+		close(p.attemptDone)
+
 		if !p.isRestartable() {
 			break
 		}
@@ -273,6 +276,7 @@ func (p *Process) waitForStdOutErr() {
 func (p *Process) getProcessStarter() func() error {
 	return func() error {
 		p.command = p.getCommander()
+		p.attemptDone = make(chan struct{})
 		p.command.SetEnv(p.getProcessEnvironment())
 		p.command.SetDir(p.procConf.WorkingDir)
 
@@ -537,11 +541,34 @@ func (p *Process) sendSignal(sig int) error {
 	return p.command.Stop(sig, p.procConf.ShutDownParams.ParentOnly)
 }
 
+// shutdownTarget pins a stop request to one child attempt. procDoneChan
+// closes only when the entire process, including its restart loop, is done.
+type shutdownTarget struct {
+	command command.Commander
+	done    <-chan struct{}
+}
+
+func (p *Process) beginShutdown() (shutdownTarget, bool) {
+	p.stateMtx.Lock()
+	if !p.isRunningLocked() {
+		p.stateMtx.Unlock()
+		return shutdownTarget{}, false
+	}
+	target := shutdownTarget{command: p.command, done: p.attemptDone}
+	p.procState.Status = types.ProcessStateTerminating
+	p.onStateChange(types.ProcessStateTerminating)
+	ev := p.snapshotEventLocked()
+	p.stateMtx.Unlock()
+	p.publishLocked(ev)
+	return target, true
+}
+
 func (p *Process) stopProcess(withNoRestart bool) error {
 	if withNoRestart {
 		p.runCancelFn()
 	}
-	if !p.isRunning() {
+	target, running := p.beginShutdown()
+	if !running {
 		log.Debug().Msgf("process %s is in state %s not shutting down", p.getName(), p.getStatusName())
 		// prevent pending process from running
 		if p.isOneOfStates(types.ProcessStatePending) {
@@ -552,10 +579,9 @@ func (p *Process) stopProcess(withNoRestart bool) error {
 		}
 		return nil
 	}
-	p.setState(types.ProcessStateTerminating)
 	// if the process is interactive and running in the background, it might be blocked on writing to the pty
 	// so we need to drain the pty to allow it to exit
-	if ptyFile := p.command.GetPty(); ptyFile != nil {
+	if ptyFile := target.command.GetPty(); ptyFile != nil {
 		go func() {
 			_, _ = io.Copy(io.Discard, ptyFile)
 		}()
@@ -565,55 +591,52 @@ func (p *Process) stopProcess(withNoRestart bool) error {
 		p.markWontBeReady()
 		p.cancelReadyLogFunc(fmt.Errorf("process %s was shut down", p.getName()))
 	}
-	if isStringDefined(p.procConf.ShutDownParams.ShutDownCommand) {
-		return p.doConfiguredStop(p.procConf.ShutDownParams)
+	params := p.procConf.ShutDownParams
+	if isStringDefined(params.ShutDownCommand) {
+		return p.doConfiguredStop(params, target)
 	}
-	if isStringDefined(p.procConf.ShutDownParams.SendKeys) {
-		return p.doSendKeysStop(p.procConf.ShutDownParams)
+	if isStringDefined(params.SendKeys) {
+		return p.doSendKeysStop(params, target)
 	}
-	err := p.command.Stop(p.procConf.ShutDownParams.Signal, p.procConf.ShutDownParams.ParentOnly)
-	if err != nil {
-		log.Error().Err(err).Msgf("terminating %s failed", p.getName())
-	}
-	if p.procConf.ShutDownParams.ShutDownTimeout != UndefinedShutdownTimeoutSec {
-		return p.forceKillOnTimeout()
-	}
-	return err
+	return p.gracefulShutDownWithSignal(params, target)
 }
 
-func (p *Process) forceKillOnTimeout() error {
-	if p.waitForStopped(p.procConf.ShutDownParams.ShutDownTimeout) {
+func (p *Process) forceKillOnTimeout(timeout int, target shutdownTarget) error {
+	if target.waitForStopped(timeout) {
 		return nil
 	}
-	log.Debug().Msgf("process failed to shut down within %d seconds, sending %d", p.procConf.ShutDownParams.ShutDownTimeout, syscall.SIGKILL)
-	return p.forceKill()
+	log.Debug().Msgf("process failed to shut down within %d seconds, sending %d", timeout, syscall.SIGKILL)
+	return target.forceKill()
 }
 
-// waitForStopped waits up to timeout seconds for the process to end and reports
-// whether it did. It waits on procDoneChan, which stays closed once the process
-// has ended, so an exit that happens before the wait starts is not missed.
-func (p *Process) waitForStopped(timeout int) bool {
+// waitForStopped waits up to timeout seconds for the targeted attempt to end.
+// Its channel remains closed if the child exited before the wait started.
+func (t shutdownTarget) waitForStopped(timeout int) bool {
 	timer := time.NewTimer(time.Duration(timeout) * time.Second)
 	defer timer.Stop()
 	select {
-	case <-p.procDoneChan:
+	case <-t.done:
 		return true
 	case <-timer.C:
 		return false
 	}
 }
 
-// forceKill sends SIGKILL to the process group. ESRCH means there is nothing
-// left to kill because the process exited just as the timeout expired.
-func (p *Process) forceKill() error {
-	err := p.command.Stop(int(syscall.SIGKILL), false)
+// forceKill sends SIGKILL to the original process group if it is still active.
+func (t shutdownTarget) forceKill() error {
+	select {
+	case <-t.done:
+		return nil
+	default:
+	}
+	err := t.command.Stop(int(syscall.SIGKILL), false)
 	if errors.Is(err, syscall.ESRCH) {
 		return nil
 	}
 	return err
 }
 
-func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
+func (p *Process) doConfiguredStop(params types.ShutDownParams, target shutdownTarget) error {
 	timeout := params.ShutDownTimeout
 	if timeout == UndefinedShutdownTimeoutSec {
 		timeout = DefaultShutdownTimeoutSec
@@ -628,17 +651,18 @@ func (p *Process) doConfiguredStop(params types.ShutDownParams) error {
 	cmd.SetDir(p.procConf.WorkingDir)
 
 	if err := cmd.Run(); err != nil {
-		// the process termination timedout and it will be killed
 		log.Error().Msgf("terminating %s with timeout %d failed - %s", p.getName(), timeout, err.Error())
-		return p.command.Stop(int(syscall.SIGKILL), false)
+		return target.forceKill()
 	}
 	return nil
 }
 
 // sendKeys writes the interpreted keys to the process's interactive stdin (PTY).
-// It returns an error if the process is not interactive (no PTY).
 func (p *Process) sendKeys(s string) error {
-	pty := p.command.GetPty()
+	return p.writeKeys(p.GetPty(), s)
+}
+
+func (p *Process) writeKeys(pty *os.File, s string) error {
 	if pty == nil {
 		return fmt.Errorf("process %s is not interactive; cannot send keys", p.getName())
 	}
@@ -648,44 +672,45 @@ func (p *Process) sendKeys(s string) error {
 
 // doSendKeysStop performs a graceful, key-based shutdown: it writes the
 // configured keys to the process's stdin and waits up to the shutdown timeout
-// for the process to exit on its own. If it does not exit in time, it is killed
-// with SIGKILL (mirroring the shutdown.command fallback behavior).
-func (p *Process) doSendKeysStop(params types.ShutDownParams) error {
-	if err := p.sendKeys(params.SendKeys); err != nil {
+// for the process to exit on its own.
+func (p *Process) doSendKeysStop(params types.ShutDownParams, target shutdownTarget) error {
+	if err := p.writeKeys(target.command.GetPty(), params.SendKeys); err != nil {
 		log.Error().Err(err).Msgf("failed to send keys to %s, falling back to signal", p.getName())
-		return p.gracefulShutDownWithSignal(params)
+		return p.gracefulShutDownWithSignal(params, target)
 	}
 	timeout := params.ShutDownTimeout
 	if timeout == UndefinedShutdownTimeoutSec {
 		timeout = DefaultShutdownTimeoutSec
 	}
-	if p.waitForStopped(timeout) {
-		return nil // exited gracefully in response to the keys
-	}
-	log.Debug().Msgf("process %s failed to exit on keys within %d seconds, sending %d", p.getName(), timeout, syscall.SIGKILL)
-	return p.forceKill()
+	return p.forceKillOnTimeout(timeout, target)
 }
 
 // gracefulShutDownWithSignal sends the configured signal and applies the
-// SIGKILL-on-timeout fallback. It mirrors the default branch of stopProcess and
-// is used when send_keys cannot be delivered.
-func (p *Process) gracefulShutDownWithSignal(params types.ShutDownParams) error {
-	err := p.command.Stop(params.Signal, params.ParentOnly)
+// SIGKILL-on-timeout fallback to the same process attempt.
+func (p *Process) gracefulShutDownWithSignal(params types.ShutDownParams, target shutdownTarget) error {
+	err := target.command.Stop(params.Signal, params.ParentOnly)
 	if err != nil {
 		log.Error().Err(err).Msgf("terminating %s failed", p.getName())
 	}
 	if params.ShutDownTimeout != UndefinedShutdownTimeoutSec {
-		return p.forceKillOnTimeout()
+		return p.forceKillOnTimeout(params.ShutDownTimeout, target)
 	}
 	return err
 }
 
 func (p *Process) isRunning() bool {
-	return p.isOneOfStates(
-		types.ProcessStateRunning,
-		types.ProcessStateLaunched,
-		types.ProcessStateLaunching,
-	)
+	p.stateMtx.Lock()
+	defer p.stateMtx.Unlock()
+	return p.isRunningLocked()
+}
+
+func (p *Process) isRunningLocked() bool {
+	switch p.procState.Status {
+	case types.ProcessStateRunning, types.ProcessStateLaunched, types.ProcessStateLaunching:
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *Process) isSignalable() bool {
