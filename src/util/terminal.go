@@ -2,8 +2,10 @@ package util
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/rs/zerolog/log"
+	"golang.org/x/term"
 )
 
 type projectNamer interface{ GetProjectName() (string, error) }
@@ -18,4 +20,9 @@ func SetProjectNameAsTerminalTitle(n projectNamer) {
 	SetTerminalTitle(name)
 }
 
-func SetTerminalTitle(title string) { fmt.Printf("\033]0;process-compose: %s\007", title) }
+func SetTerminalTitle(title string) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
+		return
+	}
+	fmt.Printf("\033]0;process-compose: %s\007", title)
+}
